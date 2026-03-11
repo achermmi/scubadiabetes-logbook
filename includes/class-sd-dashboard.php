@@ -10,7 +10,7 @@
  *
  * @package SD_Logbook
  */
-function test(
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
