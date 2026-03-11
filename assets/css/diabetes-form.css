@@ -1,0 +1,390 @@
+/**
+ * ScubaDiabetes Logbook - Sezione Diabete
+ * Checkpoint glicemici, toggle C/S, frecce trend, grafico, decisione
+ */
+
+/* ============================================================
+   UNIT SELECTOR (inline nel form)
+   ============================================================ */
+.sd-unit-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-radius: 8px;
+}
+
+.sd-unit-selector-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #9A3412;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.sd-unit-toggle-inline {
+    display: flex;
+    border: 2px solid #EA580C;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.sd-unit-btn-inline {
+    padding: 6px 18px;
+    border: none;
+    background: #FFF;
+    color: #EA580C;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.3;
+}
+
+.sd-unit-btn-inline:first-child {
+    border-right: 1px solid #FDBA74;
+}
+
+.sd-unit-btn-inline:hover {
+    background: #FFF7ED;
+}
+
+.sd-unit-btn-inline.active {
+    background: #EA580C;
+    color: #FFF;
+}
+
+.sd-unit-btn-inline.active:hover {
+    background: #C2410C;
+}
+
+/* ============================================================
+   DIABETES SECTION
+   ============================================================ */
+.sd-section-diabetes {
+    border-color: #EA580C;
+    border-width: 2px;
+}
+
+.sd-section-title-diabetes {
+    color: #EA580C;
+    border-bottom-color: #FED7AA;
+}
+
+.sd-section-title-diabetes .sd-section-icon {
+    color: #EA580C;
+}
+
+/* ============================================================
+   GLYCEMIA CHART
+   ============================================================ */
+.sd-glycemia-chart-wrap {
+    position: relative;
+    background: #FAFBFC;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    padding: 12px 8px 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+}
+
+#sd-glycemia-chart {
+    width: 100%;
+    height: 180px;
+    display: block;
+}
+
+.sd-chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.sd-chart-zone {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+
+.sd-zone-high   { background: #FEE2E2; color: #DC2626; }
+.sd-zone-warn   { background: #FEF3C7; color: #D97706; }
+.sd-zone-ok     { background: #DCFCE7; color: #16A34A; }
+.sd-zone-low-ok { background: #DBEAFE; color: #2563EB; }
+.sd-zone-danger  { background: #FEE2E2; color: #DC2626; }
+
+/* ============================================================
+   CHECKPOINT CARDS
+   ============================================================ */
+.sd-checkpoints {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.sd-checkpoint-card {
+    background: var(--sd-white);
+    border: 1.5px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.sd-checkpoint-card:focus-within {
+    border-color: var(--sd-blue);
+}
+
+.sd-checkpoint-header {
+    text-align: center;
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 6px 0;
+    text-transform: uppercase;
+}
+
+.sd-cp-field {
+    padding: 4px 8px;
+}
+
+.sd-cp-field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.sd-cp-field input[type="number"],
+.sd-cp-field input[type="text"] {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1.5px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sd-cp-field input:focus {
+    outline: none;
+    border-color: var(--sd-blue);
+    box-shadow: 0 0 0 2px rgba(21,101,192,0.12);
+}
+
+.sd-cp-field input::placeholder {
+    color: var(--sd-gray-300);
+}
+
+/* Glycemia input larger */
+.sd-glic-input {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    text-align: center;
+    padding: 8px !important;
+}
+
+/* ============================================================
+   METHOD TOGGLE (C / S)
+   ============================================================ */
+.sd-method-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.sd-method-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 6px 4px;
+    border: 2px solid var(--sd-gray-200);
+    border-radius: 6px;
+    background: var(--sd-white);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.sd-method-letter {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--sd-gray-500);
+    transition: color 0.2s;
+}
+
+.sd-method-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: color 0.2s;
+}
+
+.sd-method-btn:hover {
+    border-color: var(--sd-blue);
+}
+
+.sd-method-btn.active {
+    border-color: var(--sd-blue);
+    background: var(--sd-blue);
+}
+
+.sd-method-btn.active .sd-method-letter,
+.sd-method-btn.active .sd-method-label {
+    color: #FFF;
+}
+
+/* C = capillare → red accent when active */
+.sd-method-btn.active[data-value="C"] {
+    border-color: #DC2626;
+    background: #DC2626;
+}
+
+/* S = sensore → teal accent when active */
+.sd-method-btn.active[data-value="S"] {
+    border-color: #0097A7;
+    background: #0097A7;
+}
+
+/* ============================================================
+   TREND ARROWS
+   ============================================================ */
+.sd-trend-select {
+    display: flex;
+    gap: 3px;
+}
+
+.sd-trend-btn {
+    flex: 1;
+    padding: 5px 2px;
+    border: 2px solid var(--sd-gray-200);
+    border-radius: 6px;
+    background: var(--sd-white);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: inherit;
+}
+
+.sd-arrow {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--sd-gray-500);
+    line-height: 1;
+}
+
+.sd-trend-btn:hover {
+    border-color: var(--sd-blue);
+}
+
+.sd-trend-btn.active {
+    border-color: var(--sd-blue);
+    background: var(--sd-blue-light);
+}
+
+/* Color arrows by direction */
+.sd-trend-btn.active .sd-arrow-up-fast  { color: #DC2626; }
+.sd-trend-btn.active .sd-arrow-up       { color: #EA580C; }
+.sd-trend-btn.active .sd-arrow-stable   { color: #16A34A; }
+.sd-trend-btn.active .sd-arrow-down     { color: #2563EB; }
+.sd-trend-btn.active .sd-arrow-down-fast { color: #7C3AED; }
+
+/* ============================================================
+   DECISION BAR (protocollo DS)
+   ============================================================ */
+.sd-decision-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: var(--sd-radius-sm);
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sd-decision-bar.sd-decision-ok {
+    background: #DCFCE7;
+    border: 2px solid #86EFAC;
+    color: #166534;
+}
+
+.sd-decision-bar.sd-decision-caution {
+    background: #FEF3C7;
+    border: 2px solid #FDE68A;
+    color: #92400E;
+}
+
+.sd-decision-bar.sd-decision-stop {
+    background: #FEE2E2;
+    border: 2px solid #FECACA;
+    color: #991B1B;
+}
+
+.sd-decision-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   ADVANCED SECTION TWEAKS
+   ============================================================ */
+.sd-section-diabetes .sd-details summary {
+    color: #EA580C;
+}
+
+.sd-inline-small {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1.5px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+.sd-section-diabetes input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
+    accent-color: #EA580C;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .sd-checkpoints {
+        grid-template-columns: 1fr;
+    }
+
+    .sd-glycemia-chart-wrap {
+        padding: 8px 4px;
+    }
+}
+
+@media (min-width: 600px) {
+    .sd-checkpoints {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

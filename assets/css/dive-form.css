@@ -1,0 +1,594 @@
+/**
+ * ScubaDiabetes Logbook - Form Immersione
+ * Tema marino, mobile-first, icone stile logbook
+ */
+
+/* ============================================================
+   CSS VARIABLES - TEMA MARINO
+   ============================================================ */
+:root {
+    --sd-blue-deep: #0B3D6E;
+    --sd-blue: #1565C0;
+    --sd-blue-light: #E3F2FD;
+    --sd-blue-pale: #F0F7FF;
+    --sd-cyan: #0097A7;
+    --sd-teal: #00897B;
+    --sd-white: #FFFFFF;
+    --sd-gray-50: #F8FAFC;
+    --sd-gray-100: #F1F5F9;
+    --sd-gray-200: #E2E8F0;
+    --sd-gray-300: #CBD5E1;
+    --sd-gray-500: #64748B;
+    --sd-gray-700: #334155;
+    --sd-gray-900: #0F172A;
+    --sd-red: #DC2626;
+    --sd-green: #16A34A;
+    --sd-orange: #EA580C;
+    --sd-radius: 12px;
+    --sd-radius-sm: 8px;
+    --sd-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --sd-shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --sd-transition: 0.2s ease;
+}
+
+/* ============================================================
+   WRAPPER
+   ============================================================ */
+.sd-form-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    color: var(--sd-gray-900);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Wider layout for dashboards and panels */
+.sd-form-wrap.sd-dashboard-wrap,
+.sd-form-wrap.sd-medical-wrap,
+.sd-form-wrap.sd-research-wrap {
+    max-width: 1100px;
+}
+
+/* ============================================================
+   NEVE PRO THEME COMPATIBILITY
+   Force full-width content area for plugin pages
+   ============================================================ */
+.nv-single-page-wrap .sd-form-wrap,
+.page .sd-form-wrap,
+.nv-content-wrap .sd-form-wrap {
+    max-width: 640px;
+}
+
+.nv-single-page-wrap .sd-form-wrap.sd-dashboard-wrap,
+.nv-single-page-wrap .sd-form-wrap.sd-medical-wrap,
+.nv-single-page-wrap .sd-form-wrap.sd-research-wrap,
+.page .sd-form-wrap.sd-dashboard-wrap,
+.page .sd-form-wrap.sd-medical-wrap,
+.page .sd-form-wrap.sd-research-wrap,
+.nv-content-wrap .sd-form-wrap.sd-dashboard-wrap,
+.nv-content-wrap .sd-form-wrap.sd-medical-wrap,
+.nv-content-wrap .sd-form-wrap.sd-research-wrap {
+    max-width: 1200px;
+}
+
+/* Force Neve container to be wide enough */
+body.page .nv-single-page-wrap .entry-content,
+body.page .nv-content-wrap .entry-content,
+body.page .nv-page-title-wrap + .container .col,
+body.page .container .col {
+    max-width: 100%;
+}
+
+/* Override Neve narrow container for plugin shortcode pages */
+body.page .single-page-container,
+body.page .container.single-page-container {
+    max-width: 1200px;
+}
+
+/* Remove Neve default page title if our header is present */
+.sd-form-wrap .sd-form-header + .nv-page-title {
+    display: none;
+}
+
+/* ============================================================
+   USER BAR
+   ============================================================ */
+.sd-user-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--sd-blue-deep) 0%, var(--sd-blue) 100%);
+    border-radius: var(--sd-radius);
+    color: var(--sd-white);
+    box-shadow: var(--sd-shadow-md);
+}
+
+.sd-user-avatar {
+    flex-shrink: 0;
+}
+
+.sd-avatar-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.4);
+    object-fit: cover;
+}
+
+.sd-user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sd-user-name {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sd-user-badge {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    line-height: 1.4;
+}
+
+.sd-user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-self: flex-start;
+}
+
+.sd-badge-diabetic {
+    background: rgba(234, 88, 12, 0.9);
+    color: var(--sd-white);
+}
+
+.sd-badge-diver {
+    background: rgba(0, 151, 167, 0.9);
+    color: var(--sd-white);
+}
+
+.sd-badge-medical {
+    background: rgba(22, 163, 74, 0.9);
+    color: var(--sd-white);
+}
+
+.sd-badge-staff {
+    background: rgba(147, 51, 234, 0.9);
+    color: var(--sd-white);
+}
+
+.sd-user-dive-count {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--sd-radius-sm);
+}
+
+.sd-count-number {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.sd-count-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.sd-form-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 0 16px;
+    border-bottom: 2px solid var(--sd-blue);
+    margin-bottom: 16px;
+}
+
+.sd-form-header-icon {
+    flex-shrink: 0;
+    color: var(--sd-blue);
+}
+
+.sd-form-header-text h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+    line-height: 1.2;
+}
+
+.sd-dive-number {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sd-cyan);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+.sd-notice,
+.sd-form-messages {
+    padding: 12px 16px;
+    border-radius: var(--sd-radius-sm);
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.sd-notice-warning { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.sd-notice-error   { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+.sd-msg-success    { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+.sd-msg-error      { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+
+.sd-notice a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* ============================================================
+   SECTIONS (CARD STYLE)
+   ============================================================ */
+.sd-section {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--sd-blue-light);
+}
+
+.sd-section-icon {
+    display: flex;
+    align-items: center;
+    color: var(--sd-blue);
+}
+
+.sd-subsection-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 12px 0 6px;
+}
+
+/* ============================================================
+   FIELDS
+   ============================================================ */
+.sd-field {
+    margin-bottom: 10px;
+}
+
+.sd-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sd-gray-700);
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+}
+
+.sd-required {
+    color: var(--sd-red);
+}
+
+.sd-field input[type="text"],
+.sd-field input[type="number"],
+.sd-field input[type="date"],
+.sd-field input[type="time"],
+.sd-field select,
+.sd-field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--sd-gray-300);
+    border-radius: var(--sd-radius-sm);
+    font-size: 16px; /* Previeni zoom su iOS */
+    font-family: inherit;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+    transition: border-color var(--sd-transition), box-shadow var(--sd-transition);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+}
+
+.sd-field input:focus,
+.sd-field select:focus,
+.sd-field textarea:focus {
+    outline: none;
+    border-color: var(--sd-blue);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15);
+}
+
+.sd-field input::placeholder,
+.sd-field textarea::placeholder {
+    color: var(--sd-gray-300);
+}
+
+.sd-field textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* ============================================================
+   FIELD ROWS (GRID)
+   ============================================================ */
+.sd-field-row {
+    display: flex;
+    gap: 10px;
+}
+
+.sd-field-half {
+    flex: 1;
+    min-width: 0;
+}
+
+.sd-field-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+/* ============================================================
+   TWO COLUMN BOX (INIZIO/FINE)
+   ============================================================ */
+.sd-two-col-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.sd-col-box {
+    background: var(--sd-blue-pale);
+    border-radius: var(--sd-radius-sm);
+    padding: 10px;
+}
+
+.sd-col-box-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--sd-blue-light);
+}
+
+.sd-col-start .sd-col-box-title { color: var(--sd-teal); }
+.sd-col-end .sd-col-box-title   { color: var(--sd-orange); }
+
+.sd-col-box .sd-field { margin-bottom: 6px; }
+
+/* ============================================================
+   ICON SELECT BUTTONS
+   ============================================================ */
+.sd-icon-select {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sd-icon-select-wide {
+    justify-content: center;
+}
+
+.sd-icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 14px;
+    border: 2px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    background: var(--sd-white);
+    color: var(--sd-gray-500);
+    cursor: pointer;
+    transition: all var(--sd-transition);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex: 1;
+    min-width: 70px;
+}
+
+.sd-icon-btn:hover {
+    border-color: var(--sd-blue);
+    color: var(--sd-blue);
+    background: var(--sd-blue-pale);
+}
+
+.sd-icon-btn.active {
+    border-color: var(--sd-blue);
+    background: var(--sd-blue);
+    color: var(--sd-white);
+}
+
+.sd-icon-btn.active svg {
+    color: var(--sd-white);
+    stroke: var(--sd-white);
+}
+
+.sd-icon-btn svg {
+    color: var(--sd-gray-500);
+    transition: color var(--sd-transition);
+}
+
+.sd-icon-btn:hover svg {
+    color: var(--sd-blue);
+}
+
+/* Small buttons (Corrente, Visibilità) */
+.sd-icon-select-small {
+    gap: 4px;
+}
+
+.sd-btn-sm {
+    padding: 7px 10px;
+    font-size: 10px;
+    min-width: 50px;
+}
+
+/* ============================================================
+   DETAILS/SUMMARY (COLLAPSIBLE)
+   ============================================================ */
+.sd-details {
+    margin-top: 10px;
+}
+
+.sd-details summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sd-gray-500);
+    padding: 8px 0;
+    user-select: none;
+    list-style: none;
+}
+
+.sd-details summary::-webkit-details-marker { display: none; }
+
+.sd-details summary::before {
+    content: "▶ ";
+    font-size: 10px;
+    transition: transform var(--sd-transition);
+    display: inline-block;
+}
+
+.sd-details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.sd-details > div,
+.sd-details > .sd-field-row,
+.sd-details > .sd-subsection-label {
+    padding-left: 4px;
+}
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+.sd-form-actions {
+    padding: 16px 0 32px;
+}
+
+.sd-btn-save {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--sd-blue) 0%, var(--sd-cyan) 100%);
+    color: var(--sd-white);
+    border: none;
+    border-radius: var(--sd-radius);
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: var(--sd-shadow-md);
+    transition: all var(--sd-transition);
+}
+
+.sd-btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(11, 61, 110, 0.2);
+}
+
+.sd-btn-save:active {
+    transform: translateY(0);
+}
+
+.sd-btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sd-btn-save svg {
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .sd-form-wrap {
+        padding: 0 8px;
+    }
+
+    .sd-section {
+        padding: 12px;
+    }
+
+    .sd-field-row-3 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .sd-icon-btn {
+        padding: 8px 10px;
+        min-width: 60px;
+    }
+
+    .sd-form-header-text h2 {
+        font-size: 19px;
+    }
+}
+
+@media (min-width: 768px) {
+    .sd-form-wrap {
+        padding: 0;
+    }
+
+    .sd-section {
+        padding: 20px;
+    }
+}

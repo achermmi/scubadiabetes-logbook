@@ -1,0 +1,323 @@
+/**
+ * ScubaDiabetes Logbook - Profilo (multi-record)
+ */
+
+/* ============================================================
+   RECORD CARDS
+   ============================================================ */
+.sd-record-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.sd-record-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    border-left: 3px solid var(--sd-blue);
+    transition: box-shadow 0.2s;
+}
+
+.sd-record-card:hover {
+    box-shadow: var(--sd-shadow-md);
+}
+
+.sd-record-card.sd-record-valid {
+    border-left-color: #16A34A;
+}
+
+.sd-record-card.sd-record-expiring {
+    border-left-color: #D97706;
+    background: #FFFBEB;
+}
+
+.sd-record-card.sd-record-expired {
+    border-left-color: #DC2626;
+    background: #FEF2F2;
+}
+
+.sd-record-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.sd-record-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sd-gray-900);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sd-record-sub {
+    font-size: 11px;
+    color: var(--sd-gray-500);
+    margin-top: 2px;
+}
+
+.sd-record-sub a {
+    color: var(--sd-blue);
+    text-decoration: none;
+}
+
+.sd-record-sub a:hover {
+    text-decoration: underline;
+}
+
+.sd-record-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.sd-rec-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: var(--sd-gray-400);
+}
+
+.sd-rec-delete:hover {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.sd-rec-call {
+    font-size: 16px;
+}
+
+.sd-rec-call:hover {
+    background: #DCFCE7;
+}
+
+/* Status tags */
+.sd-status-tag {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.sd-tag-valid {
+    background: #DCFCE7;
+    color: #16A34A;
+}
+
+.sd-tag-expiring {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.sd-tag-expired {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+/* ============================================================
+   ADD RECORD BUTTON
+   ============================================================ */
+.sd-btn-add-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: var(--sd-white);
+    color: var(--sd-blue);
+    border: 2px dashed var(--sd-blue);
+    border-radius: var(--sd-radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    justify-content: center;
+}
+
+.sd-btn-add-record:hover {
+    background: var(--sd-blue-pale);
+    border-style: solid;
+}
+
+/* ============================================================
+   ADD FORM (inline, collapsible)
+   ============================================================ */
+.sd-add-form {
+    padding: 14px;
+    background: var(--sd-gray-50);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    margin-bottom: 10px;
+}
+
+.sd-add-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.sd-btn-save-record {
+    padding: 8px 20px;
+    background: var(--sd-teal);
+    color: var(--sd-white);
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sd-btn-save-record:hover {
+    background: #00695C;
+}
+
+.sd-btn-save-record:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sd-btn-cancel-record {
+    padding: 8px 16px;
+    background: var(--sd-white);
+    color: var(--sd-gray-500);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ============================================================
+   FILE INPUT INLINE
+   ============================================================ */
+.sd-file-input-inline {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    border: 1px dashed var(--sd-gray-300);
+    border-radius: var(--sd-radius-sm);
+    background: var(--sd-white);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.sd-file-input-inline:hover {
+    border-color: var(--sd-blue);
+}
+
+/* ============================================================
+   DIABETES SECTION
+   ============================================================ */
+.sd-section-diabetes input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
+    accent-color: #EA580C;
+}
+
+.sd-section-diabetes label {
+    cursor: pointer;
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+.sd-profile-messages {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    padding: 12px 24px;
+    border-radius: var(--sd-radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    max-width: 90%;
+}
+
+/* ============================================================
+   REMOVING ANIMATION
+   ============================================================ */
+.sd-record-card.sd-removing {
+    opacity: 0.3;
+    transform: translateX(20px);
+    transition: all 0.3s;
+    pointer-events: none;
+}
+
+/* ============================================================
+   DOC LINK
+   ============================================================ */
+.sd-doc-link {
+    color: var(--sd-blue) !important;
+    text-decoration: none !important;
+}
+
+.sd-doc-link:hover {
+    text-decoration: underline !important;
+}
+
+/* ============================================================
+   UNIT TOGGLE (mg/dL ↔ mmol/L)
+   ============================================================ */
+.sd-unit-toggle {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--sd-gray-300);
+    border-radius: var(--sd-radius-sm);
+    overflow: hidden;
+    width: fit-content;
+}
+
+.sd-unit-btn {
+    padding: 7px 16px;
+    border: none;
+    background: var(--sd-white);
+    color: var(--sd-gray-600);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.3;
+}
+
+.sd-unit-btn:first-child {
+    border-right: 1px solid var(--sd-gray-300);
+}
+
+.sd-unit-btn:hover {
+    background: var(--sd-gray-100);
+}
+
+.sd-unit-btn.active {
+    background: var(--sd-blue);
+    color: #fff;
+}
+
+.sd-unit-btn.active:hover {
+    background: var(--sd-blue);
+}

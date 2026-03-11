@@ -1,0 +1,413 @@
+/**
+ * ScubaDiabetes - Research Dashboard
+ */
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.sd-research-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sd-research-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--sd-blue-deep);
+    margin: 0;
+}
+
+.sd-research-subtitle {
+    display: block;
+    font-size: 12px;
+    color: var(--sd-gray-500);
+    margin-top: 2px;
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+.sd-filters-panel {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-filters-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sd-gray-500);
+    margin-bottom: 10px;
+}
+
+.sd-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 12px;
+}
+
+.sd-filter-group label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.sd-filter-group input,
+.sd-filter-group select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+}
+
+.sd-filters-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.sd-btn-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 20px;
+    background: var(--sd-blue);
+    color: #FFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sd-btn-search:hover { background: var(--sd-blue-deep); }
+
+.sd-btn-reset {
+    padding: 9px 16px;
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-600);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sd-btn-export-research {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 16px;
+    background: var(--sd-teal);
+    color: #FFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.sd-btn-export-research:hover { background: #00695C; }
+
+/* ============================================================
+   YEAR CHIPS
+   ============================================================ */
+.sd-filter-year-group {
+    grid-column: 1 / -1;
+}
+
+.sd-year-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sd-year-chip {
+    display: inline-flex;
+    cursor: pointer;
+    margin: 0;
+}
+
+.sd-year-chip input {
+    display: none;
+}
+
+.sd-year-chip span {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 2px solid var(--sd-gray-200);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    background: var(--sd-white);
+    transition: all 0.15s;
+}
+
+.sd-year-chip input:checked + span {
+    border-color: var(--sd-blue);
+    background: var(--sd-blue);
+    color: #FFF;
+}
+
+.sd-year-chip:hover span {
+    border-color: var(--sd-blue);
+}
+
+/* ============================================================
+   STATS ROW
+   ============================================================ */
+.sd-research-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.sd-rstat {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+}
+
+.sd-rstat-val {
+    display: block;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--sd-blue-deep);
+    line-height: 1;
+}
+
+.sd-rstat-green { color: #16A34A; }
+.sd-rstat-yellow { color: #D97706; }
+.sd-rstat-red { color: #DC2626; }
+
+.sd-rstat-lbl {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--sd-gray-500);
+    margin-top: 3px;
+}
+
+/* ============================================================
+   CHARTS GRID
+   ============================================================ */
+.sd-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.sd-chart-box {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius);
+    padding: 14px;
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-chart-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--sd-gray-500);
+    margin-bottom: 8px;
+}
+
+.sd-chart-wide {
+    grid-column: 1 / -1;
+}
+
+/* ============================================================
+   DATA TABLE
+   ============================================================ */
+.sd-data-section {
+    margin-bottom: 16px;
+}
+
+.sd-data-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--sd-blue-deep);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sd-data-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: var(--sd-blue-pale);
+    color: var(--sd-blue);
+    border-radius: 10px;
+}
+
+.sd-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius);
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-research-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    white-space: nowrap;
+    min-width: 1200px;
+}
+
+/* THEAD group row */
+.sd-thead-group th {
+    padding: 6px 4px;
+    font-weight: 800;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: center;
+    border-bottom: 2px solid var(--sd-gray-300);
+}
+
+.sd-th-sub  { background: #DBEAFE; color: #1E40AF; }
+.sd-th-60   { background: #E0F2F1; color: #00695C; }
+.sd-th-30   { background: #E3F2FD; color: #1565C0; }
+.sd-th-10   { background: #EDE7F6; color: #4527A0; }
+.sd-th-post { background: #FFF3E0; color: #E65100; }
+.sd-th-dec  { background: var(--sd-gray-100); color: var(--sd-gray-500); }
+
+/* THEAD columns row */
+.sd-thead-cols th {
+    padding: 5px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--sd-gray-500);
+    background: var(--sd-gray-50);
+    border-bottom: 1px solid var(--sd-gray-200);
+    text-align: center;
+}
+
+/* TBODY */
+.sd-research-table tbody tr {
+    border-bottom: 1px solid var(--sd-gray-100);
+}
+
+.sd-research-table tbody tr:hover {
+    background: var(--sd-blue-pale);
+}
+
+.sd-research-table td {
+    padding: 5px 4px;
+    text-align: center;
+    font-size: 11px;
+}
+
+.sd-research-table td:first-child,
+.sd-research-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* Glycemia value coloring */
+.sd-gv-low    { color: #DC2626; font-weight: 800; }
+.sd-gv-target { color: #16A34A; font-weight: 800; }
+.sd-gv-high   { color: #D97706; font-weight: 800; }
+.sd-gv-danger { color: #DC2626; font-weight: 800; background: #FEE2E2; }
+
+/* Method badge in table */
+.sd-tm { font-size: 9px; font-weight: 800; padding: 0 3px; border-radius: 2px; }
+.sd-tm-C { background: #FEE2E2; color: #DC2626; }
+.sd-tm-S { background: #E0F2F1; color: #00897B; }
+
+/* Decision badge */
+.sd-td-aut { color: #16A34A; font-weight: 800; }
+.sd-td-sos { color: #D97706; font-weight: 800; }
+.sd-td-ann { color: #DC2626; font-weight: 800; }
+
+/* Day separator */
+.sd-day-row td {
+    background: var(--sd-gray-100);
+    font-weight: 800;
+    color: var(--sd-blue-deep);
+    font-size: 11px;
+    text-align: left !important;
+    padding: 6px 8px;
+    border-top: 2px solid var(--sd-gray-300);
+}
+
+/* ============================================================
+   EMPTY / LOADING
+   ============================================================ */
+.sd-research-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--sd-gray-400);
+}
+
+.sd-research-empty p {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.sd-research-loading {
+    text-align: center;
+    padding: 48px 20px;
+}
+
+.sd-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--sd-gray-200);
+    border-top-color: var(--sd-blue);
+    border-radius: 50%;
+    animation: sdSpin 0.7s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes sdSpin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width: 600px) {
+    .sd-filters-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 900px) {
+    .sd-filters-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .sd-research-stats { grid-template-columns: repeat(3, 1fr); }
+    .sd-charts-grid { grid-template-columns: 1fr; }
+}
