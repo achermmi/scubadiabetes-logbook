@@ -1,4 +1,4 @@
-name: PHP Lint
+name: WordPress CI
 
 on:
   push:
@@ -6,18 +6,26 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  wordpress-ci:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Lint PHP files
-        run: |
-          find . -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        tools: phpcs
+
+    - name: Install WordPress Coding Standards
+      run: |
+        composer global require squizlabs/php_codesniffer
+        composer global require wp-coding-standards/wpcs
+        phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+
+    - name: Run WordPress Code Standard
+      run: |
+        ~/.composer/vendor/bin/phpcs --standard=WordPress .
