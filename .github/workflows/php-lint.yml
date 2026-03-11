@@ -22,10 +22,9 @@ jobs:
 
     - name: Install WordPress Coding Standards
       run: |
-        composer global require squizlabs/php_codesniffer
-        composer global require wp-coding-standards/wpcs
-        phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+        git clone https://github.com/WordPress/WordPress-Coding-Standards.git wpcs
+        phpcs --config-set installed_paths wpcs
 
     - name: Run WordPress Code Standard
       run: |
-        ~/.composer/vendor/bin/phpcs --standard=WordPress .
+        phpcs --standard=WordPress .
