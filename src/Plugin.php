@@ -1,16 +1,32 @@
 <?php
+/**
+ * Main Plugin bootstrap class.
+ *
+ * @package ScubaDiabetes\Logbook
+ */
 
 namespace ScubaDiabetes\Logbook;
 
-class Plugin
-{
-    public static function init()
-    {
-        add_action('init', [self::class, 'boot']);
-    }
+/**
+ * Plugin bootstrap.
+ */
+class Plugin {
 
-    public static function boot()
-    {
-        // plugin logic
-    }
+	/**
+	 * Initialize the plugin.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_action( 'init', array( self::class, 'boot' ) );
+	}
+
+	/**
+	 * Boot the plugin logic.
+	 *
+	 * @return void
+	 */
+	public static function boot() {
+		// Plugin logic.
+	}
 }

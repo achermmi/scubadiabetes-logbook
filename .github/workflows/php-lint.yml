@@ -35,4 +35,4 @@ jobs:
 
       - name: Run PHPCS
         run: |
-          ~/.composer/vendor/bin/phpcs --standard=WordPress .
+          ~/.composer/vendor/bin/phpcs
