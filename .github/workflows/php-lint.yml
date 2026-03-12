@@ -18,7 +18,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          tools: composer, phpcs
+          tools: composer
+
+      - name: Install PHPCS 3
+        run: |
+          composer global require squizlabs/php_codesniffer:^3.13
 
       - name: Allow Composer plugin
         run: |
