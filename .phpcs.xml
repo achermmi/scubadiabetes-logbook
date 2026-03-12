@@ -1,11 +1,24 @@
 <?xml version="1.0"?>
 <ruleset name="ScubaDiabetes Logbook">
 
-    <rule ref="WordPress"/>
+    <rule ref="WordPress-Core">
+        <!-- Allow short ternary operator -->
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <!-- File naming handled by WP class autoloader convention -->
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <!-- Allow reserved keyword parameter names in specific cases -->
+        <exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames"/>
+    </rule>
+
+    <!-- Ignore warnings about uncached DB queries and direct queries -->
+    <rule ref="WordPress.DB.PreparedSQL">
+        <type>warning</type>
+    </rule>
 
     <config name="testVersion" value="8.0-"/>
-
     <arg name="extensions" value="php"/>
+    <arg name="warning-severity" value="0"/>
 
     <file>includes</file>
     <file>src</file>

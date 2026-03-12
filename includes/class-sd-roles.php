@@ -28,58 +28,58 @@ class SD_Roles {
 			'sd_diver_diabetic' => array(
 				'display_name' => 'Subacqueo Diabetico',
 				'capabilities' => array(
-					'read'                    => true,
-					'sd_log_dive'             => true,
-					'sd_log_diabetes'         => true,
-					'sd_view_own_dives'       => true,
-					'sd_edit_own_dives'       => true,
-					'sd_view_own_diabetes'    => true,
-					'sd_edit_own_diabetes'    => true,
-					'sd_view_own_dashboard'   => true,
-					'sd_export_own_data'      => true,
+					'read'                  => true,
+					'sd_log_dive'           => true,
+					'sd_log_diabetes'       => true,
+					'sd_view_own_dives'     => true,
+					'sd_edit_own_dives'     => true,
+					'sd_view_own_diabetes'  => true,
+					'sd_edit_own_diabetes'  => true,
+					'sd_view_own_dashboard' => true,
+					'sd_export_own_data'    => true,
 				),
 			),
-			'sd_diver' => array(
+			'sd_diver'          => array(
 				'display_name' => 'Subacqueo',
 				'capabilities' => array(
-					'read'                    => true,
-					'sd_log_dive'             => true,
-					'sd_view_own_dives'       => true,
-					'sd_edit_own_dives'       => true,
-					'sd_view_own_dashboard'   => true,
-					'sd_export_own_data'      => true,
+					'read'                  => true,
+					'sd_log_dive'           => true,
+					'sd_view_own_dives'     => true,
+					'sd_edit_own_dives'     => true,
+					'sd_view_own_dashboard' => true,
+					'sd_export_own_data'    => true,
 				),
 			),
-			'sd_medical' => array(
+			'sd_medical'        => array(
 				'display_name' => 'Medico SD',
 				'capabilities' => array(
-					'read'                    => true,
-					'sd_log_dive'             => true,
-					'sd_log_diabetes'         => true,
-					'sd_view_own_dives'       => true,
-					'sd_edit_own_dives'       => true,
-					'sd_view_own_diabetes'    => true,
-					'sd_view_all_dives'       => true,
-					'sd_view_all_diabetes'    => true,
-					'sd_supervise'            => true,
-					'sd_approve_dive'         => true,
-					'sd_export_all_data'      => true,
-					'sd_view_dashboard_all'   => true,
-					'sd_manage_profiles'      => true,
+					'read'                  => true,
+					'sd_log_dive'           => true,
+					'sd_log_diabetes'       => true,
+					'sd_view_own_dives'     => true,
+					'sd_edit_own_dives'     => true,
+					'sd_view_own_diabetes'  => true,
+					'sd_view_all_dives'     => true,
+					'sd_view_all_diabetes'  => true,
+					'sd_supervise'          => true,
+					'sd_approve_dive'       => true,
+					'sd_export_all_data'    => true,
+					'sd_view_dashboard_all' => true,
+					'sd_manage_profiles'    => true,
 				),
 			),
-			'sd_staff' => array(
+			'sd_staff'          => array(
 				'display_name' => 'Staff SD',
 				'capabilities' => array(
-					'read'                    => true,
-					'sd_log_dive'             => true,
-					'sd_log_diabetes'         => true,
-					'sd_view_own_dives'       => true,
-					'sd_edit_own_dives'       => true,
-					'sd_view_all_dives'       => true,
-					'sd_view_all_diabetes'    => true,
-					'sd_supervise'            => true,
-					'sd_view_dashboard_all'   => true,
+					'read'                  => true,
+					'sd_log_dive'           => true,
+					'sd_log_diabetes'       => true,
+					'sd_view_own_dives'     => true,
+					'sd_edit_own_dives'     => true,
+					'sd_view_all_dives'     => true,
+					'sd_view_all_diabetes'  => true,
+					'sd_supervise'          => true,
+					'sd_view_dashboard_all' => true,
 				),
 			),
 		);
@@ -128,7 +128,7 @@ class SD_Roles {
 		$all_caps = array();
 		foreach ( $this->roles as $role_data ) {
 			foreach ( array_keys( $role_data['capabilities'] ) as $cap ) {
-				if ( $cap !== 'read' ) {
+				if ( 'read' !== $cap ) {
 					$all_caps[] = $cap;
 				}
 			}
@@ -219,9 +219,13 @@ class SD_Roles {
 	 * Controlla se un utente è un subacqueo (diabetico o non)
 	 */
 	public static function is_diver( $user_id = null ) {
-		if ( ! $user_id ) $user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 		$user = get_userdata( $user_id );
-		if ( ! $user ) return false;
+		if ( ! $user ) {
+			return false;
+		}
 		$roles = (array) $user->roles;
 		return in_array( 'sd_diver_diabetic', $roles, true ) || in_array( 'sd_diver', $roles, true );
 	}
@@ -231,18 +235,34 @@ class SD_Roles {
 	 * Utile per mostrare ruoli multipli (es: Medico + Subacqueo Diabetico)
 	 */
 	public static function get_role_badges( $user_id = null ) {
-		if ( ! $user_id ) $user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 		$user = get_userdata( $user_id );
-		if ( ! $user ) return array();
+		if ( ! $user ) {
+			return array();
+		}
 
-		$roles = (array) $user->roles;
+		$roles  = (array) $user->roles;
 		$badges = array();
 
 		$map = array(
-			'sd_diver_diabetic' => array( 'label' => __( 'Subacqueo Diabetico', 'sd-logbook' ), 'class' => 'sd-badge-diabetic' ),
-			'sd_diver'          => array( 'label' => __( 'Subacqueo', 'sd-logbook' ),           'class' => 'sd-badge-diver' ),
-			'sd_medical'        => array( 'label' => __( 'Medico', 'sd-logbook' ),              'class' => 'sd-badge-medical' ),
-			'sd_staff'          => array( 'label' => __( 'Staff', 'sd-logbook' ),               'class' => 'sd-badge-staff' ),
+			'sd_diver_diabetic' => array(
+				'label' => __( 'Subacqueo Diabetico', 'sd-logbook' ),
+				'class' => 'sd-badge-diabetic',
+			),
+			'sd_diver'          => array(
+				'label' => __( 'Subacqueo', 'sd-logbook' ),
+				'class' => 'sd-badge-diver',
+			),
+			'sd_medical'        => array(
+				'label' => __( 'Medico', 'sd-logbook' ),
+				'class' => 'sd-badge-medical',
+			),
+			'sd_staff'          => array(
+				'label' => __( 'Staff', 'sd-logbook' ),
+				'class' => 'sd-badge-staff',
+			),
 		);
 
 		foreach ( $map as $role => $info ) {
@@ -253,7 +273,10 @@ class SD_Roles {
 
 		// Fallback if no SD role found
 		if ( empty( $badges ) && in_array( 'administrator', $roles, true ) ) {
-			$badges[] = array( 'label' => __( 'Admin', 'sd-logbook' ), 'class' => 'sd-badge-staff' );
+			$badges[] = array(
+				'label' => __( 'Admin', 'sd-logbook' ),
+				'class' => 'sd-badge-staff',
+			);
 		}
 
 		return $badges;
@@ -264,7 +287,7 @@ class SD_Roles {
 	 */
 	public static function render_badges_html( $user_id = null ) {
 		$badges = self::get_role_badges( $user_id );
-		$html = '';
+		$html   = '';
 		foreach ( $badges as $b ) {
 			$html .= '<span class="sd-user-badge ' . esc_attr( $b['class'] ) . '">' . esc_html( $b['label'] ) . '</span> ';
 		}

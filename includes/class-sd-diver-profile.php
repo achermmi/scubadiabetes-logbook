@@ -41,10 +41,14 @@ class SD_Diver_Profile {
 			wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 			wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 			wp_enqueue_script( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/js/profile.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
-			wp_localize_script( 'sd-profile', 'sdProfile', array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'sd_profile_nonce' ),
-			) );
+			wp_localize_script(
+				'sd-profile',
+				'sdProfile',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'sd_profile_nonce' ),
+				)
+			);
 		}
 	}
 
@@ -66,14 +70,19 @@ class SD_Diver_Profile {
 
 		// Diabetes profile from DB
 		global $wpdb;
-		$db = new SD_Database();
-		$diabetes_profile = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$db->table('diver_profiles')} WHERE user_id = %d", $user_id
-		) );
+		$db               = new SD_Database();
+		$diabetes_profile = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('diver_profiles')} WHERE user_id = %d",
+				$user_id
+			)
+		);
 
 		$current_user = wp_get_current_user();
 		$display_name = trim( $current_user->first_name . ' ' . $current_user->last_name );
-		if ( empty( $display_name ) ) $display_name = $current_user->display_name;
+		if ( empty( $display_name ) ) {
+			$display_name = $current_user->display_name;
+		}
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/profile.php';
@@ -86,7 +95,7 @@ class SD_Diver_Profile {
 	public function save_certification() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
 		$user_id = get_current_user_id();
-		$certs = get_user_meta( $user_id, 'sd_certifications', true ) ?: array();
+		$certs   = get_user_meta( $user_id, 'sd_certifications', true ) ?: array();
 
 		$new = array(
 			'agency' => sanitize_text_field( $_POST['agency'] ?? '' ),
@@ -99,7 +108,7 @@ class SD_Diver_Profile {
 			wp_send_json_error( array( 'message' => __( 'Agenzia e livello sono obbligatori.', 'sd-logbook' ) ) );
 		}
 
-		$edit_index = isset( $_POST['edit_index'] ) && $_POST['edit_index'] !== '' ? absint( $_POST['edit_index'] ) : -1;
+		$edit_index = isset( $_POST['edit_index'] ) && '' !== $_POST['edit_index'] ? absint( $_POST['edit_index'] ) : -1;
 		if ( $edit_index >= 0 && isset( $certs[ $edit_index ] ) ) {
 			$certs[ $edit_index ] = $new;
 		} else {
@@ -107,14 +116,19 @@ class SD_Diver_Profile {
 		}
 
 		update_user_meta( $user_id, 'sd_certifications', $certs );
-		wp_send_json_success( array( 'message' => __( 'Certificazione salvata.', 'sd-logbook' ), 'data' => $new ) );
+		wp_send_json_success(
+			array(
+				'message' => __( 'Certificazione salvata.', 'sd-logbook' ),
+				'data'    => $new,
+			)
+		);
 	}
 
 	public function delete_certification() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
 		$user_id = get_current_user_id();
-		$index = absint( $_POST['index'] ?? -1 );
-		$certs = get_user_meta( $user_id, 'sd_certifications', true ) ?: array();
+		$index   = absint( $_POST['index'] ?? -1 );
+		$certs   = get_user_meta( $user_id, 'sd_certifications', true ) ?: array();
 		if ( isset( $certs[ $index ] ) ) {
 			array_splice( $certs, $index, 1 );
 			update_user_meta( $user_id, 'sd_certifications', $certs );
@@ -127,15 +141,15 @@ class SD_Diver_Profile {
 	// ================================================================
 	public function save_medical_clearance() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
-		$user_id = get_current_user_id();
+		$user_id    = get_current_user_id();
 		$clearances = get_user_meta( $user_id, 'sd_medical_clearances', true ) ?: array();
 
 		$new = array(
-			'date'        => sanitize_text_field( $_POST['clearance_date'] ?? '' ),
-			'expiry'      => sanitize_text_field( $_POST['clearance_expiry'] ?? '' ),
-			'doctor'      => sanitize_text_field( $_POST['clearance_doctor'] ?? '' ),
-			'type'        => sanitize_text_field( $_POST['clearance_type'] ?? '' ),
-			'notes'       => sanitize_text_field( $_POST['clearance_notes'] ?? '' ),
+			'date'   => sanitize_text_field( $_POST['clearance_date'] ?? '' ),
+			'expiry' => sanitize_text_field( $_POST['clearance_expiry'] ?? '' ),
+			'doctor' => sanitize_text_field( $_POST['clearance_doctor'] ?? '' ),
+			'type'   => sanitize_text_field( $_POST['clearance_type'] ?? '' ),
+			'notes'  => sanitize_text_field( $_POST['clearance_notes'] ?? '' ),
 		);
 
 		if ( empty( $new['date'] ) ) {
@@ -143,14 +157,14 @@ class SD_Diver_Profile {
 		}
 
 		// Handle file upload
-		if ( ! empty( $_FILES['clearance_doc'] ) && $_FILES['clearance_doc']['error'] === UPLOAD_ERR_OK ) {
+		if ( ! empty( $_FILES['clearance_doc'] ) && UPLOAD_ERR_OK === $_FILES['clearance_doc']['error'] ) {
 			$doc_result = $this->upload_single_doc( $user_id, $_FILES['clearance_doc'] );
 			if ( $doc_result ) {
 				$new['doc'] = $doc_result;
 			}
 		}
 
-		$edit_index = isset( $_POST['edit_index'] ) && $_POST['edit_index'] !== '' ? absint( $_POST['edit_index'] ) : -1;
+		$edit_index = isset( $_POST['edit_index'] ) && '' !== $_POST['edit_index'] ? absint( $_POST['edit_index'] ) : -1;
 		if ( $edit_index >= 0 && isset( $clearances[ $edit_index ] ) ) {
 			// Keep existing doc if no new upload
 			if ( empty( $new['doc'] ) && ! empty( $clearances[ $edit_index ]['doc'] ) ) {
@@ -162,9 +176,12 @@ class SD_Diver_Profile {
 		}
 
 		// Sort by date desc
-		usort( $clearances, function( $a, $b ) {
-			return strcmp( $b['date'], $a['date'] );
-		} );
+		usort(
+			$clearances,
+			function ( $a, $b ) {
+				return strcmp( $b['date'], $a['date'] );
+			}
+		);
 
 		update_user_meta( $user_id, 'sd_medical_clearances', $clearances );
 		wp_send_json_success( array( 'message' => __( 'Idoneità salvata.', 'sd-logbook' ) ) );
@@ -172,8 +189,8 @@ class SD_Diver_Profile {
 
 	public function delete_medical_clearance() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
-		$user_id = get_current_user_id();
-		$index = absint( $_POST['index'] ?? -1 );
+		$user_id    = get_current_user_id();
+		$index      = absint( $_POST['index'] ?? -1 );
 		$clearances = get_user_meta( $user_id, 'sd_medical_clearances', true ) ?: array();
 		if ( isset( $clearances[ $index ] ) ) {
 			// Delete associated doc
@@ -191,7 +208,7 @@ class SD_Diver_Profile {
 	// ================================================================
 	public function save_emergency_contact() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
-		$user_id = get_current_user_id();
+		$user_id  = get_current_user_id();
 		$contacts = get_user_meta( $user_id, 'sd_emergency_contacts', true ) ?: array();
 
 		$new = array(
@@ -204,7 +221,7 @@ class SD_Diver_Profile {
 			wp_send_json_error( array( 'message' => __( 'Nome e telefono obbligatori.', 'sd-logbook' ) ) );
 		}
 
-		$edit_index = isset( $_POST['edit_index'] ) && $_POST['edit_index'] !== '' ? absint( $_POST['edit_index'] ) : -1;
+		$edit_index = isset( $_POST['edit_index'] ) && '' !== $_POST['edit_index'] ? absint( $_POST['edit_index'] ) : -1;
 		if ( $edit_index >= 0 && isset( $contacts[ $edit_index ] ) ) {
 			$contacts[ $edit_index ] = $new;
 		} else {
@@ -217,8 +234,8 @@ class SD_Diver_Profile {
 
 	public function delete_emergency_contact() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
-		$user_id = get_current_user_id();
-		$index = absint( $_POST['index'] ?? -1 );
+		$user_id  = get_current_user_id();
+		$index    = absint( $_POST['index'] ?? -1 );
 		$contacts = get_user_meta( $user_id, 'sd_emergency_contacts', true ) ?: array();
 		if ( isset( $contacts[ $index ] ) ) {
 			array_splice( $contacts, $index, 1 );
@@ -233,8 +250,8 @@ class SD_Diver_Profile {
 	public function delete_medical_doc() {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
 		$user_id = get_current_user_id();
-		$index = absint( $_POST['doc_index'] ?? -1 );
-		$docs = get_user_meta( $user_id, 'sd_medical_docs', true ) ?: array();
+		$index   = absint( $_POST['doc_index'] ?? -1 );
+		$docs    = get_user_meta( $user_id, 'sd_medical_docs', true ) ?: array();
 		if ( isset( $docs[ $index ] ) ) {
 			if ( ! empty( $docs[ $index ]['path'] ) && file_exists( $docs[ $index ]['path'] ) ) {
 				unlink( $docs[ $index ]['path'] );
@@ -271,8 +288,8 @@ class SD_Diver_Profile {
 		);
 
 		global $wpdb;
-		$db = new SD_Database();
-		$table = $db->table( 'diver_profiles' );
+		$db       = new SD_Database();
+		$table    = $db->table( 'diver_profiles' );
 		$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE user_id = %d", $user_id ) );
 
 		if ( $existing ) {
@@ -288,22 +305,22 @@ class SD_Diver_Profile {
 	// HELPER: Upload singolo documento
 	// ================================================================
 	private function upload_single_doc( $user_id, $file ) {
-		$allowed = array( 'pdf', 'jpg', 'jpeg', 'png', 'zip' );
+		$allowed  = array( 'pdf', 'jpg', 'jpeg', 'png', 'zip' );
 		$max_size = 5 * 1024 * 1024;
 
 		$name = sanitize_file_name( $file['name'] );
-		$ext = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
+		$ext  = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
 
 		if ( ! in_array( $ext, $allowed, true ) || $file['size'] > $max_size ) {
 			return null;
 		}
 
 		$upload_dir = wp_upload_dir();
-		$sd_dir = $upload_dir['basedir'] . '/sd-medical-docs/' . $user_id;
+		$sd_dir     = $upload_dir['basedir'] . '/sd-medical-docs/' . $user_id;
 		wp_mkdir_p( $sd_dir );
 
 		$unique_name = time() . '-' . $name;
-		$dest = $sd_dir . '/' . $unique_name;
+		$dest        = $sd_dir . '/' . $unique_name;
 
 		if ( move_uploaded_file( $file['tmp_name'], $dest ) ) {
 			return array(

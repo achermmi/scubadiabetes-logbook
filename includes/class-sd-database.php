@@ -47,7 +47,7 @@ class SD_Database {
 		// Dati anagrafici e medici del subacqueo
 		// =====================================================================
 		$table_profiles = $this->table( 'diver_profiles' );
-		$sql_profiles = "CREATE TABLE {$table_profiles} (
+		$sql_profiles   = "CREATE TABLE {$table_profiles} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL,
 			is_diabetic tinyint(1) NOT NULL DEFAULT 0,
@@ -81,7 +81,7 @@ class SD_Database {
 		// Corrisponde alla parte sinistra del logbook
 		// =====================================================================
 		$table_dives = $this->table( 'dives' );
-		$sql_dives = "CREATE TABLE {$table_dives} (
+		$sql_dives   = "CREATE TABLE {$table_dives} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL,
 			dive_number int unsigned DEFAULT NULL,
@@ -137,16 +137,16 @@ class SD_Database {
 		//
 		// Struttura da FOGLIO_X_DATI_X_PAZ.pdf:
 		// Per ogni checkpoint (-60, -30, -10 min, post):
-		//   - Glic: UN SOLO valore glicemico (mg/dl)
-		//   - Metodo: C (capillare) OPPURE S (sensore CGM)
-		//   - Freccia sensore: trend CGM (solo se metodo = S)
-		//   - CHO rapidi (gr)
-		//   - CHO lenti (gr)
-		//   - INS (U) - insulina somministrata
-		//   - Note provvedimenti
+		// - Glic: UN SOLO valore glicemico (mg/dl)
+		// - Metodo: C (capillare) OPPURE S (sensore CGM)
+		// - Freccia sensore: trend CGM (solo se metodo = S)
+		// - CHO rapidi (gr)
+		// - CHO lenti (gr)
+		// - INS (U) - insulina somministrata
+		// - Note provvedimenti
 		// =====================================================================
 		$table_diabetes = $this->table( 'dive_diabetes' );
-		$sql_diabetes = "CREATE TABLE {$table_diabetes} (
+		$sql_diabetes   = "CREATE TABLE {$table_diabetes} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			dive_id bigint(20) unsigned NOT NULL,
 			user_id bigint(20) unsigned NOT NULL,
@@ -205,7 +205,7 @@ class SD_Database {
 		// Raggruppa più immersioni dello stesso giorno (fino a 3 come da FOGLIO)
 		// =====================================================================
 		$table_sessions = $this->table( 'dive_sessions' );
-		$sql_sessions = "CREATE TABLE {$table_sessions} (
+		$sql_sessions   = "CREATE TABLE {$table_sessions} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL,
 			session_date date NOT NULL,
@@ -224,7 +224,7 @@ class SD_Database {
 		// TABELLA 5: SUPERVISIONE MEDICA (sd_medical_supervision)
 		// =====================================================================
 		$table_medical = $this->table( 'medical_supervision' );
-		$sql_medical = "CREATE TABLE {$table_medical} (
+		$sql_medical   = "CREATE TABLE {$table_medical} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			dive_id bigint(20) unsigned NOT NULL,
 			diver_user_id bigint(20) unsigned NOT NULL,
@@ -251,7 +251,7 @@ class SD_Database {
 		// Ogni modifica viene registrata con vecchi/nuovi valori
 		// =====================================================================
 		$table_edits = $this->table( 'dive_edits' );
-		$sql_edits = "CREATE TABLE {$table_edits} (
+		$sql_edits   = "CREATE TABLE {$table_edits} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			dive_id bigint(20) unsigned NOT NULL,
 			user_id bigint(20) unsigned NOT NULL,
@@ -318,6 +318,6 @@ class SD_Database {
 		global $wpdb;
 		$table = $this->table( 'diver_profiles' );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table ) ) === $table;
+		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 	}
 }

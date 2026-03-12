@@ -1,0 +1,7 @@
+# Composer
+vendor/
+
+# PHPCS tools (local dev only)
+*.phar
+CodeSniffer.conf
+tools/

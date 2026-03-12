@@ -25,7 +25,9 @@ class SD_Dive_Edit {
 
 	public function enqueue_assets() {
 		global $post;
-		if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'sd_dive_edit' ) ) return;
+		if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'sd_dive_edit' ) ) {
+			return;
+		}
 
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-logbook-diabetes', SD_LOGBOOK_PLUGIN_URL . 'assets/css/diabetes-form.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
@@ -35,18 +37,26 @@ class SD_Dive_Edit {
 		// User glycemia unit
 		$glycemia_unit = 'mg/dl';
 		global $wpdb;
-		$db_tmp = new SD_Database();
-		$user_unit = $wpdb->get_var( $wpdb->prepare(
-			"SELECT glycemia_unit FROM {$db_tmp->table('diver_profiles')} WHERE user_id = %d",
-			get_current_user_id()
-		) );
-		if ( $user_unit ) $glycemia_unit = $user_unit;
+		$db_tmp    = new SD_Database();
+		$user_unit = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT glycemia_unit FROM {$db_tmp->table('diver_profiles')} WHERE user_id = %d",
+				get_current_user_id()
+			)
+		);
+		if ( $user_unit ) {
+			$glycemia_unit = $user_unit;
+		}
 
-		wp_localize_script( 'sd-dive-edit', 'sdDiveEdit', array(
-			'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-			'nonce'         => wp_create_nonce( 'sd_dive_edit_nonce' ),
-			'glycemiaUnit'  => $glycemia_unit,
-		) );
+		wp_localize_script(
+			'sd-dive-edit',
+			'sdDiveEdit',
+			array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'sd_dive_edit_nonce' ),
+				'glycemiaUnit' => $glycemia_unit,
+			)
+		);
 	}
 
 	public function render( $atts ) {
@@ -65,16 +75,18 @@ class SD_Dive_Edit {
 		// Fetch user's dives
 		global $wpdb;
 		$db    = new SD_Database();
-		$dives = $wpdb->get_results( $wpdb->prepare(
-			"SELECT d.id, d.dive_number, d.dive_date, d.site_name, d.max_depth, d.dive_time,
+		$dives = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT d.id, d.dive_number, d.dive_date, d.site_name, d.max_depth, d.dive_time,
 					(SELECT COUNT(*) FROM {$db->table('dive_diabetes')} dd WHERE dd.dive_id = d.id) AS has_diabetes,
 					(SELECT COUNT(*) FROM {$db->table('dive_edits')} de WHERE de.dive_id = d.id) AS edit_count
 			 FROM {$db->table('dives')} d
 			 WHERE d.user_id = %d
 			 ORDER BY d.dive_date DESC, d.time_in DESC
 			 LIMIT 200",
-			$user_id
-		) );
+				$user_id
+			)
+		);
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/dive-edit.php';
@@ -88,24 +100,40 @@ class SD_Dive_Edit {
 		check_ajax_referer( 'sd_dive_edit_nonce', 'nonce' );
 		$dive_id = absint( $_POST['dive_id'] ?? 0 );
 		$user_id = get_current_user_id();
-		if ( ! $dive_id ) wp_send_json_error();
+		if ( ! $dive_id ) {
+			wp_send_json_error();
+		}
 
 		global $wpdb;
 		$db = new SD_Database();
 
-		$dive = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
-			$dive_id, $user_id
-		), ARRAY_A );
+		$dive = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			),
+			ARRAY_A
+		);
 
-		if ( ! $dive ) wp_send_json_error( array( 'message' => 'Immersione non trovata' ) );
+		if ( ! $dive ) {
+			wp_send_json_error( array( 'message' => 'Immersione non trovata' ) );
+		}
 
-		$diabetes = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d",
-			$dive_id
-		), ARRAY_A );
+		$diabetes = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d",
+				$dive_id
+			),
+			ARRAY_A
+		);
 
-		wp_send_json_success( array( 'dive' => $dive, 'diabetes' => $diabetes ) );
+		wp_send_json_success(
+			array(
+				'dive'     => $dive,
+				'diabetes' => $diabetes,
+			)
+		);
 	}
 
 	// ================================================================
@@ -115,53 +143,111 @@ class SD_Dive_Edit {
 		check_ajax_referer( 'sd_dive_edit_nonce', 'nonce' );
 		$dive_id = absint( $_POST['dive_id'] ?? 0 );
 		$user_id = get_current_user_id();
-		if ( ! $dive_id ) wp_send_json_error();
+		if ( ! $dive_id ) {
+			wp_send_json_error();
+		}
 
 		global $wpdb;
 		$db = new SD_Database();
 
 		// Verifica proprietà
-		$old_dive = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
-			$dive_id, $user_id
-		), ARRAY_A );
+		$old_dive = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			),
+			ARRAY_A
+		);
 
-		if ( ! $old_dive ) wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+		if ( ! $old_dive ) {
+			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+		}
 
 		// Campi aggiornabili — processa SOLO quelli presenti nel POST
 		$dive_fields = array(
-			'dive_number', 'dive_date', 'site_name', 'site_latitude', 'site_longitude',
-			'time_in', 'time_out',
-			'pressure_start', 'pressure_end', 'max_depth', 'avg_depth', 'dive_time',
-			'tank_count', 'tank_capacity', 'gas_mix', 'nitrox_percentage',
-			'safety_stop_depth', 'safety_stop_time', 'deco_stop_depth', 'deco_stop_time',
-			'deep_stop_depth', 'deep_stop_time', 'ballast_kg', 'entry_type',
-			'dive_type', 'weather', 'temp_air', 'temp_water', 'sea_condition', 'current_strength',
-			'visibility', 'suit_type', 'sightings', 'other_equipment', 'notes',
-			'buddy_name', 'guide_name',
+			'dive_number',
+			'dive_date',
+			'site_name',
+			'site_latitude',
+			'site_longitude',
+			'time_in',
+			'time_out',
+			'pressure_start',
+			'pressure_end',
+			'max_depth',
+			'avg_depth',
+			'dive_time',
+			'tank_count',
+			'tank_capacity',
+			'gas_mix',
+			'nitrox_percentage',
+			'safety_stop_depth',
+			'safety_stop_time',
+			'deco_stop_depth',
+			'deco_stop_time',
+			'deep_stop_depth',
+			'deep_stop_time',
+			'ballast_kg',
+			'entry_type',
+			'dive_type',
+			'weather',
+			'temp_air',
+			'temp_water',
+			'sea_condition',
+			'current_strength',
+			'visibility',
+			'suit_type',
+			'sightings',
+			'other_equipment',
+			'notes',
+			'buddy_name',
+			'guide_name',
 		);
 
-		$int_fields   = array( 'dive_number', 'pressure_start', 'pressure_end', 'dive_time', 'tank_count',
-			'safety_stop_time', 'deco_stop_time', 'deep_stop_time' );
-		$float_fields = array( 'site_latitude', 'site_longitude',
-			'max_depth', 'avg_depth', 'tank_capacity', 'nitrox_percentage',
-			'safety_stop_depth', 'deco_stop_depth', 'deep_stop_depth', 'ballast_kg',
-			'temp_air', 'temp_water' );
+		$int_fields   = array(
+			'dive_number',
+			'pressure_start',
+			'pressure_end',
+			'dive_time',
+			'tank_count',
+			'safety_stop_time',
+			'deco_stop_time',
+			'deep_stop_time',
+		);
+		$float_fields = array(
+			'site_latitude',
+			'site_longitude',
+			'max_depth',
+			'avg_depth',
+			'tank_capacity',
+			'nitrox_percentage',
+			'safety_stop_depth',
+			'deco_stop_depth',
+			'deep_stop_depth',
+			'ballast_kg',
+			'temp_air',
+			'temp_water',
+		);
 
 		$new_dive = array();
 		$changes  = array();
 
 		foreach ( $dive_fields as $field ) {
 			// Processa solo campi effettivamente presenti nel form inviato
-			if ( ! array_key_exists( $field, $_POST ) ) continue;
+			if ( ! array_key_exists( $field, $_POST ) ) {
+				continue;
+			}
 
 			$new_val = sanitize_text_field( $_POST[ $field ] );
-			if ( $new_val === '' ) $new_val = null;
+			if ( '' === $new_val ) {
+				$new_val = null;
+			}
 
 			// Converti numerici
-			if ( in_array( $field, $int_fields, true ) && $new_val !== null ) {
+			if ( in_array( $field, $int_fields, true ) && null !== $new_val ) {
 				$new_val = absint( $new_val );
-			} elseif ( in_array( $field, $float_fields, true ) && $new_val !== null ) {
+			} elseif ( in_array( $field, $float_fields, true ) && null !== $new_val ) {
 				$new_val = floatval( $new_val );
 			}
 
@@ -177,7 +263,7 @@ class SD_Dive_Edit {
 					'table_name' => 'dives',
 					'field_name' => $field,
 					'old_value'  => $old_val,
-					'new_value'  => $new_val !== null ? (string) $new_val : null,
+					'new_value'  => null !== $new_val ? (string) $new_val : null,
 				);
 			}
 		}
@@ -189,16 +275,19 @@ class SD_Dive_Edit {
 
 		// ── Dati diabete ──
 		if ( SD_Roles::is_diabetic_diver( $user_id ) ) {
-			$old_diabetes = $wpdb->get_row( $wpdb->prepare(
-				"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d",
-				$dive_id
-			), ARRAY_A );
+			$old_diabetes = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d",
+					$dive_id
+				),
+				ARRAY_A
+			);
 
 			$input_unit = sanitize_text_field( $_POST['glycemia_input_unit'] ?? 'mg/dl' );
-			$is_mmol    = ( $input_unit === 'mmol/l' );
+			$is_mmol    = ( 'mmol/l' === $input_unit );
 
-			$checkpoints    = array( '60', '30', '10', 'post' );
-			$diabetes_data  = array();
+			$checkpoints      = array( '60', '30', '10', 'post' );
+			$diabetes_data    = array();
 			$diabetes_changes = array();
 
 			foreach ( $checkpoints as $cp ) {
@@ -206,9 +295,9 @@ class SD_Dive_Edit {
 
 				// Valore glicemico — converti in mg/dL se mmol/L
 				$raw = ! empty( $_POST[ $prefix . 'value' ] ) ? floatval( $_POST[ $prefix . 'value' ] ) : null;
-				if ( $raw !== null && $is_mmol ) {
+				if ( null !== $raw && $is_mmol ) {
 					$raw = (int) round( $raw * 18.018 );
-				} elseif ( $raw !== null ) {
+				} elseif ( null !== $raw ) {
 					$raw = absint( $raw );
 				}
 				$diabetes_data[ $prefix . 'value' ] = $raw;
@@ -248,7 +337,7 @@ class SD_Dive_Edit {
 							'table_name' => 'dive_diabetes',
 							'field_name' => $field,
 							'old_value'  => $old_val,
-							'new_value'  => $new_val !== null ? (string) $new_val : null,
+							'new_value'  => null !== $new_val ? (string) $new_val : null,
 						);
 					}
 				}
@@ -278,10 +367,12 @@ class SD_Dive_Edit {
 			}
 		}
 
-		wp_send_json_success( array(
-			'message'      => __( 'Immersione aggiornata con successo!', 'sd-logbook' ),
-			'changes_count' => count( $changes ),
-		) );
+		wp_send_json_success(
+			array(
+				'message'       => __( 'Immersione aggiornata con successo!', 'sd-logbook' ),
+				'changes_count' => count( $changes ),
+			)
+		);
 	}
 
 	// ================================================================
@@ -291,27 +382,37 @@ class SD_Dive_Edit {
 		check_ajax_referer( 'sd_dive_edit_nonce', 'nonce' );
 		$dive_id = absint( $_POST['dive_id'] ?? 0 );
 		$user_id = get_current_user_id();
-		if ( ! $dive_id ) wp_send_json_error();
+		if ( ! $dive_id ) {
+			wp_send_json_error();
+		}
 
 		global $wpdb;
 		$db = new SD_Database();
 
 		// Verifica proprietà
-		$dive = $wpdb->get_row( $wpdb->prepare(
-			"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
-			$dive_id, $user_id
-		) );
-		if ( ! $dive ) wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+		$dive = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			)
+		);
+		if ( ! $dive ) {
+			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+		}
 
-		$history = $wpdb->get_results( $wpdb->prepare(
-			"SELECT de.*, u.display_name
+		$history = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT de.*, u.display_name
 			 FROM {$db->table('dive_edits')} de
 			 LEFT JOIN {$wpdb->users} u ON de.user_id = u.ID
 			 WHERE de.dive_id = %d
 			 ORDER BY de.created_at DESC
 			 LIMIT 100",
-			$dive_id
-		), ARRAY_A );
+				$dive_id
+			),
+			ARRAY_A
+		);
 
 		wp_send_json_success( array( 'history' => $history ) );
 	}
@@ -322,9 +423,13 @@ class SD_Dive_Edit {
 	// ================================================================
 	private function values_equal( $old, $new, $field = '', $int_fields = array(), $float_fields = array() ) {
 		// Entrambi null o vuoti → uguali
-		if ( ( $old === null || $old === '' ) && ( $new === null || $new === '' ) ) return true;
+		if ( ( null === $old || '' === $old ) && ( null === $new || '' === $new ) ) {
+			return true;
+		}
 		// Solo uno null → diversi
-		if ( ( $old === null || $old === '' ) !== ( $new === null || $new === '' ) ) return false;
+		if ( ( null === $old || '' === $old ) !== ( null === $new || '' === $new ) ) {
+			return false;
+		}
 
 		// Confronto numerico per campi numerici
 		if ( is_numeric( $old ) && is_numeric( $new ) ) {

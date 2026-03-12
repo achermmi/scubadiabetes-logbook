@@ -59,18 +59,26 @@ class SD_Dashboard {
 			// Get user's glycemia unit preference
 			$glycemia_unit = 'mg/dl';
 			global $wpdb;
-			$db_tmp = new SD_Database();
-			$user_unit = $wpdb->get_var( $wpdb->prepare(
-				"SELECT glycemia_unit FROM {$db_tmp->table('diver_profiles')} WHERE user_id = %d",
-				get_current_user_id()
-			) );
-			if ( $user_unit ) $glycemia_unit = $user_unit;
+			$db_tmp    = new SD_Database();
+			$user_unit = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT glycemia_unit FROM {$db_tmp->table('diver_profiles')} WHERE user_id = %d",
+					get_current_user_id()
+				)
+			);
+			if ( $user_unit ) {
+				$glycemia_unit = $user_unit;
+			}
 
-			wp_localize_script( 'sd-dashboard', 'sdDashboard', array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'sd_dashboard_nonce' ),
-				'glycemiaUnit' => $glycemia_unit,
-			) );
+			wp_localize_script(
+				'sd-dashboard',
+				'sdDashboard',
+				array(
+					'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+					'nonce'        => wp_create_nonce( 'sd_dashboard_nonce' ),
+					'glycemiaUnit' => $glycemia_unit,
+				)
+			);
 		}
 	}
 
@@ -91,8 +99,8 @@ class SD_Dashboard {
 				. '</div>';
 		}
 
-		$user_id = get_current_user_id();
-		$is_diabetic = SD_Roles::is_diabetic_diver( $user_id );
+		$user_id      = get_current_user_id();
+		$is_diabetic  = SD_Roles::is_diabetic_diver( $user_id );
 		$can_view_all = SD_Roles::can_view_all( $user_id );
 
 		// Fetch dives
@@ -108,15 +116,17 @@ class SD_Dashboard {
 				 LIMIT 200"
 			);
 		} else {
-			$dives = $wpdb->get_results( $wpdb->prepare(
-				"SELECT d.*, %s as diver_name
+			$dives = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT d.*, %s as diver_name
 				 FROM {$db->table('dives')} d
 				 WHERE d.user_id = %d
 				 ORDER BY d.dive_date DESC, d.time_in DESC
 				 LIMIT 200",
-				wp_get_current_user()->display_name,
-				$user_id
-			) );
+					wp_get_current_user()->display_name,
+					$user_id
+				)
+			);
 		}
 
 		// Stats
@@ -141,11 +151,11 @@ class SD_Dashboard {
 		global $wpdb;
 		$where = $can_view_all ? '1=1' : $wpdb->prepare( 'user_id = %d', $user_id );
 
-		$stats = new stdClass();
-		$stats->total_dives = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')} WHERE {$where}" );
-		$stats->max_depth = $wpdb->get_var( "SELECT MAX(max_depth) FROM {$db->table('dives')} WHERE {$where}" );
-		$stats->total_time = (int) $wpdb->get_var( "SELECT SUM(dive_time) FROM {$db->table('dives')} WHERE {$where}" );
-		$stats->unique_sites = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT site_name) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats                 = new stdClass();
+		$stats->total_dives    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats->max_depth      = $wpdb->get_var( "SELECT MAX(max_depth) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats->total_time     = (int) $wpdb->get_var( "SELECT SUM(dive_time) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats->unique_sites   = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT site_name) FROM {$db->table('dives')} WHERE {$where}" );
 		$stats->last_dive_date = $wpdb->get_var( "SELECT MAX(dive_date) FROM {$db->table('dives')} WHERE {$where}" );
 
 		return $stats;
@@ -163,19 +173,26 @@ class SD_Dashboard {
 		}
 
 		global $wpdb;
-		$db = new SD_Database();
+		$db      = new SD_Database();
 		$user_id = get_current_user_id();
 
 		// Get dive
 		$can_view_all = SD_Roles::can_view_all( $user_id );
 		if ( $can_view_all ) {
-			$dive = $wpdb->get_row( $wpdb->prepare(
-				"SELECT * FROM {$db->table('dives')} WHERE id = %d", $dive_id
-			) );
+			$dive = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$db->table('dives')} WHERE id = %d",
+					$dive_id
+				)
+			);
 		} else {
-			$dive = $wpdb->get_row( $wpdb->prepare(
-				"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d", $dive_id, $user_id
-			) );
+			$dive = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+					$dive_id,
+					$user_id
+				)
+			);
 		}
 
 		if ( ! $dive ) {
@@ -183,14 +200,19 @@ class SD_Dashboard {
 		}
 
 		// Get diabetes data if exists
-		$diabetes = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d", $dive_id
-		) );
+		$diabetes = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('dive_diabetes')} WHERE dive_id = %d",
+				$dive_id
+			)
+		);
 
-		wp_send_json_success( array(
-			'dive'     => $dive,
-			'diabetes' => $diabetes,
-		) );
+		wp_send_json_success(
+			array(
+				'dive'     => $dive,
+				'diabetes' => $diabetes,
+			)
+		);
 	}
 
 	/**
@@ -199,7 +221,7 @@ class SD_Dashboard {
 	public function export_csv() {
 		check_ajax_referer( 'sd_dashboard_nonce', 'nonce' );
 
-		$user_id = get_current_user_id();
+		$user_id        = get_current_user_id();
 		$can_export_all = SD_Roles::can_export_all( $user_id );
 
 		global $wpdb;
@@ -216,14 +238,17 @@ class SD_Dashboard {
 				ARRAY_A
 			);
 		} else {
-			$dives = $wpdb->get_results( $wpdb->prepare(
-				"SELECT d.*, dd.*
+			$dives = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT d.*, dd.*
 				 FROM {$db->table('dives')} d
 				 LEFT JOIN {$db->table('dive_diabetes')} dd ON d.id = dd.dive_id
 				 WHERE d.user_id = %d
 				 ORDER BY d.dive_date DESC",
-				$user_id
-			), ARRAY_A );
+					$user_id
+				),
+				ARRAY_A
+			);
 		}
 
 		if ( empty( $dives ) ) {
@@ -231,9 +256,9 @@ class SD_Dashboard {
 		}
 
 		// Generate CSV
-		$filename = 'scubadiabetes-export-' . date( 'Y-m-d-His' ) . '.csv';
+		$filename   = 'scubadiabetes-export-' . gmdate( 'Y-m-d-His' ) . '.csv';
 		$upload_dir = wp_upload_dir();
-		$filepath = $upload_dir['basedir'] . '/' . $filename;
+		$filepath   = $upload_dir['basedir'] . '/' . $filename;
 
 		$fp = fopen( $filepath, 'w' );
 
@@ -253,10 +278,12 @@ class SD_Dashboard {
 
 		$file_url = $upload_dir['baseurl'] . '/' . $filename;
 
-		wp_send_json_success( array(
-			'url'      => $file_url,
-			'filename' => $filename,
-		) );
+		wp_send_json_success(
+			array(
+				'url'      => $file_url,
+				'filename' => $filename,
+			)
+		);
 	}
 
 	/**
@@ -278,13 +305,20 @@ class SD_Dashboard {
 		// Solo proprie immersioni (o admin)
 		$can_view_all = SD_Roles::can_view_all( $user_id );
 		if ( $can_view_all ) {
-			$dive = $wpdb->get_row( $wpdb->prepare(
-				"SELECT id FROM {$db->table('dives')} WHERE id = %d", $dive_id
-			) );
+			$dive = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('dives')} WHERE id = %d",
+					$dive_id
+				)
+			);
 		} else {
-			$dive = $wpdb->get_row( $wpdb->prepare(
-				"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d", $dive_id, $user_id
-			) );
+			$dive = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+					$dive_id,
+					$user_id
+				)
+			);
 		}
 
 		if ( ! $dive ) {
