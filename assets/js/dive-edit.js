@@ -171,6 +171,13 @@
         html += textareaField('notes', 'Note', dive.notes);
 
         // ══════════════════════════════════════════════════════════
+        // CONDIVISIONE DATI PER LA RICERCA
+        // ══════════════════════════════════════════════════════════
+        html += sectionTitle('Condivisione dati');
+        html += checkboxField('shared_for_research', 'Condividi questa immersione per la ricerca scientifica', dive.shared_for_research);
+        html += '<p class="sd-field-help" style="margin:-8px 0 12px 28px;font-size:0.85em;color:#666;">Se deselezionato, l\'immersione sarà visibile solo a te.</p>';
+
+        // ══════════════════════════════════════════════════════════
         // SEZIONE DIABETE (identica struttura al form registrazione)
         // ══════════════════════════════════════════════════════════
         if (diabetes) {

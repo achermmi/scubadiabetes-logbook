@@ -33,6 +33,7 @@ class SD_Diver_Profile {
 		add_action( 'wp_ajax_sd_delete_emergency_contact', array( $this, 'delete_emergency_contact' ) );
 		add_action( 'wp_ajax_sd_delete_medical_doc', array( $this, 'delete_medical_doc' ) );
 		add_action( 'wp_ajax_sd_save_diabetes_profile', array( $this, 'save_diabetes_profile' ) );
+		add_action( 'wp_ajax_sd_save_sharing_preference', array( $this, 'save_sharing_preference' ) );
 	}
 
 	public function enqueue_assets() {
@@ -299,6 +300,34 @@ class SD_Diver_Profile {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Dati diabete aggiornati.', 'sd-logbook' ) ) );
+	}
+
+	// ================================================================
+	// PREFERENZA CONDIVISIONE
+	// ================================================================
+	public function save_sharing_preference() {
+		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
+		$user_id = get_current_user_id();
+		$shared  = ! empty( $_POST['default_shared_for_research'] ) ? 1 : 0;
+
+		global $wpdb;
+		$db       = new SD_Database();
+		$table    = $db->table( 'diver_profiles' );
+		$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE user_id = %d", $user_id ) );
+
+		if ( $existing ) {
+			$wpdb->update( $table, array( 'default_shared_for_research' => $shared ), array( 'user_id' => $user_id ) );
+		} else {
+			$wpdb->insert(
+				$table,
+				array(
+					'user_id'                      => $user_id,
+					'default_shared_for_research'  => $shared,
+				)
+			);
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Preferenza condivisione aggiornata.', 'sd-logbook' ) ) );
 	}
 
 	// ================================================================

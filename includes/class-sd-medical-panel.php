@@ -107,13 +107,13 @@ class SD_Medical_Panel {
 			}
 			$obj->dive_count = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$db->table('dives')} WHERE user_id = %d",
+					"SELECT COUNT(*) FROM {$db->table('dives')} WHERE user_id = %d AND shared_for_research = 1",
 					$user->ID
 				)
 			);
 			$obj->last_dive  = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT MAX(dive_date) FROM {$db->table('dives')} WHERE user_id = %d",
+					"SELECT MAX(dive_date) FROM {$db->table('dives')} WHERE user_id = %d AND shared_for_research = 1",
 					$user->ID
 				)
 			);
@@ -137,7 +137,7 @@ class SD_Medical_Panel {
 				}
 			)
 		);
-		$total_dives    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')}" );
+		$total_dives    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')} WHERE shared_for_research = 1" );
 
 		// Current user info
 		$current_user = wp_get_current_user();
@@ -192,7 +192,7 @@ class SD_Medical_Panel {
 					dd.dive_decision, dd.dive_decision_reason
 			 FROM {$db->table('dives')} d
 			 LEFT JOIN {$db->table('dive_diabetes')} dd ON d.id = dd.dive_id
-			 WHERE d.user_id = %d
+			 WHERE d.user_id = %d AND d.shared_for_research = 1
 			 ORDER BY d.dive_date DESC, d.time_in DESC
 			 LIMIT 50",
 				$diver_id
@@ -309,6 +309,7 @@ class SD_Medical_Panel {
 			 LEFT JOIN {$wpdb->users} u ON d.user_id = u.ID
 			 LEFT JOIN {$wpdb->usermeta} um_fn ON u.ID = um_fn.user_id AND um_fn.meta_key = 'first_name'
 			 LEFT JOIN {$wpdb->usermeta} um_ln ON u.ID = um_ln.user_id AND um_ln.meta_key = 'last_name'
+			 WHERE d.shared_for_research = 1
 			 ORDER BY d.dive_date DESC, u.display_name ASC",
 			ARRAY_A
 		);

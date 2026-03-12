@@ -198,6 +198,30 @@
     });
 
     // ============================================================
+    // SAVE SHARING PREFERENCE
+    // ============================================================
+    $('#sd-sharing-form').on('submit', function(e) {
+        e.preventDefault();
+        var $btn = $('#sd-btn-save-sharing');
+        $btn.prop('disabled', true).text('Salvataggio...');
+
+        var formData = $(this).serialize();
+        // Ensure unchecked checkbox sends 0
+        if (!$(this).find('input[name="default_shared_for_research"]').is(':checked')) {
+            formData += '&default_shared_for_research=0';
+        }
+
+        $.post(sdProfile.ajaxUrl, formData, function(resp) {
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+            } else {
+                showMsg(resp.data?.message || 'Errore', 'error');
+            }
+            $btn.prop('disabled', false).text('Salva preferenza');
+        });
+    });
+
+    // ============================================================
     // SAVE DIABETES PROFILE
     // ============================================================
     $('#sd-diabetes-form').on('submit', function(e) {

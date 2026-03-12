@@ -457,6 +457,25 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <?php endif; ?>
 
         <!-- ============================================================ -->
+        <!-- CONDIVISIONE DATI PER LA RICERCA -->
+        <!-- ============================================================ -->
+        <div class="sd-section">
+            <div class="sd-section-title">
+                <span class="sd-section-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </span>
+                <?php esc_html_e( 'Condivisione dati', 'sd-logbook' ); ?>
+            </div>
+            <div class="sd-field">
+                <label class="sd-checkbox-label">
+                    <input type="checkbox" name="shared_for_research" value="1" id="sd-shared-for-research" checked>
+                    <?php esc_html_e( 'Condividi questa immersione per la ricerca scientifica', 'sd-logbook' ); ?>
+                </label>
+                <p class="sd-field-help"><?php esc_html_e( 'Se deselezionato, l\'immersione sarà visibile solo a te.', 'sd-logbook' ); ?></p>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
         <!-- PULSANTE SALVA -->
         <!-- ============================================================ -->
         <div class="sd-form-actions">

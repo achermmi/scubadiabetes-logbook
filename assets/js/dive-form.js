@@ -8,6 +8,13 @@
     $(document).ready(function() {
 
         // ============================================================
+        // DEFAULT CONDIVISIONE RICERCA (dal profilo utente)
+        // ============================================================
+        if (typeof sdLogbook !== 'undefined' && sdLogbook.defaultShared !== undefined) {
+            $('#sd-shared-for-research').prop('checked', parseInt(sdLogbook.defaultShared) === 1);
+        }
+
+        // ============================================================
         // ICON SELECT BUTTONS
         // Click su un bottone icona per selezionarlo (toggle)
         // ============================================================

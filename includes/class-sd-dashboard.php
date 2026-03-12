@@ -109,11 +109,15 @@ class SD_Dashboard {
 
 		if ( $can_view_all ) {
 			$dives = $wpdb->get_results(
-				"SELECT d.*, u.display_name as diver_name
+				$wpdb->prepare(
+					"SELECT d.*, u.display_name as diver_name
 				 FROM {$db->table('dives')} d
 				 LEFT JOIN {$wpdb->users} u ON d.user_id = u.ID
+				 WHERE d.shared_for_research = 1 OR d.user_id = %d
 				 ORDER BY d.dive_date DESC, d.time_in DESC
-				 LIMIT 200"
+				 LIMIT 200",
+					$user_id
+				)
 			);
 		} else {
 			$dives = $wpdb->get_results(
@@ -149,7 +153,11 @@ class SD_Dashboard {
 	 */
 	private function get_stats( $user_id, $can_view_all, $db ) {
 		global $wpdb;
-		$where = $can_view_all ? '1=1' : $wpdb->prepare( 'user_id = %d', $user_id );
+		if ( $can_view_all ) {
+			$where = $wpdb->prepare( '(shared_for_research = 1 OR user_id = %d)', $user_id );
+		} else {
+			$where = $wpdb->prepare( 'user_id = %d', $user_id );
+		}
 
 		$stats                 = new stdClass();
 		$stats->total_dives    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')} WHERE {$where}" );
@@ -181,8 +189,9 @@ class SD_Dashboard {
 		if ( $can_view_all ) {
 			$dive = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$db->table('dives')} WHERE id = %d",
-					$dive_id
+					"SELECT * FROM {$db->table('dives')} WHERE id = %d AND (shared_for_research = 1 OR user_id = %d)",
+					$dive_id,
+					$user_id
 				)
 			);
 		} else {
@@ -230,11 +239,15 @@ class SD_Dashboard {
 		// Query
 		if ( $can_export_all ) {
 			$dives = $wpdb->get_results(
-				"SELECT d.*, dd.*, u.display_name as diver_name
+				$wpdb->prepare(
+					"SELECT d.*, dd.*, u.display_name as diver_name
 				 FROM {$db->table('dives')} d
 				 LEFT JOIN {$db->table('dive_diabetes')} dd ON d.id = dd.dive_id
 				 LEFT JOIN {$wpdb->users} u ON d.user_id = u.ID
+				 WHERE d.shared_for_research = 1 OR d.user_id = %d
 				 ORDER BY d.dive_date DESC",
+					$user_id
+				),
 				ARRAY_A
 			);
 		} else {
@@ -307,8 +320,9 @@ class SD_Dashboard {
 		if ( $can_view_all ) {
 			$dive = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT id FROM {$db->table('dives')} WHERE id = %d",
-					$dive_id
+					"SELECT id, user_id FROM {$db->table('dives')} WHERE id = %d AND (shared_for_research = 1 OR user_id = %d)",
+					$dive_id,
+					$user_id
 				)
 			);
 		} else {

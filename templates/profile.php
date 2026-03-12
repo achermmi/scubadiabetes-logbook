@@ -264,6 +264,50 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     </div>
 
     <!-- ============================================================ -->
+    <!-- CONDIVISIONE DATI PER LA RICERCA (tutti gli utenti) -->
+    <!-- ============================================================ -->
+    <div class="sd-section">
+        <div class="sd-section-title">
+            <span class="sd-section-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
+            <?php esc_html_e( 'Condivisione dati per la ricerca', 'sd-logbook' ); ?>
+        </div>
+
+        <form id="sd-sharing-form" class="sd-dive-form" novalidate>
+            <input type="hidden" name="action" value="sd_save_sharing_preference">
+            <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'sd_profile_nonce' ); ?>">
+            <?php
+            $current_shared = 1;
+            if ( $diabetes_profile && isset( $diabetes_profile->default_shared_for_research ) ) {
+                $current_shared = (int) $diabetes_profile->default_shared_for_research;
+            } else {
+                // Check from DB if no diabetes profile loaded
+                global $wpdb;
+                $db_share       = new SD_Database();
+                $share_val      = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT default_shared_for_research FROM {$db_share->table('diver_profiles')} WHERE user_id = %d",
+                        $user_id
+                    )
+                );
+                if ( null !== $share_val ) {
+                    $current_shared = (int) $share_val;
+                }
+            }
+            ?>
+            <div class="sd-field">
+                <label class="sd-checkbox-label">
+                    <input type="checkbox" name="default_shared_for_research" value="1" <?php checked( $current_shared, 1 ); ?>>
+                    <?php esc_html_e( 'Condividi le mie immersioni per la ricerca scientifica (impostazione predefinita)', 'sd-logbook' ); ?>
+                </label>
+                <p class="sd-field-help"><?php esc_html_e( 'Questa preferenza verrà applicata alle nuove immersioni. Puoi modificarla per ogni singola immersione.', 'sd-logbook' ); ?></p>
+            </div>
+            <div class="sd-add-form-actions">
+                <button type="submit" class="sd-btn-save-record" id="sd-btn-save-sharing"><?php esc_html_e( 'Salva preferenza', 'sd-logbook' ); ?></button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- DATI DIABETE (solo diabetici — singolo record in DB) -->
     <!-- ============================================================ -->
     <?php if ( $is_diabetic ) : ?>

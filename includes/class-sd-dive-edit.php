@@ -203,6 +203,7 @@ class SD_Dive_Edit {
 			'notes',
 			'buddy_name',
 			'guide_name',
+			'shared_for_research',
 		);
 
 		$int_fields   = array(
@@ -214,6 +215,7 @@ class SD_Dive_Edit {
 			'safety_stop_time',
 			'deco_stop_time',
 			'deep_stop_time',
+			'shared_for_research',
 		);
 		$float_fields = array(
 			'site_latitude',

@@ -236,7 +236,7 @@ class SD_Research_Dashboard {
 		global $wpdb;
 		$db = new SD_Database();
 
-		$where = array( '1=1' );
+		$where = array( 'd.shared_for_research = 1' );
 		$vals  = array();
 
 		if ( ! empty( $_POST['date_from'] ) ) {

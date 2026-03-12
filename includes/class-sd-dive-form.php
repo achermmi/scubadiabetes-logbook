@@ -68,13 +68,25 @@ class SD_Dive_Form {
 				$glycemia_unit = $user_unit;
 			}
 
+			$default_shared = 1;
+			$user_shared    = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT default_shared_for_research FROM {$db_tmp->table('diver_profiles')} WHERE user_id = %d",
+					get_current_user_id()
+				)
+			);
+			if ( null !== $user_shared ) {
+				$default_shared = (int) $user_shared;
+			}
+
 			wp_localize_script(
 				'sd-logbook-form',
 				'sdLogbook',
 				array(
-					'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-					'nonce'        => wp_create_nonce( 'sd_dive_form_nonce' ),
-					'glycemiaUnit' => $glycemia_unit,
+					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+					'nonce'          => wp_create_nonce( 'sd_dive_form_nonce' ),
+					'glycemiaUnit'   => $glycemia_unit,
+					'defaultShared'  => $default_shared,
 					'strings'      => array(
 						'saving'      => __( 'Salvataggio...', 'sd-logbook' ),
 						'saved'       => __( 'Immersione salvata!', 'sd-logbook' ),
@@ -181,6 +193,7 @@ class SD_Dive_Form {
 			'notes'             => sanitize_textarea_field( $_POST['notes'] ?? '' ) ?: null,
 			'buddy_name'        => sanitize_text_field( $_POST['buddy_name'] ?? '' ) ?: null,
 			'guide_name'        => sanitize_text_field( $_POST['guide_name'] ?? '' ) ?: null,
+			'shared_for_research' => ! empty( $_POST['shared_for_research'] ) ? 1 : 0,
 		);
 
 		// Validazione campi obbligatori

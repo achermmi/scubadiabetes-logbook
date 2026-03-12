@@ -66,6 +66,7 @@ class SD_Database {
 			cgm_device varchar(50) DEFAULT NULL,
 			insulin_pump_model varchar(50) DEFAULT NULL,
 			glycemia_unit varchar(10) NOT NULL DEFAULT 'mg/dl',
+			default_shared_for_research tinyint(1) NOT NULL DEFAULT 1,
 			notes text DEFAULT NULL,
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,13 +122,15 @@ class SD_Database {
 			notes text DEFAULT NULL,
 			buddy_name varchar(100) DEFAULT NULL,
 			guide_name varchar(100) DEFAULT NULL,
+			shared_for_research tinyint(1) NOT NULL DEFAULT 1,
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY idx_user_id (user_id),
 			KEY idx_dive_date (dive_date),
 			KEY idx_site (site_name),
-			KEY idx_user_date (user_id, dive_date)
+			KEY idx_user_date (user_id, dive_date),
+			KEY idx_shared (shared_for_research)
 		) {$charset_collate};";
 		dbDelta( $sql_dives );
 
