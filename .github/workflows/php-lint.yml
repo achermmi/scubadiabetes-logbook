@@ -11,20 +11,20 @@ jobs:
 
     steps:
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        tools: phpcs
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer, phpcs
 
-    - name: Install WordPress Coding Standards
-      run: |
-        git clone https://github.com/WordPress/WordPress-Coding-Standards.git wpcs
-        phpcs --config-set installed_paths wpcs
+      - name: Install WordPress Coding Standards
+        run: |
+          composer global require dealerdirect/phpcodesniffer-composer-installer
+          composer global require wp-coding-standards/wpcs
 
-    - name: Run WordPress Code Standard
-      run: |
-        phpcs --standard=WordPress .
+      - name: Run PHPCS
+        run: |
+          ~/.composer/vendor/bin/phpcs --standard=WordPress .
