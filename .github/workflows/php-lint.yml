@@ -20,6 +20,10 @@ jobs:
           php-version: '8.2'
           tools: composer, phpcs
 
+      - name: Allow Composer plugin
+        run: |
+          composer config --global allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+
       - name: Install WordPress Coding Standards
         run: |
           composer global require dealerdirect/phpcodesniffer-composer-installer
