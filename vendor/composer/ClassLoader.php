@@ -42,10 +42,14 @@ namespace Composer\Autoload;
  */
 class ClassLoader
 {
-    /** @var \Closure(string):void */
+    /**
+     * @var \Closure(string):void 
+     */
     private static $includeFile;
 
-    /** @var string|null */
+    /**
+     * @var string|null 
+     */
     private $vendorDir;
 
     // PSR-4
@@ -76,7 +80,9 @@ class ClassLoader
      */
     private $fallbackDirsPsr0 = array();
 
-    /** @var bool */
+    /**
+     * @var bool 
+     */
     private $useIncludePath = false;
 
     /**
@@ -84,7 +90,9 @@ class ClassLoader
      */
     private $classMap = array();
 
-    /** @var bool */
+    /**
+     * @var bool 
+     */
     private $classMapAuthoritative = false;
 
     /**
@@ -92,7 +100,9 @@ class ClassLoader
      */
     private $missingClasses = array();
 
-    /** @var string|null */
+    /**
+     * @var string|null 
+     */
     private $apcuPrefix;
 
     /**
@@ -417,7 +427,7 @@ class ClassLoader
     /**
      * Loads the given class or interface.
      *
-     * @param  string    $class The name of the class
+     * @param  string $class The name of the class
      * @return true|null True if loaded, null otherwise
      */
     public function loadClass($class)
@@ -485,8 +495,8 @@ class ClassLoader
     }
 
     /**
-     * @param  string       $class
-     * @param  string       $ext
+     * @param  string $class
+     * @param  string $ext
      * @return string|false
      */
     private function findFileWithExtension($class, $ext)
@@ -572,8 +582,10 @@ class ClassLoader
          * @param  string $file
          * @return void
          */
-        self::$includeFile = \Closure::bind(static function($file) {
-            include $file;
-        }, null, null);
+        self::$includeFile = \Closure::bind(
+            static function ($file) {
+                include $file;
+            }, null, null
+        );
     }
 }

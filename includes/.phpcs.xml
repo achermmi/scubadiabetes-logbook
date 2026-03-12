@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ruleset name="ScubaDiabetes">
+
+    <rule ref="WordPress"/>
+
+    <config name="testVersion" value="8.0-"/>
+
+    <arg name="extensions" value="php"/>
+
+</ruleset>
