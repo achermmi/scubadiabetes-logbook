@@ -13,6 +13,11 @@
  * Requires at least: 6.0
  * Requires PHP: 7.4
  */
+require_once __DIR__ . '/vendor/autoload.php';
+
+use ScubaDiabetes\Logbook\Plugin;
+Plugin::init();
+
 
 // Impedisci accesso diretto
 if ( ! defined( 'ABSPATH' ) ) {

@@ -1,0 +1,8 @@
+{
+  "name": "scubadiabetes/logbook",
+  "autoload": {
+    "psr-4": {
+      "ScubaDiabetes\\Logbook\\": "src/"
+    }
+  }
+}
