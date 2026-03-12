@@ -1,5 +1,0 @@
-<?php
-enum MyEnum
-{
-}
-?>

@@ -10,20 +10,18 @@
  * @package SD_Logbook
  */
 
-if (! defined('ABSPATH') ) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class SD_Database
-{
+class SD_Database {
 
     /**
      * Prefisso tabelle del plugin
      */
     private $prefix;
 
-    public function __construct()
-    {
+    public function __construct() {
         global $wpdb;
         $this->prefix = $wpdb->prefix . 'sd_';
     }
@@ -31,26 +29,24 @@ class SD_Database
     /**
      * Restituisce il nome completo di una tabella
      */
-    public function table( $name )
-    {
+    public function table( $name ) {
         return $this->prefix . $name;
     }
 
     /**
      * Crea tutte le tabelle del plugin
      */
-    public function create_tables()
-    {
+    public function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
-        include_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         // =====================================================================
         // TABELLA 1: PROFILO SUBACQUEO (sd_diver_profiles)
         // Dati anagrafici e medici del subacqueo
         // =====================================================================
-        $table_profiles = $this->table('diver_profiles');
+        $table_profiles = $this->table( 'diver_profiles' );
         $sql_profiles = "CREATE TABLE {$table_profiles} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             user_id bigint(20) unsigned NOT NULL,
@@ -77,14 +73,14 @@ class SD_Database
             UNIQUE KEY idx_user_id (user_id),
             KEY idx_is_diabetic (is_diabetic)
         ) {$charset_collate};";
-        dbDelta($sql_profiles);
+        dbDelta( $sql_profiles );
 
         // =====================================================================
         // TABELLA 2: IMMERSIONI (sd_dives)
         // Dati subacquei comuni a TUTTI i subacquei (diabetici e non)
         // Corrisponde alla parte sinistra del logbook
         // =====================================================================
-        $table_dives = $this->table('dives');
+        $table_dives = $this->table( 'dives' );
         $sql_dives = "CREATE TABLE {$table_dives} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             user_id bigint(20) unsigned NOT NULL,
@@ -112,6 +108,7 @@ class SD_Database
             deep_stop_time smallint unsigned DEFAULT NULL,
             ballast_kg decimal(4,1) DEFAULT NULL,
             entry_type varchar(10) DEFAULT NULL,
+            dive_type varchar(15) DEFAULT NULL,
             weather varchar(15) DEFAULT NULL,
             temp_air decimal(4,1) DEFAULT NULL,
             temp_water decimal(4,1) DEFAULT NULL,
@@ -132,7 +129,7 @@ class SD_Database
             KEY idx_site (site_name),
             KEY idx_user_date (user_id, dive_date)
         ) {$charset_collate};";
-        dbDelta($sql_dives);
+        dbDelta( $sql_dives );
 
         // =====================================================================
         // TABELLA 3: DATI DIABETE PER IMMERSIONE (sd_dive_diabetes)
@@ -148,7 +145,7 @@ class SD_Database
         //   - INS (U) - insulina somministrata
         //   - Note provvedimenti
         // =====================================================================
-        $table_diabetes = $this->table('dive_diabetes');
+        $table_diabetes = $this->table( 'dive_diabetes' );
         $sql_diabetes = "CREATE TABLE {$table_diabetes} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             dive_id bigint(20) unsigned NOT NULL,
@@ -201,13 +198,13 @@ class SD_Database
             KEY idx_user_id (user_id),
             KEY idx_dive_decision (dive_decision)
         ) {$charset_collate};";
-        dbDelta($sql_diabetes);
+        dbDelta( $sql_diabetes );
 
         // =====================================================================
         // TABELLA 4: SESSIONI DI IMMERSIONE (sd_dive_sessions)
         // Raggruppa più immersioni dello stesso giorno (fino a 3 come da FOGLIO)
         // =====================================================================
-        $table_sessions = $this->table('dive_sessions');
+        $table_sessions = $this->table( 'dive_sessions' );
         $sql_sessions = "CREATE TABLE {$table_sessions} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             user_id bigint(20) unsigned NOT NULL,
@@ -221,12 +218,12 @@ class SD_Database
             KEY idx_session_date (session_date),
             UNIQUE KEY idx_user_date (user_id, session_date)
         ) {$charset_collate};";
-        dbDelta($sql_sessions);
+        dbDelta( $sql_sessions );
 
         // =====================================================================
         // TABELLA 5: SUPERVISIONE MEDICA (sd_medical_supervision)
         // =====================================================================
-        $table_medical = $this->table('medical_supervision');
+        $table_medical = $this->table( 'medical_supervision' );
         $sql_medical = "CREATE TABLE {$table_medical} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             dive_id bigint(20) unsigned NOT NULL,
@@ -241,13 +238,36 @@ class SD_Database
             KEY idx_diver (diver_user_id),
             KEY idx_supervisor (supervisor_user_id)
         ) {$charset_collate};";
-        dbDelta($sql_medical);
+        dbDelta( $sql_medical );
 
         // =====================================================================
         // TABELLA 6: LOG ALIMENTAZIONE PRE-IMMERSIONE (sd_nutrition_log)
         // Da protocollo Tab. 4: alimentazione corretta
         // =====================================================================
-        $table_nutrition = $this->table('nutrition_log');
+        $table_nutrition = $this->table( 'nutrition_log' );
+
+        // =====================================================================
+        // TABELLA 7: STORICO MODIFICHE IMMERSIONI (sd_dive_edits)
+        // Ogni modifica viene registrata con vecchi/nuovi valori
+        // =====================================================================
+        $table_edits = $this->table( 'dive_edits' );
+        $sql_edits = "CREATE TABLE {$table_edits} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            dive_id bigint(20) unsigned NOT NULL,
+            user_id bigint(20) unsigned NOT NULL,
+            edit_type varchar(20) NOT NULL DEFAULT 'update',
+            table_name varchar(30) NOT NULL DEFAULT 'dives',
+            field_name varchar(60) NOT NULL,
+            old_value text DEFAULT NULL,
+            new_value text DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY idx_dive_id (dive_id),
+            KEY idx_user_id (user_id),
+            KEY idx_created (created_at)
+        ) {$charset_collate};";
+        dbDelta( $sql_edits );
+
         $sql_nutrition = "CREATE TABLE {$table_nutrition} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             dive_id bigint(20) unsigned DEFAULT NULL,
@@ -265,19 +285,19 @@ class SD_Database
             KEY idx_dive_id (dive_id),
             KEY idx_date (log_date)
         ) {$charset_collate};";
-        dbDelta($sql_nutrition);
+        dbDelta( $sql_nutrition );
     }
 
     /**
      * Rimuovi tutte le tabelle (usata SOLO in uninstall, MAI in deactivate)
      */
-    public function drop_tables()
-    {
+    public function drop_tables() {
         global $wpdb;
 
         $tables = array(
             'medical_supervision',
             'nutrition_log',
+            'dive_edits',
             'dive_diabetes',
             'dives',
             'dive_sessions',
@@ -285,20 +305,19 @@ class SD_Database
         );
 
         foreach ( $tables as $table ) {
-            $table_name = $this->table($table);
+            $table_name = $this->table( $table );
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+            $wpdb->query( "DROP TABLE IF EXISTS {$table_name}" );
         }
     }
 
     /**
      * Verifica se le tabelle esistono
      */
-    public function tables_exist()
-    {
+    public function tables_exist() {
         global $wpdb;
-        $table = $this->table('diver_profiles');
+        $table = $this->table( 'diver_profiles' );
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) === $table;
+        return $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table ) ) === $table;
     }
 }

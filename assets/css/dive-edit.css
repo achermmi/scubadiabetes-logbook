@@ -1,0 +1,465 @@
+/**
+ * ScubaDiabetes - Modifica Immersioni
+ */
+
+/* ============================================================
+   DIVE EDIT LIST
+   ============================================================ */
+.sd-edit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.sd-edit-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    border-left: 3px solid var(--sd-blue);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.sd-edit-card:hover {
+    box-shadow: var(--sd-shadow-md);
+    border-left-color: var(--sd-blue-deep);
+}
+
+.sd-edit-card-left {
+    min-width: 70px;
+    text-align: center;
+}
+.sd-edit-num {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--sd-blue-deep);
+}
+.sd-edit-date {
+    font-size: 11px;
+    color: var(--sd-gray-500);
+}
+
+.sd-edit-card-center {
+    flex: 1;
+    min-width: 0;
+}
+.sd-edit-site {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--sd-gray-800);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sd-edit-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sd-gray-500);
+}
+
+.sd-meta-edited {
+    background: #FEF3C7 !important;
+    color: #92400E !important;
+    border-color: #FCD34D !important;
+}
+
+.sd-edit-card-right {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.sd-btn-edit-dive,
+.sd-btn-history-dive {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1.5px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.sd-btn-edit-dive {
+    background: #FFF;
+    color: var(--sd-blue);
+    border-color: var(--sd-blue);
+}
+.sd-btn-edit-dive:hover {
+    background: var(--sd-blue);
+    color: #FFF;
+}
+.sd-btn-history-dive {
+    background: #FFF;
+    color: #64748B;
+    border-color: #CBD5E1;
+}
+.sd-btn-history-dive:hover {
+    background: #F1F5F9;
+    color: #334155;
+}
+
+/* ============================================================
+   EDIT PANEL (inline, slide-down)
+   ============================================================ */
+.sd-edit-panel {
+    margin: 20px 0;
+    background: var(--sd-white);
+    border: 2px solid var(--sd-blue);
+    border-radius: var(--sd-radius-md);
+    box-shadow: var(--sd-shadow-lg);
+    overflow: hidden;
+}
+
+.sd-edit-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, var(--sd-blue-deep), var(--sd-blue));
+    color: #FFF;
+}
+.sd-edit-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+.sd-edit-panel-close {
+    background: none;
+    border: none;
+    color: #FFF;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+}
+.sd-edit-panel-close:hover { opacity: 1; }
+
+.sd-edit-panel-body {
+    padding: 18px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.sd-edit-panel-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--sd-gray-200);
+    background: var(--sd-gray-50);
+}
+
+.sd-btn-save-edit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFF;
+    background: var(--sd-blue);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.sd-btn-save-edit:hover { background: var(--sd-blue-deep); }
+
+.sd-btn-cancel-edit {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sd-gray-600);
+    background: var(--sd-gray-100);
+    border: 1px solid var(--sd-gray-300);
+    border-radius: 8px;
+    cursor: pointer;
+}
+.sd-btn-cancel-edit:hover { background: var(--sd-gray-200); }
+
+/* Edit form sections */
+.sd-edit-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sd-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 18px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--sd-gray-200);
+}
+.sd-edit-section-title:first-child {
+    margin-top: 0;
+}
+
+.sd-edit-checkpoint {
+    margin-top: 12px;
+    padding: 4px 8px;
+    background: #EFF6FF;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--sd-blue-deep);
+}
+
+.sd-field-quarter {
+    flex: 0 0 calc(25% - 8px);
+    min-width: 100px;
+}
+
+/* ============================================================
+   HISTORY PANEL
+   ============================================================ */
+.sd-history-panel {
+    margin: 20px 0;
+    background: var(--sd-white);
+    border: 2px solid #D97706;
+    border-radius: var(--sd-radius-md);
+    box-shadow: var(--sd-shadow-lg);
+    overflow: hidden;
+}
+
+.sd-history-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #92400E, #D97706);
+    color: #FFF;
+}
+.sd-history-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+.sd-history-panel-close {
+    background: none;
+    border: none;
+    color: #FFF;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+.sd-history-panel-close:hover { opacity: 1; }
+
+.sd-history-panel-body {
+    padding: 18px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.sd-empty-history {
+    text-align: center;
+    color: var(--sd-gray-500);
+    padding: 20px;
+}
+
+/* Timeline */
+.sd-history-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sd-history-group {
+    border-left: 3px solid #D97706;
+    padding-left: 14px;
+}
+
+.sd-history-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.sd-history-date {
+    font-weight: 700;
+    font-size: 13px;
+    color: #92400E;
+}
+.sd-history-user {
+    font-size: 12px;
+    color: var(--sd-gray-500);
+    background: var(--sd-gray-100);
+    padding: 1px 8px;
+    border-radius: 10px;
+}
+.sd-history-count {
+    font-size: 11px;
+    color: #D97706;
+    font-weight: 600;
+}
+
+.sd-history-changes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sd-history-change {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #FFFBEB;
+    border-radius: 4px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.sd-hc-field {
+    font-weight: 600;
+    color: var(--sd-gray-700);
+    min-width: 100px;
+}
+.sd-hc-old {
+    color: #DC2626;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+.sd-hc-arrow {
+    color: var(--sd-gray-400);
+    font-weight: 700;
+}
+.sd-hc-new {
+    color: #16A34A;
+    font-weight: 600;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .sd-edit-card {
+        flex-wrap: wrap;
+    }
+    .sd-edit-card-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .sd-field-quarter {
+        flex: 0 0 calc(50% - 6px);
+    }
+    .sd-history-change {
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+    }
+}
+
+/* ============================================================
+   FIELD SIZES
+   ============================================================ */
+.sd-edit-form-inner .sd-field-third {
+    flex: 0 0 calc(33.33% - 8px);
+    min-width: 100px;
+}
+
+.sd-edit-form-inner .sd-field-row-3 {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SUBSECTION LABELS (inside edit form)
+   ============================================================ */
+.sd-edit-subsection {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 12px 0 6px 0;
+}
+
+/* ============================================================
+   CHECKPOINT CARDS (glycemic data)
+   ============================================================ */
+.sd-edit-checkpoints {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 10px 0;
+}
+
+.sd-edit-cp-card {
+    border: 1.5px solid var(--sd-gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--sd-white);
+}
+
+.sd-edit-cp-header {
+    padding: 8px 12px;
+    color: #FFF;
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.sd-edit-cp-body {
+    padding: 10px 12px 14px;
+}
+
+.sd-edit-cp-body .sd-field-row {
+    margin-bottom: 6px;
+}
+
+.sd-edit-cp-body .sd-field {
+    margin-bottom: 4px;
+}
+
+.sd-edit-cp-body .sd-field label {
+    font-size: 11px;
+}
+
+/* Collapsible details inside edit form */
+.sd-edit-form-inner .sd-details {
+    margin-top: 14px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.sd-edit-form-inner .sd-details summary {
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--sd-gray-600);
+    cursor: pointer;
+    background: var(--sd-gray-50);
+}
+
+.sd-edit-form-inner .sd-details[open] summary {
+    border-bottom: 1px solid var(--sd-gray-200);
+}
+
+.sd-edit-form-inner .sd-details > div,
+.sd-edit-form-inner .sd-details > .sd-edit-subsection,
+.sd-edit-form-inner .sd-details > .sd-field-row,
+.sd-edit-form-inner .sd-details > .sd-field {
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+@media (max-width: 640px) {
+    .sd-edit-form-inner .sd-field-third {
+        flex: 0 0 calc(50% - 6px);
+    }
+    .sd-edit-checkpoints {
+        grid-template-columns: 1fr;
+    }
+}
