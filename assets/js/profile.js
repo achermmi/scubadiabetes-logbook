@@ -20,7 +20,7 @@
     });
 
     // ============================================================
-    // SHOW / HIDE INLINE FORMS
+    // SHOW / HIDE INLINE FORMS & EDIT FUNCTIONALITY
     // ============================================================
     $(document).on('click', '.sd-btn-add-record', function() {
         var formId = $(this).data('form');
@@ -30,12 +30,79 @@
         $(this).hide();
     });
 
+    $(document).on('click', '.sd-rec-edit', function() {
+        var type = $(this).data('type');
+        var index = $(this).data('index');
+        var $card = $(this).closest('.sd-record-card');
+
+        var formMap = {
+            'certification': 'sd-cert-form',
+            'medical_clearance': 'sd-clearance-form',
+            'emergency_contact': 'sd-contact-form'
+        };
+
+        var formId = formMap[type];
+        if (!formId) return;
+
+        var $form = $('#' + formId);
+
+        // Populate form with card data
+        if (type === 'certification') {
+            $form.find('[name="cert_agency"]').val($card.find('.sd-record-title').text().split(' — ')[0]);
+            $form.find('[name="cert_level"]').val($card.find('.sd-record-title').text().split(' — ')[1]);
+            var subText = $card.find('.sd-record-sub').text();
+            var dateMatch = subText.match(/(\d{2}\/\d{2}\/\d{4})/);
+            if (dateMatch) {
+                var parts = dateMatch[0].split('/');
+                $form.find('[name="cert_date"]').val(parts[2] + '-' + parts[1] + '-' + parts[0]);
+            }
+            var numberMatch = subText.match(/N° (.+?)(?:\s|$)/);
+            $form.find('[name="cert_number"]').val(numberMatch ? numberMatch[1] : '');
+        } else if (type === 'medical_clearance') {
+            var title = $card.find('.sd-record-title').text();
+            var dates = title.split('→');
+            if (dates[0]) {
+                var dateParts = dates[0].trim().split('/');
+                $form.find('[name="clearance_date"]').val(dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0]);
+            }
+            if (dates[1]) {
+                var expiryParts = dates[1].trim().split('/');
+                $form.find('[name="clearance_expiry"]').val(expiryParts[2] + '-' + expiryParts[1] + '-' + expiryParts[0]);
+            }
+            var subText = $card.find('.sd-record-sub').text();
+            var typeMatch = subText.match(/^([^ ·]+)/);
+            $form.find('[name="clearance_type"]').val(typeMatch ? typeMatch[1] : '');
+            var doctorMatch = subText.match(/Dr\. (.+?)(?:\s·|$)/);
+            $form.find('[name="clearance_doctor"]').val(doctorMatch ? doctorMatch[1] : '');
+        } else if (type === 'emergency_contact') {
+            var title = $card.find('.sd-record-title').text();
+            $form.find('[name="contact_name"]').val(title);
+            var subText = $card.find('.sd-record-sub').text();
+            var parts = subText.split(' · ');
+            if (parts[0]) {
+                $form.find('[name="contact_phone"]').val(parts[0]);
+            }
+            if (parts[1]) {
+                $form.find('[name="contact_relationship"]').val(parts[1]);
+            }
+        }
+
+        // Store edit index
+        $form.data('edit-index', index);
+
+        // Show form
+        $form.slideDown(200);
+        $form.find('input, select, textarea').first().focus();
+        $('[data-form="' + formId + '"].sd-btn-add-record').hide();
+    });
+
     $(document).on('click', '.sd-btn-cancel-record', function() {
         var formId = $(this).data('form');
         var $form = $('#' + formId);
         // Reset fields
         $form.find('input:not([type=hidden]), select, textarea').val('');
         $form.find('input[type=file]').val('');
+        $form.removeData('edit-index');
         $form.slideUp(200);
         // Show add button again
         $('[data-form="' + formId + '"].sd-btn-add-record').show();
@@ -60,16 +127,23 @@
 
         $btn.prop('disabled', true).text('Salvataggio...');
 
-        $.post(sdProfile.ajaxUrl, {
+        var postData = {
             action: 'sd_save_certification',
             nonce: sdProfile.nonce,
             agency: agency,
             level: level,
             cert_date: date,
             cert_number: number
-        }, function(resp) {
+        };
+
+        var editIndex = $form.data('edit-index');
+        if (editIndex !== undefined) {
+            postData.edit_index = editIndex;
+        }
+
+        $.post(sdProfile.ajaxUrl, postData, function(resp) {
             if (resp.success) {
-                showMsg('Certificazione aggiunta!', 'success');
+                showMsg('Certificazione salvata!', 'success');
                 setTimeout(function() { location.reload(); }, 800);
             } else {
                 showMsg(resp.data.message, 'error');
@@ -102,6 +176,11 @@
         formData.append('clearance_doctor', $form.find('[name="clearance_doctor"]').val());
         formData.append('clearance_notes', $form.find('[name="clearance_notes"]').val());
 
+        var editIndex = $form.data('edit-index');
+        if (editIndex !== undefined) {
+            formData.append('edit_index', editIndex);
+        }
+
         var fileInput = $form.find('[name="clearance_doc"]')[0];
         if (fileInput && fileInput.files.length > 0) {
             var file = fileInput.files[0];
@@ -121,7 +200,7 @@
             contentType: false,
             success: function(resp) {
                 if (resp.success) {
-                    showMsg('Idoneità aggiunta!', 'success');
+                    showMsg('Idoneità salvata!', 'success');
                     setTimeout(function() { location.reload(); }, 800);
                 } else {
                     showMsg(resp.data.message, 'error');
@@ -149,15 +228,22 @@
 
         $btn.prop('disabled', true).text('Salvataggio...');
 
-        $.post(sdProfile.ajaxUrl, {
+        var postData = {
             action: 'sd_save_emergency_contact',
             nonce: sdProfile.nonce,
             contact_name: name,
             contact_phone: phone,
             contact_relationship: rel
-        }, function(resp) {
+        };
+
+        var editIndex = $form.data('edit-index');
+        if (editIndex !== undefined) {
+            postData.edit_index = editIndex;
+        }
+
+        $.post(sdProfile.ajaxUrl, postData, function(resp) {
             if (resp.success) {
-                showMsg('Contatto aggiunto!', 'success');
+                showMsg('Contatto salvato!', 'success');
                 setTimeout(function() { location.reload(); }, 800);
             } else {
                 showMsg(resp.data.message, 'error');

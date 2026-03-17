@@ -47,6 +47,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     </div>
                 </div>
                 <div class="sd-record-actions">
+                    <button type="button" class="sd-rec-btn sd-rec-edit" data-type="certification" data-index="<?php echo $idx; ?>" title="Modifica">✎</button>
                     <button type="button" class="sd-rec-btn sd-rec-delete" data-type="certification" data-index="<?php echo $idx; ?>" title="Elimina">✕</button>
                 </div>
             </div>
@@ -143,6 +144,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     </div>
                 </div>
                 <div class="sd-record-actions">
+                    <button type="button" class="sd-rec-btn sd-rec-edit" data-type="medical_clearance" data-index="<?php echo $idx; ?>" title="Modifica">✎</button>
                     <button type="button" class="sd-rec-btn sd-rec-delete" data-type="medical_clearance" data-index="<?php echo $idx; ?>">✕</button>
                 </div>
             </div>
@@ -217,6 +219,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 </div>
                 <div class="sd-record-actions">
                     <a href="tel:<?php echo esc_attr( $ct['phone'] ); ?>" class="sd-rec-btn sd-rec-call" title="Chiama">📞</a>
+                    <button type="button" class="sd-rec-btn sd-rec-edit" data-type="emergency_contact" data-index="<?php echo $idx; ?>" title="Modifica">✎</button>
                     <button type="button" class="sd-rec-btn sd-rec-delete" data-type="emergency_contact" data-index="<?php echo $idx; ?>">✕</button>
                 </div>
             </div>
