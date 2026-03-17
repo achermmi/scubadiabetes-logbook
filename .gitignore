@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # Composer
 vendor/
 
@@ -5,3 +6,15 @@ vendor/
 *.phar
 CodeSniffer.conf
 tools/
+=======
+# Composer
+vendor/
+
+# PHPCS tools (local dev only)
+*.phar
+CodeSniffer.conf
+git-push.bat
+git-push.ps1
+tools/
+
+>>>>>>> Stashed changes
