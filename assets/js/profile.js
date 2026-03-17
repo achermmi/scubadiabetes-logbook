@@ -79,26 +79,29 @@
             $form.find('[name="contact_name"]').val(title);
             var subText = $card.find('.sd-record-sub').text();
 
-            // Extract phone - get text between start and first separator (·)
-            var phoneMatch = subText.match(/^([^·\n]+?)(?:\s·|$)/);
-            if (phoneMatch) {
-                $form.find('[name="contact_phone"]').val(phoneMatch[1].trim());
+            // Split by separator to get individual fields
+            var parts = subText.split('·').map(function(s) { return s.trim(); });
+
+            // Extract phone (first part)
+            if (parts[0]) {
+                $form.find('[name="contact_phone"]').val(parts[0]);
             }
 
-            // Extract email - regex pattern for email addresses
-            var emailMatch = subText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-            if (emailMatch) {
-                $form.find('[name="contact_email"]').val(emailMatch[1].toLowerCase());
+            // Extract email (second part if exists)
+            if (parts.length > 1 && parts[1]) {
+                var emailStr = parts[1];
+                // Check if it looks like an email
+                if (emailStr.includes('@')) {
+                    $form.find('[name="contact_email"]').val(emailStr.toLowerCase());
+                }
             }
 
-            // Extract relationship - after last separator
-            var parts = subText.split('·');
+            // Extract relationship (last part)
             if (parts.length > 1) {
-                var rel = parts[parts.length - 1].trim();
-                // Only set if it matches one of the valid options
+                var relStr = parts[parts.length - 1];
                 var validRels = ['coniuge', 'genitore', 'figlio', 'fratello', 'amico', 'medico', 'altro'];
-                if (validRels.includes(rel.toLowerCase())) {
-                    $form.find('[name="contact_relationship"]').val(rel.toLowerCase());
+                if (validRels.includes(relStr.toLowerCase())) {
+                    $form.find('[name="contact_relationship"]').val(relStr.toLowerCase());
                 }
             }
         }
