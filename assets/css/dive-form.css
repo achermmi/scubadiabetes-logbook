@@ -321,6 +321,8 @@ body.page .container.single-page-container {
 .sd-field input[type="number"],
 .sd-field input[type="date"],
 .sd-field input[type="time"],
+.sd-field input[type="email"],
+.sd-field input[type="tel"],
 .sd-field select,
 .sd-field textarea {
     width: 100%;
@@ -334,6 +336,8 @@ body.page .container.single-page-container {
     transition: border-color var(--sd-transition), box-shadow var(--sd-transition);
     box-sizing: border-box;
     -webkit-appearance: none;
+    line-height: 1.5;
+    height: auto;
 }
 
 .sd-field input:focus,
