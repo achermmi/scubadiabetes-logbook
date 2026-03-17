@@ -11,7 +11,7 @@
  * Text Domain: sd-logbook
  * Domain Path: /languages
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.2
  */
 
 // Impedisci accesso diretto
