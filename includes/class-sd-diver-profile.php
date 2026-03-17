@@ -215,7 +215,9 @@ class SD_Diver_Profile {
 		$new = array(
 			'name'         => sanitize_text_field( $_POST['contact_name'] ?? '' ),
 			'phone'        => sanitize_text_field( $_POST['contact_phone'] ?? '' ),
+			'email'        => strtolower( sanitize_email( $_POST['contact_email'] ?? '' ) ),
 			'relationship' => sanitize_text_field( $_POST['contact_relationship'] ?? '' ),
+			'notes'        => sanitize_textarea_field( $_POST['contact_notes'] ?? '' ),
 		);
 
 		if ( empty( $new['name'] ) || empty( $new['phone'] ) ) {

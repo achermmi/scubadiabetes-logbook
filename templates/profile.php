@@ -214,7 +214,9 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <div class="sd-record-title"><?php echo esc_html( $ct['name'] ); ?></div>
                     <div class="sd-record-sub">
                         <?php echo esc_html( $ct['phone'] ); ?>
+                        <?php if ( ! empty( $ct['email'] ) ) echo ' · <a href="mailto:' . esc_attr( $ct['email'] ) . '">' . esc_html( $ct['email'] ) . '</a>'; ?>
                         <?php if ( $ct['relationship'] ) echo ' · ' . esc_html( $ct['relationship'] ); ?>
+                        <?php if ( ! empty( $ct['notes'] ) ) echo '<br><em>' . esc_html( $ct['notes'] ) . '</em>'; ?>
                     </div>
                 </div>
                 <div class="sd-record-actions">
@@ -238,6 +240,10 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 </div>
             </div>
             <div class="sd-field">
+                <label><?php esc_html_e( 'E-mail', 'sd-logbook' ); ?></label>
+                <input type="email" name="contact_email">
+            </div>
+            <div class="sd-field">
                 <label><?php esc_html_e( 'Relazione', 'sd-logbook' ); ?></label>
                 <select name="contact_relationship">
                     <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
@@ -253,6 +259,10 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                         <option value="<?php echo esc_attr($val); ?>"><?php echo esc_html($lab); ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="sd-field">
+                <label><?php esc_html_e( 'Note', 'sd-logbook' ); ?></label>
+                <textarea name="contact_notes" rows="2" placeholder="<?php esc_attr_e('Note aggiuntive','sd-logbook'); ?>"></textarea>
             </div>
             <div class="sd-add-form-actions">
                 <button type="button" class="sd-btn-save-record" data-type="emergency_contact"><?php esc_html_e( 'Salva', 'sd-logbook' ); ?></button>

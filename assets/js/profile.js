@@ -78,12 +78,28 @@
             var title = $card.find('.sd-record-title').text();
             $form.find('[name="contact_name"]').val(title);
             var subText = $card.find('.sd-record-sub').text();
-            var parts = subText.split(' · ');
-            if (parts[0]) {
-                $form.find('[name="contact_phone"]').val(parts[0]);
+            // Extract phone, email, relationship from card
+            var cardData = $(this).closest('.sd-record-card').data();
+            // Fallback: extract from display text
+            var phoneMatch = subText.match(/^([^·\n]+)/);
+            if (phoneMatch) {
+                $form.find('[name="contact_phone"]').val(phoneMatch[1].trim());
             }
-            if (parts[1]) {
-                $form.find('[name="contact_relationship"]').val(parts[1]);
+            // Try to get email and relationship from data attributes if available
+            var emailMatch = subText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (emailMatch) {
+                $form.find('[name="contact_email"]').val(emailMatch[1].toLowerCase());
+            }
+            // Get relationship - look for all text after the last separator
+            var parts = subText.split('·');
+            if (parts.length > 1) {
+                // If there are multiple parts, the last one is likely the relationship
+                var rel = parts[parts.length - 1].trim();
+                // Only set if it matches one of the valid options
+                var validRels = ['coniuge', 'genitore', 'figlio', 'fratello', 'amico', 'medico', 'altro'];
+                if (validRels.includes(rel.toLowerCase())) {
+                    $form.find('[name="contact_relationship"]').val(rel.toLowerCase());
+                }
             }
         }
 
@@ -219,7 +235,9 @@
 
         var name  = $form.find('[name="contact_name"]').val();
         var phone = $form.find('[name="contact_phone"]').val();
+        var email = $form.find('[name="contact_email"]').val().toLowerCase(); // Convert to lowercase
         var rel   = $form.find('[name="contact_relationship"]').val();
+        var notes = $form.find('[name="contact_notes"]').val();
 
         if (!name || !phone) {
             showMsg('Nome e telefono sono obbligatori.', 'error');
@@ -233,7 +251,9 @@
             nonce: sdProfile.nonce,
             contact_name: name,
             contact_phone: phone,
-            contact_relationship: rel
+            contact_email: email,
+            contact_relationship: rel,
+            contact_notes: notes
         };
 
         var editIndex = $form.data('edit-index');
