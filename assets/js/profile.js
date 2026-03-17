@@ -78,22 +78,22 @@
             var title = $card.find('.sd-record-title').text();
             $form.find('[name="contact_name"]').val(title);
             var subText = $card.find('.sd-record-sub').text();
-            // Extract phone, email, relationship from card
-            var cardData = $(this).closest('.sd-record-card').data();
-            // Fallback: extract from display text
-            var phoneMatch = subText.match(/^([^·\n]+)/);
+
+            // Extract phone - get text between start and first separator (·)
+            var phoneMatch = subText.match(/^([^·\n]+?)(?:\s·|$)/);
             if (phoneMatch) {
                 $form.find('[name="contact_phone"]').val(phoneMatch[1].trim());
             }
-            // Try to get email and relationship from data attributes if available
+
+            // Extract email - regex pattern for email addresses
             var emailMatch = subText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
             if (emailMatch) {
                 $form.find('[name="contact_email"]').val(emailMatch[1].toLowerCase());
             }
-            // Get relationship - look for all text after the last separator
+
+            // Extract relationship - after last separator
             var parts = subText.split('·');
             if (parts.length > 1) {
-                // If there are multiple parts, the last one is likely the relationship
                 var rel = parts[parts.length - 1].trim();
                 // Only set if it matches one of the valid options
                 var validRels = ['coniuge', 'genitore', 'figlio', 'fratello', 'amico', 'medico', 'altro'];

@@ -239,26 +239,28 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <input type="tel" name="contact_phone" placeholder="+41 79...">
                 </div>
             </div>
-            <div class="sd-field">
-                <label><?php esc_html_e( 'E-mail', 'sd-logbook' ); ?></label>
-                <input type="email" name="contact_email">
-            </div>
-            <div class="sd-field">
-                <label><?php esc_html_e( 'Relazione', 'sd-logbook' ); ?></label>
-                <select name="contact_relationship">
-                    <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
-                    <?php foreach ( array(
-                        'coniuge'   => __('Coniuge/Partner','sd-logbook'),
-                        'genitore'  => __('Genitore','sd-logbook'),
-                        'figlio'    => __('Figlio/a','sd-logbook'),
-                        'fratello'  => __('Fratello/Sorella','sd-logbook'),
-                        'amico'     => __('Amico/a','sd-logbook'),
-                        'medico'    => __('Medico curante','sd-logbook'),
-                        'altro'     => __('Altro','sd-logbook'),
-                    ) as $val => $lab ) : ?>
-                        <option value="<?php echo esc_attr($val); ?>"><?php echo esc_html($lab); ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label><?php esc_html_e( 'E-mail', 'sd-logbook' ); ?></label>
+                    <input type="email" name="contact_email">
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label><?php esc_html_e( 'Relazione', 'sd-logbook' ); ?></label>
+                    <select name="contact_relationship">
+                        <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
+                        <?php foreach ( array(
+                            'coniuge'   => __('Coniuge/Partner','sd-logbook'),
+                            'genitore'  => __('Genitore','sd-logbook'),
+                            'figlio'    => __('Figlio/a','sd-logbook'),
+                            'fratello'  => __('Fratello/Sorella','sd-logbook'),
+                            'amico'     => __('Amico/a','sd-logbook'),
+                            'medico'    => __('Medico curante','sd-logbook'),
+                            'altro'     => __('Altro','sd-logbook'),
+                        ) as $val => $lab ) : ?>
+                            <option value="<?php echo esc_attr($val); ?>"><?php echo esc_html($lab); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
             <div class="sd-field">
                 <label><?php esc_html_e( 'Note', 'sd-logbook' ); ?></label>
