@@ -312,6 +312,7 @@ class SD_Diver_Profile {
 			$wpdb->insert( $table, $data );
 		}
 
+		$this->update_research_id( $user_id );
 		wp_send_json_success( array( 'message' => __( 'Dati diabete aggiornati.', 'sd-logbook' ) ) );
 	}
 
@@ -340,6 +341,7 @@ class SD_Diver_Profile {
 			);
 		}
 
+		$this->update_research_id( $user_id );
 		wp_send_json_success( array( 'message' => __( 'Preferenza condivisione aggiornata.', 'sd-logbook' ) ) );
 	}
 
@@ -410,7 +412,44 @@ class SD_Diver_Profile {
 			$wpdb->insert( $table, array_merge( array( 'user_id' => $user_id ), $data ) );
 		}
 
+		$this->update_research_id( $user_id );
 		wp_send_json_success( array( 'message' => __( 'Dati personali aggiornati.', 'sd-logbook' ) ) );
+	}
+
+	// ================================================================
+	// HELPER: Genera e salva ID ricerca
+	// Formato: YYYYMMDD + Iniziale Nome + Iniziale Cognome + Sesso + is_diabetic + shared
+	// ================================================================
+	private function generate_research_id( $user_id ) {
+		global $wpdb;
+		$db      = new SD_Database();
+		$profile = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT birth_date, gender, is_diabetic, default_shared_for_research FROM {$db->table('diver_profiles')} WHERE user_id = %d",
+				$user_id
+			)
+		);
+
+		$user       = get_userdata( $user_id );
+		$first_name = $user ? $user->first_name : '';
+		$last_name  = $user ? $user->last_name  : '';
+
+		$birth    = ( $profile && $profile->birth_date ) ? str_replace( '-', '', $profile->birth_date ) : '00000000';
+		$ini_f    = $first_name ? strtoupper( substr( $first_name, 0, 1 ) ) : 'X';
+		$ini_l    = $last_name  ? strtoupper( substr( $last_name,  0, 1 ) ) : 'X';
+		$gender   = ( $profile && $profile->gender ) ? $profile->gender : 'U';
+		$diabetic = $profile ? (int) $profile->is_diabetic : 0;
+		$shared   = $profile ? (int) $profile->default_shared_for_research : 1;
+
+		return $birth . $ini_f . $ini_l . $gender . $diabetic . $shared;
+	}
+
+	private function update_research_id( $user_id ) {
+		global $wpdb;
+		$db    = new SD_Database();
+		$table = $db->table( 'diver_profiles' );
+		$id    = $this->generate_research_id( $user_id );
+		$wpdb->update( $table, array( 'id_for_research' => $id ), array( 'user_id' => $user_id ) );
 	}
 
 	// ================================================================

@@ -62,6 +62,7 @@ class SD_Database {
 			emergency_contact_relationship varchar(50) DEFAULT NULL,
 			medical_clearance_date date DEFAULT NULL,
 			medical_clearance_expiry date DEFAULT NULL,
+			id_for_research varchar(20) DEFAULT NULL,
 			gender varchar(2) DEFAULT NULL,
 			gsm varchar(30) DEFAULT NULL,
 			phone varchar(30) DEFAULT NULL,

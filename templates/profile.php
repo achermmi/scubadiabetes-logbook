@@ -38,6 +38,15 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         </div>
 
         <div class="sd-section-body">
+            <!-- ID Ricerca -->
+            <?php if ( ! empty( $dp->id_for_research ) && ! empty( $dp->default_shared_for_research ) ) : ?>
+            <div class="sd-research-id-bar">
+                <span class="sd-research-id-label"><?php esc_html_e( 'ID Ricerca', 'sd-logbook' ); ?></span>
+                <code class="sd-research-id-value"><?php echo esc_html( $dp->id_for_research ); ?></code>
+                <span class="sd-research-id-note"><?php esc_html_e( '(usato solo a scopo di ricerca)', 'sd-logbook' ); ?></span>
+            </div>
+            <?php endif; ?>
+
             <!-- Campi WordPress (sola lettura) -->
             <div class="sd-personal-wp-fields">
                 <div class="sd-field-row">
