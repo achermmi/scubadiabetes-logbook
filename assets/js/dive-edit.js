@@ -222,6 +222,13 @@
             });
             html += '</div>';
 
+            // Decisione immersione
+            html += '<div class="sd-edit-subsection">Decisione immersione</div>';
+            html += '<div class="sd-field-row">';
+            html += selectField('dive_decision', 'Decisione', diabetes.dive_decision, {'':'—', autorizzata:'Autorizzata', sospesa:'Sospesa', annullata:'Annullata'}, 'half');
+            html += field('dive_decision_reason', 'Motivazione', 'text', diabetes.dive_decision_reason, '');
+            html += '</div>';
+
             // Terapia insulinica e chetonemia (avanzato)
             html += '<details class="sd-details"><summary>Terapia insulinica e chetonemia (avanzato)</summary>';
             html += '<div class="sd-edit-subsection">Chetonemia</div>';

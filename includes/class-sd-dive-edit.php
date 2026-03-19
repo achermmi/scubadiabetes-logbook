@@ -327,6 +327,22 @@ class SD_Dive_Edit {
 			$diabetes_data['hypo_treatment']        = sanitize_textarea_field( $_POST['hypo_treatment'] ?? '' ) ?: null;
 			$diabetes_data['diabetes_notes']        = sanitize_textarea_field( $_POST['diabetes_notes'] ?? '' ) ?: null;
 
+			// Normalizza glicemie mmol/L: evita phantom changes da arrotondamento
+			if ( $is_mmol && $old_diabetes ) {
+				foreach ( $checkpoints as $cp ) {
+					$fld     = 'glic_' . $cp . '_value';
+					$old_mgdl = $old_diabetes[ $fld ] ?? null;
+					$new_mgdl = $diabetes_data[ $fld ];
+					if ( null !== $old_mgdl && null !== $new_mgdl ) {
+						$old_display = round( floatval( $old_mgdl ) / 18.018, 1 );
+						$new_display = round( floatval( $new_mgdl ) / 18.018, 1 );
+						if ( abs( $old_display - $new_display ) < 0.01 ) {
+							$diabetes_data[ $fld ] = (int) $old_mgdl;
+						}
+					}
+				}
+			}
+
 			// Track changes — confronto normalizzato
 			if ( $old_diabetes ) {
 				foreach ( $diabetes_data as $field => $new_val ) {
