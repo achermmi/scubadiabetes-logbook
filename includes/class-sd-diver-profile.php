@@ -283,14 +283,16 @@ class SD_Diver_Profile {
 		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
 		$user_id = get_current_user_id();
 
-		if ( ! SD_Roles::is_diabetic_diver( $user_id ) ) {
+		if ( ! SD_Roles::is_diver( $user_id ) ) {
 			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
 		}
 
+		$diabetes_type = sanitize_text_field( $_POST['diabetes_type'] ?? 'non_diabetico' );
+		$is_diabetic   = in_array( $diabetes_type, array( 'non_diabetico', 'none' ), true ) ? 0 : 1;
+
 		$data = array(
-			'user_id'            => $user_id,
-			'is_diabetic'        => 1,
-			'diabetes_type'      => sanitize_text_field( $_POST['diabetes_type'] ?? 'none' ),
+			'is_diabetic'        => $is_diabetic,
+			'diabetes_type'      => $diabetes_type,
 			'therapy_type'       => sanitize_text_field( $_POST['therapy_type'] ?? 'none' ),
 			'hba1c_last'         => ! empty( $_POST['hba1c_last'] ) ? floatval( $_POST['hba1c_last'] ) : null,
 			'hba1c_date'         => sanitize_text_field( $_POST['hba1c_date'] ?? '' ) ?: null,
@@ -309,7 +311,17 @@ class SD_Diver_Profile {
 		if ( $existing ) {
 			$wpdb->update( $table, $data, array( 'user_id' => $user_id ) );
 		} else {
-			$wpdb->insert( $table, $data );
+			$wpdb->insert( $table, array_merge( array( 'user_id' => $user_id ), $data ) );
+		}
+
+		// Sync WordPress role based on is_diabetic
+		$wp_user = new WP_User( $user_id );
+		if ( $is_diabetic ) {
+			$wp_user->remove_role( 'sd_diver' );
+			$wp_user->add_role( 'sd_diver_diabetic' );
+		} else {
+			$wp_user->remove_role( 'sd_diver_diabetic' );
+			$wp_user->add_role( 'sd_diver' );
 		}
 
 		$this->update_research_id( $user_id );

@@ -510,7 +510,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- ============================================================ -->
     <!-- DATI DIABETE (solo diabetici — singolo record in DB) -->
     <!-- ============================================================ -->
-    <?php if ( $is_diabetic ) : ?>
+    <?php if ( SD_Roles::is_diver( $user_id ) ) : ?>
     <div class="sd-section sd-section-diabetes">
         <div class="sd-section-title sd-section-title-diabetes">
             <span class="sd-section-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12z"/><line x1="12" y1="18" x2="12" y2="14"/><line x1="10" y1="16" x2="14" y2="16"/></svg></span>
@@ -525,7 +525,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <div class="sd-field sd-field-half">
                     <label><?php esc_html_e( 'Tipo diabete', 'sd-logbook' ); ?></label>
                     <select name="diabetes_type">
-                        <?php foreach ( array('none'=>'Non specificato','tipo1'=>'Tipo 1','tipo2'=>'Tipo 2','altro'=>'Altro') as $v => $l ) : ?>
+                        <?php foreach ( array('non_diabetico'=>'Non diabetico','none'=>'Non specificato','tipo1'=>'Tipo 1','tipo2'=>'Tipo 2','altro'=>'Altro') as $v => $l ) : ?>
                         <option value="<?php echo $v; ?>" <?php selected( $dp->diabetes_type ?? 'none', $v ); ?>><?php echo esc_html($l); ?></option>
                         <?php endforeach; ?>
                     </select>

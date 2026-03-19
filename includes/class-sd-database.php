@@ -51,7 +51,7 @@ class SD_Database {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL,
 			is_diabetic tinyint(1) NOT NULL DEFAULT 0,
-			diabetes_type varchar(10) DEFAULT 'none',
+			diabetes_type varchar(20) DEFAULT 'none',
 			therapy_type varchar(10) DEFAULT 'none',
 			certification_level varchar(50) DEFAULT NULL,
 			certification_agency varchar(50) DEFAULT NULL,
