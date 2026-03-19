@@ -287,6 +287,200 @@
 }
 
 /* ============================================================
+   COLLAPSIBLE SECTION
+   ============================================================ */
+.sd-section-collapsible .sd-section-title {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sd-section-collapsible:not(.sd-section-collapsed) .sd-section-title {
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--sd-blue-light);
+    padding-bottom: 8px;
+}
+
+.sd-section-chevron {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    color: var(--sd-gray-400);
+    transition: transform 0.25s;
+}
+
+.sd-section-collapsible.sd-section-collapsed .sd-section-chevron {
+    transform: rotate(-90deg);
+}
+
+.sd-section-body {
+    overflow: hidden;
+}
+
+/* ============================================================
+   ALLERGIE / MEDICAMENTI ITEM LISTS
+   ============================================================ */
+.sd-item-list-header {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    padding: 0 4px;
+}
+
+.sd-item-list-header span:first-child {
+    flex: 1;
+    color: var(--sd-blue-deep);
+    font-size: 13px;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.sd-item-col-label {
+    margin-right: 34px; /* aligns with sospeso checkbox */
+    font-size: 11px;
+}
+
+.sd-item-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    overflow: hidden;
+    margin-bottom: 6px;
+    min-height: 36px;
+}
+
+.sd-item-list:empty {
+    background: var(--sd-gray-50);
+}
+
+.sd-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--sd-white);
+    border-bottom: 1px solid var(--sd-gray-100);
+    font-size: 13px;
+}
+
+.sd-list-item:last-child {
+    border-bottom: none;
+}
+
+.sd-item-name {
+    flex: 1;
+    color: var(--sd-gray-900);
+}
+
+.sd-sospeso-label {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.sd-sospeso-label input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: var(--sd-teal);
+}
+
+.sd-item-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--sd-gray-400);
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.sd-item-delete:hover {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.sd-item-add-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.sd-item-add-row input[type="text"] {
+    flex: 1;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+    transition: border-color 0.15s;
+}
+
+.sd-item-add-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--sd-blue);
+}
+
+.sd-item-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 12px;
+    height: 36px;
+    background: var(--sd-white);
+    color: var(--sd-blue);
+    border: 1.5px solid var(--sd-blue);
+    border-radius: var(--sd-radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.sd-item-add-btn:hover {
+    background: var(--sd-blue-pale);
+}
+
+/* Read-only WP fields */
+.sd-personal-wp-fields input:disabled {
+    background: var(--sd-gray-50);
+    color: var(--sd-gray-500);
+    border-color: var(--sd-gray-200);
+    cursor: default;
+}
+
+/* Quarter-width field (for Peso/Altezza) */
+.sd-field-quarter {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ============================================================
    UNIT TOGGLE (mg/dL ↔ mmol/L)
    ============================================================ */
 .sd-unit-toggle {

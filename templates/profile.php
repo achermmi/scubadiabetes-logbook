@@ -27,6 +27,182 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     </div>
 
     <!-- ============================================================ -->
+    <!-- DATI PERSONALI (sezione collassabile) -->
+    <!-- ============================================================ -->
+    <?php $dp = $diabetes_profile; ?>
+    <div class="sd-section sd-section-collapsible sd-section-collapsed">
+        <div class="sd-section-title sd-section-toggle">
+            <span class="sd-section-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <?php esc_html_e( 'Dati personali', 'sd-logbook' ); ?>
+            <span class="sd-section-chevron"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </div>
+
+        <div class="sd-section-body">
+            <!-- Campi WordPress (sola lettura) -->
+            <div class="sd-personal-wp-fields">
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></label>
+                        <input type="text" value="<?php echo esc_attr( $current_user->first_name ); ?>" disabled>
+                    </div>
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Cognome', 'sd-logbook' ); ?></label>
+                        <input type="text" value="<?php echo esc_attr( $current_user->last_name ); ?>" disabled>
+                    </div>
+                </div>
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Ruolo', 'sd-logbook' ); ?></label>
+                        <input type="text" value="<?php echo esc_attr( $user_role_display ); ?>" disabled>
+                    </div>
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'E-mail', 'sd-logbook' ); ?></label>
+                        <input type="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" disabled>
+                    </div>
+                </div>
+                <p class="sd-field-help"><?php esc_html_e( 'Nome, cognome, ruolo ed e-mail si modificano dal profilo WordPress.', 'sd-logbook' ); ?></p>
+            </div>
+
+            <!-- Form campi aggiuntivi -->
+            <form id="sd-personal-form" class="sd-dive-form" novalidate>
+                <input type="hidden" name="action" value="sd_save_personal_data">
+                <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'sd_profile_nonce' ); ?>">
+
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'GSM', 'sd-logbook' ); ?></label>
+                        <input type="tel" name="personal_gsm" value="<?php echo esc_attr( $dp->gsm ?? '' ); ?>" placeholder="+41 79…">
+                    </div>
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Telefono', 'sd-logbook' ); ?></label>
+                        <input type="tel" name="personal_phone" value="<?php echo esc_attr( $dp->phone ?? '' ); ?>" placeholder="+41 91…">
+                    </div>
+                </div>
+                <div class="sd-field">
+                    <label><?php esc_html_e( 'Via', 'sd-logbook' ); ?></label>
+                    <input type="text" name="personal_address" value="<?php echo esc_attr( $dp->address ?? '' ); ?>">
+                </div>
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'CAP', 'sd-logbook' ); ?></label>
+                        <input type="text" name="personal_zip" value="<?php echo esc_attr( $dp->zip ?? '' ); ?>">
+                    </div>
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Località', 'sd-logbook' ); ?></label>
+                        <input type="text" name="personal_city" value="<?php echo esc_attr( $dp->city ?? '' ); ?>">
+                    </div>
+                </div>
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Data di nascita', 'sd-logbook' ); ?></label>
+                        <input type="date" name="personal_birth_date" value="<?php echo esc_attr( $dp->birth_date ?? '' ); ?>">
+                    </div>
+                    <div class="sd-field sd-field-quarter">
+                        <label><?php esc_html_e( 'Peso (Kg)', 'sd-logbook' ); ?></label>
+                        <input type="number" name="personal_weight" step="0.5" min="20" max="300" value="<?php echo esc_attr( $dp->weight ?? '' ); ?>">
+                    </div>
+                    <div class="sd-field sd-field-quarter">
+                        <label><?php esc_html_e( 'Altezza (cm)', 'sd-logbook' ); ?></label>
+                        <input type="number" name="personal_height" step="1" min="100" max="250" value="<?php echo esc_attr( $dp->height ?? '' ); ?>">
+                    </div>
+                </div>
+
+                <div class="sd-field-row">
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Sesso', 'sd-logbook' ); ?></label>
+                        <select name="personal_gender">
+                            <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
+                            <?php foreach ( array('M'=>'M (Maschio)','F'=>'F (Femmina)','NB'=>'NB (Non binario)','U'=>'U (Non specificato)') as $val => $lab ) : ?>
+                            <option value="<?php echo esc_attr($val); ?>" <?php selected( $dp->gender ?? '', $val ); ?>><?php echo esc_html($lab); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="sd-field sd-field-half">
+                        <label><?php esc_html_e( 'Gruppo sanguigno', 'sd-logbook' ); ?></label>
+                        <select name="personal_blood_type">
+                            <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
+                            <?php foreach ( array('A+','A-','B+','B-','AB+','AB-','0+','0-') as $bt ) : ?>
+                            <option value="<?php echo esc_attr($bt); ?>" <?php selected( $dp->blood_type ?? '', $bt ); ?>><?php echo esc_html($bt); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <?php
+                // Decode allergies
+                $allergies = array();
+                if ( ! empty( $dp->allergies ) ) {
+                    $decoded = json_decode( $dp->allergies, true );
+                    if ( is_array( $decoded ) ) { $allergies = $decoded; }
+                }
+                // Decode medications
+                $medications = array();
+                if ( ! empty( $dp->medications ) ) {
+                    $decoded = json_decode( $dp->medications, true );
+                    if ( is_array( $decoded ) ) { $medications = $decoded; }
+                }
+                ?>
+
+                <!-- ALLERGIE -->
+                <div class="sd-field">
+                    <div class="sd-item-list-header">
+                        <span><?php esc_html_e( 'Allergie', 'sd-logbook' ); ?></span>
+                    </div>
+                    <div class="sd-item-list" id="sd-allergies-list">
+                        <?php foreach ( $allergies as $allergy ) : ?>
+                        <div class="sd-list-item">
+                            <span class="sd-item-name"><?php echo esc_html( $allergy ); ?></span>
+                            <button type="button" class="sd-item-delete" title="<?php esc_attr_e( 'Elimina', 'sd-logbook' ); ?>">✕</button>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="sd-item-add-row">
+                        <input type="text" id="sd-allergy-input" placeholder="<?php esc_attr_e( 'Nuova allergia…', 'sd-logbook' ); ?>">
+                        <button type="button" id="sd-add-allergy-btn" class="sd-item-add-btn">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <?php esc_html_e( 'Aggiungi', 'sd-logbook' ); ?>
+                        </button>
+                    </div>
+                    <input type="hidden" name="personal_allergies" id="sd-allergies-json">
+                </div>
+
+                <!-- MEDICAMENTI -->
+                <div class="sd-field">
+                    <div class="sd-item-list-header">
+                        <span><?php esc_html_e( 'Medicamenti', 'sd-logbook' ); ?></span>
+                        <span class="sd-item-col-label"><?php esc_html_e( 'Sospeso', 'sd-logbook' ); ?></span>
+                    </div>
+                    <div class="sd-item-list" id="sd-medications-list">
+                        <?php foreach ( $medications as $med ) :
+                            $med_name    = is_array( $med ) ? ( $med['name'] ?? '' ) : (string) $med;
+                            $med_sospeso = is_array( $med ) && ! empty( $med['sospeso'] );
+                        ?>
+                        <div class="sd-list-item sd-med-item">
+                            <span class="sd-item-name"><?php echo esc_html( $med_name ); ?></span>
+                            <label class="sd-sospeso-label">
+                                <input type="checkbox" class="sd-sospeso-cb" <?php checked( $med_sospeso ); ?>>
+                            </label>
+                            <button type="button" class="sd-item-delete" title="<?php esc_attr_e( 'Elimina', 'sd-logbook' ); ?>">✕</button>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="sd-item-add-row">
+                        <input type="text" id="sd-medication-input" placeholder="<?php esc_attr_e( 'Nuovo medicamento…', 'sd-logbook' ); ?>">
+                        <button type="button" id="sd-add-medication-btn" class="sd-item-add-btn">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <?php esc_html_e( 'Aggiungi', 'sd-logbook' ); ?>
+                        </button>
+                    </div>
+                    <input type="hidden" name="personal_medications" id="sd-medications-json">
+                </div>
+
+                <div class="sd-add-form-actions">
+                    <button type="submit" class="sd-btn-save-record" id="sd-btn-save-personal"><?php esc_html_e( 'Salva dati personali', 'sd-logbook' ); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- CERTIFICAZIONI SUB (multi-record) -->
     <!-- ============================================================ -->
     <div class="sd-section">
@@ -332,7 +508,6 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
             <?php esc_html_e( 'Dati diabete', 'sd-logbook' ); ?>
         </div>
 
-        <?php $dp = $diabetes_profile; ?>
         <form id="sd-diabetes-form" class="sd-dive-form" novalidate>
             <input type="hidden" name="action" value="sd_save_diabetes_profile">
             <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('sd_profile_nonce'); ?>">

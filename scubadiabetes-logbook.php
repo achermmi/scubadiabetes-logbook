@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.0.0' );
+define( 'SD_LOGBOOK_VERSION', '1.1.0' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '1.4.0';
+	const DB_VERSION = '1.6.0';
 
 	/**
 	 * Ottieni istanza singleton

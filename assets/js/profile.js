@@ -8,6 +8,106 @@
     'use strict';
 
     // ============================================================
+    // COLLAPSIBLE SECTIONS
+    // ============================================================
+    // Initialize: hide bodies of collapsed sections
+    $('.sd-section-collapsible.sd-section-collapsed .sd-section-body').hide();
+
+    $(document).on('click', '.sd-section-toggle', function() {
+        var $section = $(this).closest('.sd-section-collapsible');
+        var $body    = $section.find('.sd-section-body').first();
+        $section.toggleClass('sd-section-collapsed');
+        $body.slideToggle(200);
+    });
+
+    // ============================================================
+    // ALLERGIE / MEDICAMENTI — item list management
+    // ============================================================
+
+    // Add allergy
+    function addAllergyItem(name) {
+        if (!name.trim()) return;
+        var $item = $('<div class="sd-list-item"></div>');
+        $item.append($('<span class="sd-item-name"></span>').text(name.trim()));
+        $item.append('<button type="button" class="sd-item-delete" title="Elimina">✕</button>');
+        $('#sd-allergies-list').append($item);
+    }
+
+    $(document).on('click', '#sd-add-allergy-btn', function() {
+        var $input = $('#sd-allergy-input');
+        addAllergyItem($input.val());
+        $input.val('').focus();
+    });
+
+    $(document).on('keydown', '#sd-allergy-input', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('#sd-add-allergy-btn').trigger('click'); }
+    });
+
+    // Add medication
+    function addMedicationItem(name, sospeso) {
+        if (!name.trim()) return;
+        var $item = $('<div class="sd-list-item sd-med-item"></div>');
+        $item.append($('<span class="sd-item-name"></span>').text(name.trim()));
+        var $cb = $('<input type="checkbox" class="sd-sospeso-cb">');
+        if (sospeso) $cb.prop('checked', true);
+        $item.append($('<label class="sd-sospeso-label"></label>').append($cb));
+        $item.append('<button type="button" class="sd-item-delete" title="Elimina">✕</button>');
+        $('#sd-medications-list').append($item);
+    }
+
+    $(document).on('click', '#sd-add-medication-btn', function() {
+        var $input = $('#sd-medication-input');
+        addMedicationItem($input.val(), false);
+        $input.val('').focus();
+    });
+
+    $(document).on('keydown', '#sd-medication-input', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('#sd-add-medication-btn').trigger('click'); }
+    });
+
+    // Delete item (both lists)
+    $(document).on('click', '#sd-allergies-list .sd-item-delete, #sd-medications-list .sd-item-delete', function() {
+        $(this).closest('.sd-list-item').remove();
+    });
+
+    // Serialize lists to hidden JSON inputs before submit
+    function serializeLists() {
+        var allergies = [];
+        $('#sd-allergies-list .sd-list-item').each(function() {
+            allergies.push($(this).find('.sd-item-name').text().trim());
+        });
+        $('#sd-allergies-json').val(JSON.stringify(allergies));
+
+        var medications = [];
+        $('#sd-medications-list .sd-list-item').each(function() {
+            medications.push({
+                name:    $(this).find('.sd-item-name').text().trim(),
+                sospeso: $(this).find('.sd-sospeso-cb').is(':checked')
+            });
+        });
+        $('#sd-medications-json').val(JSON.stringify(medications));
+    }
+
+    // ============================================================
+    // SAVE PERSONAL DATA
+    // ============================================================
+    $('#sd-personal-form').on('submit', function(e) {
+        e.preventDefault();
+        serializeLists();
+        var $btn = $('#sd-btn-save-personal');
+        $btn.prop('disabled', true).text('Salvataggio...');
+
+        $.post(sdProfile.ajaxUrl, $(this).serialize(), function(resp) {
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+            } else {
+                showMsg(resp.data?.message || 'Errore', 'error');
+            }
+            $btn.prop('disabled', false).text('Salva dati personali');
+        });
+    });
+
+    // ============================================================
     // UNIT TOGGLE (mg/dL ↔ mmol/L)
     // ============================================================
     $(document).on('click', '.sd-unit-btn', function(e) {

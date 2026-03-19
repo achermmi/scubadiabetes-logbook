@@ -34,6 +34,7 @@ class SD_Diver_Profile {
 		add_action( 'wp_ajax_sd_delete_medical_doc', array( $this, 'delete_medical_doc' ) );
 		add_action( 'wp_ajax_sd_save_diabetes_profile', array( $this, 'save_diabetes_profile' ) );
 		add_action( 'wp_ajax_sd_save_sharing_preference', array( $this, 'save_sharing_preference' ) );
+		add_action( 'wp_ajax_sd_save_personal_data', array( $this, 'save_personal_data' ) );
 	}
 
 	public function enqueue_assets() {
@@ -84,6 +85,16 @@ class SD_Diver_Profile {
 		if ( empty( $display_name ) ) {
 			$display_name = $current_user->display_name;
 		}
+
+		// Role labels for display
+		$wp_roles         = wp_roles();
+		$user_role_labels = array();
+		foreach ( $current_user->roles as $role ) {
+			if ( isset( $wp_roles->role_names[ $role ] ) ) {
+				$user_role_labels[] = translate_user_role( $wp_roles->role_names[ $role ] );
+			}
+		}
+		$user_role_display = ! empty( $user_role_labels ) ? implode( ', ', $user_role_labels ) : '';
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/profile.php';
@@ -330,6 +341,76 @@ class SD_Diver_Profile {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Preferenza condivisione aggiornata.', 'sd-logbook' ) ) );
+	}
+
+	// ================================================================
+	// DATI PERSONALI
+	// ================================================================
+	public function save_personal_data() {
+		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
+		$user_id = get_current_user_id();
+
+		$allowed_genders     = array( 'M', 'F', 'NB', 'U' );
+		$gender_raw          = sanitize_text_field( $_POST['personal_gender'] ?? '' );
+		$allowed_blood_types = array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-' );
+		$blood_type_raw      = sanitize_text_field( $_POST['personal_blood_type'] ?? '' );
+
+		// Parse and sanitize allergies JSON array
+		$allergies_raw  = wp_unslash( $_POST['personal_allergies'] ?? '[]' );
+		$allergies_arr  = json_decode( $allergies_raw, true );
+		$allergies_clean = array();
+		if ( is_array( $allergies_arr ) ) {
+			foreach ( $allergies_arr as $a ) {
+				$clean = sanitize_text_field( (string) $a );
+				if ( $clean !== '' ) {
+					$allergies_clean[] = $clean;
+				}
+			}
+		}
+
+		// Parse and sanitize medications JSON array
+		$medications_raw   = wp_unslash( $_POST['personal_medications'] ?? '[]' );
+		$medications_arr   = json_decode( $medications_raw, true );
+		$medications_clean = array();
+		if ( is_array( $medications_arr ) ) {
+			foreach ( $medications_arr as $m ) {
+				$name = sanitize_text_field( is_array( $m ) ? ( $m['name'] ?? '' ) : (string) $m );
+				if ( $name !== '' ) {
+					$medications_clean[] = array(
+						'name'    => $name,
+						'sospeso' => is_array( $m ) && ! empty( $m['sospeso'] ),
+					);
+				}
+			}
+		}
+
+		$data = array(
+			'gender'      => in_array( $gender_raw, $allowed_genders, true ) ? $gender_raw : null,
+			'gsm'         => sanitize_text_field( $_POST['personal_gsm'] ?? '' ) ?: null,
+			'phone'       => sanitize_text_field( $_POST['personal_phone'] ?? '' ) ?: null,
+			'address'     => sanitize_text_field( $_POST['personal_address'] ?? '' ) ?: null,
+			'zip'         => sanitize_text_field( $_POST['personal_zip'] ?? '' ) ?: null,
+			'city'        => sanitize_text_field( $_POST['personal_city'] ?? '' ) ?: null,
+			'birth_date'  => sanitize_text_field( $_POST['personal_birth_date'] ?? '' ) ?: null,
+			'weight'      => ! empty( $_POST['personal_weight'] ) ? floatval( $_POST['personal_weight'] ) : null,
+			'height'      => ! empty( $_POST['personal_height'] ) ? absint( $_POST['personal_height'] ) : null,
+			'blood_type'  => in_array( $blood_type_raw, $allowed_blood_types, true ) ? $blood_type_raw : null,
+			'allergies'   => ! empty( $allergies_clean ) ? wp_json_encode( $allergies_clean ) : null,
+			'medications' => ! empty( $medications_clean ) ? wp_json_encode( $medications_clean ) : null,
+		);
+
+		global $wpdb;
+		$db       = new SD_Database();
+		$table    = $db->table( 'diver_profiles' );
+		$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE user_id = %d", $user_id ) );
+
+		if ( $existing ) {
+			$wpdb->update( $table, $data, array( 'user_id' => $user_id ) );
+		} else {
+			$wpdb->insert( $table, array_merge( array( 'user_id' => $user_id ), $data ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Dati personali aggiornati.', 'sd-logbook' ) ) );
 	}
 
 	// ================================================================
