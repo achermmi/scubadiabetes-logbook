@@ -362,7 +362,7 @@ class SD_Diver_Profile {
 		if ( is_array( $allergies_arr ) ) {
 			foreach ( $allergies_arr as $a ) {
 				$clean = sanitize_text_field( (string) $a );
-				if ( $clean !== '' ) {
+				if ( '' !== $clean ) {
 					$allergies_clean[] = $clean;
 				}
 			}
@@ -375,7 +375,7 @@ class SD_Diver_Profile {
 		if ( is_array( $medications_arr ) ) {
 			foreach ( $medications_arr as $m ) {
 				$name = sanitize_text_field( is_array( $m ) ? ( $m['name'] ?? '' ) : (string) $m );
-				if ( $name !== '' ) {
+				if ( '' !== $name ) {
 					$medications_clean[] = array(
 						'name'    => $name,
 						'sospeso' => is_array( $m ) && ! empty( $m['sospeso'] ),
