@@ -432,11 +432,11 @@ class SD_Diver_Profile {
 
 		$user       = get_userdata( $user_id );
 		$first_name = $user ? $user->first_name : '';
-		$last_name  = $user ? $user->last_name  : '';
+		$last_name  = $user ? $user->last_name : '';
 
 		$birth    = ( $profile && $profile->birth_date ) ? str_replace( '-', '', $profile->birth_date ) : '00000000';
 		$ini_f    = $first_name ? strtoupper( substr( $first_name, 0, 1 ) ) : 'X';
-		$ini_l    = $last_name  ? strtoupper( substr( $last_name,  0, 1 ) ) : 'X';
+		$ini_l    = $last_name ? strtoupper( substr( $last_name, 0, 1 ) ) : 'X';
 		$gender   = ( $profile && $profile->gender ) ? $profile->gender : 'U';
 		$diabetic = $profile ? (int) $profile->is_diabetic : 0;
 		$shared   = $profile ? (int) $profile->default_shared_for_research : 1;
