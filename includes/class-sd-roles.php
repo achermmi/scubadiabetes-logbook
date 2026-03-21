@@ -80,6 +80,7 @@ class SD_Roles {
 					'sd_view_all_diabetes'  => true,
 					'sd_supervise'          => true,
 					'sd_view_dashboard_all' => true,
+					'sd_manage_members'     => true,
 				),
 			),
 		);

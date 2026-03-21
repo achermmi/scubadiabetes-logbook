@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '1.8.0';
+	const DB_VERSION = '2.0.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -70,6 +70,9 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-medical-panel.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-research-dashboard.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-edit.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-helper.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-admin.php';
 	}
 
 	/**
@@ -91,6 +94,7 @@ final class SD_Logbook {
 		// Crea tabelle database
 		$db = new SD_Database();
 		$db->create_tables();
+		$db->create_membership_tables();
 
 		// Crea ruoli utente personalizzati
 		$roles = new SD_Roles();
@@ -99,6 +103,14 @@ final class SD_Logbook {
 		// Salva la versione del DB
 		update_option( 'sd_logbook_db_version', self::DB_VERSION );
 		update_option( 'sd_logbook_version', SD_LOGBOOK_VERSION );
+
+		// Imposta email segretariato di default
+		if ( ! get_option( 'sd_secretariat_email' ) ) {
+			update_option( 'sd_secretariat_email', get_option( 'admin_email' ) );
+		}
+
+		// Programma cron rinnovi
+		SD_Membership_Helper::schedule_cron();
 
 		// Pulisci rewrite rules
 		flush_rewrite_rules();
@@ -110,6 +122,7 @@ final class SD_Logbook {
 	public function deactivate() {
 		// NON rimuoviamo le tabelle alla disattivazione (dati scientifici!)
 		// I ruoli vengono mantenuti
+		wp_clear_scheduled_hook( 'sd_membership_renewal_check' );
 		flush_rewrite_rules();
 	}
 
@@ -121,6 +134,7 @@ final class SD_Logbook {
 		if ( version_compare( $current_db_version, self::DB_VERSION, '<' ) ) {
 			$db = new SD_Database();
 			$db->create_tables();
+			$db->create_membership_tables();
 			update_option( 'sd_logbook_db_version', self::DB_VERSION );
 		}
 	}
@@ -146,6 +160,11 @@ final class SD_Logbook {
 		new SD_Medical_Panel();
 		new SD_Research_Dashboard();
 		new SD_Dive_Edit();
+		new SD_Membership();
+		new SD_Membership_Admin();
+
+		// Cron rinnovi (registra se non già programmato)
+		SD_Membership_Helper::schedule_cron();
 
 		// Neve PRO theme compatibility
 		add_filter( 'neve_sidebar_position', array( $this, 'neve_force_fullwidth' ) );
@@ -180,7 +199,7 @@ final class SD_Logbook {
 		if ( ! is_a( $post, 'WP_Post' ) ) {
 			return false;
 		}
-		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_dive_edit' );
+		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_dive_edit', 'sd_iscrizione', 'sd_gestione_soci', 'sd_iscrizione_edit' );
 		foreach ( $shortcodes as $sc ) {
 			if ( has_shortcode( $post->post_content, $sc ) ) {
 				return true;

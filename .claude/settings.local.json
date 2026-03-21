@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \":*)",
+      "Read(//z/htdocs/scubadiabetes/**)",
+      "Bash(wp user:*)",
+      "Bash(php -r \":*)"
+    ]
+  }
+}

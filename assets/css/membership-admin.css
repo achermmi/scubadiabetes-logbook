@@ -1,0 +1,272 @@
+/**
+ * Stili Gestione Soci (Admin) - ScubaDiabetes Logbook
+ */
+
+/* ===== STATS BAR ===== */
+.sd-stats-bar {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin-bottom: 1.5rem;
+}
+
+.sd-stat-card {
+	flex: 1 1 160px;
+	background: #fff;
+	border: 1px solid var(--sd-border, #dde1e7);
+	border-radius: 8px;
+	padding: 1rem 1.25rem;
+	text-align: center;
+}
+
+.sd-stat-card .sd-stat-value {
+	display: block;
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+.sd-stat-card .sd-stat-label {
+	display: block;
+	font-size: 0.78rem;
+	color: var(--sd-muted, #6b7280);
+	margin-top: 0.2rem;
+}
+
+.sd-stat-success .sd-stat-value { color: #059669; }
+.sd-stat-warning .sd-stat-value { color: #d97706; }
+.sd-stat-info .sd-stat-value    { color: #2563eb; }
+
+/* ===== FILTER BAR ===== */
+.sd-filter-bar {
+	background: #f9fafb;
+	border: 1px solid var(--sd-border, #dde1e7);
+	border-radius: 8px;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.sd-filters-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.sd-filter-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	align-items: flex-end;
+}
+
+.sd-filter-group {
+	flex: 0 0 auto;
+}
+
+.sd-filter-group input,
+.sd-filter-group select {
+	min-width: 160px;
+}
+
+.sd-filter-group:last-child {
+	display: flex;
+	gap: 0.4rem;
+	margin-left: auto;
+}
+
+.sd-export-bar {
+	margin-top: 0.75rem;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+/* ===== TABELLA SOCI ===== */
+.sd-table-wrap {
+	overflow-x: auto;
+	border-radius: 8px;
+	border: 1px solid var(--sd-border, #dde1e7);
+}
+
+.sd-members-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+	background: #fff;
+}
+
+.sd-members-table thead {
+	background: #f3f4f6;
+}
+
+.sd-members-table th {
+	padding: 0.6rem 0.75rem;
+	text-align: left;
+	font-weight: 600;
+	color: #374151;
+	font-size: 0.8rem;
+	white-space: nowrap;
+	border-bottom: 2px solid var(--sd-border, #dde1e7);
+}
+
+.sd-members-table td {
+	padding: 0.55rem 0.75rem;
+	border-bottom: 1px solid #f3f4f6;
+	color: #374151;
+	white-space: nowrap;
+}
+
+.sd-members-table tbody tr:hover {
+	background: #f0f7ff;
+	cursor: pointer;
+}
+
+.sd-members-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.sd-table-empty {
+	text-align: center;
+	padding: 2rem;
+	color: var(--sd-muted, #6b7280);
+	font-style: italic;
+}
+
+/* ===== STATUS BADGES ===== */
+.sd-paid-badge {
+	display: inline-block;
+	padding: 0.15rem 0.5rem;
+	border-radius: 100px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.sd-unpaid-badge {
+	display: inline-block;
+	padding: 0.15rem 0.5rem;
+	border-radius: 100px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: #fee2e2;
+	color: #7f1d1d;
+}
+
+.sd-status-badge {
+	display: inline-block;
+	padding: 0.15rem 0.5rem;
+	border-radius: 100px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.sd-status-completato { background: #d1fae5; color: #065f46; }
+.sd-status-in_attesa  { background: #fef3c7; color: #78350f; }
+.sd-status-fallito    { background: #fee2e2; color: #7f1d1d; }
+.sd-status-rimborsato { background: #f3f4f6; color: #6b7280; }
+
+/* ===== PAGINAZIONE ===== */
+.sd-pagination {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	margin-top: 1rem;
+	padding: 0.75rem;
+}
+
+.sd-page-info {
+	font-size: 0.85rem;
+	color: var(--sd-muted, #6b7280);
+}
+
+/* ===== AUDIT LOG ===== */
+.sd-audit-log {
+	border: 1px solid var(--sd-border, #dde1e7);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.sd-audit-entry {
+	display: flex;
+	gap: 1rem;
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid #f3f4f6;
+	font-size: 0.8rem;
+	font-family: 'Courier New', monospace;
+	align-items: center;
+}
+
+.sd-audit-entry:last-child {
+	border-bottom: none;
+}
+
+.sd-audit-date {
+	color: var(--sd-muted, #6b7280);
+	flex-shrink: 0;
+	min-width: 140px;
+}
+
+.sd-audit-action {
+	font-weight: 700;
+	padding: 0.1rem 0.4rem;
+	border-radius: 3px;
+}
+
+.sd-audit-register { background: #d1fae5; color: #065f46; }
+.sd-audit-update   { background: #dbeafe; color: #1e40af; }
+.sd-audit-delete   { background: #fee2e2; color: #7f1d1d; }
+.sd-audit-renewal_reminder { background: #fef3c7; color: #78350f; }
+
+.sd-audit-table {
+	color: #6b7280;
+}
+
+.sd-audit-ip {
+	color: #9ca3af;
+	margin-left: auto;
+}
+
+/* ===== MANAGEMENT WRAP ===== */
+.sd-management-wrap {
+	max-width: 1200px;
+}
+
+/* ===== PAYMENT STATUS SELECT ===== */
+.sd-payment-status-select option[value="1"] {
+	color: #065f46;
+}
+
+.sd-payment-status-select option[value="0"] {
+	color: #7f1d1d;
+}
+
+/* Multi-role checkboxes */
+.sd-checkbox-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	padding: 6px 0;
+}
+
+.sd-checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.9rem;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.sd-checkbox-label input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.sd-admin-badge {
+	margin: 0 0 6px;
+	font-size: 0.85rem;
+	color: #1d4ed8;
+}

@@ -307,6 +307,163 @@ class SD_Database {
 	}
 
 	/**
+	 * Crea le tabelle per il sistema iscrizioni soci
+	 * Usa dbDelta per le nuove tabelle e ALTER TABLE per colonne aggiuntive
+	 * sulle tabelle già esistenti
+	 */
+	public function create_membership_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// =====================================================================
+		// TABELLA: SOCI (sd_members)
+		// =====================================================================
+		$table_members = $this->table( 'members' );
+		$sql_members   = "CREATE TABLE {$table_members} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			wp_user_id int(11) DEFAULT NULL,
+			first_name varchar(100) NOT NULL,
+			last_name varchar(100) NOT NULL,
+			email varchar(255) NOT NULL,
+			phone varchar(50) DEFAULT NULL,
+			date_of_birth date DEFAULT NULL,
+			fiscal_code varchar(50) DEFAULT NULL,
+			address_street varchar(255) DEFAULT NULL,
+			address_city varchar(100) DEFAULT NULL,
+			address_postal varchar(20) DEFAULT NULL,
+			address_country varchar(100) DEFAULT 'CH',
+			address_canton varchar(50) DEFAULT NULL,
+			membership_type varchar(50) DEFAULT 'individuale',
+			diabetes_type varchar(30) DEFAULT 'non_diabetico',
+			roles text DEFAULT NULL,
+			member_since date DEFAULT NULL,
+			membership_expiry date DEFAULT NULL,
+			is_active tinyint(1) DEFAULT 1,
+			has_paid_fee tinyint(1) DEFAULT 0,
+			medical_cert_expiry date DEFAULT NULL,
+			notes text DEFAULT NULL,
+			avatar_url varchar(500) DEFAULT NULL,
+			sotto_tutela tinyint(1) DEFAULT 0,
+			birth_place varchar(100) DEFAULT NULL,
+			birth_country varchar(100) DEFAULT 'CH',
+			gender varchar(5) DEFAULT NULL,
+			is_scuba tinyint(1) DEFAULT 0,
+			fee_amount decimal(5,2) DEFAULT NULL,
+			member_type varchar(50) DEFAULT 'attivo',
+			diabetology_center varchar(200) DEFAULT NULL,
+			registered_by int(11) DEFAULT NULL,
+			registered_at datetime DEFAULT NULL,
+			privacy_consent tinyint(1) DEFAULT 0,
+			consent_date datetime DEFAULT NULL,
+			guardian_first_name varchar(100) DEFAULT NULL,
+			guardian_last_name varchar(100) DEFAULT NULL,
+			guardian_role varchar(50) DEFAULT NULL,
+			guardian_dob date DEFAULT NULL,
+			guardian_birth_place varchar(100) DEFAULT NULL,
+			guardian_birth_country varchar(100) DEFAULT 'CH',
+			guardian_gender varchar(5) DEFAULT NULL,
+			guardian_email varchar(100) DEFAULT NULL,
+			guardian_phone varchar(30) DEFAULT NULL,
+			guardian_address varchar(200) DEFAULT NULL,
+			guardian_city varchar(100) DEFAULT NULL,
+			guardian_postal varchar(20) DEFAULT NULL,
+			guardian_country varchar(100) DEFAULT 'CH',
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY email (email),
+			KEY idx_email (email),
+			KEY idx_wp_user (wp_user_id)
+		) {$charset_collate};";
+		dbDelta( $sql_members );
+
+		// =====================================================================
+		// TABELLA: PAGAMENTI (sd_payments)
+		// =====================================================================
+		$table_payments = $this->table( 'payments' );
+		$sql_payments   = "CREATE TABLE {$table_payments} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			member_id int(11) NOT NULL,
+			amount decimal(10,2) NOT NULL,
+			currency varchar(3) DEFAULT 'CHF',
+			payment_date datetime DEFAULT NULL,
+			payment_method varchar(50) NOT NULL DEFAULT 'bonifico_iban',
+			payment_year int(11) NOT NULL,
+			status varchar(30) DEFAULT 'in_attesa',
+			transaction_id varchar(255) DEFAULT NULL,
+			notes text DEFAULT NULL,
+			registered_by int(11) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_member (member_id),
+			KEY idx_year (payment_year)
+		) {$charset_collate};";
+		dbDelta( $sql_payments );
+
+		// =====================================================================
+		// TABELLA: FAMILIARI (sd_family_members)
+		// =====================================================================
+		$table_family = $this->table( 'family_members' );
+		$sql_family   = "CREATE TABLE {$table_family} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			member_id int(11) NOT NULL,
+			first_name varchar(100) NOT NULL,
+			last_name varchar(100) NOT NULL,
+			date_of_birth date DEFAULT NULL,
+			phone varchar(50) DEFAULT NULL,
+			email varchar(255) DEFAULT NULL,
+			diabetes_type varchar(30) DEFAULT 'non_diabetico',
+			companion_role varchar(50) DEFAULT NULL,
+			is_companion tinyint(1) DEFAULT 0,
+			address varchar(200) DEFAULT NULL,
+			city varchar(100) DEFAULT NULL,
+			postal varchar(20) DEFAULT NULL,
+			country varchar(100) DEFAULT 'CH',
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY member_id (member_id)
+		) {$charset_collate};";
+		dbDelta( $sql_family );
+
+		// =====================================================================
+		// TABELLA: AUDIT LOG (sd_audit_log)
+		// =====================================================================
+		$table_audit = $this->table( 'audit_log' );
+		$sql_audit   = "CREATE TABLE {$table_audit} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			member_id int(11) DEFAULT NULL,
+			action varchar(100) NOT NULL,
+			table_name varchar(100) DEFAULT NULL,
+			record_id int(11) DEFAULT NULL,
+			old_data longtext DEFAULT NULL,
+			new_data longtext DEFAULT NULL,
+			ip_address varchar(45) DEFAULT NULL,
+			user_agent varchar(500) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_member (member_id),
+			KEY idx_action (action),
+			KEY idx_created (created_at)
+		) {$charset_collate};";
+		dbDelta( $sql_audit );
+
+		// =====================================================================
+		// TABELLA: DIVER_PROFILES - aggiungi campo diabetology_center se mancante
+		// =====================================================================
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $this->table( 'diver_profiles' ) . ' LIKE %s',
+				'diabetology_center'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN diabetology_center varchar(200) DEFAULT NULL' ); // phpcs:ignore
+		}
+	}
+
+	/**
 	 * Rimuovi tutte le tabelle (usata SOLO in uninstall, MAI in deactivate)
 	 */
 	public function drop_tables() {
