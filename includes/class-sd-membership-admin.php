@@ -76,7 +76,7 @@ class SD_Membership_Admin {
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'sd_membership_admin_nonce' ),
 				'editUrl'    => $edit_url,
-				'currentYear' => date( 'Y' ),
+				'currentYear' => gmdate( 'Y' ),
 				'membNonce'  => wp_create_nonce( 'sd_membership_nonce' ),
 			)
 		);
@@ -94,7 +94,7 @@ class SD_Membership_Admin {
 
 		global $wpdb;
 		$db           = new SD_Database();
-		$current_year = date( 'Y' );
+		$current_year = gmdate( 'Y' );
 
 		// Stats rapide
 		$total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE is_active = 1" );
@@ -184,7 +184,7 @@ class SD_Membership_Admin {
 		// Dati per i select
 		$countries     = SD_Membership_Helper::get_countries();
 		$swiss_cantons = SD_Membership_Helper::get_swiss_cantons();
-		$current_year  = date( 'Y' );
+		$current_year  = gmdate( 'Y' );
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/membership-edit.php';
@@ -207,7 +207,7 @@ class SD_Membership_Admin {
 		$per_page    = min( absint( $_POST['per_page'] ?? 25 ), 100 );
 		$paged       = max( 1, absint( $_POST['paged'] ?? 1 ) );
 		$offset      = ( $paged - 1 ) * $per_page;
-		$year        = absint( $_POST['anno'] ?? date( 'Y' ) );
+		$year        = absint( $_POST['anno'] ?? gmdate( 'Y' ) );
 
 		// Filtri
 		$search      = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
@@ -360,7 +360,7 @@ class SD_Membership_Admin {
 		$payment_date   = sanitize_text_field( wp_unslash( $_POST['payment_date'] ?? '' ) );
 		$payment_method = sanitize_text_field( wp_unslash( $_POST['payment_method'] ?? '' ) );
 		$payment_amount = ! empty( $_POST['payment_amount'] ) ? floatval( $_POST['payment_amount'] ) : null;
-		$payment_year   = absint( $_POST['payment_year'] ?? date( 'Y' ) );
+		$payment_year   = absint( $_POST['payment_year'] ?? gmdate( 'Y' ) );
 		$notes          = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
 		$member_type    = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? '' ) );
 		$is_active      = isset( $_POST['is_active'] ) ? absint( $_POST['is_active'] ) : 1;
@@ -369,12 +369,32 @@ class SD_Membership_Admin {
 		$update_data = array();
 
 		$text_fields = array(
-			'first_name', 'last_name', 'email', 'phone', 'birth_place', 'birth_country',
-			'gender', 'address_street', 'address_city', 'address_postal', 'address_country',
-			'address_canton', 'fiscal_code', 'diabetology_center',
-			'guardian_first_name', 'guardian_last_name', 'guardian_role', 'guardian_birth_place',
-			'guardian_birth_country', 'guardian_gender', 'guardian_email', 'guardian_phone',
-			'guardian_address', 'guardian_city', 'guardian_postal', 'guardian_country',
+			'first_name',
+			'last_name',
+			'email',
+			'phone',
+			'birth_place',
+			'birth_country',
+			'gender',
+			'address_street',
+			'address_city',
+			'address_postal',
+			'address_country',
+			'address_canton',
+			'fiscal_code',
+			'diabetology_center',
+			'guardian_first_name',
+			'guardian_last_name',
+			'guardian_role',
+			'guardian_birth_place',
+			'guardian_birth_country',
+			'guardian_gender',
+			'guardian_email',
+			'guardian_phone',
+			'guardian_address',
+			'guardian_city',
+			'guardian_postal',
+			'guardian_country',
 		);
 
 		foreach ( $text_fields as $field ) {
@@ -543,7 +563,7 @@ class SD_Membership_Admin {
 		global $wpdb;
 		$db     = new SD_Database();
 		$format = sanitize_text_field( wp_unslash( $_POST['format'] ?? 'csv' ) );
-		$year   = absint( $_POST['anno'] ?? date( 'Y' ) );
+		$year   = absint( $_POST['anno'] ?? gmdate( 'Y' ) );
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
@@ -564,13 +584,31 @@ class SD_Membership_Admin {
 		);
 
 		$headers_row = array(
-			'ID', 'Nome', 'Cognome', 'Email', 'Telefono', 'Data Nascita', 'Genere',
-			'Via', 'CAP', 'Città', 'Paese', 'Tassa CHF', 'Pagato', 'Tipo Socio',
-			'Subacqueo', 'Diabete', 'Socio dal', 'Scadenza', 'Registrato il',
-			'Data Pagamento', 'Metodo Pagamento', 'Stato Pagamento',
+			'ID',
+			'Nome',
+			'Cognome',
+			'Email',
+			'Telefono',
+			'Data Nascita',
+			'Genere',
+			'Via',
+			'CAP',
+			'Città',
+			'Paese',
+			'Tassa CHF',
+			'Pagato',
+			'Tipo Socio',
+			'Subacqueo',
+			'Diabete',
+			'Socio dal',
+			'Scadenza',
+			'Registrato il',
+			'Data Pagamento',
+			'Metodo Pagamento',
+			'Stato Pagamento',
 		);
 
-		$filename = 'soci-scubadiabetes-' . $year . '-' . date( 'Ymd' );
+		$filename = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' );
 
 		if ( 'xlsx' === $format ) {
 			// Export come Spreadsheet XML (aperto da Excel/LibreOffice)
@@ -627,8 +665,8 @@ class SD_Membership_Admin {
 		global $wpdb;
 		$db = new SD_Database();
 
-		$thirty_days_from_now = date( 'Y-m-d', strtotime( '+30 days' ) );
-		$today                = date( 'Y-m-d' );
+		$thirty_days_from_now = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
+		$today                = gmdate( 'Y-m-d' );
 
 		// Solo soci attivi, non pagati, con scadenza entro 30 giorni
 		$members = $wpdb->get_results(
@@ -646,7 +684,7 @@ class SD_Membership_Admin {
 		foreach ( $members as $member ) {
 			$subject = sprintf(
 				'[ScubaDiabetes] Rinnovo iscrizione %s - Scadenza %s',
-				date( 'Y' ),
+				gmdate( 'Y' ),
 				$member->membership_expiry
 			);
 

@@ -27,7 +27,7 @@ class SD_Membership_Helper {
 		$d = '';
 		if ( ! empty( $birth_date ) ) {
 			$ts = strtotime( $birth_date );
-			$d  = $ts ? date( 'Ymd', $ts ) : '';
+			$d  = $ts ? gmdate( 'Ymd', $ts ) : '';
 		}
 		$n      = strtoupper( substr( trim( $nome ), 0, 1 ) );
 		$cap    = preg_replace( '/[^A-Za-z0-9]/', '', $cap );
@@ -112,7 +112,7 @@ class SD_Membership_Helper {
 
 		$site_name = get_bloginfo( 'name' );
 		$site_url  = home_url();
-		$year      = date( 'Y' );
+		$year      = gmdate( 'Y' );
 
 		// === Email al socio ===
 		$to      = $member->email;
@@ -150,7 +150,7 @@ class SD_Membership_Helper {
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
 		$html .= '<h2 style="color:#0055a5;">Benvenuto in ScubaDiabetes!</h2>';
 		$html .= '<p>Caro/a <strong>' . $name . '</strong>,</p>';
-		$html .= '<p>La tua iscrizione all\'Associazione ScubaDiabetes per l\'anno <strong>' . date( 'Y' ) . '</strong> è stata ricevuta con successo.</p>';
+		$html .= '<p>La tua iscrizione all\'Associazione ScubaDiabetes per l\'anno <strong>' . gmdate( 'Y' ) . '</strong> è stata ricevuta con successo.</p>';
 
 		if ( ! empty( $plain_password ) ) {
 			$html .= '<h3>Le tue credenziali di accesso:</h3>';
@@ -187,7 +187,7 @@ class SD_Membership_Helper {
 		$guardian_name = esc_html( $member->guardian_first_name . ' ' . $member->guardian_last_name );
 
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$html .= '<h2 style="color:#0055a5;">Iscrizione ScubaDiabetes ' . date( 'Y' ) . '</h2>';
+		$html .= '<h2 style="color:#0055a5;">Iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . '</h2>';
 		$html .= '<p>Gentile <strong>' . $guardian_name . '</strong>,</p>';
 		$html .= '<p>La informiamo che l\'iscrizione all\'Associazione ScubaDiabetes per <strong>' . $name . '</strong> è stata ricevuta con successo.</p>';
 		$html .= '<p>In qualità di ' . esc_html( $member->guardian_role ) . ', Lei verrà tenuta/o informata/o delle attività dell\'associazione relative al/la minore.</p>';
@@ -399,7 +399,7 @@ class SD_Membership_Helper {
 		$yob      = '';
 		if ( ! empty( $birth_date ) ) {
 			$ts  = strtotime( $birth_date );
-			$yob = $ts ? date( 'Y', $ts ) : '';
+			$yob = $ts ? gmdate( 'Y', $ts ) : '';
 		}
 		$rand = strtoupper( substr( md5( $first_name . $last_name . $birth_date . time() ), 0, 4 ) );
 		return $initials . $yob . $rand;

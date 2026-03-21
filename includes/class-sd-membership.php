@@ -48,7 +48,7 @@ class SD_Membership {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'sd_membership_nonce' ),
-				'currentYear' => date( 'Y' ),
+				'currentYear' => gmdate( 'Y' ),
 			)
 		);
 	}
@@ -75,7 +75,7 @@ class SD_Membership {
 
 		$countries      = SD_Membership_Helper::get_countries();
 		$swiss_cantons  = SD_Membership_Helper::get_swiss_cantons();
-		$current_year   = date( 'Y' );
+		$current_year   = gmdate( 'Y' );
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/membership-form.php';
@@ -294,8 +294,8 @@ class SD_Membership {
 			'address_canton'      => $address_canton,
 			'membership_type'     => $fee_amount >= 75 ? 'famiglia' : ( $fee_amount <= 30 ? 'individuale' : 'individuale' ),
 			'diabetes_type'       => $is_diabetic ? ( 'tipo_1' === $diabetes_type || 'tipo_2' === $diabetes_type ? $diabetes_type : 'tipo_1' ) : 'non_diabetico',
-			'member_since'        => date( 'Y-m-d' ),
-			'membership_expiry'   => date( 'Y-12-31' ),
+			'member_since'        => gmdate( 'Y-m-d' ),
+			'membership_expiry'   => gmdate( 'Y-12-31' ),
 			'is_active'           => 1,
 			'has_paid_fee'        => 0,
 			// Campi estesi
@@ -436,7 +436,7 @@ class SD_Membership {
 				'amount'         => $fee_amount,
 				'currency'       => 'CHF',
 				'payment_method' => 'bonifico_iban',
-				'payment_year'   => intval( date( 'Y' ) ),
+				'payment_year'   => intval( gmdate( 'Y' ) ),
 				'status'         => 'in_attesa',
 				'registered_by'  => get_current_user_id(),
 			)
