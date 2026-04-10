@@ -79,7 +79,7 @@ class SD_Dive_Import {
 			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
 		}
 
-		if ( empty( $_FILES['import_file'] ) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK ) {
+		if ( empty( $_FILES['import_file'] ) || UPLOAD_ERR_OK !== $_FILES['import_file']['error'] ) {
 			wp_send_json_error( array( 'message' => 'Nessun file ricevuto o errore di upload.' ) );
 		}
 
@@ -99,7 +99,7 @@ class SD_Dive_Import {
 		}
 
 		try {
-			if ( $ext === 'ssrf' ) {
+			if ( 'ssrf' === $ext ) {
 				$dives = $this->parse_ssrf( $tmp_path );
 			} else {
 				$dives = $this->parse_shearwater_db( $tmp_path );
@@ -122,13 +122,15 @@ class SD_Dive_Import {
 		$new_count = count( array_filter( $dives, fn( $d ) => ! $d['is_duplicate'] ) );
 		$dup_count = count( $dives ) - $new_count;
 
-		wp_send_json_success( array(
-			'dives'     => $dives,
-			'total'     => count( $dives ),
-			'new'       => $new_count,
-			'duplicate' => $dup_count,
-			'source'    => strtoupper( $ext ),
-		) );
+		wp_send_json_success(
+			array(
+				'dives'     => $dives,
+				'total'     => count( $dives ),
+				'new'       => $new_count,
+				'duplicate' => $dup_count,
+				'source'    => strtoupper( $ext ),
+			)
+		);
 	}
 
 	/* ================================================================
@@ -179,11 +181,13 @@ class SD_Dive_Import {
 			}
 		}
 
-		wp_send_json_success( array(
-			'imported' => $imported,
-			'skipped'  => $skipped,
-			'errors'   => $errors,
-		) );
+		wp_send_json_success(
+			array(
+				'imported' => $imported,
+				'skipped'  => $skipped,
+				'errors'   => $errors,
+			)
+		);
 	}
 
 	/* ================================================================
@@ -322,9 +326,13 @@ class SD_Dive_Import {
 			// Visibility rating → string
 			$visibility = null;
 			$vis_val    = (int) $d['visibility'];
-			if ( $vis_val >= 4 ) $visibility = 'buona';
-			elseif ( $vis_val >= 2 ) $visibility = 'media';
-			elseif ( $vis_val > 0 ) $visibility = 'scarsa';
+			if ( $vis_val >= 4 ) {
+				$visibility = 'buona';
+			} elseif ( $vis_val >= 2 ) {
+				$visibility = 'media';
+			} elseif ( $vis_val > 0 ) {
+				$visibility = 'scarsa';
+			}
 
 			$dives[] = array(
 				'source'          => 'subsurface',
@@ -381,7 +389,7 @@ class SD_Dive_Import {
 		}
 
 		$result = $db->query(
-			"SELECT
+			'SELECT
 				DiveId, DiveDate, DiveLengthTime,
 				Depth, AverageDepth, AverageTemp, MinTemp,
 				Site, Location,
@@ -395,7 +403,7 @@ class SD_Dive_Import {
 				GearNotes, Notes,
 				Dress
 			FROM dive_details
-			ORDER BY DiveDate ASC"
+			ORDER BY DiveDate ASC'
 		);
 
 		$dives = array();
@@ -473,9 +481,13 @@ class SD_Dive_Import {
 			preg_match( '/(\d+)/', $vis_raw, $vm );
 			$vis_m      = isset( $vm[1] ) ? (int) $vm[1] : 0;
 			$visibility = null;
-			if ( $vis_m >= 15 ) $visibility = 'buona';
-			elseif ( $vis_m >= 5 ) $visibility = 'media';
-			elseif ( $vis_m > 0 ) $visibility = 'scarsa';
+			if ( $vis_m >= 15 ) {
+				$visibility = 'buona';
+			} elseif ( $vis_m >= 5 ) {
+				$visibility = 'media';
+			} elseif ( $vis_m > 0 ) {
+				$visibility = 'scarsa';
+			}
 
 			// Weather
 			$weather_map = array(
@@ -557,7 +569,9 @@ class SD_Dive_Import {
 		$table = $db->table( 'dives' );
 
 		$date = sanitize_text_field( $dive['dive_date'] ?? '' );
-		if ( ! $date ) return false;
+		if ( ! $date ) {
+			return false;
+		}
 
 		// Check 1: same date + time (within 10 minutes)
 		$time_in = sanitize_text_field( $dive['time_in'] ?? '' );
@@ -573,7 +587,9 @@ class SD_Dive_Import {
 					$time_in . ':00'
 				)
 			);
-			if ( $count > 0 ) return true;
+			if ( $count > 0 ) {
+				return true;
+			}
 		} else {
 			// Fallback: same date + same max_depth ± 0.5m
 			$max_depth = (float) ( $dive['max_depth'] ?? 0 );
@@ -589,7 +605,9 @@ class SD_Dive_Import {
 						$max_depth
 					)
 				);
-				if ( $count > 0 ) return true;
+				if ( $count > 0 ) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -599,16 +617,20 @@ class SD_Dive_Import {
 	 * Sanitize + type-cast raw dive array for DB insert
 	 * ============================================================== */
 	private function sanitize_dive_row( $raw, $user_id, $dive_number ) {
-		$nullable_str = function( $v ) {
+		$nullable_str = function ( $v ) {
 			$s = sanitize_text_field( (string) $v );
-			return $s === '' ? null : $s;
+			return '' === $s ? null : $s;
 		};
-		$nullable_float = function( $v ) {
-			if ( $v === null || $v === '' ) return null;
+		$nullable_float = function ( $v ) {
+			if ( null === $v || '' === $v ) {
+				return null;
+			}
 			return (float) $v;
 		};
-		$nullable_int = function( $v ) {
-			if ( $v === null || $v === '' ) return null;
+		$nullable_int = function ( $v ) {
+			if ( null === $v || '' === $v ) {
+				return null;
+			}
 			return (int) $v;
 		};
 
