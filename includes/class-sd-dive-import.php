@@ -373,8 +373,11 @@ class SD_Dive_Import {
 	 * Parser: Shearwater Cloud .db (SQLite3)
 	 * ============================================================== */
 	private function parse_shearwater_db( $path ) {
-		if ( ! class_exists( 'SQLite3' ) ) {
-			throw new Exception( 'SQLite3 non disponibile sul server.' );
+		$use_pdo = ! class_exists( 'SQLite3' ) && class_exists( 'PDO' ) && in_array( 'sqlite', PDO::getAvailableDrivers(), true );
+		$use_sqlite3 = class_exists( 'SQLite3' );
+
+		if ( ! $use_sqlite3 && ! $use_pdo ) {
+			throw new Exception( 'SQLite3 non disponibile sul server. Contatta il supporto hosting per abilitare l\'estensione php_sqlite3 o pdo_sqlite.' );
 		}
 
 		// Copy to writable temp location
@@ -383,13 +386,7 @@ class SD_Dive_Import {
 			throw new Exception( 'Impossibile copiare il file temporaneo.' );
 		}
 
-		$db = new SQLite3( $tmp, SQLITE3_OPEN_READONLY );
-		if ( ! $db ) {
-			throw new Exception( 'Impossibile aprire il database Shearwater.' );
-		}
-
-		$result = $db->query(
-			'SELECT
+		$sql = 'SELECT
 				DiveId, DiveDate, DiveLengthTime,
 				Depth, AverageDepth, AverageTemp, MinTemp,
 				Site, Location,
@@ -403,11 +400,18 @@ class SD_Dive_Import {
 				GearNotes, Notes,
 				Dress
 			FROM dive_details
-			ORDER BY DiveDate ASC'
-		);
+			ORDER BY DiveDate ASC';
+
+		if ( $use_sqlite3 ) {
+			$rows = $this->query_sqlite3( $tmp, $sql );
+		} else {
+			$rows = $this->query_pdo_sqlite( $tmp, $sql );
+		}
+
+		@unlink( $tmp );
 
 		$dives = array();
-		while ( $row = $result->fetchArray( SQLITE3_ASSOC ) ) {
+		foreach ( $rows as $row ) {
 			// Date: '2025-11-22 15:42:32' → date + time
 			$dt_parts = explode( ' ', $row['DiveDate'] );
 			$date_str = $dt_parts[0] ?? '';
@@ -555,9 +559,39 @@ class SD_Dive_Import {
 			);
 		}
 
-		$db->close();
-		@unlink( $tmp );
 		return $dives;
+	}
+
+	/* ================================================================
+	 * SQLite helpers: abstraction over SQLite3 and PDO
+	 * ============================================================== */
+	private function query_sqlite3( $path, $sql ) {
+		$db = new SQLite3( $path, SQLITE3_OPEN_READONLY );
+		if ( ! $db ) {
+			throw new Exception( 'Impossibile aprire il database Shearwater.' );
+		}
+		$result = $db->query( $sql );
+		if ( ! $result ) {
+			$db->close();
+			throw new Exception( 'Errore query SQLite3: ' . $db->lastErrorMsg() );
+		}
+		$rows = array();
+		while ( $row = $result->fetchArray( SQLITE3_ASSOC ) ) {
+			$rows[] = $row;
+		}
+		$db->close();
+		return $rows;
+	}
+
+	private function query_pdo_sqlite( $path, $sql ) {
+		try {
+			$pdo    = new PDO( 'sqlite:' . $path );
+			$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+			$stmt   = $pdo->query( $sql );
+			return $stmt->fetchAll( PDO::FETCH_ASSOC );
+		} catch ( PDOException $e ) {
+			throw new Exception( 'Errore PDO SQLite: ' . $e->getMessage() );
+		}
 	}
 
 	/* ================================================================

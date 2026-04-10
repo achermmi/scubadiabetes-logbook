@@ -28,15 +28,20 @@
             if (files.length) handleFile(files[0]);
         });
 
-        // Click to open file dialog
-        $zone.on('click', function () {
-            $('#sd-import-file-input').trigger('click');
+        // Prevent file input's own click from bubbling back to the zone (infinite loop)
+        $('#sd-import-file-input').on('click', function (e) {
+            e.stopPropagation();
         });
 
-        // Prevent button click propagating to zone click (would open file dialog twice)
+        // Click on the zone itself opens the file dialog
+        $zone.on('click', function () {
+            document.getElementById('sd-import-file-input').click();
+        });
+
+        // Dedicated button: stop propagation to zone, then open dialog
         $('#sd-btn-choose-file').on('click', function (e) {
             e.stopPropagation();
-            $('#sd-import-file-input').trigger('click');
+            document.getElementById('sd-import-file-input').click();
         });
 
         $('#sd-import-file-input').on('change', function () {
@@ -182,15 +187,16 @@
             var $btn = $(this);
             $btn.prop('disabled', true).text('Importazione in corso…');
 
+            // action + nonce must be in the URL so WordPress can route the request
+            // and verify the nonce via $_REQUEST even with a JSON body.
+            var confirmUrl = sdImport.ajaxUrl
+                + '?action=sd_import_confirm&nonce=' + encodeURIComponent(sdImport.nonce);
+
             $.ajax({
-                url: sdImport.ajaxUrl,
+                url: confirmUrl,
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({
-                    action: 'sd_import_confirm',
-                    nonce: sdImport.nonce,
-                    dives: selected
-                }),
+                data: JSON.stringify({ dives: selected }),
                 success: function (resp) {
                     if (resp.success) {
                         showResult(resp.data);
