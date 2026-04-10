@@ -386,21 +386,30 @@ class SD_Dive_Import {
 			throw new Exception( 'Impossibile copiare il file temporaneo.' );
 		}
 
+		// Temperature comes from log_records.Temperature (Celsius × 10).
+		// dive_details.AverageTemp is typically NULL in real Cloud Backup files,
+		// so we JOIN log_records and compute the average ourselves.
+		// SQLite allows selecting non-aggregated columns with GROUP BY on the PK.
 		$sql = 'SELECT
-				DiveId, DiveDate, DiveLengthTime,
-				Depth, AverageDepth, AverageTemp, MinTemp,
-				Site, Location,
-				Buddy,
-				DiveNumber,
-				Environment,
-				Visibility, Weather, Conditions, Platform,
-				AirTemperature,
-				TankProfileData,
-				TankSize, Weight,
-				GearNotes, Notes,
-				Dress
-			FROM dive_details
-			ORDER BY DiveDate ASC';
+				d.DiveId, d.DiveDate, d.DiveLengthTime,
+				d.Depth, d.AverageDepth,
+				d.Site, d.Location,
+				d.Buddy,
+				d.DiveNumber,
+				d.Environment,
+				d.Visibility, d.Weather, d.Conditions, d.Platform,
+				d.AirTemperature,
+				d.TankProfileData,
+				d.TankSize, d.Weight,
+				d.GearNotes, d.Notes,
+				d.Dress,
+				ROUND(
+					AVG( CASE WHEN lr.Temperature > 0 THEN lr.Temperature ELSE NULL END ) / 10.0,
+				1 ) AS AvgWaterTempC
+			FROM dive_details d
+			LEFT JOIN log_records lr ON lr.DiveId = d.DiveId
+			GROUP BY d.DiveId
+			ORDER BY d.DiveDate ASC';
 
 		if ( $use_sqlite3 ) {
 			$rows = $this->query_sqlite3( $tmp, $sql );
@@ -424,10 +433,16 @@ class SD_Dive_Import {
 			$max_depth = $row['Depth'] ? (float) $row['Depth'] : null;
 			$avg_depth = $row['AverageDepth'] ? (float) $row['AverageDepth'] : null;
 
-			// Shearwater stores temperature in Celsius × 10 in log_records, but
-			// dive_details AverageTemp is already in °C
-			$temp_water = $row['AverageTemp'] ? (float) $row['AverageTemp'] : null;
-			$temp_air   = $row['AirTemperature'] ? (float) $row['AirTemperature'] : null;
+			// Water temp: computed from log_records.Temperature (Celsius × 10) via JOIN.
+			// The SQL already divides by 10 and rounds to 1 decimal → direct float.
+			$temp_raw   = $row['AvgWaterTempC'] ?? null;
+			$temp_water = ( null !== $temp_raw && '' !== $temp_raw ) ? (float) $temp_raw : null;
+
+			// Air temperature in dive_details is also Celsius × 10.
+			$air_raw  = $row['AirTemperature'] ?? null;
+			$temp_air = ( null !== $air_raw && '' !== $air_raw && 0 !== (int) $air_raw )
+				? round( (float) $air_raw / 10.0, 1 )
+				: null;
 
 			// Site name: prefer Site, fallback Location
 			$site_name = trim( $row['Site'] ?: $row['Location'] ?: 'Sito sconosciuto' );
