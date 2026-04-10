@@ -260,7 +260,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <label><?php esc_html_e( 'Livello', 'sd-logbook' ); ?> *</label>
                     <select name="cert_level">
                         <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
-                        <?php foreach ( array('Open Water','Advanced Open Water','Rescue Diver','Divemaster','Instructor','Altro') as $l ) : ?>
+                        <?php foreach ( array('Open Water','Advanced Open Water','BLS','Rescue Diver','Divemaster','Ecodiver','Instructor','Muta Stagna','Nitrox','Notturna','Altro') as $l ) : ?>
                         <option value="<?php echo esc_attr($l); ?>"><?php echo esc_html($l); ?></option>
                         <?php endforeach; ?>
                     </select>
