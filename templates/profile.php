@@ -223,12 +223,17 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <!-- Lista certificazioni esistenti -->
         <div class="sd-record-list" id="sd-cert-list">
             <?php if ( ! empty( $certifications ) ) : foreach ( $certifications as $idx => $cert ) : ?>
-            <div class="sd-record-card" data-index="<?php echo $idx; ?>">
+            <div class="sd-record-card" data-index="<?php echo $idx; ?>"
+                 data-doc-name="<?php echo esc_attr( $cert['doc']['name'] ?? '' ); ?>"
+                 data-doc-url="<?php echo esc_attr( $cert['doc']['url'] ?? '' ); ?>">
                 <div class="sd-record-main">
                     <div class="sd-record-title"><?php echo esc_html( $cert['agency'] ); ?> — <?php echo esc_html( $cert['level'] ); ?></div>
                     <div class="sd-record-sub">
                         <?php if ( $cert['date'] ) echo esc_html( date_i18n('d/m/Y', strtotime($cert['date'])) ); ?>
                         <?php if ( $cert['number'] ) echo ' · N° ' . esc_html( $cert['number'] ); ?>
+                        <?php if ( ! empty( $cert['doc'] ) ) : ?>
+                            · <a href="<?php echo esc_url( $cert['doc']['url'] ); ?>" target="_blank" class="sd-doc-link">📎 <?php echo esc_html( $cert['doc']['name'] ); ?></a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="sd-record-actions">
@@ -270,6 +275,11 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <label><?php esc_html_e( 'N° Brevetto', 'sd-logbook' ); ?></label>
                     <input type="text" name="cert_number" placeholder="<?php esc_attr_e('Opzionale','sd-logbook'); ?>">
                 </div>
+            </div>
+            <div class="sd-field">
+                <label><?php esc_html_e( 'Documento brevetto (PDF, JPG, PNG — max 5 MB)', 'sd-logbook' ); ?></label>
+                <input type="file" name="cert_doc" accept=".pdf,.jpg,.jpeg,.png" class="sd-file-input-inline">
+                <div class="sd-cert-doc-current" style="display:none;font-size:12px;color:var(--sd-gray-500);margin-top:4px;"></div>
             </div>
             <div class="sd-add-form-actions">
                 <button type="button" class="sd-btn-save-record" data-type="certification"><?php esc_html_e( 'Salva', 'sd-logbook' ); ?></button>

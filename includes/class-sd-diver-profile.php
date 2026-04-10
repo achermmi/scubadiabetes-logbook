@@ -120,8 +120,22 @@ class SD_Diver_Profile {
 			wp_send_json_error( array( 'message' => __( 'Agenzia e livello sono obbligatori.', 'sd-logbook' ) ) );
 		}
 
+		// Handle optional document upload
+		if ( ! empty( $_FILES['cert_doc'] ) && UPLOAD_ERR_OK === $_FILES['cert_doc']['error'] ) {
+			$doc_result = $this->upload_cert_doc( $user_id, $_FILES['cert_doc'] );
+			if ( $doc_result ) {
+				$new['doc'] = $doc_result;
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Formato documento non valido o file troppo grande (max 5 MB, PDF/JPG/PNG).', 'sd-logbook' ) ) );
+			}
+		}
+
 		$edit_index = isset( $_POST['edit_index'] ) && '' !== $_POST['edit_index'] ? absint( $_POST['edit_index'] ) : -1;
 		if ( $edit_index >= 0 && isset( $certs[ $edit_index ] ) ) {
+			// Keep existing doc if no new file was uploaded
+			if ( empty( $new['doc'] ) && ! empty( $certs[ $edit_index ]['doc'] ) ) {
+				$new['doc'] = $certs[ $edit_index ]['doc'];
+			}
 			$certs[ $edit_index ] = $new;
 		} else {
 			$certs[] = $new;
@@ -142,6 +156,10 @@ class SD_Diver_Profile {
 		$index   = absint( $_POST['index'] ?? -1 );
 		$certs   = get_user_meta( $user_id, 'sd_certifications', true ) ?: array();
 		if ( isset( $certs[ $index ] ) ) {
+			// Delete associated document file if present
+			if ( ! empty( $certs[ $index ]['doc']['path'] ) && file_exists( $certs[ $index ]['doc']['path'] ) ) {
+				unlink( $certs[ $index ]['doc']['path'] );
+			}
 			array_splice( $certs, $index, 1 );
 			update_user_meta( $user_id, 'sd_certifications', $certs );
 		}
@@ -467,6 +485,35 @@ class SD_Diver_Profile {
 	// ================================================================
 	// HELPER: Upload singolo documento
 	// ================================================================
+	private function upload_cert_doc( $user_id, $file ) {
+		$allowed  = array( 'pdf', 'jpg', 'jpeg', 'png' );
+		$max_size = 5 * 1024 * 1024;
+
+		$name = sanitize_file_name( $file['name'] );
+		$ext  = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
+
+		if ( ! in_array( $ext, $allowed, true ) || $file['size'] > $max_size ) {
+			return null;
+		}
+
+		$upload_dir  = wp_upload_dir();
+		$sd_dir      = $upload_dir['basedir'] . '/sd-cert-docs/' . $user_id;
+		wp_mkdir_p( $sd_dir );
+
+		$unique_name = time() . '-' . $name;
+		$dest        = $sd_dir . '/' . $unique_name;
+
+		if ( move_uploaded_file( $file['tmp_name'], $dest ) ) {
+			return array(
+				'name' => $name,
+				'url'  => $upload_dir['baseurl'] . '/sd-cert-docs/' . $user_id . '/' . $unique_name,
+				'path' => $dest,
+				'date' => date_i18n( 'd/m/Y' ),
+			);
+		}
+		return null;
+	}
+
 	private function upload_single_doc( $user_id, $file ) {
 		$allowed  = array( 'pdf', 'jpg', 'jpeg', 'png', 'zip' );
 		$max_size = 5 * 1024 * 1024;

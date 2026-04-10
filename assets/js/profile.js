@@ -156,8 +156,17 @@
                 var parts = dateMatch[0].split('/');
                 $form.find('[name="cert_date"]').val(parts[2] + '-' + parts[1] + '-' + parts[0]);
             }
-            var numberMatch = subText.match(/N° (.+?)(?:\s|$)/);
+            var numberMatch = subText.match(/N° (.+?)(?:\s·|$)/);
             $form.find('[name="cert_number"]').val(numberMatch ? numberMatch[1] : '');
+            // Show existing document name if present
+            var docName = $card.data('doc-name');
+            var docUrl  = $card.data('doc-url');
+            var $docInfo = $form.find('.sd-cert-doc-current');
+            if (docName) {
+                $docInfo.html('Documento attuale: <a href="' + docUrl + '" target="_blank">📎 ' + $('<span>').text(docName).html() + '</a> (lascia il campo vuoto per mantenerlo)').show();
+            } else {
+                $docInfo.hide().html('');
+            }
         } else if (type === 'medical_clearance') {
             var title = $card.find('.sd-record-title').text();
             var dates = title.split('→');
@@ -221,6 +230,7 @@
         // Reset fields
         $form.find('input:not([type=hidden]), select, textarea').val('');
         $form.find('input[type=file]').val('');
+        $form.find('.sd-cert-doc-current').hide().html('');
         $form.removeData('edit-index');
         $form.slideUp(200);
         // Show add button again
@@ -236,37 +246,61 @@
 
         var agency = $form.find('[name="cert_agency"]').val();
         var level  = $form.find('[name="cert_level"]').val();
-        var date   = $form.find('[name="cert_date"]').val();
-        var number = $form.find('[name="cert_number"]').val();
 
         if (!agency || !level) {
             showMsg('Agenzia e livello sono obbligatori.', 'error');
             return;
         }
 
+        // Validate file if selected
+        var fileInput = $form.find('[name="cert_doc"]')[0];
+        if (fileInput && fileInput.files.length > 0) {
+            var file = fileInput.files[0];
+            var allowed = ['pdf', 'jpg', 'jpeg', 'png'];
+            var ext = file.name.split('.').pop().toLowerCase();
+            if (allowed.indexOf(ext) === -1) {
+                showMsg('Formato non valido. Usa PDF, JPG o PNG.', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showMsg('Il file supera i 5 MB.', 'error');
+                return;
+            }
+        }
+
         $btn.prop('disabled', true).text('Salvataggio...');
 
-        var postData = {
-            action: 'sd_save_certification',
-            nonce: sdProfile.nonce,
-            agency: agency,
-            level: level,
-            cert_date: date,
-            cert_number: number
-        };
+        var formData = new FormData();
+        formData.append('action', 'sd_save_certification');
+        formData.append('nonce', sdProfile.nonce);
+        formData.append('agency', agency);
+        formData.append('level', level);
+        formData.append('cert_date', $form.find('[name="cert_date"]').val());
+        formData.append('cert_number', $form.find('[name="cert_number"]').val());
 
         var editIndex = $form.data('edit-index');
         if (editIndex !== undefined) {
-            postData.edit_index = editIndex;
+            formData.append('edit_index', editIndex);
         }
 
-        $.post(sdProfile.ajaxUrl, postData, function(resp) {
-            if (resp.success) {
-                showMsg('Certificazione salvata!', 'success');
-                setTimeout(function() { location.reload(); }, 800);
-            } else {
-                showMsg(resp.data.message, 'error');
-                $btn.prop('disabled', false).text('Salva');
+        if (fileInput && fileInput.files.length > 0) {
+            formData.append('cert_doc', fileInput.files[0]);
+        }
+
+        $.ajax({
+            url: sdProfile.ajaxUrl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(resp) {
+                if (resp.success) {
+                    showMsg('Certificazione salvata!', 'success');
+                    setTimeout(function() { location.reload(); }, 800);
+                } else {
+                    showMsg(resp.data.message, 'error');
+                    $btn.prop('disabled', false).text('Salva');
+                }
             }
         });
     });
