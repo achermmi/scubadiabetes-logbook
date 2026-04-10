@@ -373,7 +373,7 @@ class SD_Dive_Import {
 	 * Parser: Shearwater Cloud .db (SQLite3)
 	 * ============================================================== */
 	private function parse_shearwater_db( $path ) {
-		$use_pdo = ! class_exists( 'SQLite3' ) && class_exists( 'PDO' ) && in_array( 'sqlite', PDO::getAvailableDrivers(), true );
+		$use_pdo = ! class_exists( 'SQLite3' ) && class_exists( 'PDO' ) && in_array( 'sqlite', PDO::getAvailableDrivers(), true ); // phpcs:ignore WordPress.DB.RestrictedClasses.mysql__PDO -- reading a local SQLite file, not the WP database
 		$use_sqlite3 = class_exists( 'SQLite3' );
 
 		if ( ! $use_sqlite3 && ! $use_pdo ) {
@@ -584,14 +584,16 @@ class SD_Dive_Import {
 	}
 
 	private function query_pdo_sqlite( $path, $sql ) {
+		// phpcs:disable WordPress.DB.RestrictedClasses.mysql__PDO -- reading a local SQLite file, not the WP database
 		try {
-			$pdo    = new PDO( 'sqlite:' . $path );
+			$pdo  = new PDO( 'sqlite:' . $path );
 			$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
-			$stmt   = $pdo->query( $sql );
+			$stmt = $pdo->query( $sql );
 			return $stmt->fetchAll( PDO::FETCH_ASSOC );
 		} catch ( PDOException $e ) {
 			throw new Exception( 'Errore PDO SQLite: ' . $e->getMessage() );
 		}
+		// phpcs:enable WordPress.DB.RestrictedClasses.mysql__PDO
 	}
 
 	/* ================================================================
