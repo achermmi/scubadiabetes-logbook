@@ -73,6 +73,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-helper.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-admin.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-import.php';
 	}
 
 	/**
@@ -162,6 +163,7 @@ final class SD_Logbook {
 		new SD_Dive_Edit();
 		new SD_Membership();
 		new SD_Membership_Admin();
+		new SD_Dive_Import();
 
 		// Cron rinnovi (registra se non già programmato)
 		SD_Membership_Helper::schedule_cron();

@@ -1,0 +1,455 @@
+/**
+ * ScubaDiabetes - Importazione Immersioni
+ */
+
+/* ============================================================
+   IMPORT WRAPPER
+   ============================================================ */
+.sd-import-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--sd-gray-900);
+}
+
+/* ============================================================
+   UPLOAD ZONE
+   ============================================================ */
+.sd-upload-zone {
+    border: 2px dashed var(--sd-gray-300);
+    border-radius: var(--sd-radius);
+    padding: 36px 20px;
+    text-align: center;
+    background: var(--sd-gray-50);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sd-upload-zone:hover,
+.sd-upload-zone.sd-drag-over {
+    border-color: var(--sd-blue);
+    background: var(--sd-blue-pale);
+}
+
+.sd-upload-icon {
+    color: var(--sd-blue);
+    margin-bottom: 12px;
+}
+
+.sd-upload-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+    margin-bottom: 6px;
+}
+
+.sd-upload-sub {
+    font-size: 13px;
+    color: var(--sd-gray-500);
+    margin-bottom: 16px;
+}
+
+.sd-upload-formats {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.sd-format-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.sd-format-ssrf {
+    background: #E0F2F1;
+    color: #00695C;
+    border: 1px solid #B2DFDB;
+}
+
+.sd-format-shearwater {
+    background: #E3F2FD;
+    color: #1565C0;
+    border: 1px solid #BBDEFB;
+}
+
+.sd-btn-upload-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 24px;
+    background: var(--sd-blue);
+    color: #FFF;
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sd-btn-upload-file:hover {
+    background: var(--sd-blue-deep);
+}
+
+#sd-import-file-input {
+    display: none;
+}
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+.sd-import-progress {
+    text-align: center;
+    padding: 30px;
+}
+
+.sd-progress-bar-wrap {
+    height: 6px;
+    background: var(--sd-gray-200);
+    border-radius: 3px;
+    margin: 12px 0 8px;
+    overflow: hidden;
+}
+
+.sd-progress-bar-fill {
+    height: 100%;
+    background: var(--sd-blue);
+    border-radius: 3px;
+    animation: sdProgressPulse 1.5s ease-in-out infinite;
+    width: 60%;
+}
+
+@keyframes sdProgressPulse {
+    0%   { width: 20%; }
+    50%  { width: 80%; }
+    100% { width: 20%; }
+}
+
+/* ============================================================
+   IMPORT SUMMARY BAR
+   ============================================================ */
+.sd-import-summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--sd-blue-pale);
+    border: 1px solid var(--sd-blue-light);
+    border-radius: var(--sd-radius-sm);
+    align-items: center;
+}
+
+.sd-import-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sd-import-stat-val {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.sd-stat-new   .sd-import-stat-val { color: #16A34A; }
+.sd-stat-dup   .sd-import-stat-val { color: #D97706; }
+.sd-stat-total .sd-import-stat-val { color: var(--sd-blue-deep); }
+
+.sd-import-source-badge {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    background: var(--sd-blue);
+    color: #FFF;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   SELECTION BAR
+   ============================================================ */
+.sd-select-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.sd-select-bar-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sd-gray-700);
+}
+
+.sd-btn-select-all,
+.sd-btn-select-new {
+    padding: 5px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1.5px solid var(--sd-gray-300);
+    background: var(--sd-white);
+    color: var(--sd-gray-700);
+}
+
+.sd-btn-select-all:hover,
+.sd-btn-select-new:hover {
+    border-color: var(--sd-blue);
+    color: var(--sd-blue);
+}
+
+.sd-selected-count {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--sd-gray-500);
+    font-weight: 600;
+}
+
+/* ============================================================
+   DIVE PREVIEW TABLE
+   ============================================================ */
+.sd-preview-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    margin-bottom: 16px;
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 640px;
+    background: #FFF;
+}
+
+.sd-preview-table thead th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--sd-gray-500);
+    background: var(--sd-gray-50);
+    border-bottom: 2px solid var(--sd-gray-200);
+}
+
+.sd-preview-table tbody tr {
+    border-bottom: 1px solid var(--sd-gray-100);
+    transition: background 0.1s;
+}
+
+.sd-preview-table tbody tr:hover {
+    background: var(--sd-blue-pale);
+}
+
+.sd-preview-table tbody tr.sd-row-duplicate {
+    background: #FFFBEB;
+}
+
+.sd-preview-table tbody tr.sd-row-duplicate:hover {
+    background: #FEF3C7;
+}
+
+.sd-preview-table td {
+    padding: 8px 10px;
+    color: var(--sd-gray-800);
+}
+
+.sd-preview-table td:first-child {
+    width: 36px;
+    text-align: center;
+}
+
+.sd-dup-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #FEF3C7;
+    color: #D97706;
+    border: 1px solid #FCD34D;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.sd-new-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #DCFCE7;
+    color: #16A34A;
+    border: 1px solid #BBF7D0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.sd-depth-val {
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+}
+
+.sd-time-val {
+    color: var(--sd-cyan);
+    font-weight: 600;
+}
+
+/* Checkbox style */
+.sd-preview-table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--sd-blue);
+}
+
+.sd-preview-table tr.sd-row-duplicate input[type="checkbox"] {
+    accent-color: #D97706;
+}
+
+/* ============================================================
+   IMPORT ACTIONS
+   ============================================================ */
+.sd-import-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+}
+
+.sd-btn-import-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 28px;
+    background: linear-gradient(135deg, var(--sd-blue), var(--sd-cyan));
+    color: #FFF;
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--sd-shadow-md);
+}
+
+.sd-btn-import-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(21, 101, 192, 0.25);
+}
+
+.sd-btn-import-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sd-btn-import-reset {
+    padding: 11px 20px;
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-600);
+    border: 1px solid var(--sd-gray-300);
+    border-radius: var(--sd-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sd-btn-import-reset:hover {
+    background: var(--sd-gray-200);
+}
+
+/* ============================================================
+   RESULT PANEL
+   ============================================================ */
+.sd-import-result {
+    padding: 20px;
+    border-radius: var(--sd-radius-sm);
+    text-align: center;
+}
+
+.sd-import-result.sd-result-success {
+    background: #DCFCE7;
+    border: 2px solid #86EFAC;
+}
+
+.sd-import-result.sd-result-error {
+    background: #FEE2E2;
+    border: 2px solid #FECACA;
+}
+
+.sd-result-icon {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.sd-result-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--sd-gray-900);
+    margin-bottom: 6px;
+}
+
+.sd-result-sub {
+    font-size: 14px;
+    color: var(--sd-gray-600);
+    margin-bottom: 16px;
+}
+
+.sd-btn-view-logbook {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 22px;
+    background: var(--sd-blue);
+    color: #FFF;
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.sd-btn-view-logbook:hover {
+    background: var(--sd-blue-deep);
+    color: #FFF;
+    text-decoration: none;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .sd-upload-zone { padding: 24px 14px; }
+    .sd-import-summary { gap: 8px; }
+    .sd-import-stat-val { font-size: 18px; }
+}
