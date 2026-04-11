@@ -1185,7 +1185,9 @@ class SD_Dive_Import {
 			'site_latitude'       => $nullable_float( $raw['site_latitude'] ),
 			'site_longitude'      => $nullable_float( $raw['site_longitude'] ),
 			'time_in'             => $nullable_str( $raw['time_in'] ),
-			'time_out'            => null,
+			'time_out'            => ( ! empty( $raw['time_in'] ) && ! empty( $raw['dive_time'] ) )
+				? date( 'H:i', strtotime( $raw['time_in'] ) + (int) $raw['dive_time'] * 60 )
+				: null,
 			'pressure_start'      => $nullable_int( $raw['pressure_start'] ),
 			'pressure_end'        => $nullable_int( $raw['pressure_end'] ),
 			'max_depth'           => $nullable_float( $raw['max_depth'] ),
