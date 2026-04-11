@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '2.0.0';
+	const DB_VERSION = '2.1.0';
 
 	/**
 	 * Ottieni istanza singleton

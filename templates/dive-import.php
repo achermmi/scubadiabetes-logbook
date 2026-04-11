@@ -99,6 +99,17 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
             </div>
         </div>
 
+        <?php if ( current_user_can( 'manage_options' ) ) : ?>
+        <div class="sd-section" id="sd-schema-debug-section" style="border:1px dashed #CBD5E1;background:#F8FAFC;">
+            <div style="font-size:12px;font-weight:700;color:#64748B;margin-bottom:8px;">🔧 Diagnostica schema .db (solo admin)</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="file" id="sd-schema-file-input" accept=".db" style="font-size:12px;">
+                <button type="button" id="sd-btn-schema-dump" style="font-size:12px;padding:4px 10px;background:#3B82F6;color:#fff;border:none;border-radius:4px;cursor:pointer;">Analizza schema</button>
+            </div>
+            <pre id="sd-schema-output" style="font-size:11px;margin-top:10px;background:#1E293B;color:#E2E8F0;padding:12px;border-radius:6px;overflow:auto;max-height:400px;display:none;"></pre>
+        </div>
+        <?php endif; ?>
+
     </div>
 
     <!-- ============================================================ -->
@@ -162,6 +173,8 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                         <th></th>
                         <th><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></th>
                         <th>#</th>
+                        <th><?php esc_html_e( 'Marca', 'sd-logbook' ); ?></th>
+                        <th><?php esc_html_e( 'Modello', 'sd-logbook' ); ?></th>
                         <th><?php esc_html_e( 'Data', 'sd-logbook' ); ?></th>
                         <th><?php esc_html_e( 'Sito', 'sd-logbook' ); ?></th>
                         <th><?php esc_html_e( 'Prof. max', 'sd-logbook' ); ?></th>
@@ -211,7 +224,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <?php esc_html_e( 'Vai al logbook', 'sd-logbook' ); ?>
                 </a>
-                <button type="button" id="sd-btn-reset-import" class="sd-btn-import-reset" style="margin-top:10px;display:block;width:100%;text-align:center;">
+                <button type="button" id="sd-btn-reset-import-result" class="sd-btn-import-reset" style="margin-top:10px;">
                     <?php esc_html_e( 'Importa un altro file', 'sd-logbook' ); ?>
                 </button>
             </div>

@@ -137,6 +137,11 @@ class SD_Database {
 			notes text DEFAULT NULL,
 			buddy_name varchar(100) DEFAULT NULL,
 			guide_name varchar(100) DEFAULT NULL,
+			computer_brand varchar(50) DEFAULT NULL,
+			computer_model varchar(100) DEFAULT NULL,
+			computer_serial varchar(50) DEFAULT NULL,
+			computer_firmware varchar(50) DEFAULT NULL,
+			imported_at datetime DEFAULT NULL,
 			shared_for_research tinyint(1) NOT NULL DEFAULT 1,
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -148,6 +153,23 @@ class SD_Database {
 			KEY idx_shared (shared_for_research)
 		) {$charset_collate};";
 		dbDelta( $sql_dives );
+
+		// Migration: add computer / import columns if missing (added in v2.1.0).
+		$new_dive_cols = array(
+			'computer_brand'    => 'varchar(50) DEFAULT NULL',
+			'computer_model'    => 'varchar(100) DEFAULT NULL',
+			'computer_serial'   => 'varchar(50) DEFAULT NULL',
+			'computer_firmware' => 'varchar(50) DEFAULT NULL',
+			'imported_at'       => 'datetime DEFAULT NULL',
+		);
+		foreach ( $new_dive_cols as $col_name => $col_def ) {
+			$exists = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->prepare( 'SHOW COLUMNS FROM ' . $table_dives . ' LIKE %s', $col_name ) // phpcs:ignore
+			);
+			if ( empty( $exists ) ) {
+				$wpdb->query( 'ALTER TABLE ' . $table_dives . ' ADD COLUMN ' . $col_name . ' ' . $col_def ); // phpcs:ignore
+			}
+		}
 
 		// =====================================================================
 		// TABELLA 3: DATI DIABETE PER IMMERSIONE (sd_dive_diabetes)

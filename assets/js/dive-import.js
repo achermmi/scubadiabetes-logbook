@@ -120,11 +120,16 @@
                 var dateStr  = formatDate(dive.dive_date);
                 var timeIn   = dive.time_in ? dive.time_in : '';
 
+                var brandStr = esc(dive.computer_brand || '—');
+                var modelStr = esc(dive.computer_model || '—');
+
                 $tbody.append(
                     '<tr class="' + rowClass + '" data-idx="' + idx + '">' +
                     '<td><input type="checkbox" class="sd-dive-check" ' + checked + '></td>' +
                     '<td>' + statusBadge + '</td>' +
                     '<td><strong>' + (dive.dive_number || '—') + '</strong></td>' +
+                    '<td>' + brandStr + '</td>' +
+                    '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;">' + modelStr + '</td>' +
                     '<td>' + dateStr + (timeIn ? '<br><small style="color:#94A3B8;">' + timeIn + '</small>' : '') + '</td>' +
                     '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">' + esc(dive.site_name) + '</td>' +
                     '<td class="sd-depth-val">' + depthStr + '</td>' +
@@ -214,14 +219,17 @@
         });
 
         // ============================================================
-        // Reset
+        // Reset (preview step + result step)
         // ============================================================
-        $('#sd-btn-reset-import').on('click', function () {
+        function doReset() {
             previewData = [];
             $('#sd-import-file-input').val('');
             $('#sd-import-messages').hide().html('');
             showStep('upload');
-        });
+        }
+
+        $('#sd-btn-reset-import').on('click', doReset);
+        $('#sd-btn-reset-import-result').on('click', doReset);
 
         // ============================================================
         // Show result
@@ -278,6 +286,46 @@
             el.appendChild(document.createTextNode(str));
             return el.innerHTML;
         }
+
+        // ============================================================
+        // Schema debug (admin only)
+        // ============================================================
+        $('#sd-btn-schema-dump').on('click', function () {
+            var fileInput = document.getElementById('sd-schema-file-input');
+            if (!fileInput || !fileInput.files.length) {
+                alert('Seleziona un file .db prima.');
+                return;
+            }
+            var $btn = $(this);
+            var $out = $('#sd-schema-output');
+            $btn.prop('disabled', true).text('Analisi in corso…');
+            $out.hide().text('');
+
+            var formData = new FormData();
+            formData.append('action', 'sd_import_schema');
+            formData.append('nonce', sdImport.nonce);
+            formData.append('import_file', fileInput.files[0]);
+
+            $.ajax({
+                url: sdImport.ajaxUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (resp) {
+                    $btn.prop('disabled', false).text('Analizza schema');
+                    if (resp.success) {
+                        $out.text(JSON.stringify(resp.data.schema, null, 2)).show();
+                    } else {
+                        $out.text('Errore: ' + (resp.data && resp.data.message ? resp.data.message : 'sconosciuto')).show();
+                    }
+                },
+                error: function () {
+                    $btn.prop('disabled', false).text('Analizza schema');
+                    $out.text('Errore di connessione.').show();
+                }
+            });
+        });
 
     });
 
