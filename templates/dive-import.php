@@ -217,12 +217,18 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                 <div id="sd-result-title" class="sd-result-title"></div>
                 <div id="sd-result-sub" class="sd-result-sub"></div>
                 <?php
-                $dash_page = get_page_by_path( 'dashboard' ) ?: get_page_by_path( 'logbook' );
-                $dash_url  = $dash_page ? get_permalink( $dash_page ) : home_url( '/' );
+                $logbook_page   = get_page_by_path( 'modifica-logbook' );
+                $logbook_url    = $logbook_page ? get_permalink( $logbook_page ) : home_url( '/modifica-logbook/' );
+                $dashboard_page = get_page_by_path( 'dashboard-immersioni' );
+                $dashboard_url  = $dashboard_page ? get_permalink( $dashboard_page ) : home_url( '/dashboard-immersioni/' );
                 ?>
-                <a href="<?php echo esc_url( $dash_url ); ?>" class="sd-btn-view-logbook">
+                <a href="<?php echo esc_url( $logbook_url ); ?>" class="sd-btn-view-logbook">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <?php esc_html_e( 'Vai al logbook', 'sd-logbook' ); ?>
+                </a>
+                <a href="<?php echo esc_url( $dashboard_url ); ?>" class="sd-btn-view-logbook" style="margin-top:8px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <?php esc_html_e( 'Vai a Dashboard immersioni', 'sd-logbook' ); ?>
                 </a>
                 <button type="button" id="sd-btn-reset-import-result" class="sd-btn-import-reset" style="margin-top:10px;">
                     <?php esc_html_e( 'Importa un altro file', 'sd-logbook' ); ?>
