@@ -123,40 +123,27 @@ class SD_Dashboard {
 
 		$user_id      = get_current_user_id();
 		$is_diabetic  = SD_Roles::is_diabetic_diver( $user_id );
-		$can_view_all = SD_Roles::can_view_all( $user_id );
+		$can_view_all = false; // La dashboard personale mostra SEMPRE solo le proprie immersioni.
+		                       // Il pannello medico/ricerca ha la sua pagina dedicata per vedere tutti i dati.
 
-		// Fetch dives
+		// Fetch dives — solo immersioni dell'utente corrente
 		global $wpdb;
 		$db = new SD_Database();
 
-		if ( $can_view_all ) {
-			$dives = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT d.*, u.display_name as diver_name
-				 FROM {$db->table('dives')} d
-				 LEFT JOIN {$wpdb->users} u ON d.user_id = u.ID
-				 WHERE d.shared_for_research = 1 OR d.user_id = %d
-				 ORDER BY d.dive_date DESC, d.time_in DESC
-				 LIMIT 200",
-					$user_id
-				)
-			);
-		} else {
-			$dives = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT d.*, %s as diver_name
-				 FROM {$db->table('dives')} d
-				 WHERE d.user_id = %d
-				 ORDER BY d.dive_date DESC, d.time_in DESC
-				 LIMIT 200",
-					wp_get_current_user()->display_name,
-					$user_id
-				)
-			);
-		}
+		$dives = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT d.*, %s as diver_name
+			 FROM {$db->table('dives')} d
+			 WHERE d.user_id = %d
+			 ORDER BY d.dive_date DESC, d.time_in DESC
+			 LIMIT 200",
+				wp_get_current_user()->display_name,
+				$user_id
+			)
+		);
 
-		// Stats
-		$stats = $this->get_stats( $user_id, $can_view_all, $db );
+		// Stats — sempre solo le proprie immersioni
+		$stats = $this->get_stats( $user_id, false, $db );
 
 		// User info
 		$current_user = wp_get_current_user();
@@ -207,25 +194,14 @@ class SD_Dashboard {
 		$db      = new SD_Database();
 		$user_id = get_current_user_id();
 
-		// Get dive
-		$can_view_all = SD_Roles::can_view_all( $user_id );
-		if ( $can_view_all ) {
-			$dive = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT * FROM {$db->table('dives')} WHERE id = %d AND (shared_for_research = 1 OR user_id = %d)",
-					$dive_id,
-					$user_id
-				)
-			);
-		} else {
-			$dive = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
-					$dive_id,
-					$user_id
-				)
-			);
-		}
+		// Get dive — solo immersioni dell'utente corrente
+		$dive = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			)
+		);
 
 		if ( ! $dive ) {
 			wp_send_json_error( array( 'message' => 'Immersione non trovata' ) );
@@ -338,25 +314,14 @@ class SD_Dashboard {
 		global $wpdb;
 		$db = new SD_Database();
 
-		// Solo proprie immersioni (o admin)
-		$can_view_all = SD_Roles::can_view_all( $user_id );
-		if ( $can_view_all ) {
-			$dive = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT id, user_id FROM {$db->table('dives')} WHERE id = %d AND (shared_for_research = 1 OR user_id = %d)",
-					$dive_id,
-					$user_id
-				)
-			);
-		} else {
-			$dive = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
-					$dive_id,
-					$user_id
-				)
-			);
-		}
+		// Solo proprie immersioni
+		$dive = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			)
+		);
 
 		if ( ! $dive ) {
 			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
