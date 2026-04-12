@@ -53,8 +53,8 @@
         // ============================================================
         function handleFile(file) {
             var ext = file.name.split('.').pop().toLowerCase();
-            if (ext !== 'ssrf' && ext !== 'db') {
-                showMessage('error', 'Formato non supportato. Usa .ssrf (Subsurface) o .db (Shearwater Cloud).');
+            if (ext !== 'ssrf' && ext !== 'db' && ext !== 'uddf') {
+                showMessage('error', 'Formato non supportato. Usa .ssrf (Subsurface), .db (Shearwater Cloud) o .uddf.');
                 return;
             }
             if (file.size > 50 * 1024 * 1024) {

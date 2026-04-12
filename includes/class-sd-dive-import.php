@@ -199,14 +199,16 @@ class SD_Dive_Import {
 			wp_send_json_error( array( 'message' => 'File troppo grande (max 50 MB).' ) );
 		}
 
-		$allowed = array( 'ssrf', 'db' );
+		$allowed = array( 'ssrf', 'db', 'uddf' );
 		if ( ! in_array( $ext, $allowed, true ) ) {
-			wp_send_json_error( array( 'message' => 'Formato non supportato. Usa .ssrf (Subsurface) o .db (Shearwater Cloud).' ) );
+			wp_send_json_error( array( 'message' => 'Formato non supportato. Usa .ssrf (Subsurface), .db (Shearwater Cloud) o .uddf.' ) );
 		}
 
 		try {
 			if ( 'ssrf' === $ext ) {
 				$dives = $this->parse_ssrf( $tmp_path );
+			} elseif ( 'uddf' === $ext ) {
+				$dives = $this->parse_uddf( $tmp_path );
 			} else {
 				$dives = $this->parse_shearwater_db( $tmp_path );
 			}
@@ -811,6 +813,374 @@ class SD_Dive_Import {
 				'imported_at'         => current_time( 'mysql' ),
 				'shared_for_research' => 1,
 				'_shearwater_id'      => $dive_id,
+			);
+		}
+
+		return $dives;
+	}
+
+	/* ================================================================
+	 * Parser: UDDF 3.2.0 (Universal Dive Data Format — XML)
+	 * ============================================================== */
+	private function parse_uddf( $path ) {
+		$xml_str = file_get_contents( $path );
+		if ( ! $xml_str ) {
+			throw new Exception( 'Impossibile leggere il file.' );
+		}
+
+		// Strip default namespace so SimpleXML XPath works without prefixes.
+		$xml_str = preg_replace( '/\s+xmlns(?::\w+)?="[^"]*"/', '', $xml_str );
+
+		libxml_use_internal_errors( true );
+		$xml = simplexml_load_string( $xml_str );
+		if ( ! $xml ) {
+			throw new Exception( 'File UDDF non valido (XML malformato).' );
+		}
+
+		// Build dive site map: id → [name, lat, lng]
+		$sites = array();
+		foreach ( $xml->xpath( '//divesite/site' ) as $site ) {
+			$id = (string) $site['id'];
+			if ( ! $id ) {
+				continue;
+			}
+			$name  = (string) ( $site->name ?? '' );
+			$lat   = null;
+			$lng   = null;
+			if ( isset( $site->geography ) ) {
+				$lat_s = (string) ( $site->geography->latitude ?? '' );
+				$lng_s = (string) ( $site->geography->longitude ?? '' );
+				if ( '' !== $lat_s ) {
+					$lat = (float) $lat_s;
+				}
+				if ( '' !== $lng_s ) {
+					$lng = (float) $lng_s;
+				}
+			}
+			$sites[ $id ] = array(
+				'name' => $name,
+				'lat'  => $lat,
+				'lng'  => $lng,
+			);
+		}
+
+		$dives = array();
+		foreach ( $xml->xpath( '//dive' ) as $d ) {
+			$before = $d->informationbeforedive ?? null;
+			$after  = $d->informationafterdive ?? null;
+			if ( ! $before ) {
+				continue;
+			}
+
+			// Date / time from ISO 8601 datetime
+			$dt_raw    = (string) ( $before->datetime ?? '' );
+			$dive_date = null;
+			$time_in   = null;
+			if ( $dt_raw ) {
+				$dt_clean = str_replace( 'T', ' ', $dt_raw );
+				$parts    = explode( ' ', $dt_clean );
+				$dive_date = $parts[0] ?? null;
+				$time_in   = isset( $parts[1] ) ? substr( $parts[1], 0, 5 ) : null;
+			}
+			if ( ! $dive_date ) {
+				continue;
+			}
+
+			// Dive number
+			$dive_number = (int) ( $before->divenumber ?? 0 ) ?: null;
+
+			// Site: resolve via link ref, then try direct location element
+			$site_name = '';
+			$lat       = null;
+			$lng       = null;
+			$link_refs = $before->xpath( 'link/@ref' );
+			if ( $link_refs ) {
+				foreach ( $link_refs as $ref ) {
+					$ref_str = (string) $ref;
+					if ( isset( $sites[ $ref_str ] ) ) {
+						$site_name = $sites[ $ref_str ]['name'];
+						$lat       = $sites[ $ref_str ]['lat'];
+						$lng       = $sites[ $ref_str ]['lng'];
+						break;
+					}
+				}
+			}
+			if ( empty( $site_name ) && isset( $before->location ) ) {
+				$loc       = $before->location;
+				$site_name = (string) ( $loc->name ?? (string) $loc );
+				$lat_s     = (string) ( $loc->latitude ?? '' );
+				$lng_s     = (string) ( $loc->longitude ?? '' );
+				if ( '' !== $lat_s ) {
+					$lat = (float) $lat_s;
+				}
+				if ( '' !== $lng_s ) {
+					$lng = (float) $lng_s;
+				}
+			}
+
+			// Buddy / guide / entry_type from informationbeforedive
+			$buddy_name = null;
+			$guide_name = null;
+			$entry_type = null;
+			if ( isset( $before->buddy ) ) {
+				$bn = trim( (string) ( $before->buddy->name ?? (string) $before->buddy ) );
+				if ( '' !== $bn ) {
+					$buddy_name = $bn;
+				}
+			}
+			if ( isset( $before->divemaster ) ) {
+				$gn = trim( (string) ( $before->divemaster->name ?? (string) $before->divemaster ) );
+				if ( '' !== $gn ) {
+					$guide_name = $gn;
+				}
+			}
+			if ( isset( $before->entry ) ) {
+				$entry_raw = strtolower( trim( (string) ( $before->entry->type ?? (string) $before->entry ) ) );
+				$entry_map = array(
+					'shore' => 'riva',
+					'riva'  => 'riva',
+					'boat'  => 'barca',
+					'barca' => 'barca',
+					'drift' => 'drift',
+				);
+				$entry_type = $entry_map[ $entry_raw ] ?? null;
+			}
+
+			// Environment block
+			$temp_air         = null;
+			$temp_water       = null;
+			$dive_type        = null;
+			$visibility       = null;
+			$weather          = null;
+			$sea_condition    = null;
+			$current_strength = null;
+			if ( isset( $d->environment ) ) {
+				$env = $d->environment;
+				// Water type (fresh/salt)
+				$water = strtolower( (string) ( $env->water ?? '' ) );
+				if ( false !== strpos( $water, 'fresh' ) || false !== strpos( $water, 'dolce' ) ) {
+					$dive_type = 'lago';
+				} elseif ( false !== strpos( $water, 'salt' ) || false !== strpos( $water, 'mare' ) || false !== strpos( $water, 'salat' ) ) {
+					$dive_type = 'mare';
+				}
+				// Temperatures — UDDF spec uses Kelvin; convert if value > 100
+				// Priority for temp_air: <air> child > <surface> child
+				if ( isset( $env->temperature ) ) {
+					$air_raw  = (float) ( $env->temperature->air ?? 0 );
+					$surf_raw = (float) ( $env->temperature->surface ?? 0 );
+					$bot_raw  = (float) ( $env->temperature->bottom ?? 0 );
+					$air_src  = $air_raw > 0 ? $air_raw : $surf_raw;
+					if ( $air_src > 0 ) {
+						$temp_air = $air_src > 100 ? round( $air_src - 273.15, 1 ) : round( $air_src, 1 );
+					}
+					if ( $bot_raw > 0 ) {
+						$temp_water = $bot_raw > 100 ? round( $bot_raw - 273.15, 1 ) : round( $bot_raw, 1 );
+					}
+				}
+				// Visibility: handle both scalar metres and <horizontal>/<vertical> children
+				if ( isset( $env->visibility ) ) {
+					$vis_node = $env->visibility;
+					$vis_m    = isset( $vis_node->horizontal )
+						? (float) $vis_node->horizontal
+						: (float) $vis_node;
+					if ( $vis_m >= 15 ) {
+						$visibility = 'buona';
+					} elseif ( $vis_m >= 5 ) {
+						$visibility = 'media';
+					} elseif ( $vis_m > 0 ) {
+						$visibility = 'scarsa';
+					}
+				}
+				// Weather
+				$weather_raw = strtolower( trim( (string) ( $env->weather ?? '' ) ) );
+				if ( '' !== $weather_raw ) {
+					if ( false !== strpos( $weather_raw, 'sun' ) || false !== strpos( $weather_raw, 'sereno' ) || false !== strpos( $weather_raw, 'soleggiato' ) ) {
+						$weather = 'sereno';
+					} elseif ( false !== strpos( $weather_raw, 'rain' ) || false !== strpos( $weather_raw, 'pioggia' ) ) {
+						$weather = 'pioggia';
+					} elseif ( false !== strpos( $weather_raw, 'cloud' ) || false !== strpos( $weather_raw, 'overcast' ) || false !== strpos( $weather_raw, 'nuvol' ) || false !== strpos( $weather_raw, 'coperto' ) ) {
+						$weather = 'nuvoloso';
+					}
+				}
+				// Sea condition from <waves>
+				$waves_raw = strtolower( trim( (string) ( $env->waves ?? '' ) ) );
+				if ( '' !== $waves_raw ) {
+					if ( false !== strpos( $waves_raw, 'calm' ) || false !== strpos( $waves_raw, 'calmo' ) ) {
+						$sea_condition = 'calmo';
+					} elseif ( false !== strpos( $waves_raw, 'strong' ) || false !== strpos( $waves_raw, 'rough' ) || false !== strpos( $waves_raw, 'agitat' ) ) {
+						$sea_condition = 'agitato';
+					} elseif ( '' !== $waves_raw ) {
+						$sea_condition = 'mosso';
+					}
+				}
+				// Current strength
+				$curr_raw = strtolower( trim( (string) ( $env->current ?? '' ) ) );
+				if ( '' !== $curr_raw && 'none' !== $curr_raw && 'nessuna' !== $curr_raw ) {
+					if ( false !== strpos( $curr_raw, 'strong' ) || false !== strpos( $curr_raw, 'forte' ) ) {
+						$current_strength = 'forte';
+					} elseif ( false !== strpos( $curr_raw, 'mild' ) || false !== strpos( $curr_raw, 'medium' ) || false !== strpos( $curr_raw, 'moderate' ) || false !== strpos( $curr_raw, 'media' ) ) {
+						$current_strength = 'media';
+					} else {
+						$current_strength = 'debole';
+					}
+				}
+			}
+
+			// Equipment: prefer <equipment> block, fall back to <tankdata>
+			$tank_capacity  = null;
+			$pressure_start = null;
+			$pressure_end   = null;
+			$gas_mix        = 'aria';
+			$nitrox_pct     = null;
+			$ballast_kg     = null;
+			$computer_model = null;
+
+			$suit_type = null;
+
+			if ( isset( $d->equipment ) ) {
+				$eq = $d->equipment;
+				if ( isset( $eq->tank ) ) {
+					$tank = $eq->tank;
+					$tv   = (float) ( $tank->tankvolume ?? 0 );
+					if ( $tv > 0 ) {
+						$tank_capacity = $tv;
+					}
+					$ps = (float) ( $tank->pressure ?? 0 );
+					if ( $ps > 0 ) {
+						$pressure_start = (int) round( $ps );
+					}
+					$pe = (float) ( $tank->pressure_end ?? 0 );
+					if ( $pe > 0 ) {
+						$pressure_end = (int) round( $pe );
+					}
+					if ( isset( $tank->gasmix ) ) {
+						$o2_raw  = (float) ( $tank->gasmix->o2 ?? 0 );
+						$o2_frac = $o2_raw > 1 ? $o2_raw / 100.0 : $o2_raw;
+						if ( $o2_frac > 0.22 ) {
+							$gas_mix    = 'nitrox';
+							$nitrox_pct = round( $o2_frac * 100, 1 );
+						}
+					}
+				}
+				if ( isset( $eq->weightsystem ) ) {
+					$lead = (float) ( $eq->weightsystem->lead ?? 0 );
+					if ( $lead > 0 ) {
+						$ballast_kg = $lead;
+					}
+				}
+				if ( isset( $eq->divecomputer ) ) {
+					$cm = (string) ( $eq->divecomputer->model ?? '' );
+					if ( '' !== $cm ) {
+						$computer_model = $cm;
+					}
+				}
+				if ( isset( $eq->exposureprotection ) ) {
+					$ep_type = strtolower( trim( (string) ( $eq->exposureprotection->type ?? (string) $eq->exposureprotection ) ) );
+					$suit_map = array(
+						'drysuit'   => 'stagna',
+						'dry'       => 'stagna',
+						'stagna'    => 'stagna',
+						'semidry'   => 'semistagna',
+						'semi-dry'  => 'semistagna',
+						'semistagna' => 'semistagna',
+						'wetsuit'   => 'umida',
+						'wet'       => 'umida',
+						'umida'     => 'umida',
+					);
+					$suit_type = $suit_map[ $ep_type ] ?? null;
+				}
+			} elseif ( isset( $d->tankdata ) ) {
+				// Alternative UDDF structure: <tankdata> as direct child of <dive>
+				$td = $d->tankdata;
+				$tv = (float) ( $td->tankvolume ?? 0 );
+				if ( $tv > 0 ) {
+					$tank_capacity = $tv;
+				}
+				$ps = (float) ( $td->tankpressurebegin ?? 0 );
+				if ( $ps > 0 ) {
+					$pressure_start = (int) round( $ps );
+				}
+				$pe = (float) ( $td->tankpressureend ?? 0 );
+				if ( $pe > 0 ) {
+					$pressure_end = (int) round( $pe );
+				}
+				if ( isset( $td->gasmix ) ) {
+					$o2_raw  = (float) ( $td->gasmix->o2 ?? 0 );
+					$o2_frac = $o2_raw > 1 ? $o2_raw / 100.0 : $o2_raw;
+					if ( $o2_frac > 0.22 ) {
+						$gas_mix    = 'nitrox';
+						$nitrox_pct = round( $o2_frac * 100, 1 );
+					}
+				}
+			}
+
+			// After-dive information
+			$dive_time = null;
+			$max_depth = null;
+			$avg_depth = null;
+			$notes     = null;
+			if ( $after ) {
+				$dur = (float) ( $after->diveduration ?? 0 );
+				if ( $dur > 0 ) {
+					$dive_time = (int) round( $dur / 60 );
+				}
+				// greatestdepth (spec) or maxdepth (some exporters)
+				$gd = (float) ( $after->greatestdepth ?? ( $after->maxdepth ?? 0 ) );
+				if ( $gd > 0 ) {
+					$max_depth = round( $gd, 1 );
+				}
+				$ad = (float) ( $after->averagedepth ?? 0 );
+				if ( $ad > 0 ) {
+					$avg_depth = round( $ad, 1 );
+				}
+				$notes_raw = trim( (string) ( $after->notes ?? '' ) );
+				if ( '' !== $notes_raw ) {
+					$notes = $notes_raw;
+				}
+				// Water temperature from lowesttemperature (spec) if not already set
+				if ( null === $temp_water ) {
+					$lt_raw = (float) ( $after->lowesttemperature ?? 0 );
+					if ( $lt_raw > 0 ) {
+						$temp_water = $lt_raw > 100 ? round( $lt_raw - 273.15, 1 ) : round( $lt_raw, 1 );
+					}
+				}
+			}
+
+			$dives[] = array(
+				'source'              => 'uddf',
+				'dive_number'         => $dive_number,
+				'dive_date'           => $dive_date,
+				'time_in'             => $time_in,
+				'dive_time'           => $dive_time,
+				'site_name'           => $site_name ?: 'Sito sconosciuto',
+				'site_latitude'       => $lat,
+				'site_longitude'      => $lng,
+				'max_depth'           => $max_depth,
+				'avg_depth'           => $avg_depth,
+				'temp_water'          => $temp_water,
+				'temp_air'            => $temp_air,
+				'pressure_start'      => $pressure_start,
+				'pressure_end'        => $pressure_end,
+				'tank_capacity'       => $tank_capacity,
+				'gas_mix'             => $gas_mix,
+				'nitrox_percentage'   => $nitrox_pct,
+				'ballast_kg'          => $ballast_kg,
+				'entry_type'          => $entry_type,
+				'visibility'          => $visibility,
+				'weather'             => $weather,
+				'sea_condition'       => $sea_condition,
+				'current_strength'    => $current_strength,
+				'buddy_name'          => $buddy_name,
+				'guide_name'          => $guide_name,
+				'notes'               => $notes,
+				'suit_type'           => $suit_type,
+				'dive_type'           => $dive_type,
+				'computer_brand'      => null,
+				'computer_model'      => $computer_model,
+				'computer_serial'     => null,
+				'computer_firmware'   => null,
+				'imported_at'         => current_time( 'mysql' ),
+				'shared_for_research' => 1,
 			);
 		}
 

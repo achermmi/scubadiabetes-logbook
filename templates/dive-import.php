@@ -33,7 +33,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
         </div>
         <div class="sd-form-header-text">
             <h2><?php esc_html_e( 'Importa immersioni', 'sd-logbook' ); ?></h2>
-            <span class="sd-dive-number"><?php esc_html_e( 'da Subsurface (.ssrf) o Shearwater Cloud (.db)', 'sd-logbook' ); ?></span>
+            <span class="sd-dive-number"><?php esc_html_e( 'da Subsurface (.ssrf), Shearwater Cloud (.db) o UDDF (.uddf)', 'sd-logbook' ); ?></span>
         </div>
     </div>
 
@@ -72,6 +72,16 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                         Contiene tutti i campi + pressione bombole in PSI.
                     </div>
                 </div>
+                <div style="flex:1;min-width:220px;padding:12px 14px;background:#F3E8FF;border-radius:8px;">
+                    <div style="font-weight:800;font-size:14px;color:#6B21A8;margin-bottom:4px;">
+                        🔵 UDDF (.uddf)
+                    </div>
+                    <div style="font-size:12px;color:#581C87;">
+                        Formato universale <strong>UDDF 3.2</strong> esportato da Garmin Descent,
+                        MacDive, DivingLog e molti altri computer.
+                        Esporta da <em>File → Esporta → UDDF</em>.
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -89,13 +99,14 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                 <div class="sd-upload-formats">
                     <span class="sd-format-badge sd-format-ssrf">🐙 .ssrf · Subsurface</span>
                     <span class="sd-format-badge sd-format-shearwater">🌊 .db · Shearwater Cloud</span>
+                    <span class="sd-format-badge sd-format-uddf">🔵 .uddf · UDDF</span>
                 </div>
                 <button type="button" id="sd-btn-choose-file" class="sd-btn-upload-file">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <?php esc_html_e( 'Scegli file', 'sd-logbook' ); ?>
                 </button>
-                <input type="file" id="sd-import-file-input" accept=".ssrf,.db">
-                <p style="font-size:11px;color:var(--sd-gray-400);margin-top:12px;"><?php esc_html_e( 'Max 50 MB · .ssrf · .db', 'sd-logbook' ); ?></p>
+                <input type="file" id="sd-import-file-input" accept=".ssrf,.db,.uddf">
+                <p style="font-size:11px;color:var(--sd-gray-400);margin-top:12px;"><?php esc_html_e( 'Max 50 MB · .ssrf · .db · .uddf', 'sd-logbook' ); ?></p>
             </div>
         </div>
 

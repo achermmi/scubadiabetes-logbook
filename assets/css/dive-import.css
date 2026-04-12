@@ -81,6 +81,12 @@
     border: 1px solid #BBDEFB;
 }
 
+.sd-format-uddf {
+    background: #F3E8FF;
+    color: #6B21A8;
+    border: 1px solid #E9D5FF;
+}
+
 .sd-btn-upload-file {
     display: inline-flex;
     align-items: center;
