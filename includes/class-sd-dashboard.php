@@ -124,7 +124,7 @@ class SD_Dashboard {
 		$user_id      = get_current_user_id();
 		$is_diabetic  = SD_Roles::is_diabetic_diver( $user_id );
 		$can_view_all = false; // La dashboard personale mostra SEMPRE solo le proprie immersioni.
-		                       // Il pannello medico/ricerca ha la sua pagina dedicata per vedere tutti i dati.
+		// Il pannello medico/ricerca ha la sua pagina dedicata per vedere tutti i dati.
 
 		// Fetch dives — solo immersioni dell'utente corrente
 		global $wpdb;
