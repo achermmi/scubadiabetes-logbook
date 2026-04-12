@@ -49,10 +49,23 @@ class SD_Dashboard {
 				array( 'sd-logbook-form' ),
 				SD_LOGBOOK_VERSION
 			);
+			// Leaflet maps
+			wp_enqueue_style( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
+			wp_enqueue_script( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
+
+			wp_enqueue_style( 'sd-dive-edit', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-edit.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+
 			wp_enqueue_script(
 				'sd-dashboard',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/js/dashboard.js',
-				array( 'jquery' ),
+				array( 'jquery', 'leaflet' ),
+				SD_LOGBOOK_VERSION,
+				true
+			);
+			wp_enqueue_script(
+				'sd-dive-edit',
+				SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-edit.js',
+				array( 'jquery', 'sd-dashboard' ),
 				SD_LOGBOOK_VERSION,
 				true
 			);
@@ -76,6 +89,15 @@ class SD_Dashboard {
 				array(
 					'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
 					'nonce'        => wp_create_nonce( 'sd_dashboard_nonce' ),
+					'glycemiaUnit' => $glycemia_unit,
+				)
+			);
+			wp_localize_script(
+				'sd-dive-edit',
+				'sdDiveEdit',
+				array(
+					'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+					'nonce'        => wp_create_nonce( 'sd_dive_edit_nonce' ),
 					'glycemiaUnit' => $glycemia_unit,
 				)
 			);
@@ -161,7 +183,8 @@ class SD_Dashboard {
 
 		$stats                 = new stdClass();
 		$stats->total_dives    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('dives')} WHERE {$where}" );
-		$stats->max_depth      = $wpdb->get_var( "SELECT MAX(max_depth) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats->max_depth         = $wpdb->get_var( "SELECT MAX(max_depth) FROM {$db->table('dives')} WHERE {$where}" );
+		$stats->max_depth_dive_id = (int) $wpdb->get_var( "SELECT id FROM {$db->table('dives')} WHERE {$where} ORDER BY max_depth DESC LIMIT 1" );
 		$stats->total_time     = (int) $wpdb->get_var( "SELECT SUM(dive_time) FROM {$db->table('dives')} WHERE {$where}" );
 		$stats->unique_sites   = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT site_name) FROM {$db->table('dives')} WHERE {$where}" );
 		$stats->last_dive_date = $wpdb->get_var( "SELECT MAX(dive_date) FROM {$db->table('dives')} WHERE {$where}" );

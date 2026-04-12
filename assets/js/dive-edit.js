@@ -5,7 +5,8 @@
 (function($) {
     'use strict';
 
-    var currentDiveId = null;
+    var currentDiveId    = null;
+    var _formSnapshot    = null; // serializzazione form al momento del caricamento
     var FACTOR = 18.018;
     var isMmol = (typeof sdDiveEdit !== 'undefined' && sdDiveEdit.glycemiaUnit === 'mmol/l');
 
@@ -20,6 +21,44 @@
     function glicMin() { return isMmol ? '1.0' : '20'; }
     function glicMax() { return isMmol ? '28.0' : '500'; }
     function glicInputmode() { return isMmol ? 'decimal' : 'numeric'; }
+
+    // ============================================================
+    // MAPPA DAL FORM DI MODIFICA
+    // ============================================================
+    $(document).on('click', '.sd-btn-form-map', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var lat   = parseFloat($(this).data('lat'));
+        var lng   = parseFloat($(this).data('lng'));
+        var title = $(this).data('title') || '';
+        if (isNaN(lat) || isNaN(lng)) return;
+        if (typeof window.sdOpenMap === 'function') {
+            window.sdOpenMap(lat, lng, title);
+        }
+    });
+
+    // Aggiorna il pulsante mappa nel form quando cambiano lat/lng
+    $(document).on('input change', '#sd-edit-form input[name="site_latitude"], #sd-edit-form input[name="site_longitude"]', function() {
+        syncFormMapButton();
+    });
+
+    function syncFormMapButton() {
+        var lat   = parseFloat($('#sd-edit-form input[name="site_latitude"]').val()) || 0;
+        var lng   = parseFloat($('#sd-edit-form input[name="site_longitude"]').val()) || 0;
+        var title = $('input[name="site_name"]').val() || '';
+        var $btn  = $('#sd-form-map-btn');
+        if (!$btn.length) return;
+        if (lat !== 0 && lng !== 0) {
+            $btn.addClass('sd-btn-form-map--active')
+                .removeAttr('disabled')
+                .attr({ 'data-lat': lat, 'data-lng': lng, 'data-title': title });
+            $btn.find('.sd-form-map-label').text(' Vedi posizione sulla mappa');
+        } else {
+            $btn.removeClass('sd-btn-form-map--active')
+                .attr('disabled', 'disabled');
+            $btn.find('.sd-form-map-label').text(' Inserisci lat/lng per abilitare la mappa');
+        }
+    }
 
     // ============================================================
     // EDIT: Load dive data
@@ -65,10 +104,17 @@
         html += field('dive_number', 'N° Immersione', 'number', dive.dive_number, '', 'half', '1', '1');
         html += '</div>';
         html += field('site_name', 'Sito di immersione *', 'text', dive.site_name);
+        var hasCoords = dive.site_latitude && dive.site_longitude;
         html += '<div class="sd-field-row">';
         html += field('site_latitude', 'Latitudine', 'number', dive.site_latitude, 'es: 37.5667', 'half', '0.0000001');
         html += field('site_longitude', 'Longitudine', 'number', dive.site_longitude, 'es: 15.1667', 'half', '0.0000001');
         html += '</div>';
+        html += '<div style="margin:-6px 0 10px;">' +
+            '<button type="button" id="sd-form-map-btn" class="sd-btn-form-map' + (hasCoords ? ' sd-btn-form-map--active' : '') + '" ' +
+            (hasCoords ? 'data-lat="' + esc(dive.site_latitude) + '" data-lng="' + esc(dive.site_longitude) + '" data-title="' + esc(dive.site_name) + '"' : 'disabled') + '>' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>' +
+            '<span class="sd-form-map-label">' + (hasCoords ? ' Vedi posizione sulla mappa' : ' Inserisci lat/lng per abilitare la mappa') + '</span>' +
+            '</button></div>';
 
         // ══════════════════════════════════════════════════════════
         // SEZIONE 2: EQUIPAGGIAMENTO
@@ -258,6 +304,8 @@
         html += '</form>';
         $('#sd-edit-panel-body').html(html);
         $('#sd-edit-panel-title').text('Modifica immersione #' + (dive.dive_number || dive.id));
+        // Snapshot per rilevare modifiche non salvate
+        _formSnapshot = $('#sd-edit-form').serialize();
     }
 
     // ============================================================
@@ -327,21 +375,56 @@
         $.post(sdDiveEdit.ajaxUrl, formData, function(resp) {
             $btn.prop('disabled', false).html('<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Salva Modifiche');
             if (resp.success) {
+                _formSnapshot = null; // nessuna modifica non salvata dopo il salvataggio
                 showMsg(resp.data.message + ' (' + resp.data.changes_count + ' campi modificati)', 'success');
-                // Aggiorna il badge "mod." nella card
-                var $card = $('.sd-edit-card[data-dive-id="' + currentDiveId + '"]');
-                var $badge = $card.find('.sd-meta-edited');
-                if ($badge.length === 0) {
-                    $card.find('.sd-edit-meta').append('<span class="sd-meta-badge sd-meta-edited">mod.</span>');
-                }
-                // Aggiorna dati visibili nella card
+
                 var newSite = $('input[name="site_name"]').val();
                 var newDate = $('input[name="dive_date"]').val();
-                if (newSite) $card.find('.sd-edit-site').text(newSite);
+                var fmtDate = '';
                 if (newDate) {
                     var dp = newDate.split('-');
-                    $card.find('.sd-edit-date').text(dp[2] + '/' + dp[1] + '/' + dp[0]);
+                    fmtDate = dp[2] + '/' + dp[1] + '/' + dp[0];
                 }
+
+                // Aggiorna card nella pagina modifica-logbook
+                var $editCard = $('.sd-edit-card[data-dive-id="' + currentDiveId + '"]');
+                if ($editCard.length) {
+                    if ($editCard.find('.sd-meta-edited').length === 0) {
+                        $editCard.find('.sd-edit-meta').append('<span class="sd-meta-badge sd-meta-edited">mod.</span>');
+                    }
+                    if (newSite) $editCard.find('.sd-edit-site').text(newSite);
+                    if (fmtDate) $editCard.find('.sd-edit-date').text(fmtDate);
+                }
+
+                // Aggiorna card nella dashboard
+                var $dashCard = $('.sd-dive-card[data-dive-id="' + currentDiveId + '"]');
+                if ($dashCard.length) {
+                    if ($dashCard.find('.sd-meta-edited').length === 0) {
+                        $dashCard.find('.sd-dive-meta').append('<span class="sd-meta-badge sd-meta-edited">mod.</span>');
+                    }
+                    if (newSite) $dashCard.find('.sd-dive-site').text(newSite);
+                    if (fmtDate) $dashCard.find('.sd-dive-date').text(fmtDate);
+
+                    // Aggiorna pulsante mappa nella card
+                    var savedLat = parseFloat($('input[name="site_latitude"]').val()) || 0;
+                    var savedLng = parseFloat($('input[name="site_longitude"]').val()) || 0;
+                    if (savedLat !== 0 && savedLng !== 0) {
+                        var savedTitle = newSite || $dashCard.find('.sd-dive-site').text();
+                        $dashCard
+                            .attr({ 'data-lat': savedLat, 'data-lng': savedLng });
+                        var $mapBtn = $dashCard.find('.sd-btn-card-map');
+                        $mapBtn
+                            .removeClass('sd-btn-card-map--disabled')
+                            .addClass('sd-btn-card-map--active sd-btn-open-map')
+                            .removeAttr('disabled')
+                            .attr({ 'data-lat': savedLat, 'data-lng': savedLng, 'data-title': savedTitle })
+                            .css({ cursor: 'pointer', opacity: '', 'pointer-events': '' })
+                            .prop('title', 'Mostra posizione');
+                    }
+                }
+
+                // Aggiorna pulsante mappa nel form
+                syncFormMapButton();
             } else {
                 showMsg(resp.data?.message || 'Errore', 'error');
             }
@@ -349,11 +432,28 @@
     });
 
     // ============================================================
-    // CLOSE EDIT
+    // CLOSE EDIT — controlla modifiche non salvate, poi torna alla card
     // ============================================================
     $(document).on('click', '#sd-edit-panel-close, #sd-btn-cancel-edit', function() {
-        $('#sd-edit-panel').slideUp(200);
+        // Controlla se ci sono modifiche non salvate
+        var currentData = $('#sd-edit-form').serialize();
+        if (_formSnapshot !== null && currentData !== _formSnapshot) {
+            if (!confirm('Hai modifiche non salvate. Chiudendo perderai i dati inseriti.\n\nVuoi continuare?')) {
+                return; // L'utente ha scelto di restare nel form
+            }
+        }
+
+        var diveId = currentDiveId;
+        _formSnapshot = null;
         currentDiveId = null;
+
+        $('#sd-edit-panel').slideUp(200, function() {
+            if (!diveId) return;
+            var $card = $('.sd-dive-card[data-dive-id="' + diveId + '"], .sd-edit-card[data-dive-id="' + diveId + '"]').first();
+            if ($card.length) {
+                $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
+            }
+        });
     });
 
     // ============================================================
@@ -474,12 +574,37 @@
         return pad(d.getDate()) + '/' + pad(d.getMonth()+1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    var _toastTimer = null;
+
     function showMsg(text, type) {
-        var $msg = $('#sd-edit-messages');
-        $msg.stop(true).removeClass('sd-msg-success sd-msg-error')
-            .addClass(type === 'error' ? 'sd-msg-error' : 'sd-msg-success')
-            .html(text).fadeIn(200);
-        setTimeout(function() { $msg.fadeOut(400); }, 4000);
+        // Toast fisso in alto, visibile ovunque nella pagina
+        var $toast = $('#sd-save-toast');
+        if (!$toast.length) {
+            $toast = $('<div id="sd-save-toast"></div>').appendTo('body');
+        }
+        var icon = type === 'error'
+            ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+            : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+
+        // Cancella il timer precedente per evitare fadeOut multipli
+        if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+
+        $toast
+            .stop(true, true)
+            .removeClass('sd-toast-success sd-toast-error')
+            .addClass(type === 'error' ? 'sd-toast-error' : 'sd-toast-success')
+            .html(icon + '<span>' + text + '</span>')
+            // Imposta display:flex manualmente — non via CSS !important
+            // così jQuery può sovrascriverlo con display:none nel fadeOut
+            .css('display', 'flex')
+            .hide()
+            .fadeIn(250);
+
+        var delay = type === 'error' ? 4500 : 2500;
+        _toastTimer = setTimeout(function() {
+            $toast.fadeOut(400);
+            _toastTimer = null;
+        }, delay);
     }
 
     function esc(s) {

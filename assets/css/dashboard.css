@@ -107,13 +107,7 @@
     border: 1px solid var(--sd-gray-200);
     border-radius: var(--sd-radius-sm);
     box-shadow: var(--sd-shadow);
-    cursor: pointer;
     transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.sd-dive-card:hover {
-    border-color: var(--sd-blue);
-    box-shadow: var(--sd-shadow-md);
 }
 
 .sd-dive-card-left {
@@ -405,6 +399,209 @@
     text-align: center;
     padding: 40px 0;
     color: var(--sd-gray-500);
+}
+
+/* ============================================================
+   CARD ACTIONS (pulsanti Dettagli / Modifica / Storico / Mappa)
+   ============================================================ */
+.sd-dive-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 5px;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+.sd-btn-card-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 11px;
+    height: 34px;
+    border-radius: var(--sd-radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid transparent;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+    box-sizing: border-box;
+}
+
+/* Dettagli — blu */
+.sd-btn-detail.sd-btn-card-action {
+    border-color: var(--sd-blue);
+    background: var(--sd-white);
+    color: var(--sd-blue);
+}
+.sd-btn-detail.sd-btn-card-action:hover {
+    background: var(--sd-blue);
+    color: var(--sd-white);
+}
+
+/* Modifica — verde teal */
+.sd-btn-card-edit {
+    border-color: var(--sd-teal);
+    background: var(--sd-white);
+    color: var(--sd-teal);
+}
+.sd-btn-card-edit:hover {
+    background: var(--sd-teal);
+    color: var(--sd-white);
+}
+
+/* Storico — arancio */
+.sd-btn-card-history {
+    border: 1.5px solid #D97706 !important;
+    background: #FFFFFF !important;
+    color: #D97706 !important;
+}
+.sd-btn-card-history:hover {
+    background: #D97706 !important;
+    color: #FFFFFF !important;
+}
+
+/* Globo — attivo */
+.sd-btn-card-map--active {
+    border: 1.5px solid #0EA5E9;
+    background: #E0F2FE;
+    color: #0284C7;
+    cursor: pointer;
+}
+.sd-btn-card-map--active:hover {
+    background: #0EA5E9;
+    color: var(--sd-white);
+}
+
+/* Globo — disabilitato */
+.sd-btn-card-map--disabled,
+.sd-btn-card-map:disabled {
+    border: 1.5px solid var(--sd-gray-200);
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-300);
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ============================================================
+   PULSANTE "MODIFICA" nel footer del modal dettaglio
+   ============================================================ */
+.sd-btn-modal-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: #E0F2F1;
+    color: var(--sd-teal);
+    border: 1px solid #B2DFDB;
+    border-radius: var(--sd-radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sd-btn-modal-edit:hover {
+    background: var(--sd-teal);
+    color: var(--sd-white);
+}
+
+/* ============================================================
+   PULSANTE MAPPA nei modali (dettaglio ed edit)
+   ============================================================ */
+.sd-btn-detail-map,
+.sd-btn-form-map {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: #E0F2FE;
+    color: #0284C7;
+    border: 1px solid #BAE6FD;
+    border-radius: var(--sd-radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sd-btn-detail-map:hover,
+.sd-btn-form-map--active:hover {
+    background: #0EA5E9;
+    color: var(--sd-white);
+}
+.sd-btn-form-map:disabled,
+.sd-btn-form-map:not(.sd-btn-form-map--active) {
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-400);
+    border-color: var(--sd-gray-200);
+    cursor: default;
+}
+
+/* full-width detail item */
+.sd-detail-full {
+    grid-column: 1 / -1;
+    padding: 6px 0;
+}
+
+/* ============================================================
+   BADGE "mod." nelle dive card
+   ============================================================ */
+.sd-meta-edited {
+    background: #EDE9FE;
+    color: #7C3AED;
+}
+
+/* ============================================================
+   BANDIERA DAN (marker Leaflet)
+   ============================================================ */
+.sd-dan-flag-marker { background: none !important; border: none !important; }
+.sd-dan-flag { display: flex; flex-direction: column; align-items: flex-start; }
+.sd-dan-flag-pole {
+    width: 3px;
+    height: 26px;
+    background: #555;
+    border-radius: 0 0 2px 2px;
+    margin-left: 1px;
+}
+
+/* ============================================================
+   TOAST NOTIFICA SALVATAGGIO (fisso in alto, sempre visibile)
+   ============================================================ */
+#sd-save-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 90vw;
+    white-space: nowrap;
+}
+#sd-save-toast.sd-toast-success {
+    background: #16A34A;
+    color: #fff;
+    border: 1px solid #15803D;
+}
+#sd-save-toast.sd-toast-error {
+    background: #DC2626;
+    color: #fff;
+    border: 1px solid #B91C1C;
+}
+#sd-save-toast svg {
+    flex-shrink: 0;
 }
 
 /* ============================================================

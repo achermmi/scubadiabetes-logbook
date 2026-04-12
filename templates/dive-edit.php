@@ -104,7 +104,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <?php esc_html_e( 'Salva Modifiche', 'sd-logbook' ); ?>
             </button>
             <button type="button" class="sd-btn-cancel-edit" id="sd-btn-cancel-edit">
-                <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
+                <?php esc_html_e( 'Chiudi', 'sd-logbook' ); ?>
             </button>
         </div>
     </div>
