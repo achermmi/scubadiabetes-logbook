@@ -617,10 +617,24 @@
     .sd-dive-card {
         padding: 10px;
         gap: 8px;
+        flex-wrap: wrap;
     }
 
     .sd-dive-card-left {
         min-width: 40px;
+    }
+
+    .sd-dive-card-right.sd-dive-actions {
+        flex-basis: 100%;
+        width: 100%;
+        justify-content: flex-end;
+        gap: 4px;
+    }
+
+    .sd-btn-card-action {
+        padding: 0 8px;
+        height: 30px;
+        font-size: 10px;
     }
 
     .sd-modal {
