@@ -172,6 +172,19 @@ class SD_Dive_Import {
 			);
 		}
 
+		// Extra: distinct Platform/Environment/Weather/Dress values from dive_details
+		$extra = array();
+		$detail_fields = array( 'Platform', 'Environment', 'Weather', 'Conditions', 'Dress', 'DiveType', 'EntryType', 'DiveActivity' );
+		foreach ( $detail_fields as $field ) {
+			$rows = $q( "SELECT DISTINCT \"{$field}\" AS val FROM dive_details WHERE \"{$field}\" IS NOT NULL AND \"{$field}\" != '' LIMIT 20" );
+			if ( ! empty( $rows ) && ! isset( $rows[0]['_error'] ) ) {
+				$extra[ $field ] = array_column( $rows, 'val' );
+			}
+		}
+		if ( ! empty( $extra ) ) {
+			$schema['_dive_details_field_values'] = $extra;
+		}
+
 		@unlink( $tmp );
 		wp_send_json_success( array( 'schema' => $schema ) );
 	}
@@ -550,14 +563,32 @@ class SD_Dive_Import {
 				TankSize, Weight,
 				GearNotes, Notes,
 				Dress,
-				GnssEntryLocation
+				GnssEntryLocation,
+				ThermalComfort, Workload, Problems, Malfunctions, Symptoms, ExposureToAltitude
 			FROM dive_details
 			ORDER BY DiveDate ASC';
 
-		if ( $use_sqlite3 ) {
-			$rows = $this->query_sqlite3( $tmp, $sql );
-		} else {
-			$rows = $this->query_pdo_sqlite( $tmp, $sql );
+		// Try full query with extended columns; fall back without them if the
+		// Shearwater DB version does not include ThermalComfort etc.
+		$sql_fallback = str_replace(
+			',
+				ThermalComfort, Workload, Problems, Malfunctions, Symptoms, ExposureToAltitude',
+			'',
+			$sql
+		);
+		try {
+			if ( $use_sqlite3 ) {
+				$rows = $this->query_sqlite3( $tmp, $sql );
+			} else {
+				$rows = $this->query_pdo_sqlite( $tmp, $sql );
+			}
+		} catch ( Exception $e ) {
+			// Extended columns not available — retry without them.
+			if ( $use_sqlite3 ) {
+				$rows = $this->query_sqlite3( $tmp, $sql_fallback );
+			} else {
+				$rows = $this->query_pdo_sqlite( $tmp, $sql_fallback );
+			}
 		}
 
 		// Load water temperatures separately via schema discovery.
@@ -597,11 +628,13 @@ class SD_Dive_Import {
 			'Overcast'     => 'nuvoloso',
 			'Rain'         => 'pioggia',
 			'Rainy'        => 'pioggia',
+			'Night'        => 'notturna',
 			// Italian
 			'Soleggiato'   => 'sereno',
 			'Nuvoloso'     => 'nuvoloso',
 			'Coperto'      => 'nuvoloso',
 			'Pioggia'      => 'pioggia',
+			'Notte'        => 'notturna',
 		);
 		$cond_map = array(
 			// English
@@ -622,11 +655,128 @@ class SD_Dive_Import {
 			'Semi Dry Suit'  => 'semistagna',
 			'Dry Suit'       => 'stagna',
 			'Drysuit'        => 'stagna',
+			'Dive Skin'      => 'skin',
 			// Italian
 			'Muta umida'     => 'umida',
 			'Muta semi-stagna' => 'semistagna',
 			'Muta semistagna'  => 'semistagna',
 			'Muta stagna'    => 'stagna',
+		);
+		// Platform → entry_type (tipo di ingresso/piattaforma)
+		// All mapped values must fit varchar(10).
+		$platform_map = array(
+			// English (legacy values)
+			'Shore'         => 'riva',
+			'Boat'          => 'barca',
+			'Drift'         => 'drift',
+			'Guided Dive'   => 'guidata',
+			'Guided dive'   => 'guidata',
+			'Resort'        => 'resort',
+			'Liveaboard'    => 'liveab.',
+			'Cavern'        => 'grotta',
+			'Ice'           => 'ghiaccio',
+			'Platform'      => 'barca',
+			'Night Dive'    => 'notturna',
+			'Open Water'    => 'mare',
+			// English (observed in Shearwater Cloud backups)
+			'Landside'      => 'riva',
+			'Beach/Shore'   => 'riva',
+			'Beach'         => 'riva',
+			'Pier'          => 'riva',
+			'Small boat'    => 'barca',
+			'Large boat'    => 'barca',
+			'Inflatable'    => 'barca',
+			'Zodiac'        => 'barca',
+			'Liveaboard boat' => 'liveab.',
+			'Drift dive'    => 'drift',
+			'Cave'          => 'grotta',
+			'Night dive'    => 'notturna',
+			// Italian
+			'Riva'          => 'riva',
+			'Spiaggia'      => 'riva',
+			'Molo'          => 'riva',
+			'Barca'         => 'barca',
+			'Barca piccola' => 'barca',
+			'Liveaboard'    => 'liveab.',
+			'Guidata'       => 'guidata',
+			'Corrente'      => 'drift',
+			'Notturna'      => 'notturna',
+		);
+		// ThermalComfort (comfort termico)
+		$thermal_map = array(
+			'Cool'         => 'freddo',
+			'Warm/Neutral' => 'confortevole',
+			'Warm'         => 'confortevole',
+			'Neutral'      => 'confortevole',
+			'Hot'          => 'caldo',
+			'Very Hot'     => 'molto_caldo',
+			'Cold'         => 'molto_freddo',
+			// Italian
+			'Freddo'       => 'freddo',
+			'Confortevole' => 'confortevole',
+			'Caldo'        => 'caldo',
+		);
+		// Workload (carico di lavoro)
+		$workload_map = array(
+			'Light'    => 'leggero',
+			'Moderate' => 'moderato',
+			'Severe'   => 'intenso',
+			'Very Hot' => 'intenso',
+			// Italian
+			'Leggero'  => 'leggero',
+			'Moderato' => 'moderato',
+			'Intenso'  => 'intenso',
+		);
+		// Problems (problemi)
+		$problems_map = array(
+			'None'          => 'nessuno',
+			'Buoyancy'      => 'galleggiamento',
+			'Navigation'    => 'navigazione',
+			'Lost buddy'    => 'compagno_perso',
+			'Entanglement'  => 'aggrovigliamento',
+			'Equipment'     => 'attrezzatura',
+			'Visibility'    => 'visibilita',
+			'Other'         => 'altro',
+			// Italian
+			'Nessuno'       => 'nessuno',
+		);
+		// Malfunctions (guasti)
+		$malfunctions_map = array(
+			'None'       => 'nessuno',
+			'Face mask'  => 'maschera',
+			'Mask'       => 'maschera',
+			'Regulator'  => 'erogatore',
+			'BCD'        => 'gav',
+			'Computer'   => 'computer',
+			'Wetsuit'    => 'muta',
+			'Drysuit'    => 'muta_stagna',
+			'Fin'        => 'pinna',
+			'Tank'       => 'bombola',
+			'Other'      => 'altro',
+			// Italian
+			'Nessuno'    => 'nessuno',
+			'Maschera'   => 'maschera',
+			'Erogatore'  => 'erogatore',
+		);
+		// Symptoms (sintomi)
+		$symptoms_map = array(
+			'No'         => 'no',
+			'None'       => 'no',
+			'Yes'        => 'si',
+			// Italian
+			'Sì'         => 'si',
+			'Nessuno'    => 'no',
+		);
+		// ExposureToAltitude (esposizione all'altitudine)
+		$altitude_map = array(
+			'None'   => 'nessuno',
+			'No'     => 'nessuno',
+			'Yes'    => 'si',
+			'V'      => 'si',
+			'< 6h'   => 'meno_6h',
+			'> 6h'   => 'piu_6h',
+			// Italian
+			'Nessuno' => 'nessuno',
 		);
 
 		$dives = array();
@@ -766,9 +916,51 @@ class SD_Dive_Import {
 				$visibility = 'scarsa';
 			}
 
-			// Notes
-			$notes_parts = array_filter( array( $row['GearNotes'], $row['Notes'] ) );
-			$notes       = implode( "\n", $notes_parts );
+			// Notes: keep GearNotes separate, put only dive notes in notes field.
+			$gear_notes = trim( $row['GearNotes'] ?? '' ) ?: null;
+			$notes      = trim( $row['Notes'] ?? '' ) ?: null;
+
+			// New extended fields (may be absent in older Shearwater DB versions).
+			// Platform → stored in entry_type (same field, expanded values).
+			$entry_type_from_platform = null;
+			$raw_platform             = $row['Platform'] ?? null;
+			if ( $raw_platform && '' !== $raw_platform ) {
+				$entry_type_from_platform = substr( $platform_map[ $raw_platform ] ?? $raw_platform, 0, 10 );
+			}
+			$thermal_comfort     = null;
+			$raw_thermal         = $row['ThermalComfort'] ?? null;
+			if ( $raw_thermal && '' !== $raw_thermal ) {
+				$thermal_comfort = $thermal_map[ $raw_thermal ] ?? $raw_thermal;
+			}
+			$workload            = null;
+			$raw_workload        = $row['Workload'] ?? null;
+			if ( $raw_workload && '' !== $raw_workload ) {
+				$workload = $workload_map[ $raw_workload ] ?? $raw_workload;
+			}
+			$problems            = null;
+			$raw_problems        = $row['Problems'] ?? null;
+			if ( $raw_problems && '' !== $raw_problems && 'None' !== $raw_problems ) {
+				$problems = $problems_map[ $raw_problems ] ?? $raw_problems;
+			} elseif ( 'None' === $raw_problems ) {
+				$problems = 'nessuno';
+			}
+			$malfunctions        = null;
+			$raw_malfunctions    = $row['Malfunctions'] ?? null;
+			if ( $raw_malfunctions && '' !== $raw_malfunctions && 'None' !== $raw_malfunctions ) {
+				$malfunctions = $malfunctions_map[ $raw_malfunctions ] ?? $raw_malfunctions;
+			} elseif ( 'None' === $raw_malfunctions ) {
+				$malfunctions = 'nessuno';
+			}
+			$symptoms            = null;
+			$raw_symptoms        = $row['Symptoms'] ?? null;
+			if ( null !== $raw_symptoms && '' !== $raw_symptoms ) {
+				$symptoms = $symptoms_map[ $raw_symptoms ] ?? $raw_symptoms;
+			}
+			$exposure_to_altitude = null;
+			$raw_altitude         = $row['ExposureToAltitude'] ?? null;
+			if ( null !== $raw_altitude && '' !== $raw_altitude ) {
+				$exposure_to_altitude = $altitude_map[ $raw_altitude ] ?? $raw_altitude;
+			}
 
 			// Computer info: brand is always Shearwater.
 			// Prefer per-dive entry, fall back to global (one-row-per-computer tables).
@@ -779,40 +971,48 @@ class SD_Dive_Import {
 			$sw_firmware = $info_src['firmware'] ?? null;
 
 			$dives[] = array(
-				'source'              => 'shearwater',
-				'dive_number'         => $dive_number,
-				'dive_date'           => $date_str,
-				'time_in'             => $time_str,
-				'dive_time'           => $dive_time,
-				'site_name'           => $site_name,
-				'site_latitude'       => $lat,
-				'site_longitude'      => $lng,
-				'max_depth'           => $max_depth,
-				'avg_depth'           => $avg_depth,
-				'temp_water'          => $temp_water,
-				'temp_air'            => $temp_air,
-				'pressure_start'      => $pressure_start,
-				'pressure_end'        => $pressure_end,
-				'tank_capacity'       => $tank_capacity,
-				'gas_mix'             => $gas_mix,
-				'nitrox_percentage'   => $nitrox_pct,
-				'ballast_kg'          => $ballast_kg,
-				'buddy_name'          => $row['Buddy'] ?: null,
-				'guide_name'          => null,
-				'notes'               => $notes ?: null,
-				'dive_type'           => $dive_type,
-				'visibility'          => $visibility,
-				'weather'             => $weather,
-				'sea_condition'       => $sea_condition,
-				'suit_type'           => $suit_type,
-				'current_strength'    => null,
-				'computer_brand'      => 'Shearwater',
-				'computer_model'      => $sw_model,
-				'computer_serial'     => $sw_serial,
-				'computer_firmware'   => $sw_firmware,
-				'imported_at'         => current_time( 'mysql' ),
-				'shared_for_research' => 1,
-				'_shearwater_id'      => $dive_id,
+				'source'               => 'shearwater',
+				'dive_number'          => $dive_number,
+				'dive_date'            => $date_str,
+				'time_in'              => $time_str,
+				'dive_time'            => $dive_time,
+				'site_name'            => $site_name,
+				'site_latitude'        => $lat,
+				'site_longitude'       => $lng,
+				'max_depth'            => $max_depth,
+				'avg_depth'            => $avg_depth,
+				'temp_water'           => $temp_water,
+				'temp_air'             => $temp_air,
+				'pressure_start'       => $pressure_start,
+				'pressure_end'         => $pressure_end,
+				'tank_capacity'        => $tank_capacity,
+				'gas_mix'              => $gas_mix,
+				'nitrox_percentage'    => $nitrox_pct,
+				'ballast_kg'           => $ballast_kg,
+				'buddy_name'           => $row['Buddy'] ?: null,
+				'guide_name'           => null,
+				'entry_type'           => $entry_type_from_platform,
+				'notes'                => $notes,
+				'gear_notes'           => $gear_notes,
+				'thermal_comfort'      => $thermal_comfort,
+				'workload'             => $workload,
+				'problems'             => $problems,
+				'malfunctions'         => $malfunctions,
+				'symptoms'             => $symptoms,
+				'exposure_to_altitude' => $exposure_to_altitude,
+				'dive_type'            => $dive_type,
+				'visibility'           => $visibility,
+				'weather'              => $weather,
+				'sea_condition'        => $sea_condition,
+				'suit_type'            => $suit_type,
+				'current_strength'     => null,
+				'computer_brand'       => 'Shearwater',
+				'computer_model'       => $sw_model,
+				'computer_serial'      => $sw_serial,
+				'computer_firmware'    => $sw_firmware,
+				'imported_at'          => current_time( 'mysql' ),
+				'shared_for_research'  => 1,
+				'_shearwater_id'       => $dive_id,
 			);
 		}
 
@@ -1115,10 +1315,12 @@ class SD_Dive_Import {
 			}
 
 			// After-dive information
-			$dive_time = null;
-			$max_depth = null;
-			$avg_depth = null;
-			$notes     = null;
+			$dive_time         = null;
+			$max_depth         = null;
+			$avg_depth         = null;
+			$notes             = null;
+			$safety_stop_depth = null;
+			$safety_stop_time  = null;
 			if ( $after ) {
 				$dur = (float) ( $after->diveduration ?? 0 );
 				if ( $dur > 0 ) {
@@ -1144,6 +1346,39 @@ class SD_Dive_Import {
 						$temp_water = $lt_raw > 100 ? round( $lt_raw - 273.15, 1 ) : round( $lt_raw, 1 );
 					}
 				}
+
+				// Safety stop from <safetystops><stop>
+				if ( isset( $after->safetystops->stop ) ) {
+					foreach ( $after->safetystops->stop as $stop ) {
+						$sd = (float) ( $stop->depth ?? 0 );
+						$st = (float) ( $stop->duration ?? 0 );
+						if ( $sd > 0 || $st > 0 ) {
+							// duration in UDDF safetystops is in minutes
+							$safety_stop_depth = $sd > 0 ? round( $sd, 1 ) : null;
+							$safety_stop_time  = $st > 0 ? (int) round( $st ) : null;
+							break; // take first stop only
+						}
+					}
+				}
+			}
+
+			// Fallback: safety stop from <events><event type="safety_stop">
+			if ( null === $safety_stop_depth && null === $safety_stop_time && isset( $d->events ) ) {
+				foreach ( $d->events->event as $ev ) {
+					$ev_type = strtolower( trim( (string) ( $ev->type ?? '' ) ) );
+					if ( in_array( $ev_type, array( 'safety_stop', 'safetystop', 'safetyStop' ), true ) ) {
+						$ed = (float) ( $ev->depth ?? 0 );
+						$et = (float) ( $ev->duration ?? 0 );
+						if ( $ed > 0 ) {
+							$safety_stop_depth = round( $ed, 1 );
+						}
+						if ( $et > 0 ) {
+							// event duration is in seconds
+							$safety_stop_time = (int) round( $et / 60 );
+						}
+						break;
+					}
+				}
 			}
 
 			$dives[] = array(
@@ -1165,6 +1400,8 @@ class SD_Dive_Import {
 				'gas_mix'             => $gas_mix,
 				'nitrox_percentage'   => $nitrox_pct,
 				'ballast_kg'          => $ballast_kg,
+				'safety_stop_depth'   => $safety_stop_depth,
+				'safety_stop_time'    => $safety_stop_time,
 				'entry_type'          => $entry_type,
 				'visibility'          => $visibility,
 				'weather'             => $weather,
@@ -1547,47 +1784,65 @@ class SD_Dive_Import {
 			return (int) $v;
 		};
 
+		$nullable_textarea = function ( $v ) {
+			$s = sanitize_textarea_field( (string) $v );
+			return '' === $s ? null : $s;
+		};
+
 		return array(
-			'user_id'             => $user_id,
-			'dive_number'         => $dive_number,
-			'dive_date'           => sanitize_text_field( $raw['dive_date'] ),
-			'site_name'           => sanitize_text_field( $raw['site_name'] ?? 'Sito importato' ),
-			'site_latitude'       => $nullable_float( $raw['site_latitude'] ),
-			'site_longitude'      => $nullable_float( $raw['site_longitude'] ),
-			'time_in'             => $nullable_str( $raw['time_in'] ),
-			'time_out'            => ( ! empty( $raw['time_in'] ) && ! empty( $raw['dive_time'] ) )
+			'user_id'              => $user_id,
+			'dive_number'          => $dive_number,
+			'dive_date'            => sanitize_text_field( $raw['dive_date'] ),
+			'site_name'            => sanitize_text_field( $raw['site_name'] ?? 'Sito importato' ),
+			'site_latitude'        => $nullable_float( $raw['site_latitude'] ),
+			'site_longitude'       => $nullable_float( $raw['site_longitude'] ),
+			'time_in'              => $nullable_str( $raw['time_in'] ),
+			'time_out'             => ( ! empty( $raw['time_in'] ) && ! empty( $raw['dive_time'] ) )
 				? gmdate( 'H:i', strtotime( $raw['time_in'] ) + (int) $raw['dive_time'] * 60 )
 				: null,
-			'pressure_start'      => $nullable_int( $raw['pressure_start'] ),
-			'pressure_end'        => $nullable_int( $raw['pressure_end'] ),
-			'max_depth'           => $nullable_float( $raw['max_depth'] ),
-			'avg_depth'           => $nullable_float( $raw['avg_depth'] ),
-			'dive_time'           => $nullable_int( $raw['dive_time'] ),
-			'tank_count'          => 1,
-			'tank_capacity'       => $nullable_float( $raw['tank_capacity'] ),
-			'gas_mix'             => $nullable_str( $raw['gas_mix'] ) ?? 'aria',
-			'nitrox_percentage'   => $nullable_float( $raw['nitrox_percentage'] ),
-			'ballast_kg'          => $nullable_float( $raw['ballast_kg'] ),
-			'entry_type'          => null,
-			'dive_type'           => $nullable_str( $raw['dive_type'] ),
-			'weather'             => $nullable_str( $raw['weather'] ),
-			'temp_air'            => $nullable_float( $raw['temp_air'] ),
-			'temp_water'          => $nullable_float( $raw['temp_water'] ),
-			'sea_condition'       => $nullable_str( $raw['sea_condition'] ),
-			'current_strength'    => $nullable_str( $raw['current_strength'] ),
-			'visibility'          => $nullable_str( $raw['visibility'] ),
-			'suit_type'           => $nullable_str( $raw['suit_type'] ),
-			'sightings'           => null,
-			'other_equipment'     => null,
-			'notes'               => $nullable_str( $raw['notes'] ),
-			'buddy_name'          => $nullable_str( $raw['buddy_name'] ),
-			'guide_name'          => $nullable_str( $raw['guide_name'] ),
-			'computer_brand'      => $nullable_str( $raw['computer_brand'] ),
-			'computer_model'      => $nullable_str( $raw['computer_model'] ),
-			'computer_serial'     => $nullable_str( $raw['computer_serial'] ),
-			'computer_firmware'   => $nullable_str( $raw['computer_firmware'] ),
-			'imported_at'         => $nullable_str( $raw['imported_at'] ),
-			'shared_for_research' => isset( $raw['shared_for_research'] ) ? (int) $raw['shared_for_research'] : 1,
+			'pressure_start'       => $nullable_int( $raw['pressure_start'] ),
+			'pressure_end'         => $nullable_int( $raw['pressure_end'] ),
+			'max_depth'            => $nullable_float( $raw['max_depth'] ),
+			'avg_depth'            => $nullable_float( $raw['avg_depth'] ),
+			'dive_time'            => $nullable_int( $raw['dive_time'] ),
+			'tank_count'           => 1,
+			'tank_capacity'        => $nullable_float( $raw['tank_capacity'] ),
+			'gas_mix'              => $nullable_str( $raw['gas_mix'] ) ?? 'aria',
+			'nitrox_percentage'    => $nullable_float( $raw['nitrox_percentage'] ),
+			'ballast_kg'           => $nullable_float( $raw['ballast_kg'] ),
+			'safety_stop_depth'    => $nullable_float( $raw['safety_stop_depth'] ?? null ),
+			'safety_stop_time'     => $nullable_int( $raw['safety_stop_time'] ?? null ),
+			'deco_stop_depth'      => $nullable_float( $raw['deco_stop_depth'] ?? null ),
+			'deco_stop_time'       => $nullable_int( $raw['deco_stop_time'] ?? null ),
+			'deep_stop_depth'      => $nullable_float( $raw['deep_stop_depth'] ?? null ),
+			'deep_stop_time'       => $nullable_int( $raw['deep_stop_time'] ?? null ),
+			'entry_type'           => $nullable_str( substr( (string) ( $raw['entry_type'] ?? '' ), 0, 10 ) ),
+			'dive_type'            => $nullable_str( $raw['dive_type'] ),
+			'weather'              => $nullable_str( $raw['weather'] ),
+			'temp_air'             => $nullable_float( $raw['temp_air'] ),
+			'temp_water'           => $nullable_float( $raw['temp_water'] ),
+			'sea_condition'        => $nullable_str( $raw['sea_condition'] ),
+			'current_strength'     => $nullable_str( $raw['current_strength'] ),
+			'visibility'           => $nullable_str( $raw['visibility'] ),
+			'suit_type'            => $nullable_str( $raw['suit_type'] ),
+			'gear_notes'           => $nullable_textarea( $raw['gear_notes'] ?? '' ),
+			'thermal_comfort'      => $nullable_str( $raw['thermal_comfort'] ),
+			'workload'             => $nullable_str( $raw['workload'] ),
+			'problems'             => $nullable_str( $raw['problems'] ),
+			'malfunctions'         => $nullable_str( $raw['malfunctions'] ),
+			'symptoms'             => $nullable_str( $raw['symptoms'] ),
+			'exposure_to_altitude' => $nullable_str( $raw['exposure_to_altitude'] ),
+			'sightings'            => null,
+			'other_equipment'      => null,
+			'notes'                => $nullable_textarea( $raw['notes'] ?? '' ),
+			'buddy_name'           => $nullable_str( $raw['buddy_name'] ),
+			'guide_name'           => $nullable_str( $raw['guide_name'] ),
+			'computer_brand'       => $nullable_str( $raw['computer_brand'] ),
+			'computer_model'       => $nullable_str( $raw['computer_model'] ),
+			'computer_serial'      => $nullable_str( $raw['computer_serial'] ),
+			'computer_firmware'    => $nullable_str( $raw['computer_firmware'] ),
+			'imported_at'          => $nullable_str( $raw['imported_at'] ),
+			'shared_for_research'  => isset( $raw['shared_for_research'] ) ? (int) $raw['shared_for_research'] : 1,
 		);
 	}
 }

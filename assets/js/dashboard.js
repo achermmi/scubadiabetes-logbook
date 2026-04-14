@@ -149,7 +149,7 @@
             html += detailItem('Prof. media', dive.avg_depth ? dive.avg_depth + ' m' : '—');
             html += detailItem('Tempo', dive.dive_time ? dive.dive_time + ' min' : '—');
             html += detailItem('Tipo immersione', dive.dive_type || '—');
-            html += detailItem('Ingresso', dive.entry_type || '—');
+            html += detailItem('Ingresso', dive.entry_type ? (labelOf(dive.entry_type)) : '—');
             html += detailItem('Miscela', dive.gas_mix || '—');
             if (dive.gas_mix === 'nitrox' && dive.nitrox_percentage) {
                 html += detailItem('%O₂ Nitrox', dive.nitrox_percentage + '%');
@@ -166,6 +166,12 @@
             html += detailItem('Mare', dive.sea_condition || '—');
             html += detailItem('Corrente', dive.current_strength || '—');
             html += detailItem('Visibilità', dive.visibility || '—');
+            if (dive.thermal_comfort) html += detailItem('Comfort termico', labelOf(dive.thermal_comfort));
+            if (dive.workload) html += detailItem('Carico di lavoro', labelOf(dive.workload));
+            if (dive.problems) html += detailItem('Problemi', labelOf(dive.problems));
+            if (dive.malfunctions) html += detailItem('Guasti attrezzatura', labelOf(dive.malfunctions));
+            if (dive.symptoms) html += detailItem('Sintomi post-immersione', labelOf(dive.symptoms));
+            if (dive.exposure_to_altitude) html += detailItem("Esposizione all'altitudine", labelOf(dive.exposure_to_altitude));
             html += detailItem('Compagno', dive.buddy_name || '—');
             html += detailItem('Guida', dive.guide_name || '—');
 
@@ -207,6 +213,9 @@
 
             if (dive.sightings) {
                 html += '<div class="sd-detail-item sd-detail-full"><div class="sd-detail-label">Cosa ho visto</div><div class="sd-detail-value">' + esc(dive.sightings) + '</div></div>';
+            }
+            if (dive.gear_notes) {
+                html += '<div class="sd-detail-item sd-detail-full"><div class="sd-detail-label">Note sull\'equipaggiamento</div><div class="sd-detail-value">' + esc(dive.gear_notes) + '</div></div>';
             }
             if (dive.other_equipment) {
                 html += '<div class="sd-detail-item sd-detail-full"><div class="sd-detail-label">Altro equipaggiamento</div><div class="sd-detail-value">' + esc(dive.other_equipment) + '</div></div>';
@@ -386,6 +395,31 @@
     // ============================================================
     function detailItem(label, value) {
         return '<div class="sd-detail-item"><div class="sd-detail-label">' + esc(label) + '</div><div class="sd-detail-value">' + esc(value) + '</div></div>';
+    }
+
+    // Traduce chiavi interne in etichette italiane leggibili
+    var _labels = {
+        // entry_type (valori estesi da Platform Shearwater)
+        riva:'Riva', barca:'Barca', drift:'Drift', guidata:'Guidata', resort:'Resort', liveaboard:'Liveaboard', grotta:'Grotta', ghiaccio:'Ghiaccio', piattaforma:'Piattaforma',
+        // thermal_comfort
+        molto_freddo:'Molto freddo', freddo:'Freddo', confortevole:'Confortevole', caldo:'Caldo', molto_caldo:'Molto caldo',
+        // workload
+        leggero:'Leggero', moderato:'Moderato', intenso:'Intenso',
+        // problems
+        nessuno:'Nessuno', galleggiamento:'Galleggiamento', navigazione:'Navigazione',
+        compagno_perso:'Compagno perso', aggrovigliamento:'Aggrovigliamento',
+        attrezzatura:'Attrezzatura', visibilita:'Visibilità scarsa', altro:'Altro',
+        // malfunctions
+        maschera:'Maschera', erogatore:'Erogatore', gav:'GAV', computer:'Computer',
+        muta:'Muta', muta_stagna:'Muta stagna', pinna:'Pinna', bombola:'Bombola',
+        // symptoms
+        no:'No', si:'Sì',
+        // exposure_to_altitude
+        meno_6h:'Meno di 6 ore', piu_6h:'Più di 6 ore'
+    };
+    function labelOf(val) {
+        if (!val) return '—';
+        return _labels[val] || val;
     }
 
     function formatDate(dateStr) {

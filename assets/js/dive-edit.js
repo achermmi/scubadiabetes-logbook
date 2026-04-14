@@ -180,7 +180,7 @@
         // ══════════════════════════════════════════════════════════
         html += sectionTitle('Ingresso in acqua');
         html += '<div class="sd-field-row">';
-        html += selectField('entry_type', 'Tipo ingresso', dive.entry_type, {'':'—',riva:'Riva',barca:'Barca',drift:'Drift'}, 'half');
+        html += selectField('entry_type', 'Tipo ingresso', dive.entry_type, {'':'—',riva:'Riva',barca:'Barca',drift:'Drift',guidata:'Guidata',resort:'Resort',liveaboard:'Liveaboard',grotta:'Grotta',ghiaccio:'Ghiaccio',piattaforma:'Piattaforma'}, 'half');
         html += '</div>';
 
         // ══════════════════════════════════════════════════════════
@@ -189,7 +189,7 @@
         html += sectionTitle('Condizioni');
         html += '<div class="sd-edit-subsection">Meteo</div>';
         html += '<div class="sd-field-row">';
-        html += selectField('weather', 'Meteo', dive.weather, {'':'—',sereno:'Sereno',nuvoloso:'Nuvoloso',pioggia:'Pioggia'}, 'third');
+        html += selectField('weather', 'Meteo', dive.weather, {'':'—',sereno:'Sereno',nuvoloso:'Nuvoloso',pioggia:'Pioggia',notturna:'Notturna'}, 'third');
         html += field('temp_air', 'Temp. aria (°C)', 'number', dive.temp_air, '33', 'third', '0.1');
         html += field('temp_water', 'Temp. acqua (°C)', 'number', dive.temp_water, '17', 'third', '0.1');
         html += '</div>';
@@ -203,6 +203,20 @@
         html += selectField('current_strength', 'Corrente', dive.current_strength, {'':'—',debole:'Debole',media:'Media',forte:'Forte'}, 'third');
         html += selectField('visibility', 'Visibilità', dive.visibility, {'':'—',buona:'Buona',media:'Media',scarsa:'Scarsa'}, 'third');
         html += '</div>';
+        html += '<div class="sd-edit-subsection">Dati fisiologici e sicurezza</div>';
+        html += '<div class="sd-field-row">';
+        html += selectField('thermal_comfort', 'Comfort termico', dive.thermal_comfort, {'':'—',molto_freddo:'Molto freddo',freddo:'Freddo',confortevole:'Confortevole',caldo:'Caldo',molto_caldo:'Molto caldo'}, 'half');
+        html += selectField('workload', 'Carico di lavoro', dive.workload, {'':'—',leggero:'Leggero',moderato:'Moderato',intenso:'Intenso'}, 'half');
+        html += '</div>';
+        html += '<div class="sd-field-row">';
+        html += selectField('problems', 'Problemi', dive.problems, {'':'—',nessuno:'Nessuno',galleggiamento:'Galleggiamento',navigazione:'Navigazione',compagno_perso:'Compagno perso',aggrovigliamento:'Aggrovigliamento',attrezzatura:'Attrezzatura',visibilita:'Visibilità scarsa',altro:'Altro'}, 'half');
+        html += selectField('malfunctions', 'Guasti attrezzatura', dive.malfunctions, {'':'—',nessuno:'Nessuno',maschera:'Maschera',erogatore:'Erogatore',gav:'GAV',computer:'Computer',muta:'Muta',muta_stagna:'Muta stagna',pinna:'Pinna',bombola:'Bombola',altro:'Altro'}, 'half');
+        html += '</div>';
+        html += '<div class="sd-field-row">';
+        html += selectField('symptoms', 'Sintomi post-immersione', dive.symptoms, {'':'—',no:'No',si:'Sì'}, 'half');
+        html += selectField('exposure_to_altitude', "Esposizione all'altitudine", dive.exposure_to_altitude, {'':'—',nessuno:'Nessuna',meno_6h:'Meno di 6 ore',piu_6h:'Più di 6 ore',si:'Sì (non specificato)'}, 'half');
+        html += '</div>';
+        html += textareaField('gear_notes', "Note sull'equipaggiamento", dive.gear_notes);
 
         // ══════════════════════════════════════════════════════════
         // SEZIONE 6: NOTE E COMPAGNI

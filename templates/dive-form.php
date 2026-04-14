@@ -179,6 +179,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <input type="hidden" name="suit_type" value="">
                 </div>
             </div>
+
+            <!-- Note equipaggiamento -->
+            <div class="sd-field">
+                <label for="sd-gear-notes"><?php esc_html_e( 'Note sull\'equipaggiamento', 'sd-logbook' ); ?></label>
+                <textarea id="sd-gear-notes" name="gear_notes" rows="2" placeholder="<?php esc_attr_e( 'Muta 7 mm, guanti, cappuccio...', 'sd-logbook' ); ?>"></textarea>
+            </div>
         </div>
 
         <!-- ============================================================ -->
@@ -330,6 +336,10 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <svg viewBox="0 0 40 40" width="36" height="36"><path d="M10 24a6 6 0 0 1-1-12 9 9 0 0 1 17-1 6 6 0 0 1 1 12z" fill="#94A3B8" stroke="#64748B" stroke-width="1.5"/><line x1="14" y1="28" x2="12" y2="34" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="28" x2="18" y2="34" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/><line x1="26" y1="28" x2="24" y2="34" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/></svg>
                     <span><?php esc_html_e( 'Pioggia', 'sd-logbook' ); ?></span>
                 </button>
+                <button type="button" class="sd-icon-btn" data-value="notturna">
+                    <svg viewBox="0 0 40 40" width="36" height="36"><path d="M28 22a10 10 0 1 1-12-12 8 8 0 0 0 12 12z" fill="#1E3A5F" stroke="#3B82F6" stroke-width="1.5"/><circle cx="32" cy="10" r="1.5" fill="#FCD34D"/><circle cx="28" cy="6" r="1" fill="#FCD34D"/><circle cx="34" cy="15" r="1" fill="#FCD34D"/></svg>
+                    <span><?php esc_html_e( 'Notturna', 'sd-logbook' ); ?></span>
+                </button>
             </div>
             <input type="hidden" name="weather" value="">
 
@@ -412,6 +422,82 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                         <button type="button" class="sd-icon-btn sd-btn-sm" data-value="scarsa"><?php esc_html_e( 'Scarsa', 'sd-logbook' ); ?></button>
                     </div>
                     <input type="hidden" name="visibility" value="">
+                </div>
+            </div>
+
+            <!-- Dati fisiologici e sicurezza -->
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label for="sd-thermal-comfort"><?php esc_html_e( 'Comfort termico', 'sd-logbook' ); ?></label>
+                    <select id="sd-thermal-comfort" name="thermal_comfort">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="molto_freddo"><?php esc_html_e( 'Molto freddo', 'sd-logbook' ); ?></option>
+                        <option value="freddo"><?php esc_html_e( 'Freddo', 'sd-logbook' ); ?></option>
+                        <option value="confortevole"><?php esc_html_e( 'Confortevole', 'sd-logbook' ); ?></option>
+                        <option value="caldo"><?php esc_html_e( 'Caldo', 'sd-logbook' ); ?></option>
+                        <option value="molto_caldo"><?php esc_html_e( 'Molto caldo', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label for="sd-workload"><?php esc_html_e( 'Carico di lavoro', 'sd-logbook' ); ?></label>
+                    <select id="sd-workload" name="workload">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="leggero"><?php esc_html_e( 'Leggero', 'sd-logbook' ); ?></option>
+                        <option value="moderato"><?php esc_html_e( 'Moderato', 'sd-logbook' ); ?></option>
+                        <option value="intenso"><?php esc_html_e( 'Intenso', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label for="sd-problems"><?php esc_html_e( 'Problemi', 'sd-logbook' ); ?></label>
+                    <select id="sd-problems" name="problems">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="nessuno"><?php esc_html_e( 'Nessuno', 'sd-logbook' ); ?></option>
+                        <option value="galleggiamento"><?php esc_html_e( 'Galleggiamento', 'sd-logbook' ); ?></option>
+                        <option value="navigazione"><?php esc_html_e( 'Navigazione', 'sd-logbook' ); ?></option>
+                        <option value="compagno_perso"><?php esc_html_e( 'Compagno perso', 'sd-logbook' ); ?></option>
+                        <option value="aggrovigliamento"><?php esc_html_e( 'Aggrovigliamento', 'sd-logbook' ); ?></option>
+                        <option value="attrezzatura"><?php esc_html_e( 'Attrezzatura', 'sd-logbook' ); ?></option>
+                        <option value="visibilita"><?php esc_html_e( 'Visibilità scarsa', 'sd-logbook' ); ?></option>
+                        <option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label for="sd-malfunctions"><?php esc_html_e( 'Guasti attrezzatura', 'sd-logbook' ); ?></label>
+                    <select id="sd-malfunctions" name="malfunctions">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="nessuno"><?php esc_html_e( 'Nessuno', 'sd-logbook' ); ?></option>
+                        <option value="maschera"><?php esc_html_e( 'Maschera', 'sd-logbook' ); ?></option>
+                        <option value="erogatore"><?php esc_html_e( 'Erogatore', 'sd-logbook' ); ?></option>
+                        <option value="gav"><?php esc_html_e( 'GAV', 'sd-logbook' ); ?></option>
+                        <option value="computer"><?php esc_html_e( 'Computer', 'sd-logbook' ); ?></option>
+                        <option value="muta"><?php esc_html_e( 'Muta', 'sd-logbook' ); ?></option>
+                        <option value="muta_stagna"><?php esc_html_e( 'Muta stagna', 'sd-logbook' ); ?></option>
+                        <option value="pinna"><?php esc_html_e( 'Pinna', 'sd-logbook' ); ?></option>
+                        <option value="bombola"><?php esc_html_e( 'Bombola', 'sd-logbook' ); ?></option>
+                        <option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label for="sd-symptoms"><?php esc_html_e( 'Sintomi post-immersione', 'sd-logbook' ); ?></label>
+                    <select id="sd-symptoms" name="symptoms">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="no"><?php esc_html_e( 'No', 'sd-logbook' ); ?></option>
+                        <option value="si"><?php esc_html_e( 'Sì', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label for="sd-exposure-altitude"><?php esc_html_e( 'Esposizione all\'altitudine', 'sd-logbook' ); ?></label>
+                    <select id="sd-exposure-altitude" name="exposure_to_altitude">
+                        <option value=""><?php esc_html_e( '— Non specificato —', 'sd-logbook' ); ?></option>
+                        <option value="nessuno"><?php esc_html_e( 'Nessuna', 'sd-logbook' ); ?></option>
+                        <option value="meno_6h"><?php esc_html_e( 'Meno di 6 ore', 'sd-logbook' ); ?></option>
+                        <option value="piu_6h"><?php esc_html_e( 'Più di 6 ore', 'sd-logbook' ); ?></option>
+                        <option value="si"><?php esc_html_e( 'Sì (non specificato)', 'sd-logbook' ); ?></option>
+                    </select>
                 </div>
             </div>
         </div>

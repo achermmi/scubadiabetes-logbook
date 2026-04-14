@@ -132,6 +132,13 @@ class SD_Database {
 			current_strength varchar(10) DEFAULT NULL,
 			visibility varchar(10) DEFAULT NULL,
 			suit_type varchar(15) DEFAULT NULL,
+			gear_notes text DEFAULT NULL,
+			thermal_comfort varchar(20) DEFAULT NULL,
+			workload varchar(20) DEFAULT NULL,
+			problems varchar(100) DEFAULT NULL,
+			malfunctions varchar(100) DEFAULT NULL,
+			symptoms varchar(50) DEFAULT NULL,
+			exposure_to_altitude varchar(20) DEFAULT NULL,
 			sightings text DEFAULT NULL,
 			other_equipment text DEFAULT NULL,
 			notes text DEFAULT NULL,
@@ -155,12 +162,29 @@ class SD_Database {
 		dbDelta( $sql_dives );
 
 		// Migration: add computer / import columns if missing (added in v2.1.0).
+		// Migration: add Shearwater extended fields if missing (added in v2.5.0).
+		// Migration: add entry_type and remaining fields if missing (added in v2.6.0).
 		$new_dive_cols = array(
-			'computer_brand'    => 'varchar(50) DEFAULT NULL',
-			'computer_model'    => 'varchar(100) DEFAULT NULL',
-			'computer_serial'   => 'varchar(50) DEFAULT NULL',
-			'computer_firmware' => 'varchar(50) DEFAULT NULL',
-			'imported_at'       => 'datetime DEFAULT NULL',
+			'computer_brand'       => 'varchar(50) DEFAULT NULL',
+			'computer_model'       => 'varchar(100) DEFAULT NULL',
+			'computer_serial'      => 'varchar(50) DEFAULT NULL',
+			'computer_firmware'    => 'varchar(50) DEFAULT NULL',
+			'imported_at'          => 'datetime DEFAULT NULL',
+			'gear_notes'           => 'text DEFAULT NULL',
+			'thermal_comfort'      => 'varchar(20) DEFAULT NULL',
+			'workload'             => 'varchar(20) DEFAULT NULL',
+			'problems'             => 'varchar(100) DEFAULT NULL',
+			'malfunctions'         => 'varchar(100) DEFAULT NULL',
+			'symptoms'             => 'varchar(50) DEFAULT NULL',
+			'exposure_to_altitude' => 'varchar(20) DEFAULT NULL',
+			'entry_type'           => 'varchar(10) DEFAULT NULL',
+			'avg_depth'            => 'decimal(5,1) DEFAULT NULL',
+			'nitrox_percentage'    => 'decimal(4,1) DEFAULT NULL',
+			'ballast_kg'           => 'decimal(4,1) DEFAULT NULL',
+			'buddy_name'           => 'varchar(100) DEFAULT NULL',
+			'guide_name'           => 'varchar(100) DEFAULT NULL',
+			'site_latitude'        => 'decimal(10,7) DEFAULT NULL',
+			'site_longitude'       => 'decimal(10,7) DEFAULT NULL',
 		);
 		foreach ( $new_dive_cols as $col_name => $col_def ) {
 			$exists = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
