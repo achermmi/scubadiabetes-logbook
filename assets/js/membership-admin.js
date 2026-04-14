@@ -105,7 +105,7 @@
 			html += '<tr data-member-id="' + escapeAttr(m.id) + '">' +
 				'<td><strong>' + escapeHtml(m.last_name) + '</strong>, ' + escapeHtml(m.first_name) + '</td>' +
 				'<td>' + escapeHtml(m.email) + '</td>' +
-				'<td>' + escapeHtml(m.date_of_birth || '—') + '</td>' +
+				'<td>' + formatDate(m.date_of_birth) + '</td>' +
 				'<td>CHF ' + parseFloat(m.fee_amount || 0).toFixed(2) + '</td>' +
 				'<td>' + paidBadge + '</td>' +
 				'<td>' + escapeHtml(payDate) + '</td>' +
@@ -270,6 +270,13 @@
 	}
 
 	// ===== HELPER =====
+	function formatDate(val) {
+		if (!val) { return '—'; }
+		var parts = String(val).split('-');
+		if (parts.length !== 3) { return escapeHtml(val); }
+		return parts[2] + '.' + parts[1] + '.' + parts[0];
+	}
+
 	function escapeHtml(str) {
 		return $('<div>').text(String(str || '')).html();
 	}
