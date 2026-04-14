@@ -1,0 +1,282 @@
+<?php
+/**
+ * Sincronizzazione automatica ruoli → soci
+ *
+ * Quando a un utente WordPress viene assegnato uno dei ruoli gestiti
+ * (sd_diver_diabetic, sd_diver, sd_staff, sd_medical, subscriber),
+ * il sistema verifica se esiste già un record in sd_members.
+ * Se non esiste, lo crea utilizzando i dati disponibili da wp_users
+ * e sd_diver_profiles.
+ *
+ * Regola diabetes_type per sd_diver_diabetic:
+ *   - Nuovo record o valore attuale NULL → 'non_specificato'
+ *   - Valore già presente nel DB         → invariato
+ *
+ * @package SD_Logbook
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class SD_Role_Sync {
+
+	/**
+	 * Ruoli che attivano la sincronizzazione
+	 */
+	const TRIGGER_ROLES = array(
+		'sd_diver_diabetic',
+		'sd_diver',
+		'sd_staff',
+		'sd_medical',
+		'subscriber',
+	);
+
+	public function __construct() {
+		// set_role() → usato dall'admin WP e da assign_wp_role()
+		add_action( 'set_user_role', array( $this, 'on_role_assigned' ), 20, 2 );
+		// add_role() → usato quando si aggiunge un ruolo secondario
+		add_action( 'add_user_role', array( $this, 'on_role_assigned' ), 20, 2 );
+	}
+
+	/**
+	 * Callback comune per set_user_role / add_user_role
+	 *
+	 * @param int    $user_id ID utente WordPress
+	 * @param string $role    Ruolo assegnato
+	 */
+	public function on_role_assigned( $user_id, $role ) {
+		if ( ! in_array( $role, self::TRIGGER_ROLES, true ) ) {
+			return;
+		}
+
+		// Evita loop ricorsivi (assign_wp_role può ri-triggerare)
+		static $processing = array();
+		if ( ! empty( $processing[ $user_id ] ) ) {
+			return;
+		}
+		$processing[ $user_id ] = true;
+
+		$this->maybe_create_member( $user_id, $role );
+
+		unset( $processing[ $user_id ] );
+	}
+
+	/**
+	 * Crea o aggiorna il record socio al cambio di ruolo
+	 *
+	 * @param int    $user_id ID utente WordPress
+	 * @param string $role    Ruolo assegnato
+	 */
+	private function maybe_create_member( $user_id, $role ) {
+		global $wpdb;
+		$db = new SD_Database();
+
+		// Carica dati utente WP
+		$wp_user = get_userdata( $user_id );
+		if ( ! $wp_user ) {
+			return;
+		}
+
+		// --- Caso A: record già esistente per wp_user_id ---
+		$existing = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, diabetes_type FROM {$db->table('members')} WHERE wp_user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+
+		if ( $existing ) {
+			if ( 'subscriber' !== $role ) {
+				$attrs  = $this->role_to_attrs( $role );
+				$update = array(
+					'is_scuba'    => $attrs['is_scuba'],
+					'member_type' => $attrs['member_type'],
+				);
+				// Per sd_diver_diabetic: aggiorna diabetes_type solo se attualmente NULL/vuoto
+				if ( 'sd_diver_diabetic' === $role ) {
+					if ( empty( $existing->diabetes_type ) ) {
+						$update['diabetes_type'] = 'non_specificato';
+					}
+					// altrimenti mantieni il valore presente
+				} else {
+					$update['diabetes_type'] = $attrs['diabetes_type'];
+				}
+				$wpdb->update(
+					$db->table( 'members' ),
+					$update,
+					array( 'id' => $existing->id )
+				);
+			}
+			// subscriber su membro esistente: non modificare nulla
+			return;
+		}
+
+		// --- Caso B: record esistente per email (wp_user_id non collegato) ---
+		$by_email = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, diabetes_type FROM {$db->table('members')} WHERE email = %s LIMIT 1",
+				$wp_user->user_email
+			)
+		);
+
+		if ( $by_email ) {
+			$update = array( 'wp_user_id' => $user_id );
+			if ( 'subscriber' !== $role ) {
+				$attrs                = $this->role_to_attrs( $role );
+				$update['is_scuba']   = $attrs['is_scuba'];
+				$update['member_type'] = $attrs['member_type'];
+				if ( 'sd_diver_diabetic' === $role ) {
+					if ( empty( $by_email->diabetes_type ) ) {
+						$update['diabetes_type'] = 'non_specificato';
+					}
+				} else {
+					$update['diabetes_type'] = $attrs['diabetes_type'];
+				}
+			}
+			$wpdb->update(
+				$db->table( 'members' ),
+				$update,
+				array( 'id' => $by_email->id )
+			);
+			return;
+		}
+
+		// --- Caso C: nessun record esistente → crea nuovo ---
+		$this->create_member( $user_id, $role, $wp_user, $db );
+	}
+
+	/**
+	 * Inserisce un nuovo record in sd_members
+	 *
+	 * @param int        $user_id ID utente WordPress
+	 * @param string     $role    Ruolo assegnato
+	 * @param WP_User    $wp_user Oggetto utente WordPress
+	 * @param SD_Database $db     Istanza database
+	 */
+	private function create_member( $user_id, $role, $wp_user, $db ) {
+		global $wpdb;
+
+		// Recupera nome e cognome da user meta
+		$first_name = get_user_meta( $user_id, 'first_name', true );
+		$last_name  = get_user_meta( $user_id, 'last_name', true );
+
+		// Fallback: split display_name
+		if ( empty( $first_name ) && empty( $last_name ) && ! empty( $wp_user->display_name ) ) {
+			$parts      = explode( ' ', $wp_user->display_name, 2 );
+			$first_name = $parts[0];
+			$last_name  = isset( $parts[1] ) ? $parts[1] : '';
+		}
+		if ( empty( $first_name ) ) {
+			$first_name = $wp_user->user_login;
+		}
+
+		// Carica profilo subacqueo se esiste
+		$profile = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('diver_profiles')} WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+
+		$attrs = $this->role_to_attrs( $role );
+
+		// diabetes_type per sd_diver_diabetic: 'non_specificato' come default
+		// (il profilo non sovrascrive: l'operatore deve impostarlo esplicitamente)
+		$diabetes_type = $attrs['diabetes_type'];
+
+		$registered_at = $wp_user->user_registered;
+
+		$member_data = array(
+			'wp_user_id'        => $user_id,
+			'first_name'        => $first_name,
+			'last_name'         => $last_name,
+			'email'             => $wp_user->user_email,
+			'is_active'         => 1,
+			'has_paid_fee'      => 0,
+			'member_type'       => $attrs['member_type'],
+			'is_scuba'          => $attrs['is_scuba'],
+			'diabetes_type'     => $diabetes_type,
+			'member_since'      => gmdate( 'Y-m-d', strtotime( $registered_at ) ),
+			'membership_expiry' => gmdate( 'Y-12-31' ),
+			'registered_at'     => $registered_at,
+			'privacy_consent'   => 0,
+		);
+
+		// Integra dati dal profilo subacqueo se disponibili
+		if ( $profile ) {
+			if ( ! empty( $profile->birth_date ) ) {
+				$member_data['date_of_birth'] = $profile->birth_date;
+			}
+			if ( ! empty( $profile->gender ) ) {
+				$member_data['gender'] = $profile->gender;
+			}
+			if ( ! empty( $profile->phone ) ) {
+				$member_data['phone'] = $profile->phone;
+			} elseif ( ! empty( $profile->gsm ) ) {
+				$member_data['phone'] = $profile->gsm;
+			}
+			if ( ! empty( $profile->address ) ) {
+				$member_data['address_street'] = $profile->address;
+			}
+			if ( ! empty( $profile->zip ) ) {
+				$member_data['address_postal'] = $profile->zip;
+			}
+			if ( ! empty( $profile->city ) ) {
+				$member_data['address_city'] = $profile->city;
+			}
+			if ( ! empty( $profile->diabetology_center ) ) {
+				$member_data['diabetology_center'] = $profile->diabetology_center;
+			}
+		}
+
+		$wpdb->insert( $db->table( 'members' ), $member_data );
+	}
+
+	/**
+	 * Mappa ruolo WP → attributi strutturali del record socio
+	 * Non include diabetes_type per sd_diver_diabetic (gestito separatamente).
+	 *
+	 * @param string $role Ruolo WordPress
+	 * @return array { member_type, is_scuba, diabetes_type }
+	 */
+	private function role_to_attrs( $role ) {
+		switch ( $role ) {
+			case 'sd_diver_diabetic':
+				return array(
+					'member_type'   => 'attivo',
+					'is_scuba'      => 1,
+					'diabetes_type' => 'non_specificato',
+				);
+
+			case 'sd_diver':
+				return array(
+					'member_type'   => 'attivo',
+					'is_scuba'      => 1,
+					'diabetes_type' => 'non_diabetico',
+				);
+
+			case 'sd_staff':
+				return array(
+					'member_type'   => 'staff',
+					'is_scuba'      => 0,
+					'diabetes_type' => 'non_diabetico',
+				);
+
+			case 'sd_medical':
+				return array(
+					'member_type'   => 'medico',
+					'is_scuba'      => 0,
+					'diabetes_type' => 'non_diabetico',
+				);
+
+			case 'subscriber':
+			default:
+				return array(
+					'member_type'   => 'attivo',
+					'is_scuba'      => 0,
+					'diabetes_type' => 'non_diabetico',
+				);
+		}
+	}
+}

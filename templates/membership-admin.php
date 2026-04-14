@@ -113,27 +113,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</select>
 				</div>
 
-				<div class="sd-filter-group">
-					<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm">
+				<div class="sd-filter-group sd-filter-actions">
+					<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
 						<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
 					</button>
-					<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm">
+					<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
 						<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-csv" data-format="csv">
+						↓ CSV
+					</button>
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-xlsx" data-format="xlsx">
+						↓ Excel
 					</button>
 				</div>
 			</div>
 
 		</form>
-
-		<!-- Export buttons -->
-		<div class="sd-export-bar">
-			<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-export-csv" data-format="csv">
-				↓ CSV
-			</button>
-			<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-export-xlsx" data-format="xlsx">
-				↓ Excel
-			</button>
-		</div>
 	</div>
 
 	<!-- Messaggio/spinner caricamento -->

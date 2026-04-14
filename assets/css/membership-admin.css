@@ -68,17 +68,16 @@
 	min-width: 160px;
 }
 
-.sd-filter-group:last-child {
-	display: flex;
+.sd-filter-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 	gap: 0.4rem;
 	margin-left: auto;
 }
 
-.sd-export-bar {
-	margin-top: 0.75rem;
-	display: flex;
-	justify-content: flex-end;
-	gap: 0.5rem;
+.sd-action-btn {
+	width: 100%;
+	justify-content: center;
 }
 
 /* ===== TABELLA SOCI ===== */
