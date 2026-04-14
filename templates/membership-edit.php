@@ -324,7 +324,10 @@ function sd_val( $obj, $key, $default = '' ) {
 				<!-- Info registrazione (read-only) -->
 				<div class="sd-info-row">
 					<span class="sd-info-label"><?php esc_html_e( 'Registrato il:', 'sd-logbook' ); ?></span>
-					<span class="sd-info-value"><?php echo esc_html( sd_val( $member, 'registered_at', '—' ) ); ?></span>
+					<span class="sd-info-value"><?php
+					$reg_raw = sd_val( $member, 'registered_at' ) ?: sd_val( $member, 'user_registered' );
+					echo esc_html( $reg_raw ? date_i18n( 'd/m/Y', strtotime( $reg_raw ) ) : '—' );
+					?></span>
 				</div>
 				<?php if ( sd_val( $member, 'registered_by' ) ) : ?>
 				<div class="sd-info-row">

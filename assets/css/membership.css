@@ -13,6 +13,35 @@
 	padding: 0 1rem;
 }
 
+/* ===== FULL WIDTH SU DESKTOP ===== */
+@media (min-width: 1025px) {
+	.sd-management-wrap,
+	.sd-edit-wrap {
+		max-width: 100%;
+		padding: 0 1.5rem;
+	}
+
+	/* Override contenitore tema WordPress */
+	body.sd-full-width-page .entry-content,
+	body.sd-full-width-page .wp-block-post-content,
+	body.sd-full-width-page .site-main,
+	body.sd-full-width-page main.content-area,
+	body.sd-full-width-page #primary,
+	body.sd-full-width-page #content,
+	body.sd-full-width-page .page-content {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	body.sd-full-width-page .sd-management-wrap,
+	body.sd-full-width-page .sd-edit-wrap {
+		max-width: 100%;
+		width: 100%;
+		padding: 0 1.5rem;
+		box-sizing: border-box;
+	}
+}
+
 /* ===== INTESTAZIONE ===== */
 .sd-form-header {
 	margin-bottom: 2rem;

@@ -32,6 +32,14 @@ class SD_Membership_Admin {
 	}
 
 	/**
+	 * Aggiunge body class per layout full-width su desktop
+	 */
+	public function add_full_width_body_class( $classes ) {
+		$classes[] = 'sd-full-width-page';
+		return $classes;
+	}
+
+	/**
 	 * Verifica accesso: solo staff, medico e admin
 	 */
 	private function check_access() {
@@ -57,6 +65,8 @@ class SD_Membership_Admin {
 		if ( ! $has_sc ) {
 			return;
 		}
+
+		add_filter( 'body_class', array( $this, 'add_full_width_body_class' ) );
 
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-membership', SD_LOGBOOK_PLUGIN_URL . 'assets/css/membership.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
