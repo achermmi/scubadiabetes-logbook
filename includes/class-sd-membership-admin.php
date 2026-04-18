@@ -208,7 +208,7 @@ class SD_Membership_Admin {
 		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
 
 		if ( ! $this->check_access() ) {
-			wp_send_json_error( array( 'message' => 'Accesso negato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
@@ -328,14 +328,14 @@ class SD_Membership_Admin {
 		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
 
 		if ( ! $this->check_access() ) {
-			wp_send_json_error( array( 'message' => 'Accesso negato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
 		}
 
 		$member_id = absint( $_POST['member_id'] ?? 0 );
 		$member    = SD_Membership_Helper::get_member_full( $member_id );
 
 		if ( ! $member ) {
-			wp_send_json_error( array( 'message' => 'Socio non trovato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Socio non trovato.', 'sd-logbook' ) ) );
 		}
 
 		wp_send_json_success( array( 'member' => $member ) );
@@ -348,12 +348,12 @@ class SD_Membership_Admin {
 		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
 
 		if ( ! $this->check_access() ) {
-			wp_send_json_error( array( 'message' => 'Accesso negato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
 		}
 
 		$member_id = absint( $_POST['member_id'] ?? 0 );
 		if ( ! $member_id ) {
-			wp_send_json_error( array( 'message' => 'ID socio non valido.' ) );
+			wp_send_json_error( array( 'message' => __( 'ID socio non valido.', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
@@ -362,7 +362,7 @@ class SD_Membership_Admin {
 		// Carica dati vecchi per audit
 		$old_data = SD_Membership_Helper::get_member_full( $member_id );
 		if ( ! $old_data ) {
-			wp_send_json_error( array( 'message' => 'Socio non trovato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Socio non trovato.', 'sd-logbook' ) ) );
 		}
 
 		// Campi gestione
@@ -567,7 +567,7 @@ class SD_Membership_Admin {
 		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
 
 		if ( ! $this->check_access() ) {
-			wp_send_json_error( array( 'message' => 'Accesso negato.' ) );
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
@@ -594,28 +594,28 @@ class SD_Membership_Admin {
 		);
 
 		$headers_row = array(
-			'ID',
-			'Nome',
-			'Cognome',
-			'Email',
-			'Telefono',
-			'Data Nascita',
-			'Genere',
-			'Via',
-			'CAP',
-			'Città',
-			'Paese',
-			'Tassa CHF',
-			'Pagato',
-			'Tipo Socio',
-			'Subacqueo',
-			'Diabete',
-			'Socio dal',
-			'Scadenza',
-			'Registrato il',
-			'Data Pagamento',
-			'Metodo Pagamento',
-			'Stato Pagamento',
+			__( 'ID', 'sd-logbook' ),
+			__( 'Nome', 'sd-logbook' ),
+			__( 'Cognome', 'sd-logbook' ),
+			__( 'Email', 'sd-logbook' ),
+			__( 'Telefono', 'sd-logbook' ),
+			__( 'Data Nascita', 'sd-logbook' ),
+			__( 'Genere', 'sd-logbook' ),
+			__( 'Via', 'sd-logbook' ),
+			__( 'CAP', 'sd-logbook' ),
+			__( 'Città', 'sd-logbook' ),
+			__( 'Paese', 'sd-logbook' ),
+			__( 'Tassa CHF', 'sd-logbook' ),
+			__( 'Pagato', 'sd-logbook' ),
+			__( 'Tipo Socio', 'sd-logbook' ),
+			__( 'Subacqueo', 'sd-logbook' ),
+			__( 'Diabete', 'sd-logbook' ),
+			__( 'Socio dal', 'sd-logbook' ),
+			__( 'Scadenza', 'sd-logbook' ),
+			__( 'Registrato il', 'sd-logbook' ),
+			__( 'Data Pagamento', 'sd-logbook' ),
+			__( 'Metodo Pagamento', 'sd-logbook' ),
+			__( 'Stato Pagamento', 'sd-logbook' ),
 		);
 
 		$filename = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' );
@@ -692,19 +692,24 @@ class SD_Membership_Admin {
 		);
 
 		foreach ( $members as $member ) {
+			/* translators: 1: year, 2: expiry date */
 			$subject = sprintf(
-				'[ScubaDiabetes] Rinnovo iscrizione %s - Scadenza %s',
+				__( '[ScubaDiabetes] Rinnovo iscrizione %1$s - Scadenza %2$s', 'sd-logbook' ),
 				gmdate( 'Y' ),
 				$member->membership_expiry
 			);
 
 			$body  = '<html><body>';
-			$body .= '<p>Caro/a <strong>' . esc_html( $member->first_name . ' ' . $member->last_name ) . '</strong>,</p>';
-			$body .= '<p>La tua iscrizione all\'Associazione ScubaDiabetes scade il <strong>' . esc_html( $member->membership_expiry ) . '</strong>.</p>';
-			$body .= '<p>Per rinnovare l\'iscrizione, effettua il pagamento della tassa annuale:</p>';
-			$body .= '<ul><li>Importo: <strong>CHF ' . number_format( (float) $member->fee_amount, 2 ) . '</strong></li></ul>';
-			$body .= '<p>Per informazioni contatta il segretariato: <a href="mailto:' . esc_attr( get_option( 'admin_email' ) ) . '">' . esc_html( get_option( 'admin_email' ) ) . '</a></p>';
-			$body .= '<p>Cordiali saluti,<br>ScubaDiabetes</p>';
+			/* translators: member full name */
+			$body .= '<p>' . sprintf( __( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ), esc_html( $member->first_name . ' ' . $member->last_name ) ) . '</p>';
+			/* translators: membership expiry date */
+			$body .= '<p>' . sprintf( __( 'La tua iscrizione all\'Associazione ScubaDiabetes scade il <strong>%s</strong>.', 'sd-logbook' ), esc_html( $member->membership_expiry ) ) . '</p>';
+			$body .= '<p>' . __( 'Per rinnovare l\'iscrizione, effettua il pagamento della tassa annuale:', 'sd-logbook' ) . '</p>';
+			/* translators: fee amount in CHF */
+			$body .= '<ul><li>' . sprintf( __( 'Importo: <strong>CHF %s</strong>', 'sd-logbook' ), number_format( (float) $member->fee_amount, 2 ) ) . '</li></ul>';
+			/* translators: admin email address */
+			$body .= '<p>' . sprintf( __( 'Per informazioni contatta il segretariato: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'admin_email' ) ), esc_html( get_option( 'admin_email' ) ) ) . '</p>';
+			$body .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br>ScubaDiabetes</p>';
 			$body .= '</body></html>';
 
 			wp_mail(

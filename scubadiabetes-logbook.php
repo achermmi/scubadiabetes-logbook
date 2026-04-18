@@ -85,6 +85,7 @@ final class SD_Logbook {
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 
 		add_action( 'plugins_loaded', array( $this, 'on_plugins_loaded' ) );
+		add_filter( 'plugin_locale', array( $this, 'force_italian_locale' ), 10, 2 );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'init_components' ) );
 	}
@@ -150,6 +151,16 @@ final class SD_Logbook {
 			false,
 			dirname( SD_LOGBOOK_PLUGIN_BASENAME ) . '/languages/'
 		);
+	}
+
+	/**
+	 * Forza la lingua italiana per il text domain del plugin
+	 */
+	public function force_italian_locale( $locale, $domain ) {
+		if ( 'sd-logbook' === $domain ) {
+			return 'it_IT';
+		}
+		return $locale;
 	}
 
 	/**

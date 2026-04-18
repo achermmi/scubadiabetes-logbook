@@ -116,7 +116,8 @@ class SD_Membership_Helper {
 
 		// === Email al socio ===
 		$to      = $member->email;
-		$subject = sprintf( '[%s] Conferma iscrizione %s', $site_name, $year );
+		/* translators: 1: site name, 2: year */
+		$subject = sprintf( __( '[%1$s] Conferma iscrizione %2$s', 'sd-logbook' ), $site_name, $year );
 		$body    = self::get_welcome_email_body( $member, $plain_password, $site_name, $site_url );
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 		wp_mail( $to, $subject, $body, $headers );
@@ -124,7 +125,8 @@ class SD_Membership_Helper {
 		// === Email al genitore/tutore (se minorenne) ===
 		if ( $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
 			$guardian_to      = $member->guardian_email;
-			$guardian_subject = sprintf( '[%s] Iscrizione di %s %s - Anno %s', $site_name, $member->first_name, $member->last_name, $year );
+			/* translators: 1: site name, 2: first name, 3: last name, 4: year */
+			$guardian_subject = sprintf( __( '[%1$s] Iscrizione di %2$s %3$s - Anno %4$s', 'sd-logbook' ), $site_name, $member->first_name, $member->last_name, $year );
 			$guardian_body    = self::get_guardian_email_body( $member, $site_name );
 			wp_mail( $guardian_to, $guardian_subject, $guardian_body, $headers );
 		}
@@ -132,7 +134,8 @@ class SD_Membership_Helper {
 		// === Email al segretariato ===
 		$secretariat_email = get_option( 'sd_secretariat_email', get_option( 'admin_email' ) );
 		if ( $secretariat_email ) {
-			$staff_subject = sprintf( '[%s] Nuova iscrizione: %s %s', $site_name, $member->first_name, $member->last_name );
+			/* translators: 1: site name, 2: first name, 3: last name */
+			$staff_subject = sprintf( __( '[%1$s] Nuova iscrizione: %2$s %3$s', 'sd-logbook' ), $site_name, $member->first_name, $member->last_name );
 			$staff_body    = self::get_staff_email_body( $member, $site_name );
 			wp_mail( $secretariat_email, $staff_subject, $staff_body, $headers );
 		}
@@ -148,32 +151,37 @@ class SD_Membership_Helper {
 		$payment_info = self::get_payment_instructions( $member );
 
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$html .= '<h2 style="color:#0055a5;">Benvenuto in ScubaDiabetes!</h2>';
-		$html .= '<p>Caro/a <strong>' . $name . '</strong>,</p>';
-		$html .= '<p>La tua iscrizione all\'Associazione ScubaDiabetes per l\'anno <strong>' . gmdate( 'Y' ) . '</strong> è stata ricevuta con successo.</p>';
+		$html .= '<h2 style="color:#0055a5;">' . __( 'Benvenuto in ScubaDiabetes!', 'sd-logbook' ) . '</h2>';
+		/* translators: member full name */
+		$html .= '<p>' . sprintf( __( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ), $name ) . '</p>';
+		/* translators: year */
+		$html .= '<p>' . sprintf( __( 'La tua iscrizione all\'Associazione ScubaDiabetes per l\'anno <strong>%s</strong> è stata ricevuta con successo.', 'sd-logbook' ), gmdate( 'Y' ) ) . '</p>';
 
 		if ( ! empty( $plain_password ) ) {
-			$html .= '<h3>Le tue credenziali di accesso:</h3>';
+			$html .= '<h3>' . __( 'Le tue credenziali di accesso:', 'sd-logbook' ) . '</h3>';
 			$html .= '<ul>';
-			$html .= '<li><strong>Username:</strong> ' . esc_html( $member->email ) . '</li>';
-			$html .= '<li><strong>Password:</strong> ' . esc_html( $plain_password ) . '</li>';
+			$html .= '<li><strong>' . __( 'Username:', 'sd-logbook' ) . '</strong> ' . esc_html( $member->email ) . '</li>';
+			$html .= '<li><strong>' . __( 'Password:', 'sd-logbook' ) . '</strong> ' . esc_html( $plain_password ) . '</li>';
 			$html .= '</ul>';
-			$html .= '<p><a href="' . esc_url( $login_url ) . '" style="background:#0055a5;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;">Accedi al portale</a></p>';
-			$html .= '<p><em>Ti consigliamo di cambiare la password al primo accesso.</em></p>';
+			$html .= '<p><a href="' . esc_url( $login_url ) . '" style="background:#0055a5;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;">' . __( 'Accedi al portale', 'sd-logbook' ) . '</a></p>';
+			$html .= '<p><em>' . __( 'Ti consigliamo di cambiare la password al primo accesso.', 'sd-logbook' ) . '</em></p>';
 		}
 
-		$html .= '<h3>Dettagli iscrizione:</h3>';
+		$html .= '<h3>' . __( 'Dettagli iscrizione:', 'sd-logbook' ) . '</h3>';
 		$html .= '<ul>';
-		$html .= '<li><strong>Tassa annuale:</strong> CHF ' . number_format( $member->fee_amount, 2 ) . '</li>';
+		/* translators: fee amount in CHF */
+		$html .= '<li><strong>' . __( 'Tassa annuale:', 'sd-logbook' ) . '</strong> CHF ' . number_format( $member->fee_amount, 2 ) . '</li>';
 		$html .= '</ul>';
 
 		if ( ! empty( $payment_info ) ) {
-			$html .= '<h3>Istruzioni per il pagamento:</h3>';
+			$html .= '<h3>' . __( 'Istruzioni per il pagamento:', 'sd-logbook' ) . '</h3>';
 			$html .= $payment_info;
 		}
 
-		$html .= '<p>Per informazioni contatta il segretariato: <a href="mailto:' . esc_attr( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) . '">' . esc_html( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) . '</a></p>';
-		$html .= '<p>Cordiali saluti,<br><strong>' . esc_html( $site_name ) . '</strong></p>';
+		/* translators: secretariat email address */
+		$html .= '<p>' . sprintf( __( 'Per informazioni contatta il segretariato: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ), esc_html( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) ) . '</p>';
+		/* translators: site name */
+		$html .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br><strong>' . esc_html( $site_name ) . '</strong></p>';
 		$html .= '</body></html>';
 
 		return $html;
@@ -187,12 +195,17 @@ class SD_Membership_Helper {
 		$guardian_name = esc_html( $member->guardian_first_name . ' ' . $member->guardian_last_name );
 
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$html .= '<h2 style="color:#0055a5;">Iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . '</h2>';
-		$html .= '<p>Gentile <strong>' . $guardian_name . '</strong>,</p>';
-		$html .= '<p>La informiamo che l\'iscrizione all\'Associazione ScubaDiabetes per <strong>' . $name . '</strong> è stata ricevuta con successo.</p>';
-		$html .= '<p>In qualità di ' . esc_html( $member->guardian_role ) . ', Lei verrà tenuta/o informata/o delle attività dell\'associazione relative al/la minore.</p>';
-		$html .= '<p>Per informazioni: <a href="mailto:' . esc_attr( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) . '">' . esc_html( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) . '</a></p>';
-		$html .= '<p>Cordiali saluti,<br><strong>' . esc_html( $site_name ) . '</strong></p>';
+		/* translators: year */
+		$html .= '<h2 style="color:#0055a5;">' . sprintf( __( 'Iscrizione ScubaDiabetes %s', 'sd-logbook' ), gmdate( 'Y' ) ) . '</h2>';
+		/* translators: guardian full name */
+		$html .= '<p>' . sprintf( __( 'Gentile <strong>%s</strong>,', 'sd-logbook' ), $guardian_name ) . '</p>';
+		/* translators: member full name */
+		$html .= '<p>' . sprintf( __( 'La informiamo che l\'iscrizione all\'Associazione ScubaDiabetes per <strong>%s</strong> è stata ricevuta con successo.', 'sd-logbook' ), $name ) . '</p>';
+		/* translators: guardian role (e.g. genitore, tutore) */
+		$html .= '<p>' . sprintf( __( 'In qualità di %s, Lei verrà tenuta/o informata/o delle attività dell\'associazione relative al/la minore.', 'sd-logbook' ), esc_html( $member->guardian_role ) ) . '</p>';
+		/* translators: secretariat email address */
+		$html .= '<p>' . sprintf( __( 'Per informazioni: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ), esc_html( get_option( 'sd_secretariat_email', get_option( 'admin_email' ) ) ) ) . '</p>';
+		$html .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br><strong>' . esc_html( $site_name ) . '</strong></p>';
 		$html .= '</body></html>';
 
 		return $html;
@@ -205,21 +218,21 @@ class SD_Membership_Helper {
 		$name = esc_html( $member->first_name . ' ' . $member->last_name );
 
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$html .= '<h2 style="color:#0055a5;">Nuova iscrizione ricevuta</h2>';
+		$html .= '<h2 style="color:#0055a5;">' . __( 'Nuova iscrizione ricevuta', 'sd-logbook' ) . '</h2>';
 		$html .= '<table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;max-width:600px;">';
-		$html .= '<tr><th align="left" style="background:#f5f5f5;">Campo</th><th align="left" style="background:#f5f5f5;">Valore</th></tr>';
+		$html .= '<tr><th align="left" style="background:#f5f5f5;">' . __( 'Campo', 'sd-logbook' ) . '</th><th align="left" style="background:#f5f5f5;">' . __( 'Valore', 'sd-logbook' ) . '</th></tr>';
 
 		$fields = array(
-			'Nome completo'  => $name,
-			'Email'          => $member->email,
-			'Telefono'       => $member->phone,
-			'Data di nascita' => $member->date_of_birth,
-			'Genere'         => $member->gender,
-			'Subacqueo'      => $member->is_scuba ? 'Sì' : 'No',
-			'Diabete'        => $member->diabetes_type,
-			'Tassa'          => 'CHF ' . number_format( $member->fee_amount, 2 ),
-			'Tipo socio'     => $member->member_type,
-			'Tutore'         => $member->sotto_tutela ? 'Sì' : 'No',
+			__( 'Nome completo', 'sd-logbook' )  => $name,
+			__( 'Email', 'sd-logbook' )           => $member->email,
+			__( 'Telefono', 'sd-logbook' )        => $member->phone,
+			__( 'Data di nascita', 'sd-logbook' ) => $member->date_of_birth,
+			__( 'Genere', 'sd-logbook' )          => $member->gender,
+			__( 'Subacqueo', 'sd-logbook' )       => $member->is_scuba ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' ),
+			__( 'Diabete', 'sd-logbook' )         => $member->diabetes_type,
+			__( 'Tassa', 'sd-logbook' )           => 'CHF ' . number_format( $member->fee_amount, 2 ),
+			__( 'Tipo socio', 'sd-logbook' )      => $member->member_type,
+			__( 'Tutore', 'sd-logbook' )          => $member->sotto_tutela ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' ),
 		);
 
 		foreach ( $fields as $label => $value ) {
@@ -230,7 +243,8 @@ class SD_Membership_Helper {
 		}
 
 		$html .= '</table>';
-		$html .= '<p>Per gestire questa iscrizione accedi alla <a href="' . esc_url( home_url( '/gestione-soci/' ) ) . '">pagina di gestione soci</a>.</p>';
+		/* translators: URL to member management page */
+		$html .= '<p>' . sprintf( __( 'Per gestire questa iscrizione accedi alla <a href="%s">pagina di gestione soci</a>.', 'sd-logbook' ), esc_url( home_url( '/gestione-soci/' ) ) ) . '</p>';
 		$html .= '</body></html>';
 
 		return $html;
@@ -247,13 +261,13 @@ class SD_Membership_Helper {
 
 		$html = '<ul>';
 		if ( $iban ) {
-			$html .= '<li><strong>Bonifico IBAN:</strong> ' . esc_html( $iban ) . '</li>';
+			$html .= '<li><strong>' . __( 'Bonifico IBAN:', 'sd-logbook' ) . '</strong> ' . esc_html( $iban ) . '</li>';
 		}
 		if ( $twint ) {
-			$html .= '<li><strong>TWINT:</strong> ' . esc_html( $twint ) . '</li>';
+			$html .= '<li><strong>' . __( 'TWINT:', 'sd-logbook' ) . '</strong> ' . esc_html( $twint ) . '</li>';
 		}
 		if ( $paypal ) {
-			$html .= '<li><strong>PayPal:</strong> ' . esc_html( $paypal ) . '</li>';
+			$html .= '<li><strong>' . __( 'PayPal:', 'sd-logbook' ) . '</strong> ' . esc_html( $paypal ) . '</li>';
 		}
 		$html .= '</ul>';
 
@@ -319,41 +333,41 @@ class SD_Membership_Helper {
 	 */
 	public static function get_countries() {
 		return array(
-			'CH' => 'Svizzera',
-			'IT' => 'Italia',
-			'DE' => 'Germania',
-			'FR' => 'Francia',
-			'AT' => 'Austria',
-			'LI' => 'Liechtenstein',
-			'LU' => 'Lussemburgo',
-			'BE' => 'Belgio',
-			'NL' => 'Paesi Bassi',
-			'ES' => 'Spagna',
-			'PT' => 'Portogallo',
-			'GB' => 'Regno Unito',
-			'IE' => 'Irlanda',
-			'SE' => 'Svezia',
-			'NO' => 'Norvegia',
-			'DK' => 'Danimarca',
-			'FI' => 'Finlandia',
-			'PL' => 'Polonia',
-			'CZ' => 'Repubblica Ceca',
-			'SK' => 'Slovacchia',
-			'HU' => 'Ungheria',
-			'RO' => 'Romania',
-			'BG' => 'Bulgaria',
-			'HR' => 'Croazia',
-			'SI' => 'Slovenia',
-			'GR' => 'Grecia',
-			'US' => 'Stati Uniti',
-			'CA' => 'Canada',
-			'AU' => 'Australia',
-			'NZ' => 'Nuova Zelanda',
-			'JP' => 'Giappone',
-			'BR' => 'Brasile',
-			'AR' => 'Argentina',
-			'ZA' => 'Sudafrica',
-			'OT' => 'Altro',
+			'CH' => __( 'Svizzera', 'sd-logbook' ),
+			'IT' => __( 'Italia', 'sd-logbook' ),
+			'DE' => __( 'Germania', 'sd-logbook' ),
+			'FR' => __( 'Francia', 'sd-logbook' ),
+			'AT' => __( 'Austria', 'sd-logbook' ),
+			'LI' => __( 'Liechtenstein', 'sd-logbook' ),
+			'LU' => __( 'Lussemburgo', 'sd-logbook' ),
+			'BE' => __( 'Belgio', 'sd-logbook' ),
+			'NL' => __( 'Paesi Bassi', 'sd-logbook' ),
+			'ES' => __( 'Spagna', 'sd-logbook' ),
+			'PT' => __( 'Portogallo', 'sd-logbook' ),
+			'GB' => __( 'Regno Unito', 'sd-logbook' ),
+			'IE' => __( 'Irlanda', 'sd-logbook' ),
+			'SE' => __( 'Svezia', 'sd-logbook' ),
+			'NO' => __( 'Norvegia', 'sd-logbook' ),
+			'DK' => __( 'Danimarca', 'sd-logbook' ),
+			'FI' => __( 'Finlandia', 'sd-logbook' ),
+			'PL' => __( 'Polonia', 'sd-logbook' ),
+			'CZ' => __( 'Repubblica Ceca', 'sd-logbook' ),
+			'SK' => __( 'Slovacchia', 'sd-logbook' ),
+			'HU' => __( 'Ungheria', 'sd-logbook' ),
+			'RO' => __( 'Romania', 'sd-logbook' ),
+			'BG' => __( 'Bulgaria', 'sd-logbook' ),
+			'HR' => __( 'Croazia', 'sd-logbook' ),
+			'SI' => __( 'Slovenia', 'sd-logbook' ),
+			'GR' => __( 'Grecia', 'sd-logbook' ),
+			'US' => __( 'Stati Uniti', 'sd-logbook' ),
+			'CA' => __( 'Canada', 'sd-logbook' ),
+			'AU' => __( 'Australia', 'sd-logbook' ),
+			'NZ' => __( 'Nuova Zelanda', 'sd-logbook' ),
+			'JP' => __( 'Giappone', 'sd-logbook' ),
+			'BR' => __( 'Brasile', 'sd-logbook' ),
+			'AR' => __( 'Argentina', 'sd-logbook' ),
+			'ZA' => __( 'Sudafrica', 'sd-logbook' ),
+			'OT' => __( 'Altro', 'sd-logbook' ),
 		);
 	}
 
@@ -362,32 +376,32 @@ class SD_Membership_Helper {
 	 */
 	public static function get_swiss_cantons() {
 		return array(
-			'AG' => 'Argovia (AG)',
-			'AI' => 'Appenzello Interno (AI)',
-			'AR' => 'Appenzello Esterno (AR)',
-			'BE' => 'Berna (BE)',
-			'BL' => 'Basilea Campagna (BL)',
-			'BS' => 'Basilea Città (BS)',
-			'FR' => 'Friburgo (FR)',
-			'GE' => 'Ginevra (GE)',
-			'GL' => 'Glarona (GL)',
-			'GR' => 'Grigioni (GR)',
-			'JU' => 'Giura (JU)',
-			'LU' => 'Lucerna (LU)',
-			'NE' => 'Neuchâtel (NE)',
-			'NW' => 'Nidvaldo (NW)',
-			'OW' => 'Obvaldo (OW)',
-			'SG' => 'San Gallo (SG)',
-			'SH' => 'Sciaffusa (SH)',
-			'SO' => 'Soletta (SO)',
-			'SZ' => 'Svitto (SZ)',
-			'TG' => 'Turgovia (TG)',
-			'TI' => 'Ticino (TI)',
-			'UR' => 'Uri (UR)',
-			'VD' => 'Vaud (VD)',
-			'VS' => 'Vallese (VS)',
-			'ZG' => 'Zugo (ZG)',
-			'ZH' => 'Zurigo (ZH)',
+			'AG' => __( 'Argovia (AG)', 'sd-logbook' ),
+			'AI' => __( 'Appenzello Interno (AI)', 'sd-logbook' ),
+			'AR' => __( 'Appenzello Esterno (AR)', 'sd-logbook' ),
+			'BE' => __( 'Berna (BE)', 'sd-logbook' ),
+			'BL' => __( 'Basilea Campagna (BL)', 'sd-logbook' ),
+			'BS' => __( 'Basilea Città (BS)', 'sd-logbook' ),
+			'FR' => __( 'Friburgo (FR)', 'sd-logbook' ),
+			'GE' => __( 'Ginevra (GE)', 'sd-logbook' ),
+			'GL' => __( 'Glarona (GL)', 'sd-logbook' ),
+			'GR' => __( 'Grigioni (GR)', 'sd-logbook' ),
+			'JU' => __( 'Giura (JU)', 'sd-logbook' ),
+			'LU' => __( 'Lucerna (LU)', 'sd-logbook' ),
+			'NE' => __( 'Neuchâtel (NE)', 'sd-logbook' ),
+			'NW' => __( 'Nidvaldo (NW)', 'sd-logbook' ),
+			'OW' => __( 'Obvaldo (OW)', 'sd-logbook' ),
+			'SG' => __( 'San Gallo (SG)', 'sd-logbook' ),
+			'SH' => __( 'Sciaffusa (SH)', 'sd-logbook' ),
+			'SO' => __( 'Soletta (SO)', 'sd-logbook' ),
+			'SZ' => __( 'Svitto (SZ)', 'sd-logbook' ),
+			'TG' => __( 'Turgovia (TG)', 'sd-logbook' ),
+			'TI' => __( 'Ticino (TI)', 'sd-logbook' ),
+			'UR' => __( 'Uri (UR)', 'sd-logbook' ),
+			'VD' => __( 'Vaud (VD)', 'sd-logbook' ),
+			'VS' => __( 'Vallese (VS)', 'sd-logbook' ),
+			'ZG' => __( 'Zugo (ZG)', 'sd-logbook' ),
+			'ZH' => __( 'Zurigo (ZH)', 'sd-logbook' ),
 		);
 	}
 
