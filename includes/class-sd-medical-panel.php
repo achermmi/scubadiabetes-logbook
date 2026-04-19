@@ -155,7 +155,7 @@ class SD_Medical_Panel {
 		check_ajax_referer( 'sd_medical_nonce', 'nonce' );
 
 		if ( ! SD_Roles::can_view_all( get_current_user_id() ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$diver_id = absint( $_POST['diver_id'] ?? 0 );
@@ -244,7 +244,7 @@ class SD_Medical_Panel {
 
 		$user_id = get_current_user_id();
 		if ( ! SD_Roles::can_supervise( $user_id ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato a supervisionare' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato a supervisionare', 'sd-logbook' ) ) );
 		}
 
 		$diver_id = absint( $_POST['diver_id'] ?? 0 );
@@ -254,7 +254,7 @@ class SD_Medical_Panel {
 		$text     = sanitize_textarea_field( $_POST['note_text'] ?? '' );
 
 		if ( ! $diver_id || empty( $text ) ) {
-			wp_send_json_error( array( 'message' => 'Dati incompleti' ) );
+			wp_send_json_error( array( 'message' => __( 'Dati incompleti', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
@@ -277,7 +277,7 @@ class SD_Medical_Panel {
 
 		wp_send_json_success(
 			array(
-				'message'    => 'Nota salvata.',
+				'message'    => __( 'Nota salvata.', 'sd-logbook' ),
 				'supervisor' => $sup_name,
 				'date'       => date_i18n( 'd/m/Y H:i' ),
 			)
@@ -291,7 +291,7 @@ class SD_Medical_Panel {
 		check_ajax_referer( 'sd_medical_nonce', 'nonce' );
 
 		if ( ! SD_Roles::can_export_all( get_current_user_id() ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
@@ -315,7 +315,7 @@ class SD_Medical_Panel {
 		);
 
 		if ( empty( $rows ) ) {
-			wp_send_json_error( array( 'message' => 'Nessun dato diabetico da esportare' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessun dato diabetico da esportare', 'sd-logbook' ) ) );
 		}
 
 		$filename   = 'scubadiabetes-research-' . gmdate( 'Y-m-d' ) . '.csv';

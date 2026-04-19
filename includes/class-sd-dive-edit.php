@@ -117,7 +117,7 @@ class SD_Dive_Edit {
 		);
 
 		if ( ! $dive ) {
-			wp_send_json_error( array( 'message' => 'Immersione non trovata' ) );
+			wp_send_json_error( array( 'message' => __( 'Immersione non trovata', 'sd-logbook' ) ) );
 		}
 
 		$diabetes = $wpdb->get_row(
@@ -161,7 +161,7 @@ class SD_Dive_Edit {
 		);
 
 		if ( ! $old_dive ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		// Campi aggiornabili — processa SOLO quelli presenti nel POST
@@ -379,7 +379,7 @@ class SD_Dive_Edit {
 					'table_name' => 'dive_diabetes',
 					'field_name' => '_all',
 					'old_value'  => null,
-					'new_value'  => 'Dati diabete aggiunti',
+					'new_value'  => __( 'Dati diabete aggiunti', 'sd-logbook' ),
 				);
 			}
 		}
@@ -423,7 +423,7 @@ class SD_Dive_Edit {
 			)
 		);
 		if ( ! $dive ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$history = $wpdb->get_results(

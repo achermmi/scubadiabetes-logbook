@@ -118,7 +118,7 @@ class SD_Membership {
 
 		// Campi iscrizione
 		$is_scuba      = ! empty( $_POST['is_scuba'] ) ? 1 : 0;
-		$fee_amount    = floatval( $_POST['fee_amount'] ?? 0 );
+		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
 		$member_type   = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? 'attivo' ) );
 		$privacy_consent = ! empty( $_POST['privacy_consent'] ) ? 1 : 0;
 		$default_shared  = isset( $_POST['default_shared_for_research'] ) ? 1 : 0;
@@ -154,9 +154,20 @@ class SD_Membership {
 			$errors[] = __( 'Seleziona il genere.', 'sd-logbook' );
 		}
 
-		// Verifica unicità email
+		// Verifica unicità email (WP users + tabella soci)
 		if ( email_exists( $email ) ) {
 			$errors[] = __( 'Esiste già un account con questa email. Contatta il segretariato se hai bisogno di assistenza.', 'sd-logbook' );
+		}
+		global $wpdb;
+		$db_check        = new SD_Database();
+		$existing_member = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$db_check->table('members')} WHERE email = %s",
+				$email
+			)
+		);
+		if ( $existing_member ) {
+			$errors[] = __( 'Esiste già una richiesta di iscrizione con questa email. Contatta il segretariato se hai bisogno di assistenza.', 'sd-logbook' );
 		}
 
 		// === 2. Logica minori ===
@@ -276,7 +287,9 @@ class SD_Membership {
 		SD_Membership_Helper::assign_wp_role( $user_id, $is_scuba, $is_diabetic );
 
 		// === 6. Salva in wp_sd_members ===
-		global $wpdb;
+		// NOTA: assign_wp_role() triggera SD_Role_Sync che potrebbe aver già creato
+		// un record in wp_sd_members. Lo aggiorniamo con i dati completi tramite UPDATE,
+		// oppure lo inseriamo se non esiste ancora.
 		$db = new SD_Database();
 
 		$member_data = array(
@@ -327,13 +340,30 @@ class SD_Membership {
 			'guardian_country'       => $guardian_country,
 		);
 
-		$wpdb->insert( $db->table( 'members' ), $member_data );
-		$member_id = $wpdb->insert_id;
+		// Verifica se SD_Role_Sync ha già creato un record (per wp_user_id o email)
+		$sync_record = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$db->table('members')} WHERE wp_user_id = %d OR email = %s LIMIT 1",
+				$user_id,
+				$email
+			)
+		);
+
+		if ( $sync_record ) {
+			// Aggiorna il record creato da RoleSync con i dati completi
+			$wpdb->update( $db->table( 'members' ), $member_data, array( 'id' => $sync_record ) );
+			$member_id = $sync_record;
+		} else {
+			$wpdb->insert( $db->table( 'members' ), $member_data );
+			$member_id = $wpdb->insert_id;
+		}
 
 		if ( ! $member_id ) {
-			// Rollback utente WP se l'insert fallisce
+			// Rollback: elimina utente WP e qualsiasi record orfano con la stessa email
 			wp_delete_user( $user_id );
-			wp_send_json_error( array( 'message' => __( 'Errore durante il salvataggio. Riprova.', 'sd-logbook' ) ) );
+			$wpdb->delete( $db->table( 'members' ), array( 'email' => $email ) );
+			$db_error = $wpdb->last_error ? ' [DB: ' . $wpdb->last_error . ']' : '';
+			wp_send_json_error( array( 'message' => __( 'Errore durante il salvataggio. Riprova.', 'sd-logbook' ) . $db_error ) );
 		}
 
 		// === 7. Salva diver profile (se subacqueo) ===

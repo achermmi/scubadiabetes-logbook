@@ -82,7 +82,7 @@ class SD_Research_Dashboard {
 		check_ajax_referer( 'sd_research_nonce', 'nonce' );
 		$uid = get_current_user_id();
 		if ( ! SD_Roles::is_medical( $uid ) && ! current_user_can( 'administrator' ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$rows = $this->run_query();
@@ -105,12 +105,12 @@ class SD_Research_Dashboard {
 		check_ajax_referer( 'sd_research_nonce', 'nonce' );
 		$uid = get_current_user_id();
 		if ( ! SD_Roles::is_medical( $uid ) && ! current_user_can( 'administrator' ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$rows = $this->run_query();
 		if ( empty( $rows ) ) {
-			wp_send_json_error( array( 'message' => 'Nessun dato' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessun dato', 'sd-logbook' ) ) );
 		}
 
 		$filename   = 'sd-research-' . gmdate( 'Y-m-d-His' ) . '.csv';

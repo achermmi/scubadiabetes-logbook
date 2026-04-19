@@ -302,7 +302,7 @@ class SD_Diver_Profile {
 		$user_id = get_current_user_id();
 
 		if ( ! SD_Roles::is_diver( $user_id ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$diabetes_type = sanitize_text_field( $_POST['diabetes_type'] ?? 'non_diabetico' );

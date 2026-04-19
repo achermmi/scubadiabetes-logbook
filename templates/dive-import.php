@@ -58,8 +58,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                         🐙 Subsurface (.ssrf)
                     </div>
                     <div style="font-size:12px;color:#004D40;">
-                        Esporta da <strong>File → Esporta → Subsurface XML</strong>.
-                        Contiene sito, profondità, tempo, temperatura, bombole, compagni, note.
+                        <?php esc_html_e( 'Esporta da File → Esporta → Subsurface XML. Contiene sito, profondità, tempo, temperatura, bombole, compagni, note.', 'sd-logbook' ); ?>
                     </div>
                 </div>
                 <div style="flex:1;min-width:220px;padding:12px 14px;background:#E3F2FD;border-radius:8px;">
@@ -67,9 +66,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                         🌊 Shearwater Cloud (.db)
                     </div>
                     <div style="font-size:12px;color:#0D47A1;">
-                        Scarica il file <strong>.db</strong> dall'app Shearwater Cloud
-                        (<em>Settings → Export → Download Cloud Backup</em>).
-                        Contiene tutti i campi + pressione bombole in PSI.
+                        <?php esc_html_e( 'Scarica il file .db dall\'app Shearwater Cloud (Settings → Export → Download Cloud Backup). Contiene tutti i campi + pressione bombole in PSI.', 'sd-logbook' ); ?>
                     </div>
                 </div>
                 <div style="flex:1;min-width:220px;padding:12px 14px;background:#F3E8FF;border-radius:8px;">
@@ -77,9 +74,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                         🔵 UDDF (.uddf)
                     </div>
                     <div style="font-size:12px;color:#581C87;">
-                        Formato universale <strong>UDDF 3.2</strong> esportato da Garmin Descent,
-                        MacDive, DivingLog e molti altri computer.
-                        Esporta da <em>File → Esporta → UDDF</em>.
+                        <?php esc_html_e( 'Formato universale UDDF 3.2 esportato da Garmin Descent, MacDive, DivingLog e molti altri computer. Esporta da File → Esporta → UDDF.', 'sd-logbook' ); ?>
                     </div>
                 </div>
             </div>
@@ -112,10 +107,10 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
 
         <?php if ( current_user_can( 'manage_options' ) ) : ?>
         <div class="sd-section" id="sd-schema-debug-section" style="border:1px dashed #CBD5E1;background:#F8FAFC;">
-            <div style="font-size:12px;font-weight:700;color:#64748B;margin-bottom:8px;">🔧 Diagnostica schema .db (solo admin)</div>
+            <div style="font-size:12px;font-weight:700;color:#64748B;margin-bottom:8px;">🔧 <?php esc_html_e( 'Diagnostica schema .db (solo admin)', 'sd-logbook' ); ?></div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <input type="file" id="sd-schema-file-input" accept=".db" style="font-size:12px;">
-                <button type="button" id="sd-btn-schema-dump" style="font-size:12px;padding:4px 10px;background:#3B82F6;color:#fff;border:none;border-radius:4px;cursor:pointer;">Analizza schema</button>
+                <button type="button" id="sd-btn-schema-dump" style="font-size:12px;padding:4px 10px;background:#3B82F6;color:#fff;border:none;border-radius:4px;cursor:pointer;"><?php esc_html_e( 'Analizza schema', 'sd-logbook' ); ?></button>
             </div>
             <pre id="sd-schema-output" style="font-size:11px;margin-top:10px;background:#1E293B;color:#E2E8F0;padding:12px;border-radius:6px;overflow:auto;max-height:400px;display:none;"></pre>
         </div>
@@ -201,8 +196,8 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
 
         <!-- Legend -->
         <p style="font-size:11px;color:var(--sd-gray-400);margin-bottom:12px;">
-            <span class="sd-new-badge">Nuovo</span> = non ancora nel logbook &nbsp;|&nbsp;
-            <span class="sd-dup-badge">Duplicato</span> = già presente (stessa data/ora)
+            <span class="sd-new-badge"><?php esc_html_e( 'Nuovo', 'sd-logbook' ); ?></span> <?php esc_html_e( '= non ancora nel logbook', 'sd-logbook' ); ?> &nbsp;|&nbsp;
+            <span class="sd-dup-badge"><?php esc_html_e( 'Duplicato', 'sd-logbook' ); ?></span> <?php esc_html_e( '= già presente (stessa data/ora)', 'sd-logbook' ); ?>
         </p>
 
         <!-- Actions -->

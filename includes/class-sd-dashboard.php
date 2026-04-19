@@ -204,7 +204,7 @@ class SD_Dashboard {
 		);
 
 		if ( ! $dive ) {
-			wp_send_json_error( array( 'message' => 'Immersione non trovata' ) );
+			wp_send_json_error( array( 'message' => __( 'Immersione non trovata', 'sd-logbook' ) ) );
 		}
 
 		// Get diabetes data if exists
@@ -264,7 +264,7 @@ class SD_Dashboard {
 		}
 
 		if ( empty( $dives ) ) {
-			wp_send_json_error( array( 'message' => 'Nessun dato da esportare' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessun dato da esportare', 'sd-logbook' ) ) );
 		}
 
 		// Generate CSV
@@ -324,7 +324,7 @@ class SD_Dashboard {
 		);
 
 		if ( ! $dive ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		// Elimina dati diabete collegati
@@ -336,6 +336,6 @@ class SD_Dashboard {
 		// Elimina immersione
 		$wpdb->delete( $db->table( 'dives' ), array( 'id' => $dive_id ) );
 
-		wp_send_json_success( array( 'message' => 'Immersione eliminata' ) );
+		wp_send_json_success( array( 'message' => __( 'Immersione eliminata', 'sd-logbook' ) ) );
 	}
 }

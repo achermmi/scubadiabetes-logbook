@@ -366,8 +366,9 @@
 						$btn.prop('disabled', false).text('Invia iscrizione');
 					}
 				},
-				error: function () {
-					showMessage('error', 'Errore di rete. Controlla la connessione e riprova.');
+				error: function (xhr) {
+					var detail = xhr.responseText ? ('<br><pre style="font-size:11px;text-align:left;white-space:pre-wrap;">' + xhr.responseText.substring(0, 500) + '</pre>') : '';
+					showMessage('error', 'Errore di rete. Controlla la connessione e riprova.' + detail);
 					$btn.prop('disabled', false).text('Invia iscrizione');
 				},
 			});

@@ -79,22 +79,22 @@ class SD_Dive_Import {
 	public function ajax_schema() {
 		check_ajax_referer( 'sd_dive_import_nonce', 'nonce' );
 		if ( ! current_user_can( 'sd_log_dive' ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 		if ( empty( $_FILES['import_file'] ) || UPLOAD_ERR_OK !== $_FILES['import_file']['error'] ) {
-			wp_send_json_error( array( 'message' => 'Nessun file.' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessun file.', 'sd-logbook' ) ) );
 		}
 
 		$use_sqlite3 = class_exists( 'SQLite3' );
 		$use_pdo     = ! $use_sqlite3 && class_exists( 'PDO' ) && in_array( 'sqlite', PDO::getAvailableDrivers(), true ); // phpcs:ignore WordPress.DB.RestrictedClasses.mysql__PDO
 
 		if ( ! $use_sqlite3 && ! $use_pdo ) {
-			wp_send_json_error( array( 'message' => 'SQLite non disponibile.' ) );
+			wp_send_json_error( array( 'message' => __( 'SQLite non disponibile.', 'sd-logbook' ) ) );
 		}
 
 		$tmp = sys_get_temp_dir() . '/sd_schema_' . uniqid() . '.db';
 		if ( ! copy( $_FILES['import_file']['tmp_name'], $tmp ) ) {
-			wp_send_json_error( array( 'message' => 'Impossibile copiare il file.' ) );
+			wp_send_json_error( array( 'message' => __( 'Impossibile copiare il file.', 'sd-logbook' ) ) );
 		}
 
 		$q = function ( $sql ) use ( $tmp, $use_sqlite3 ) {
@@ -195,11 +195,11 @@ class SD_Dive_Import {
 	public function ajax_preview() {
 		check_ajax_referer( 'sd_dive_import_nonce', 'nonce' );
 		if ( ! current_user_can( 'sd_log_dive' ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		if ( empty( $_FILES['import_file'] ) || UPLOAD_ERR_OK !== $_FILES['import_file']['error'] ) {
-			wp_send_json_error( array( 'message' => 'Nessun file ricevuto o errore di upload.' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessun file ricevuto o errore di upload.', 'sd-logbook' ) ) );
 		}
 
 		$file      = $_FILES['import_file'];
@@ -209,12 +209,12 @@ class SD_Dive_Import {
 
 		// Max 50 MB
 		if ( $file['size'] > 50 * 1024 * 1024 ) {
-			wp_send_json_error( array( 'message' => 'File troppo grande (max 50 MB).' ) );
+			wp_send_json_error( array( 'message' => __( 'File troppo grande (max 50 MB).', 'sd-logbook' ) ) );
 		}
 
 		$allowed = array( 'ssrf', 'db', 'uddf' );
 		if ( ! in_array( $ext, $allowed, true ) ) {
-			wp_send_json_error( array( 'message' => 'Formato non supportato. Usa .ssrf (Subsurface), .db (Shearwater Cloud) o .uddf.' ) );
+			wp_send_json_error( array( 'message' => __( 'Formato non supportato. Usa .ssrf (Subsurface), .db (Shearwater Cloud) o .uddf.', 'sd-logbook' ) ) );
 		}
 
 		try {
@@ -226,11 +226,11 @@ class SD_Dive_Import {
 				$dives = $this->parse_shearwater_db( $tmp_path );
 			}
 		} catch ( Exception $e ) {
-			wp_send_json_error( array( 'message' => 'Errore parsing: ' . $e->getMessage() ) );
+			wp_send_json_error( array( 'message' => __( 'Errore parsing: ', 'sd-logbook' ) . $e->getMessage() ) );
 		}
 
 		if ( empty( $dives ) ) {
-			wp_send_json_error( array( 'message' => 'Nessuna immersione trovata nel file.' ) );
+			wp_send_json_error( array( 'message' => __( 'Nessuna immersione trovata nel file.', 'sd-logbook' ) ) );
 		}
 
 		// Mark duplicates
@@ -260,13 +260,13 @@ class SD_Dive_Import {
 	public function ajax_confirm() {
 		check_ajax_referer( 'sd_dive_import_nonce', 'nonce' );
 		if ( ! current_user_can( 'sd_log_dive' ) ) {
-			wp_send_json_error( array( 'message' => 'Non autorizzato' ) );
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
 		$raw = file_get_contents( 'php://input' );
 		$payload = json_decode( $raw, true );
 		if ( ! isset( $payload['dives'] ) || ! is_array( $payload['dives'] ) ) {
-			wp_send_json_error( array( 'message' => 'Dati non validi.' ) );
+			wp_send_json_error( array( 'message' => __( 'Dati non validi.', 'sd-logbook' ) ) );
 		}
 
 		$user_id  = get_current_user_id();
@@ -317,14 +317,14 @@ class SD_Dive_Import {
 	private function parse_ssrf( $path ) {
 		$xml_str = file_get_contents( $path );
 		if ( ! $xml_str ) {
-			throw new Exception( 'Impossibile leggere il file.' );
+			throw new Exception( __( 'Impossibile leggere il file.', 'sd-logbook' ) );
 		}
 
 		// Silence XML errors, parse
 		libxml_use_internal_errors( true );
 		$xml = simplexml_load_string( $xml_str );
 		if ( ! $xml ) {
-			throw new Exception( 'File SSRF non valido (XML malformato).' );
+			throw new Exception( __( 'File SSRF non valido (XML malformato).', 'sd-logbook' ) );
 		}
 
 		// Build site UUID → name/GPS map
@@ -496,7 +496,7 @@ class SD_Dive_Import {
 				'dive_date'          => $date_str,
 				'time_in'            => substr( $time_str, 0, 5 ),
 				'dive_time'          => $dive_time,
-				'site_name'          => $site_name ?: 'Sito sconosciuto',
+				'site_name'          => $site_name ?: __( 'Sito sconosciuto', 'sd-logbook' ),
 				'site_latitude'      => $lat,
 				'site_longitude'     => $lng,
 				'max_depth'          => $max_depth,
@@ -538,13 +538,13 @@ class SD_Dive_Import {
 		$use_sqlite3 = class_exists( 'SQLite3' );
 
 		if ( ! $use_sqlite3 && ! $use_pdo ) {
-			throw new Exception( 'SQLite3 non disponibile sul server. Contatta il supporto hosting per abilitare l\'estensione php_sqlite3 o pdo_sqlite.' );
+			throw new Exception( __( 'SQLite3 non disponibile sul server. Contatta il supporto hosting per abilitare l\'estensione php_sqlite3 o pdo_sqlite.', 'sd-logbook' ) );
 		}
 
 		// Copy to writable temp location
 		$tmp = sys_get_temp_dir() . '/sd_sw_' . uniqid() . '.db';
 		if ( ! copy( $path, $tmp ) ) {
-			throw new Exception( 'Impossibile copiare il file temporaneo.' );
+			throw new Exception( __( 'Impossibile copiare il file temporaneo.', 'sd-logbook' ) );
 		}
 
 		// Main query. Includes direct Tank1 pressure fields (PSI) and GPS entry
@@ -839,7 +839,7 @@ class SD_Dive_Import {
 			}
 
 			// Site name
-			$site_name = trim( $row['Site'] ?: $row['Location'] ?: 'Sito sconosciuto' );
+			$site_name = trim( $row['Site'] ?: $row['Location'] ?: __( 'Sito sconosciuto', 'sd-logbook' ) );
 
 			// Dive number
 			$dive_number = $row['DiveNumber'] ? (int) $row['DiveNumber'] : null;
@@ -1025,7 +1025,7 @@ class SD_Dive_Import {
 	private function parse_uddf( $path ) {
 		$xml_str = file_get_contents( $path );
 		if ( ! $xml_str ) {
-			throw new Exception( 'Impossibile leggere il file.' );
+			throw new Exception( __( 'Impossibile leggere il file.', 'sd-logbook' ) );
 		}
 
 		// Strip default namespace so SimpleXML XPath works without prefixes.
@@ -1034,7 +1034,7 @@ class SD_Dive_Import {
 		libxml_use_internal_errors( true );
 		$xml = simplexml_load_string( $xml_str );
 		if ( ! $xml ) {
-			throw new Exception( 'File UDDF non valido (XML malformato).' );
+			throw new Exception( __( 'File UDDF non valido (XML malformato).', 'sd-logbook' ) );
 		}
 
 		// Build dive site map: id → [name, lat, lng]
@@ -1387,7 +1387,7 @@ class SD_Dive_Import {
 				'dive_date'           => $dive_date,
 				'time_in'             => $time_in,
 				'dive_time'           => $dive_time,
-				'site_name'           => $site_name ?: 'Sito sconosciuto',
+				'site_name'           => $site_name ?: __( 'Sito sconosciuto', 'sd-logbook' ),
 				'site_latitude'       => $lat,
 				'site_longitude'      => $lng,
 				'max_depth'           => $max_depth,
@@ -1681,13 +1681,13 @@ class SD_Dive_Import {
 	private function query_sqlite3( $path, $sql ) {
 		$db = new SQLite3( $path, SQLITE3_OPEN_READONLY );
 		if ( ! $db ) {
-			throw new Exception( 'Impossibile aprire il database Shearwater.' );
+			throw new Exception( __( 'Impossibile aprire il database Shearwater.', 'sd-logbook' ) );
 		}
 		$result = $db->query( $sql );
 		if ( ! $result ) {
 			$msg = $db->lastErrorMsg() ?: ( 'code ' . $db->lastErrorCode() );
 			$db->close();
-			throw new Exception( 'Errore query SQLite3: ' . $msg );
+			throw new Exception( __( 'Errore query SQLite3: ', 'sd-logbook' ) . $msg );
 		}
 		$rows = array();
 		while ( $row = $result->fetchArray( SQLITE3_ASSOC ) ) {
@@ -1705,7 +1705,7 @@ class SD_Dive_Import {
 			$stmt = $pdo->query( $sql );
 			return $stmt->fetchAll( PDO::FETCH_ASSOC );
 		} catch ( PDOException $e ) {
-			throw new Exception( 'Errore PDO SQLite: ' . $e->getMessage() );
+			throw new Exception( __( 'Errore PDO SQLite: ', 'sd-logbook' ) . $e->getMessage() );
 		}
 		// phpcs:enable WordPress.DB.RestrictedClasses.mysql__PDO
 	}
@@ -1793,7 +1793,7 @@ class SD_Dive_Import {
 			'user_id'              => $user_id,
 			'dive_number'          => $dive_number,
 			'dive_date'            => sanitize_text_field( $raw['dive_date'] ),
-			'site_name'            => sanitize_text_field( $raw['site_name'] ?? 'Sito importato' ),
+			'site_name'            => sanitize_text_field( $raw['site_name'] ?? __( 'Sito importato', 'sd-logbook' ) ),
 			'site_latitude'        => $nullable_float( $raw['site_latitude'] ),
 			'site_longitude'       => $nullable_float( $raw['site_longitude'] ),
 			'time_in'              => $nullable_str( $raw['time_in'] ),
