@@ -146,7 +146,7 @@ class SD_Membership_Helper {
 	 */
 	private static function get_welcome_email_body( $member, $plain_password, $site_name, $site_url ) {
 		$name      = esc_html( $member->first_name . ' ' . $member->last_name );
-		$login_url = $site_url . '/accedi/';
+		$login_url = $site_url . '/login/';
 
 		$payment_info = self::get_payment_instructions( $member );
 
