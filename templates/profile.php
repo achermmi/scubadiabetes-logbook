@@ -121,7 +121,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                         <label><?php esc_html_e( 'Sesso', 'sd-logbook' ); ?></label>
                         <select name="personal_gender">
                             <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
-                            <?php foreach ( array('M'=>'M (Maschio)','F'=>'F (Femmina)','NB'=>'NB (Non binario)','U'=>'U (Non specificato)') as $val => $lab ) : ?>
+                            <?php foreach ( array('M'=> __('M (Maschio)','sd-logbook'),'F'=> __('F (Femmina)','sd-logbook'),'NB'=> __('NB (Non binario)','sd-logbook'),'U'=> __('U (Non specificato)','sd-logbook')) as $val => $lab ) : ?>
                             <option value="<?php echo esc_attr($val); ?>" <?php selected( $dp->gender ?? '', $val ); ?>><?php echo esc_html($lab); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -251,8 +251,19 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <label><?php esc_html_e( 'Agenzia', 'sd-logbook' ); ?> *</label>
                     <select name="cert_agency">
                         <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
-                        <?php foreach ( array('PADI','SSI','ESA','FIPSAS','CMAS','NAUI','BSAC','SDI/TDI','RAID','Altro') as $a ) : ?>
-                        <option value="<?php echo esc_attr($a); ?>"><?php echo esc_html($a); ?></option>
+                        <?php foreach ( array(
+                            'PADI'    => 'PADI',
+                            'SSI'     => 'SSI',
+                            'ESA'     => 'ESA',
+                            'FIPSAS'  => 'FIPSAS',
+                            'CMAS'    => 'CMAS',
+                            'NAUI'    => 'NAUI',
+                            'BSAC'    => 'BSAC',
+                            'SDI/TDI' => 'SDI/TDI',
+                            'RAID'    => 'RAID',
+                            'Altro'   => __( 'Altro', 'sd-logbook' ),
+                        ) as $a_val => $a_lab ) : ?>
+                        <option value="<?php echo esc_attr( $a_val ); ?>"><?php echo esc_html( $a_lab ); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -260,8 +271,20 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <label><?php esc_html_e( 'Livello', 'sd-logbook' ); ?> *</label>
                     <select name="cert_level">
                         <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
-                        <?php foreach ( array('Open Water','Advanced Open Water','BLS','Rescue Diver','Divemaster','Ecodiver','Instructor','Muta Stagna','Nitrox','Notturna','Altro') as $l ) : ?>
-                        <option value="<?php echo esc_attr($l); ?>"><?php echo esc_html($l); ?></option>
+                        <?php foreach ( array(
+                            'Open Water'          => __( 'Open Water', 'sd-logbook' ),
+                            'Advanced Open Water' => __( 'Advanced Open Water', 'sd-logbook' ),
+                            'BLS'                 => __( 'BLS', 'sd-logbook' ),
+                            'Rescue Diver'        => __( 'Rescue Diver', 'sd-logbook' ),
+                            'Divemaster'          => __( 'Divemaster', 'sd-logbook' ),
+                            'Ecodiver'            => __( 'Ecodiver', 'sd-logbook' ),
+                            'Instructor'          => __( 'Instructor', 'sd-logbook' ),
+                            'Muta Stagna'         => __( 'Muta Stagna', 'sd-logbook' ),
+                            'Nitrox'              => __( 'Nitrox', 'sd-logbook' ),
+                            'Notturna'            => __( 'Notturna', 'sd-logbook' ),
+                            'Altro'               => __( 'Altro', 'sd-logbook' ),
+                        ) as $l_val => $l_lab ) : ?>
+                        <option value="<?php echo esc_attr( $l_val ); ?>"><?php echo esc_html( $l_lab ); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -535,16 +558,28 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <div class="sd-field sd-field-half">
                     <label><?php esc_html_e( 'Tipo diabete', 'sd-logbook' ); ?></label>
                     <select name="diabetes_type">
-                        <?php foreach ( array('non_diabetico'=>'Non diabetico','none'=>'Non specificato','tipo1'=>'Tipo 1','tipo2'=>'Tipo 2','altro'=>'Altro') as $v => $l ) : ?>
-                        <option value="<?php echo $v; ?>" <?php selected( $dp->diabetes_type ?? 'none', $v ); ?>><?php echo esc_html($l); ?></option>
+                        <?php foreach ( array(
+                            'non_diabetico' => __( 'Non diabetico', 'sd-logbook' ),
+                            'none'          => __( 'Non specificato', 'sd-logbook' ),
+                            'tipo1'         => __( 'Tipo 1', 'sd-logbook' ),
+                            'tipo2'         => __( 'Tipo 2', 'sd-logbook' ),
+                            'altro'         => __( 'Altro', 'sd-logbook' ),
+                        ) as $v => $l ) : ?>
+                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $dp->diabetes_type ?? 'none', $v ); ?>><?php echo esc_html( $l ); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="sd-field sd-field-half">
                     <label><?php esc_html_e( 'Terapia', 'sd-logbook' ); ?></label>
                     <select name="therapy_type">
-                        <?php foreach ( array('none'=>'Non specificata','mdi'=>'MDI (multi-iniettiva)','csii'=>'CSII (microinfusore)','orale'=>'Orale','mista'=>'Mista') as $v => $l ) : ?>
-                        <option value="<?php echo $v; ?>" <?php selected( $dp->therapy_type ?? 'none', $v ); ?>><?php echo esc_html($l); ?></option>
+                        <?php foreach ( array(
+                            'none'  => __( 'Non specificata', 'sd-logbook' ),
+                            'mdi'   => __( 'MDI (multi-iniettiva)', 'sd-logbook' ),
+                            'csii'  => __( 'CSII (microinfusore)', 'sd-logbook' ),
+                            'orale' => __( 'Orale', 'sd-logbook' ),
+                            'mista' => __( 'Mista', 'sd-logbook' ),
+                        ) as $v => $l ) : ?>
+                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $dp->therapy_type ?? 'none', $v ); ?>><?php echo esc_html( $l ); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -577,8 +612,17 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <label><?php esc_html_e( 'Dispositivo CGM', 'sd-logbook' ); ?></label>
                 <select name="cgm_device">
                     <option value=""><?php esc_html_e('Seleziona...','sd-logbook'); ?></option>
-                    <?php foreach ( array('FreeStyle Libre 2','FreeStyle Libre 3','Dexcom G6','Dexcom G7','Dexcom ONE','Medtronic Guardian 4','Eversense E3','Altro') as $c ) : ?>
-                    <option value="<?php echo esc_attr($c); ?>" <?php selected( $dp->cgm_device ?? '', $c ); ?>><?php echo esc_html($c); ?></option>
+                    <?php foreach ( array(
+                        'FreeStyle Libre 2'  => 'FreeStyle Libre 2',
+                        'FreeStyle Libre 3'  => 'FreeStyle Libre 3',
+                        'Dexcom G6'          => 'Dexcom G6',
+                        'Dexcom G7'          => 'Dexcom G7',
+                        'Dexcom ONE'         => 'Dexcom ONE',
+                        'Medtronic Guardian 4' => 'Medtronic Guardian 4',
+                        'Eversense E3'       => 'Eversense E3',
+                        'Altro'              => __( 'Altro', 'sd-logbook' ),
+                    ) as $c_val => $c_lab ) : ?>
+                    <option value="<?php echo esc_attr( $c_val ); ?>" <?php selected( $dp->cgm_device ?? '', $c_val ); ?>><?php echo esc_html( $c_lab ); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
