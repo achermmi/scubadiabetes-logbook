@@ -107,6 +107,10 @@ class SD_Role_Sync {
 					$update,
 					array( 'id' => $existing->id )
 				);
+				// Sincronizza diver profile se ruolo subacqueo
+				if ( $attrs['is_scuba'] ) {
+					$this->sync_diver_profile_from_member( $user_id, $db, $wpdb );
+				}
 			}
 			// subscriber su membro esistente: non modificare nulla
 			return;
@@ -122,6 +126,7 @@ class SD_Role_Sync {
 
 		if ( $by_email ) {
 			$update = array( 'wp_user_id' => $user_id );
+			$is_scuba_role = false;
 			if ( 'subscriber' !== $role ) {
 				$attrs                = $this->role_to_attrs( $role );
 				$update['is_scuba']   = $attrs['is_scuba'];
@@ -133,17 +138,27 @@ class SD_Role_Sync {
 				} else {
 					$update['diabetes_type'] = $attrs['diabetes_type'];
 				}
+				$is_scuba_role = $attrs['is_scuba'];
 			}
 			$wpdb->update(
 				$db->table( 'members' ),
 				$update,
 				array( 'id' => $by_email->id )
 			);
+			// Sincronizza diver profile se ruolo subacqueo
+			if ( $is_scuba_role ) {
+				$this->sync_diver_profile_from_member( $user_id, $db, $wpdb );
+			}
 			return;
 		}
 
 		// --- Caso C: nessun record esistente → crea nuovo ---
 		$this->create_member( $user_id, $role, $wp_user, $db );
+		// Sincronizza diver profile dopo la creazione del membro
+		$attrs = $this->role_to_attrs( $role );
+		if ( $attrs['is_scuba'] ) {
+			$this->sync_diver_profile_from_member( $user_id, $db, $wpdb );
+		}
 	}
 
 	/**
@@ -231,6 +246,67 @@ class SD_Role_Sync {
 		}
 
 		$wpdb->insert( $db->table( 'members' ), $member_data );
+	}
+
+	/**
+	 * Crea o aggiorna wp_sd_diver_profiles con i dati anagrafici da wp_sd_members.
+	 * Aggiorna solo i campi vuoti nel profilo per non sovrascrivere dati già inseriti dall'utente.
+	 *
+	 * @param int         $user_id ID utente WordPress
+	 * @param SD_Database $db      Istanza database
+	 * @param wpdb        $wpdb    Istanza wpdb
+	 */
+	private function sync_diver_profile_from_member( $user_id, $db, $wpdb ) {
+		// Legge il record socio
+		$member = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('members')} WHERE wp_user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+		if ( ! $member ) {
+			return;
+		}
+
+		// Legge il profilo subacqueo esistente (se presente)
+		$profile = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('diver_profiles')} WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+
+		// Mappa campi members → diver_profiles (sovrascrive solo se il campo di destinazione è vuoto)
+		$sync_fields = array(
+			'phone'      => $member->phone,
+			'address'    => $member->address_street,
+			'zip'        => $member->address_postal,
+			'city'       => $member->address_city,
+			'birth_date' => $member->date_of_birth,
+			'gender'     => $member->gender,
+		);
+
+		if ( $profile ) {
+			// Aggiorna solo i campi vuoti nel profilo esistente
+			$update = array();
+			foreach ( $sync_fields as $profile_field => $member_value ) {
+				if ( ! empty( $member_value ) && empty( $profile->$profile_field ) ) {
+					$update[ $profile_field ] = $member_value;
+				}
+			}
+			if ( ! empty( $update ) ) {
+				$wpdb->update( $db->table( 'diver_profiles' ), $update, array( 'user_id' => $user_id ) );
+			}
+		} else {
+			// Crea nuovo profilo con i dati anagrafici disponibili
+			$insert = array( 'user_id' => $user_id );
+			foreach ( $sync_fields as $profile_field => $member_value ) {
+				if ( ! empty( $member_value ) ) {
+					$insert[ $profile_field ] = $member_value;
+				}
+			}
+			$wpdb->insert( $db->table( 'diver_profiles' ), $insert );
+		}
 	}
 
 	/**
