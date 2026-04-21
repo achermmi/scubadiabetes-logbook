@@ -118,6 +118,7 @@ class SD_Membership {
 
 		// Campi iscrizione
 		$is_scuba      = ! empty( $_POST['is_scuba'] ) ? 1 : 0;
+		$tshirt_size   = sanitize_text_field( wp_unslash( $_POST['tshirt_size'] ?? '' ) );
 		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
 		// Per fee=75, il tipo di socio è sempre "attivo_capo_famiglia" (server-side enforcement)
 		if ( $fee_amount >= 75 ) {
@@ -329,6 +330,7 @@ class SD_Membership {
 			'registered_at'       => current_time( 'mysql' ),
 			'privacy_consent'     => 1,
 			'consent_date'        => current_time( 'mysql' ),
+			'taglia_maglietta'    => $tshirt_size ?: null,
 			// Dati tutore
 			'guardian_first_name'    => $guardian_first_name,
 			'guardian_last_name'     => $guardian_last_name,

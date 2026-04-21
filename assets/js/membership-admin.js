@@ -36,7 +36,7 @@
 		var $msg     = $('#sd-members-message');
 
 		$loading.show();
-		$tbody.html('<tr><td colspan="10" class="sd-table-empty">Caricamento...</td></tr>');
+		$tbody.html('<tr><td colspan="11" class="sd-table-empty">Caricamento...</td></tr>');
 		$msg.hide();
 
 		var filters = getFilters();
@@ -61,7 +61,7 @@
 				state.total = data.total;
 
 				if (!data.rows || data.rows.length === 0) {
-					$tbody.html('<tr><td colspan="10" class="sd-table-empty">Nessun socio trovato.</td></tr>');
+					$tbody.html('<tr><td colspan="11" class="sd-table-empty">Nessun socio trovato.</td></tr>');
 					$('#sd-pagination').hide();
 					return;
 				}
@@ -71,7 +71,7 @@
 			},
 			error: function () {
 				$loading.hide();
-				$tbody.html('<tr><td colspan="10" class="sd-table-empty">Errore di rete.</td></tr>');
+				$tbody.html('<tr><td colspan="11" class="sd-table-empty">Errore di rete.</td></tr>');
 			},
 		});
 	}
@@ -111,6 +111,7 @@
 				'<td>' + escapeHtml(payDate) + '</td>' +
 				'<td>' + formatMemberType(m.member_type) + '</td>' +
 				'<td>' + scubaBadge + '</td>' +
+				'<td>' + escapeHtml(m.taglia_maglietta || '—') + '</td>' +
 				'<td>' + escapeHtml(m.wp_role_label || '—') + '</td>' +
 				'<td>' +
 					'<a href="' + sdMembAdmin.editUrl + '?member_id=' + escapeAttr(m.id) + '" class="sd-btn sd-btn-secondary sd-btn-sm">Modifica</a>' +

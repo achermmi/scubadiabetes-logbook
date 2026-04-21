@@ -201,6 +201,9 @@ class SD_Membership_Helper {
 			/* translators: fee amount in CHF */
 			$html .= '<li><strong>' . __( 'Tassa annuale:', 'sd-logbook' ) . '</strong> CHF ' . number_format( $member->fee_amount, 2 ) . '</li>';
 		}
+		if ( ! empty( $member->taglia_maglietta ) ) {
+			$html .= '<li><strong>' . __( 'Taglia Maglietta:', 'sd-logbook' ) . '</strong> ' . esc_html( $member->taglia_maglietta ) . '</li>';
+		}
 		$html .= '</ul>';
 
 		// Elenco famigliari registrati
@@ -321,6 +324,7 @@ class SD_Membership_Helper {
 			__( 'Diabete', 'sd-logbook' )         => $member->diabetes_type,
 			__( 'Tassa', 'sd-logbook' )           => 'CHF ' . number_format( $member->fee_amount, 2 ),
 			__( 'Tipo socio', 'sd-logbook' )      => $member->member_type,
+			__( 'Taglia Maglietta', 'sd-logbook' ) => ! empty( $member->taglia_maglietta ) ? $member->taglia_maglietta : '—',
 			__( 'Tutore', 'sd-logbook' )          => $member->sotto_tutela ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' ),
 		);
 

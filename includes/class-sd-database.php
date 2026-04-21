@@ -460,6 +460,7 @@ class SD_Database {
 			guardian_city varchar(100) DEFAULT NULL,
 			guardian_postal varchar(20) DEFAULT NULL,
 			guardian_country varchar(100) DEFAULT 'CH',
+			taglia_maglietta varchar(15) DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
@@ -611,6 +612,21 @@ class SD_Database {
 		);
 		if ( empty( $col ) ) {
 			$wpdb->query( 'ALTER TABLE ' . $table_family . ' ADD COLUMN family_member_id int(11) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// =====================================================================
+		// MIGRAZIONI v2.9.0: Taglia maglietta
+		// =====================================================================
+
+		// sd_members: colonna taglia_maglietta
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_members . ' LIKE %s', // phpcs:ignore
+				'taglia_maglietta'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD COLUMN taglia_maglietta varchar(15) DEFAULT NULL' ); // phpcs:ignore
 		}
 	}
 

@@ -189,6 +189,32 @@ function sd_val( $obj, $key, $default = '' ) {
 						<input type="text" name="fiscal_code" class="sd-input" value="<?php echo esc_attr( sd_val( $member, 'fiscal_code' ) ); ?>">
 					</div>
 				</div>
+
+				<div class="sd-field-row">
+					<div class="sd-field-group sd-field-quarter">
+						<label class="sd-label"><?php esc_html_e( 'Taglia Maglietta', 'sd-logbook' ); ?></label>
+						<select name="taglia_maglietta" class="sd-select">
+							<option value=""><?php esc_html_e( '-- Non indicata --', 'sd-logbook' ); ?></option>
+							<optgroup label="<?php esc_attr_e( 'Bambino/a', 'sd-logbook' ); ?>">
+								<option value="baby_2-3"   <?php selected( sd_val( $member, 'taglia_maglietta' ), 'baby_2-3' ); ?>><?php esc_html_e( '2–3 anni', 'sd-logbook' ); ?></option>
+								<option value="baby_4-5"   <?php selected( sd_val( $member, 'taglia_maglietta' ), 'baby_4-5' ); ?>><?php esc_html_e( '4–5 anni', 'sd-logbook' ); ?></option>
+								<option value="baby_6-8"   <?php selected( sd_val( $member, 'taglia_maglietta' ), 'baby_6-8' ); ?>><?php esc_html_e( '6–8 anni', 'sd-logbook' ); ?></option>
+								<option value="baby_9-11"  <?php selected( sd_val( $member, 'taglia_maglietta' ), 'baby_9-11' ); ?>><?php esc_html_e( '9–11 anni', 'sd-logbook' ); ?></option>
+								<option value="baby_12-14" <?php selected( sd_val( $member, 'taglia_maglietta' ), 'baby_12-14' ); ?>><?php esc_html_e( '12–14 anni', 'sd-logbook' ); ?></option>
+							</optgroup>
+							<optgroup label="<?php esc_attr_e( 'Adulto/a', 'sd-logbook' ); ?>">
+								<option value="XXS"  <?php selected( sd_val( $member, 'taglia_maglietta' ), 'XXS' ); ?>>XXS</option>
+								<option value="XS"   <?php selected( sd_val( $member, 'taglia_maglietta' ), 'XS' ); ?>>XS</option>
+								<option value="S"    <?php selected( sd_val( $member, 'taglia_maglietta' ), 'S' ); ?>>S</option>
+								<option value="M"    <?php selected( sd_val( $member, 'taglia_maglietta' ), 'M' ); ?>>M</option>
+								<option value="L"    <?php selected( sd_val( $member, 'taglia_maglietta' ), 'L' ); ?>>L</option>
+								<option value="XL"   <?php selected( sd_val( $member, 'taglia_maglietta' ), 'XL' ); ?>>XL</option>
+								<option value="XXL"  <?php selected( sd_val( $member, 'taglia_maglietta' ), 'XXL' ); ?>>XXL</option>
+								<option value="XXXL" <?php selected( sd_val( $member, 'taglia_maglietta' ), 'XXXL' ); ?>>XXXL</option>
+							</optgroup>
+						</select>
+					</div>
+				</div>
 			</div>
 
 			<!-- Ruolo WP -->

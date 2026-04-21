@@ -157,13 +157,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<th><?php esc_html_e( 'Data Pag.', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Sub', 'sd-logbook' ); ?></th>
+					<th><?php esc_html_e( 'Taglia', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Ruolo WP', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
 				</tr>
 			</thead>
 			<tbody id="sd-members-tbody">
 				<tr>
-					<td colspan="10" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
+					<td colspan="11" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
 				</tr>
 			</tbody>
 		</table>

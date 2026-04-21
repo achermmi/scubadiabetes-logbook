@@ -307,7 +307,7 @@ class SD_Membership_Admin {
 		                     END AS has_paid_fee,
 		                     m.member_type, m.is_scuba, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
-		                     m.wp_user_id,
+		                     m.wp_user_id, m.taglia_maglietta,
 		                     p.amount as paid_amount, p.payment_date, p.payment_method, p.status as payment_status
 		              FROM {$db->table('members')} m
 		              LEFT JOIN {$db->table('payments')} p
@@ -446,6 +446,7 @@ class SD_Membership_Admin {
 			'guardian_city',
 			'guardian_postal',
 			'guardian_country',
+			'taglia_maglietta',
 		);
 
 		foreach ( $text_fields as $field ) {
@@ -656,15 +657,33 @@ class SD_Membership_Admin {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT m.id, m.first_name, m.last_name, m.email, m.phone,
-				        m.date_of_birth, m.gender, m.address_street, m.address_postal,
-				        m.address_city, m.address_country, m.fee_amount, m.has_paid_fee,
-				        m.member_type, m.is_scuba, m.diabetes_type, m.member_since,
-				        m.membership_expiry, m.registered_at,
-				        p.payment_date, p.payment_method, p.status as payment_status
+				"SELECT m.id, m.wp_user_id,
+				        m.first_name, m.last_name, m.email, m.phone,
+				        m.date_of_birth, m.birth_place, m.birth_country,
+				        m.gender, m.fiscal_code, m.sotto_tutela,
+				        m.address_street, m.address_postal, m.address_city,
+				        m.address_country, m.address_canton,
+				        m.member_type, m.membership_type,
+				        m.taglia_maglietta,
+				        m.is_scuba, m.diabetes_type, m.diabetology_center,
+				        m.fee_amount, m.has_paid_fee,
+				        m.member_since, m.membership_expiry,
+				        m.medical_cert_expiry,
+				        m.privacy_consent, m.consent_date,
+				        m.registered_at, m.notes,
+				        m.guardian_first_name, m.guardian_last_name,
+				        m.guardian_role, m.guardian_dob,
+				        m.guardian_email, m.guardian_phone,
+				        m.guardian_address, m.guardian_city,
+				        m.guardian_postal, m.guardian_country,
+				        p.amount   AS paid_amount,
+				        p.payment_date, p.payment_method,
+				        p.status   AS payment_status,
+				        u.user_login
 				 FROM {$db->table('members')} m
 				 LEFT JOIN {$db->table('payments')} p
 				   ON p.member_id = m.id AND p.payment_year = %d
+				 LEFT JOIN {$wpdb->users} u ON u.ID = m.wp_user_id
 				 WHERE m.is_active = 1
 				 ORDER BY m.last_name, m.first_name",
 				$year
@@ -672,35 +691,143 @@ class SD_Membership_Admin {
 			ARRAY_A
 		);
 
+		// Carica i ruoli WP per tutti gli utenti coinvolti in un'unica query batch
+		$wp_user_ids = array_filter( array_column( $rows, 'wp_user_id' ) );
+		$roles_map   = array();
+		if ( ! empty( $wp_user_ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $wp_user_ids ), '%d' ) );
+			$meta_rows    = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = '{$wpdb->prefix}capabilities' AND user_id IN ({$placeholders})", // phpcs:ignore
+					$wp_user_ids
+				),
+				ARRAY_A
+			);
+			foreach ( $meta_rows as $mr ) {
+				$caps = maybe_unserialize( $mr['meta_value'] );
+				if ( is_array( $caps ) ) {
+					$roles_map[ $mr['user_id'] ] = implode( ', ', array_keys( $caps ) );
+				}
+			}
+		}
+
 		$headers_row = array(
+			// Identificativo
 			__( 'ID', 'sd-logbook' ),
+			__( 'WP User ID', 'sd-logbook' ),
+			__( 'WP Username', 'sd-logbook' ),
+			__( 'Ruoli WP', 'sd-logbook' ),
+			// Anagrafica
 			__( 'Nome', 'sd-logbook' ),
 			__( 'Cognome', 'sd-logbook' ),
 			__( 'Email', 'sd-logbook' ),
 			__( 'Telefono', 'sd-logbook' ),
 			__( 'Data Nascita', 'sd-logbook' ),
+			__( 'Luogo Nascita', 'sd-logbook' ),
+			__( 'Nazione Nascita', 'sd-logbook' ),
 			__( 'Genere', 'sd-logbook' ),
-			__( 'Via', 'sd-logbook' ),
+			__( 'Codice Fiscale / AVS', 'sd-logbook' ),
+			__( 'Sotto Tutela', 'sd-logbook' ),
+			// Indirizzo
+			__( 'Via / Indirizzo', 'sd-logbook' ),
 			__( 'CAP', 'sd-logbook' ),
 			__( 'Città', 'sd-logbook' ),
-			__( 'Paese', 'sd-logbook' ),
-			__( 'Tassa CHF', 'sd-logbook' ),
-			__( 'Pagato', 'sd-logbook' ),
+			__( 'Nazione', 'sd-logbook' ),
+			__( 'Cantone', 'sd-logbook' ),
+			// Iscrizione
 			__( 'Tipo Socio', 'sd-logbook' ),
+			__( 'Tipo Membership', 'sd-logbook' ),
+			__( 'Taglia Maglietta', 'sd-logbook' ),
 			__( 'Subacqueo', 'sd-logbook' ),
 			__( 'Diabete', 'sd-logbook' ),
-			__( 'Socio dal', 'sd-logbook' ),
-			__( 'Scadenza', 'sd-logbook' ),
+			__( 'Centro Diabetologia', 'sd-logbook' ),
+			__( 'Tassa CHF', 'sd-logbook' ),
+			__( 'Pagato', 'sd-logbook' ),
+			__( 'Membro dal', 'sd-logbook' ),
+			__( 'Scadenza Iscrizione', 'sd-logbook' ),
+			__( 'Scadenza Cert. Medico', 'sd-logbook' ),
+			__( 'Consenso Privacy', 'sd-logbook' ),
+			__( 'Data Consenso', 'sd-logbook' ),
 			__( 'Registrato il', 'sd-logbook' ),
+			__( 'Note', 'sd-logbook' ),
+			// Pagamento
+			__( 'Importo Pagato CHF', 'sd-logbook' ),
 			__( 'Data Pagamento', 'sd-logbook' ),
 			__( 'Metodo Pagamento', 'sd-logbook' ),
 			__( 'Stato Pagamento', 'sd-logbook' ),
+			// Tutore
+			__( 'Tutore Nome', 'sd-logbook' ),
+			__( 'Tutore Cognome', 'sd-logbook' ),
+			__( 'Tutore Ruolo', 'sd-logbook' ),
+			__( 'Tutore Data Nascita', 'sd-logbook' ),
+			__( 'Tutore Email', 'sd-logbook' ),
+			__( 'Tutore Telefono', 'sd-logbook' ),
+			__( 'Tutore Indirizzo', 'sd-logbook' ),
+			__( 'Tutore Città', 'sd-logbook' ),
+			__( 'Tutore CAP', 'sd-logbook' ),
+			__( 'Tutore Nazione', 'sd-logbook' ),
 		);
+
+		// Costruisce le righe normalizzate
+		$export_rows = array();
+		foreach ( $rows as $r ) {
+			$uid         = (int) ( $r['wp_user_id'] ?? 0 );
+			$wp_roles    = $uid ? ( $roles_map[ $uid ] ?? '' ) : '';
+			$export_rows[] = array(
+				$r['id'],
+				$r['wp_user_id'] ?? '',
+				$r['user_login'] ?? '',
+				$wp_roles,
+				$r['first_name'],
+				$r['last_name'],
+				$r['email'],
+				$r['phone'] ?? '',
+				$r['date_of_birth'] ?? '',
+				$r['birth_place'] ?? '',
+				$r['birth_country'] ?? '',
+				$r['gender'] ?? '',
+				$r['fiscal_code'] ?? '',
+				$r['sotto_tutela'] ? 'Sì' : 'No',
+				$r['address_street'] ?? '',
+				$r['address_postal'] ?? '',
+				$r['address_city'] ?? '',
+				$r['address_country'] ?? '',
+				$r['address_canton'] ?? '',
+				$r['member_type'] ?? '',
+				$r['membership_type'] ?? '',
+				$r['taglia_maglietta'] ?? '',
+				$r['is_scuba'] ? 'Sì' : 'No',
+				$r['diabetes_type'] ?? '',
+				$r['diabetology_center'] ?? '',
+				$r['fee_amount'] ?? '',
+				$r['has_paid_fee'] ? 'Sì' : 'No',
+				$r['member_since'] ?? '',
+				$r['membership_expiry'] ?? '',
+				$r['medical_cert_expiry'] ?? '',
+				$r['privacy_consent'] ? 'Sì' : 'No',
+				$r['consent_date'] ?? '',
+				$r['registered_at'] ?? '',
+				$r['notes'] ?? '',
+				$r['paid_amount'] ?? '',
+				$r['payment_date'] ?? '',
+				$r['payment_method'] ?? '',
+				$r['payment_status'] ?? '',
+				$r['guardian_first_name'] ?? '',
+				$r['guardian_last_name'] ?? '',
+				$r['guardian_role'] ?? '',
+				$r['guardian_dob'] ?? '',
+				$r['guardian_email'] ?? '',
+				$r['guardian_phone'] ?? '',
+				$r['guardian_address'] ?? '',
+				$r['guardian_city'] ?? '',
+				$r['guardian_postal'] ?? '',
+				$r['guardian_country'] ?? '',
+			);
+		}
 
 		$filename = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' );
 
 		if ( 'xlsx' === $format ) {
-			// Export come Spreadsheet XML (aperto da Excel/LibreOffice)
 			header( 'Content-Type: application/vnd.ms-excel; charset=UTF-8' );
 			header( 'Content-Disposition: attachment; filename="' . $filename . '.xls"' );
 			header( 'Cache-Control: no-cache, no-store, must-revalidate' );
@@ -710,17 +837,16 @@ class SD_Membership_Admin {
 			echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';
 			echo '<Worksheet ss:Name="Soci"><Table>';
 
-			// Intestazioni
 			echo '<Row>';
 			foreach ( $headers_row as $h ) {
 				echo '<Cell><Data ss:Type="String">' . esc_html( $h ) . '</Data></Cell>';
 			}
 			echo '</Row>';
 
-			foreach ( $rows as $row ) {
+			foreach ( $export_rows as $row ) {
 				echo '<Row>';
 				foreach ( $row as $cell ) {
-					$type = is_numeric( $cell ) ? 'Number' : 'String';
+					$type = is_numeric( $cell ) && '' !== $cell ? 'Number' : 'String';
 					echo '<Cell><Data ss:Type="' . $type . '">' . esc_html( (string) $cell ) . '</Data></Cell>';
 				}
 				echo '</Row>';
@@ -739,8 +865,8 @@ class SD_Membership_Admin {
 		fprintf( $output, chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) ); // BOM UTF-8
 		fputcsv( $output, $headers_row, ';' );
 
-		foreach ( $rows as $row ) {
-			fputcsv( $output, array_values( $row ), ';' );
+		foreach ( $export_rows as $row ) {
+			fputcsv( $output, $row, ';' );
 		}
 
 		fclose( $output );
