@@ -488,12 +488,14 @@ class SD_Membership {
 					continue;
 				}
 
-				wp_update_user( array(
-					'ID'           => $fm_user_id,
-					'first_name'   => $fm_first,
-					'last_name'    => $fm_last,
-					'display_name' => $fm_first . ' ' . $fm_last,
-				) );
+				wp_update_user(
+					array(
+						'ID'           => $fm_user_id,
+						'first_name'   => $fm_first,
+						'last_name'    => $fm_last,
+						'display_name' => $fm_first . ' ' . $fm_last,
+					)
+				);
 
 				// Assegna ruolo WP (stessa logica dell'intestatario)
 				SD_Membership_Helper::assign_wp_role( $fm_user_id, $fm_scuba, $fm_is_diabetic );

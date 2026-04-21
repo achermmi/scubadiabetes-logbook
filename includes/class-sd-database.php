@@ -290,14 +290,14 @@ class SD_Database {
 			'glic_10_sens'         => 'smallint unsigned DEFAULT NULL',
 			'glic_post_cap'        => 'smallint unsigned DEFAULT NULL',
 			'glic_post_sens'       => 'smallint unsigned DEFAULT NULL',
-			'glic_extra_when'      => "varchar(20) DEFAULT NULL",
+			'glic_extra_when'      => 'varchar(20) DEFAULT NULL',
 			'glic_extra_cap'       => 'smallint unsigned DEFAULT NULL',
 			'glic_extra_sens'      => 'smallint unsigned DEFAULT NULL',
-			'glic_extra_trend'     => "varchar(20) DEFAULT NULL",
-			'glic_extra_cho_rapidi'=> 'decimal(5,1) DEFAULT NULL',
+			'glic_extra_trend'     => 'varchar(20) DEFAULT NULL',
+			'glic_extra_cho_rapidi' => 'decimal(5,1) DEFAULT NULL',
 			'glic_extra_cho_lenti' => 'decimal(5,1) DEFAULT NULL',
 			'glic_extra_insulin'   => 'decimal(5,2) DEFAULT NULL',
-			'glic_extra_notes'     => "varchar(255) DEFAULT NULL",
+			'glic_extra_notes'     => 'varchar(255) DEFAULT NULL',
 		);
 		foreach ( $new_diabetes_cols as $col_name => $col_def ) {
 			$exists = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery

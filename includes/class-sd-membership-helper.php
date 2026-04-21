@@ -174,7 +174,7 @@ class SD_Membership_Helper {
 		$name      = esc_html( $member->first_name . ' ' . $member->last_name );
 		$login_url = $site_url . '/login/';
 
-		$is_famiglia = ( floatval( $member->fee_amount ) >= 75 || $member->member_type === 'attivo_capo_famiglia' );
+		$is_famiglia = ( floatval( $member->fee_amount ) >= 75 || 'attivo_capo_famiglia' === $member->member_type );
 
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
 		$html .= '<h2 style="color:#0055a5;">' . __( 'Benvenuto in ScubaDiabetes!', 'sd-logbook' ) . '</h2>';
