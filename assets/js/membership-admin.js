@@ -100,7 +100,11 @@
 
 			var scubaBadge = m.is_scuba == 1 ? '✓' : '—';
 
-			var payDate = m.payment_date ? m.payment_date.substr(0, 10) : '—';
+			var payDate = (function() {
+				if ( ! m.payment_date ) { return '—'; }
+				var parts = m.payment_date.substr(0, 10).split('-');
+				return parts.length === 3 ? parts[2] + '.' + parts[1] + '.' + parts[0] : m.payment_date.substr(0, 10);
+			})();
 
 			html += '<tr data-member-id="' + escapeAttr(m.id) + '">' +
 				'<td><strong>' + escapeHtml(m.last_name) + '</strong>, ' + escapeHtml(m.first_name) + '</td>' +
