@@ -25,7 +25,7 @@ if ( empty( $display_name ) ) {
 $role_badges_html = SD_Roles::render_badges_html( $user_id );
 ?>
 
-<div class="sd-form-wrap">
+<div class="sd-form-wrap sd-logbook-wrap">
 
     <!-- User bar -->
     <div class="sd-user-bar">

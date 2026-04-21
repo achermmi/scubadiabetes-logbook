@@ -62,6 +62,16 @@ function sd_val( $obj, $key, $default = '' ) {
 			<?php if ( $member->sotto_tutela || ! empty( $family_members ) || ! empty( $companions ) ) : ?>
 				<button type="button" class="sd-tab-btn" data-tab="famiglia"><?php esc_html_e( 'Famiglia', 'sd-logbook' ); ?></button>
 			<?php endif; ?>
+			<?php
+			$has_registered_family = ! empty( $registered_family_members );
+			$family_tab_class      = $has_registered_family ? 'sd-tab-btn sd-tab-btn-highlight' : 'sd-tab-btn';
+			?>
+			<button type="button" class="<?php echo esc_attr( $family_tab_class ); ?>" data-tab="famigliari">
+				<?php esc_html_e( 'Famigliari', 'sd-logbook' ); ?>
+				<?php if ( $has_registered_family ) : ?>
+					<span class="sd-tab-badge"><?php echo esc_html( count( $registered_family_members ) ); ?></span>
+				<?php endif; ?>
+			</button>
 			<button type="button" class="sd-tab-btn" data-tab="pagamenti"><?php esc_html_e( 'Pagamenti', 'sd-logbook' ); ?></button>
 			<button type="button" class="sd-tab-btn" data-tab="log"><?php esc_html_e( 'Log', 'sd-logbook' ); ?></button>
 		</div>
@@ -242,12 +252,14 @@ function sd_val( $obj, $key, $default = '' ) {
 						<select name="member_type" class="sd-select">
 							<?php
 							$mt_options = array(
-								'attivo'          => __( 'Attivo', 'sd-logbook' ),
-								'passivo'         => __( 'Passivo', 'sd-logbook' ),
-								'accompagnatore'  => __( 'Accompagnatore', 'sd-logbook' ),
-								'sostenitore'     => __( 'Sostenitore', 'sd-logbook' ),
-								'onorario'        => __( 'Onorario', 'sd-logbook' ),
-								'fondatore'       => __( 'Fondatore', 'sd-logbook' ),
+								'attivo'               => __( 'Attivo', 'sd-logbook' ),
+								'attivo_capo_famiglia' => __( 'Attivo Capo Famiglia', 'sd-logbook' ),
+								'attivo_famigliare'    => __( 'Attivo Famigliare', 'sd-logbook' ),
+								'passivo'              => __( 'Passivo', 'sd-logbook' ),
+								'accompagnatore'       => __( 'Accompagnatore', 'sd-logbook' ),
+								'sostenitore'          => __( 'Sostenitore', 'sd-logbook' ),
+								'onorario'             => __( 'Onorario', 'sd-logbook' ),
+								'fondatore'            => __( 'Fondatore', 'sd-logbook' ),
 							);
 							foreach ( $mt_options as $mt_val => $mt_label ) :
 							?>
@@ -291,10 +303,15 @@ function sd_val( $obj, $key, $default = '' ) {
 				<div class="sd-field-row">
 					<div class="sd-field-group sd-field-quarter">
 						<label class="sd-label"><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></label>
-						<select name="has_paid_fee" class="sd-select sd-payment-status-select">
-							<option value="0" <?php selected( sd_val( $member, 'has_paid_fee', 0 ), 0 ); ?>><?php esc_html_e( 'Non pagato', 'sd-logbook' ); ?></option>
-							<option value="1" <?php selected( sd_val( $member, 'has_paid_fee', 0 ), 1 ); ?>><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
-						</select>
+						<?php if ( sd_val( $member, 'member_type' ) === 'attivo_famigliare' ) : ?>
+							<input type="hidden" name="has_paid_fee" value="1">
+							<input type="text" class="sd-input" value="<?php esc_attr_e( 'Famigliare', 'sd-logbook' ); ?>" readonly style="background:#f0f4f8;pointer-events:none;color:#555;">
+						<?php else : ?>
+							<select name="has_paid_fee" class="sd-select sd-payment-status-select">
+								<option value="0" <?php selected( sd_val( $member, 'has_paid_fee', 0 ), 0 ); ?>><?php esc_html_e( 'Non pagato', 'sd-logbook' ); ?></option>
+								<option value="1" <?php selected( sd_val( $member, 'has_paid_fee', 0 ), 1 ); ?>><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
+							</select>
+						<?php endif; ?>
 					</div>
 					<div class="sd-field-group sd-field-quarter">
 						<label class="sd-label"><?php esc_html_e( 'Data pagamento', 'sd-logbook' ); ?></label>
@@ -525,6 +542,57 @@ function sd_val( $obj, $key, $default = '' ) {
 			<?php endif; ?>
 		</div>
 		<?php endif; ?>
+
+		<!-- === TAB FAMIGLIARI (utenti WP registrati come famigliari) === -->
+		<div class="sd-tab-content" id="sd-tab-famigliari">
+			<div class="sd-form-section">
+				<h3 class="sd-section-title"><?php esc_html_e( 'Famigliari registrati', 'sd-logbook' ); ?></h3>
+
+				<?php if ( ! empty( $registered_family_members ) ) : ?>
+					<?php
+					// Cerca la pagina di modifica per costruire i link
+					$edit_page     = get_page_by_path( 'modifica-socio' );
+					$edit_base_url = $edit_page ? get_permalink( $edit_page ) : home_url( '/modifica-socio/' );
+					?>
+					<table class="sd-members-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Data Nascita', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $registered_family_members as $rfm ) : ?>
+								<tr>
+									<td><?php echo esc_html( $rfm->first_name . ' ' . $rfm->last_name ); ?></td>
+									<td><?php echo esc_html( $rfm->email ?? '—' ); ?></td>
+									<td><?php echo esc_html( $rfm->date_of_birth ? date_i18n( 'd/m/Y', strtotime( $rfm->date_of_birth ) ) : '—' ); ?></td>
+									<td><?php echo esc_html( $rfm->diabetes_type ?? '—' ); ?></td>
+									<td>
+										<?php if ( (int) $rfm->is_active ) : ?>
+											<span class="sd-badge sd-badge-success" style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:0.8rem;"><?php esc_html_e( 'Sì', 'sd-logbook' ); ?></span>
+										<?php else : ?>
+											<span class="sd-badge sd-badge-danger" style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:12px;font-size:0.8rem;"><?php esc_html_e( 'No', 'sd-logbook' ); ?></span>
+										<?php endif; ?>
+									</td>
+									<td>
+										<a href="<?php echo esc_url( add_query_arg( 'member_id', $rfm->id, $edit_base_url ) ); ?>" class="sd-btn sd-btn-secondary sd-btn-sm">
+											<?php esc_html_e( 'Modifica', 'sd-logbook' ); ?>
+										</a>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php else : ?>
+					<p class="sd-field-note"><?php esc_html_e( 'Nessun famigliare registrato per questo intestatario.', 'sd-logbook' ); ?></p>
+				<?php endif; ?>
+			</div>
+		</div>
 
 		<!-- === TAB PAGAMENTI === -->
 		<div class="sd-tab-content" id="sd-tab-pagamenti">

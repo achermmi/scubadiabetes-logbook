@@ -94,8 +94,27 @@
 
 #sd-glycemia-chart {
     width: 100%;
-    height: 180px;
+    height: 260px;
     display: block;
+    cursor: default;
+}
+
+.sd-glycemia-tooltip {
+    display: none;
+    position: absolute;
+    background: rgba(15,23,42,0.93);
+    color: #fff;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 6px 11px;
+    border-radius: 7px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 20;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    line-height: 1.6;
+    border-left: 3px solid #FFF;
+    transform: translateY(-50%);
 }
 
 .sd-chart-legend {
@@ -386,5 +405,117 @@
 @media (min-width: 600px) {
     .sd-checkpoints {
         grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ============================================================
+   DUAL C + S INPUT ROWS
+   ============================================================ */
+.sd-cp-dual-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 4px 8px !important;
+}
+
+.sd-dual-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #FFF;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.sd-badge-cap  { background: #DC2626; }
+.sd-badge-sens { background: #0097A7; }
+
+.sd-dual-input-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.sd-dual-input-wrap label {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+/* ============================================================
+   EXTRA MEASUREMENT CARDS (4 cards)
+   ============================================================ */
+.sd-checkpoints-extra {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.sd-checkpoint-extra {
+    background: var(--sd-white);
+    border: 1.5px solid #FCD34D;
+    border-radius: var(--sd-radius-sm);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.sd-checkpoint-header-extra {
+    text-align: center;
+    color: #1A1A1A;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    padding: 6px 0;
+    text-transform: uppercase;
+}
+
+/* Dropdown "Momento" */
+.sd-extra-when-select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1.5px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748B'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sd-extra-when-select:focus {
+    outline: none;
+    border-color: #F59E0B;
+    box-shadow: 0 0 0 2px rgba(245,158,11,0.15);
+}
+
+@media (min-width: 600px) {
+    .sd-checkpoints-extra {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .sd-checkpoints-extra {
+        grid-template-columns: 1fr;
     }
 }

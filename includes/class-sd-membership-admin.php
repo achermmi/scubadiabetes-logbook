@@ -108,7 +108,16 @@ class SD_Membership_Admin {
 
 		// Stats rapide
 		$total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE is_active = 1" );
-		$paid   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$db->table('members')} WHERE is_active = 1 AND has_paid_fee = 1" ) );
+		$paid   = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
+			 WHERE m.is_active = 1
+			   AND CASE
+			           WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 1"
+		);
 		$income = (float) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COALESCE(SUM(amount),0) FROM {$db->table('payments')} WHERE status = 'completato' AND payment_year = %d",
@@ -116,11 +125,23 @@ class SD_Membership_Admin {
 			)
 		);
 
+		$expected = (float) $wpdb->get_var(
+			"SELECT COALESCE(SUM(m.fee_amount),0) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
+			 WHERE m.is_active = 1
+			   AND CASE
+			           WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 0"
+		);
+
 		$stats = array(
-			'total'  => $total,
-			'paid'   => $paid,
-			'unpaid' => $total - $paid,
-			'income' => $income,
+			'total'    => $total,
+			'paid'     => $paid,
+			'unpaid'   => $total - $paid,
+			'income'   => $income,
+			'expected' => $expected,
 		);
 
 		ob_start();
@@ -156,7 +177,7 @@ class SD_Membership_Admin {
 				. '</div>';
 		}
 
-		// Familiari e accompagnatori
+		// Familiari e accompagnatori (da sd_family_members — relazione tradizionale)
 		$family_members = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$db->table('family_members')} WHERE member_id = %d AND (is_companion = 0 OR is_companion IS NULL) ORDER BY id",
@@ -166,6 +187,19 @@ class SD_Membership_Admin {
 		$companions = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$db->table('family_members')} WHERE member_id = %d AND is_companion = 1 ORDER BY id",
+				$member_id
+			)
+		);
+
+		// Famigliari registrati come utenti WP (da sd_members con parent_member_id)
+		$registered_family_members = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT m.id, m.first_name, m.last_name, m.email, m.phone, m.date_of_birth,
+				        m.gender, m.is_scuba, m.diabetes_type, m.is_active, m.fee_amount,
+				        m.member_type, m.wp_user_id, m.member_since
+				 FROM {$db->table('members')} m
+				 WHERE m.parent_member_id = %d
+				 ORDER BY m.last_name, m.first_name",
 				$member_id
 			)
 		);
@@ -265,7 +299,12 @@ class SD_Membership_Admin {
 
 		// Query principale
 		$query_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.phone,
-		                     m.date_of_birth, m.gender, m.fee_amount, m.has_paid_fee,
+		                     m.date_of_birth, m.gender, m.fee_amount,
+		                     CASE
+		                         WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+		                         THEN COALESCE(pm.has_paid_fee, 0)
+		                         ELSE m.has_paid_fee
+		                     END AS has_paid_fee,
 		                     m.member_type, m.is_scuba, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
 		                     m.wp_user_id,
@@ -273,6 +312,8 @@ class SD_Membership_Admin {
 		              FROM {$db->table('members')} m
 		              LEFT JOIN {$db->table('payments')} p
 		                ON p.member_id = m.id AND p.payment_year = %d
+		              LEFT JOIN {$db->table('members')} pm
+		                ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
 		              {$where_sql}
 		              ORDER BY m.last_name ASC, m.first_name ASC
 		              LIMIT %d OFFSET %d";
@@ -450,6 +491,44 @@ class SD_Membership_Admin {
 		// Aggiorna tabella members
 		if ( ! empty( $update_data ) ) {
 			$wpdb->update( $db->table( 'members' ), $update_data, array( 'id' => $member_id ) );
+		}
+
+		// === Cascata disattivazione: se is_active passa a 0, disabilita anche i famigliari ===
+		$old_is_active = isset( $old_data->is_active ) ? (int) $old_data->is_active : 1;
+		$new_is_active = $is_active;
+
+		if ( $old_is_active !== $new_is_active ) {
+			// Disabilita o abilita l'utente WP dell'intestatario
+			if ( $old_data->wp_user_id ) {
+				if ( 0 === $new_is_active ) {
+					SD_Membership_Helper::disable_wp_user( $old_data->wp_user_id );
+				} else {
+					SD_Membership_Helper::enable_wp_user( $old_data->wp_user_id );
+				}
+			}
+
+			// Propaga ai famigliari registrati (solo per disattivazione, non per riattivazione a cascata)
+			if ( 0 === $new_is_active ) {
+				$family_members_wps = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT id, wp_user_id FROM {$db->table('members')} WHERE parent_member_id = %d",
+						$member_id
+					)
+				);
+				foreach ( $family_members_wps as $fm_row ) {
+					$wpdb->update(
+						$db->table( 'members' ),
+						array( 'is_active' => 0 ),
+						array( 'id' => $fm_row->id )
+					);
+					if ( $fm_row->wp_user_id ) {
+						SD_Membership_Helper::disable_wp_user( $fm_row->wp_user_id );
+					}
+				}
+			}
+		} elseif ( 0 === $new_is_active && $old_data->wp_user_id ) {
+			// Anche se is_active non è cambiato ma è 0, assicurati che l'utente sia disabilitato
+			SD_Membership_Helper::disable_wp_user( $old_data->wp_user_id );
 		}
 
 		// Aggiorna pagamento

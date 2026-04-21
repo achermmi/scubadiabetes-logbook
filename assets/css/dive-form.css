@@ -44,6 +44,11 @@
     -webkit-font-smoothing: antialiased;
 }
 
+/* Logbook form (dive) — wider on desktop */
+.sd-form-wrap.sd-logbook-wrap {
+    max-width: 900px;
+}
+
 /* Wider layout for dashboards and panels */
 .sd-form-wrap.sd-dashboard-wrap,
 .sd-form-wrap.sd-medical-wrap,
@@ -59,6 +64,12 @@
 .page .sd-form-wrap,
 .nv-content-wrap .sd-form-wrap {
     max-width: 640px;
+}
+
+.nv-single-page-wrap .sd-form-wrap.sd-logbook-wrap,
+.page .sd-form-wrap.sd-logbook-wrap,
+.nv-content-wrap .sd-form-wrap.sd-logbook-wrap {
+    max-width: 900px;
 }
 
 .nv-single-page-wrap .sd-form-wrap.sd-dashboard-wrap,

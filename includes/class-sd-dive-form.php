@@ -260,21 +260,49 @@ class SD_Dive_Form {
 
 		foreach ( $checkpoints as $cp ) {
 			$prefix    = 'glic_' . $cp . '_';
-			$raw_value = ! empty( $_POST[ $prefix . 'value' ] ) ? floatval( $_POST[ $prefix . 'value' ] ) : null;
-			// Converti mmol/L → mg/dL se necessario
-			if ( null !== $raw_value && $is_mmol ) {
-				$raw_value = round( $raw_value * 18.018 );
-			} elseif ( null !== $raw_value ) {
-				$raw_value = absint( $raw_value );
+
+			// Capillare
+			$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
+			if ( null !== $raw_cap && $is_mmol ) {
+				$raw_cap = round( $raw_cap * 18.018 );
+			} elseif ( null !== $raw_cap ) {
+				$raw_cap = absint( $raw_cap );
 			}
-			$diabetes_data[ $prefix . 'value' ]      = $raw_value;
-			$diabetes_data[ $prefix . 'method' ]     = in_array( $_POST[ $prefix . 'method' ] ?? '', array( 'C', 'S' ), true ) ? $_POST[ $prefix . 'method' ] : null;
+			// Sensore
+			$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
+			if ( null !== $raw_sens && $is_mmol ) {
+				$raw_sens = round( $raw_sens * 18.018 );
+			} elseif ( null !== $raw_sens ) {
+				$raw_sens = absint( $raw_sens );
+			}
+
+			$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
+			$diabetes_data[ $prefix . 'sens' ]       = $raw_sens;
 			$diabetes_data[ $prefix . 'trend' ]      = sanitize_text_field( $_POST[ $prefix . 'trend' ] ?? '' ) ?: null;
 			$diabetes_data[ $prefix . 'cho_rapidi' ] = ! empty( $_POST[ $prefix . 'cho_rapidi' ] ) ? floatval( $_POST[ $prefix . 'cho_rapidi' ] ) : null;
 			$diabetes_data[ $prefix . 'cho_lenti' ]  = ! empty( $_POST[ $prefix . 'cho_lenti' ] ) ? floatval( $_POST[ $prefix . 'cho_lenti' ] ) : null;
 			$diabetes_data[ $prefix . 'insulin' ]    = ! empty( $_POST[ $prefix . 'insulin' ] ) ? floatval( $_POST[ $prefix . 'insulin' ] ) : null;
 			$diabetes_data[ $prefix . 'notes' ]      = sanitize_text_field( $_POST[ $prefix . 'notes' ] ?? '' ) ?: null;
 		}
+
+		// Misura extra
+		$diabetes_data['glic_extra_when'] = in_array( $_POST['glic_extra_when'] ?? '', array( 'prima_60', 'prima_30', 'prima_10', 'prima_post', 'dopo_post' ), true )
+			? $_POST['glic_extra_when'] : null;
+		$raw_extra_cap = ! empty( $_POST['glic_extra_cap'] ) ? floatval( $_POST['glic_extra_cap'] ) : null;
+		if ( null !== $raw_extra_cap ) {
+			$raw_extra_cap = $is_mmol ? round( $raw_extra_cap * 18.018 ) : absint( $raw_extra_cap );
+		}
+		$raw_extra_sens = ! empty( $_POST['glic_extra_sens'] ) ? floatval( $_POST['glic_extra_sens'] ) : null;
+		if ( null !== $raw_extra_sens ) {
+			$raw_extra_sens = $is_mmol ? round( $raw_extra_sens * 18.018 ) : absint( $raw_extra_sens );
+		}
+		$diabetes_data['glic_extra_cap']        = $raw_extra_cap;
+		$diabetes_data['glic_extra_sens']       = $raw_extra_sens;
+		$diabetes_data['glic_extra_trend']      = sanitize_text_field( $_POST['glic_extra_trend'] ?? '' ) ?: null;
+		$diabetes_data['glic_extra_cho_rapidi'] = ! empty( $_POST['glic_extra_cho_rapidi'] ) ? floatval( $_POST['glic_extra_cho_rapidi'] ) : null;
+		$diabetes_data['glic_extra_cho_lenti']  = ! empty( $_POST['glic_extra_cho_lenti'] ) ? floatval( $_POST['glic_extra_cho_lenti'] ) : null;
+		$diabetes_data['glic_extra_insulin']    = ! empty( $_POST['glic_extra_insulin'] ) ? floatval( $_POST['glic_extra_insulin'] ) : null;
+		$diabetes_data['glic_extra_notes']      = sanitize_text_field( $_POST['glic_extra_notes'] ?? '' ) ?: null;
 
 		// Decisione immersione
 		$diabetes_data['dive_decision']        = sanitize_text_field( $_POST['dive_decision'] ?? '' ) ?: null;

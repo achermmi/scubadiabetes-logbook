@@ -36,6 +36,7 @@
 .sd-stat-success .sd-stat-value { color: #059669; }
 .sd-stat-warning .sd-stat-value { color: #d97706; }
 .sd-stat-info .sd-stat-value    { color: #2563eb; }
+.sd-stat-danger .sd-stat-value  { color: #dc2626; }
 
 /* ===== FILTER BAR ===== */
 .sd-filter-bar {

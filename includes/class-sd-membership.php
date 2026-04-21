@@ -119,7 +119,12 @@ class SD_Membership {
 		// Campi iscrizione
 		$is_scuba      = ! empty( $_POST['is_scuba'] ) ? 1 : 0;
 		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
-		$member_type   = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? 'attivo' ) );
+		// Per fee=75, il tipo di socio è sempre "attivo_capo_famiglia" (server-side enforcement)
+		if ( $fee_amount >= 75 ) {
+			$member_type = 'attivo_capo_famiglia';
+		} else {
+			$member_type = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? 'attivo' ) );
+		}
 		$privacy_consent = ! empty( $_POST['privacy_consent'] ) ? 1 : 0;
 		$default_shared  = isset( $_POST['default_shared_for_research'] ) ? 1 : 0;
 
@@ -403,30 +408,184 @@ class SD_Membership {
 			}
 		}
 
-		// === 8. Salva familiari (tassa 75 CHF) ===
+		// === 8. Salva familiari (tassa 75 CHF) — crea utente WP per ognuno ===
+		$registered_family = array(); // per le email
 		if ( $fee_amount >= 75 && ! empty( $_POST['family_members'] ) ) {
 			$family_members = wp_unslash( $_POST['family_members'] );
 			if ( is_string( $family_members ) ) {
 				$family_members = json_decode( $family_members, true ) ?: array();
 			}
 			foreach ( (array) $family_members as $fm ) {
-				$fm_name = sanitize_text_field( $fm['first_name'] ?? '' );
-				if ( empty( $fm_name ) ) {
+				$fm_first  = sanitize_text_field( $fm['first_name'] ?? '' );
+				$fm_last   = sanitize_text_field( $fm['last_name'] ?? '' );
+				$fm_email  = sanitize_email( $fm['email'] ?? '' );
+				$fm_phone  = sanitize_text_field( $fm['phone'] ?? '' );
+				$fm_dob    = sanitize_text_field( $fm['date_of_birth'] ?? '' );
+				$fm_gender = sanitize_text_field( $fm['gender'] ?? '' );
+				$fm_scuba  = ! empty( $fm['is_scuba'] ) ? 1 : 0;
+
+				if ( empty( $fm_first ) || empty( $fm_last ) || empty( $fm_email ) ) {
+					continue; // salta famigliari incompleti
+				}
+
+				$fm_dob_val     = ! empty( $fm_dob ) && strtotime( $fm_dob ) ? $fm_dob : null;
+				$fm_diab_type   = sanitize_text_field( $fm['diabetes_type'] ?? 'non_diabetico' );
+				$allowed_diab   = array( 'tipo_1', 'tipo_2', 'non_diabetico', 'non_specificato', 'altro' );
+				$fm_diab_type   = in_array( $fm_diab_type, $allowed_diab, true ) ? $fm_diab_type : 'non_diabetico';
+				$fm_is_diabetic = in_array( $fm_diab_type, array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' ), true ) ? 1 : 0;
+				$fm_diab_center = sanitize_text_field( $fm['diabetology_center'] ?? '' );
+
+				// Controlla duplicati email (WP + soci)
+				if ( email_exists( $fm_email ) ) {
+					// Email già esistente: aggiorna il record family_members senza creare utente
+					$wpdb->insert(
+						$db->table( 'family_members' ),
+						array(
+							'member_id'     => $member_id,
+							'first_name'    => $fm_first,
+							'last_name'     => $fm_last,
+							'date_of_birth' => $fm_dob_val,
+							'phone'         => $fm_phone,
+							'email'         => $fm_email,
+							'gender'        => $fm_gender,
+							'is_scuba'      => $fm_scuba,
+							'diabetes_type' => $fm_diab_type,
+							'is_companion'  => 0,
+						)
+					);
 					continue;
 				}
-				$fm_diab_type = sanitize_text_field( $fm['diabetes_type'] ?? 'non_diabetico' );
+
+				// Genera password per il famigliare (usa CAP dell'intestatario)
+				$fm_password = SD_Membership_Helper::generate_password(
+					$fm_last,
+					$fm_dob_val ?? gmdate( 'Y-m-d' ),
+					$fm_first,
+					$address_postal,
+					$fm_is_diabetic,
+					0
+				);
+
+				// Crea utente WP
+				$fm_user_id = wp_create_user( $fm_email, $fm_password, $fm_email );
+				if ( is_wp_error( $fm_user_id ) ) {
+					// Salta se impossibile creare (es. email duplicata)
+					$wpdb->insert(
+						$db->table( 'family_members' ),
+						array(
+							'member_id'     => $member_id,
+							'first_name'    => $fm_first,
+							'last_name'     => $fm_last,
+							'date_of_birth' => $fm_dob_val,
+							'phone'         => $fm_phone,
+							'email'         => $fm_email,
+							'gender'        => $fm_gender,
+							'is_scuba'      => $fm_scuba,
+							'diabetes_type' => $fm_diab_type,
+							'is_companion'  => 0,
+						)
+					);
+					continue;
+				}
+
+				wp_update_user( array(
+					'ID'           => $fm_user_id,
+					'first_name'   => $fm_first,
+					'last_name'    => $fm_last,
+					'display_name' => $fm_first . ' ' . $fm_last,
+				) );
+
+				// Assegna ruolo WP (stessa logica dell'intestatario)
+				SD_Membership_Helper::assign_wp_role( $fm_user_id, $fm_scuba, $fm_is_diabetic );
+
+				// Crea record sd_members per il famigliare
+				$fm_member_data = array(
+					'wp_user_id'         => $fm_user_id,
+					'first_name'         => $fm_first,
+					'last_name'          => $fm_last,
+					'email'              => $fm_email,
+					'phone'              => $fm_phone,
+					'date_of_birth'      => $fm_dob_val,
+					'gender'             => $fm_gender,
+					'address_street'     => $address_street,
+					'address_city'       => $address_city,
+					'address_postal'     => $address_postal,
+					'address_country'    => $address_country,
+					'address_canton'     => $address_canton,
+					'membership_type'    => 'famiglia',
+					'diabetes_type'      => $fm_is_diabetic ? $fm_diab_type : 'non_diabetico',
+					'member_since'       => gmdate( 'Y-m-d' ),
+					'membership_expiry'  => gmdate( 'Y-12-31' ),
+					'is_active'          => 1,
+					'has_paid_fee'       => 1, // i famigliari non pagano separatamente
+					'is_scuba'           => $fm_scuba,
+					'fee_amount'         => 0.00,
+					'member_type'        => 'attivo_famigliare',
+					'diabetology_center' => $fm_diab_center,
+					'parent_member_id'   => $member_id,
+					'registered_by'      => get_current_user_id(),
+					'registered_at'      => current_time( 'mysql' ),
+					'privacy_consent'    => 1,
+					'consent_date'       => current_time( 'mysql' ),
+				);
+
+				// Verifica se RoleSync ha già creato un record
+				$fm_sync_record = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM {$db->table('members')} WHERE wp_user_id = %d OR email = %s LIMIT 1",
+						$fm_user_id,
+						$fm_email
+					)
+				);
+				if ( $fm_sync_record ) {
+					$wpdb->update( $db->table( 'members' ), $fm_member_data, array( 'id' => $fm_sync_record ) );
+					$fm_member_id = $fm_sync_record;
+				} else {
+					$wpdb->insert( $db->table( 'members' ), $fm_member_data );
+					$fm_member_id = $wpdb->insert_id;
+				}
+
+				// Inserisci in family_members con link al record sd_members
 				$wpdb->insert(
 					$db->table( 'family_members' ),
 					array(
-						'member_id'     => $member_id,
-						'first_name'    => $fm_name,
-						'last_name'     => sanitize_text_field( $fm['last_name'] ?? '' ),
-						'date_of_birth' => ! empty( $fm['date_of_birth'] ) && strtotime( $fm['date_of_birth'] ) ? $fm['date_of_birth'] : null,
-						'phone'         => sanitize_text_field( $fm['phone'] ?? '' ),
-						'email'         => sanitize_email( $fm['email'] ?? '' ),
-						'diabetes_type' => in_array( $fm_diab_type, array( 'tipo_1', 'tipo_2', 'non_diabetico' ), true ) ? $fm_diab_type : 'non_diabetico',
-						'is_companion'  => 0,
+						'member_id'        => $member_id,
+						'family_member_id' => $fm_member_id ?: null,
+						'wp_user_id'       => $fm_user_id,
+						'first_name'       => $fm_first,
+						'last_name'        => $fm_last,
+						'date_of_birth'    => $fm_dob_val,
+						'phone'            => $fm_phone,
+						'email'            => $fm_email,
+						'gender'           => $fm_gender,
+						'is_scuba'         => $fm_scuba,
+						'diabetes_type'    => $fm_diab_type,
+						'is_companion'     => 0,
 					)
+				);
+
+				// Nessun pagamento per i famigliari (tassa 0)
+				if ( $fm_member_id ) {
+					$wpdb->insert(
+						$db->table( 'payments' ),
+						array(
+							'member_id'      => $fm_member_id,
+							'amount'         => 0.00,
+							'currency'       => 'CHF',
+							'payment_method' => 'famigliare',
+							'payment_year'   => intval( gmdate( 'Y' ) ),
+							'status'         => 'famigliare',
+							'registered_by'  => get_current_user_id(),
+						)
+					);
+				}
+
+				$registered_family[] = array(
+					'first_name' => $fm_first,
+					'last_name'  => $fm_last,
+					'email'      => $fm_email,
+					'password'   => $fm_password,
+					'member_id'  => $fm_member_id,
 				);
 			}
 		}
@@ -476,7 +635,7 @@ class SD_Membership {
 		SD_Membership_Helper::log_audit( $member_id, 'register', 'sd_members', $member_id, null, $member_data );
 
 		// === 12. Invio email ===
-		SD_Membership_Helper::send_registration_emails( $member_id, $password );
+		SD_Membership_Helper::send_registration_emails( $member_id, $password, $registered_family );
 
 		wp_send_json_success(
 			array(

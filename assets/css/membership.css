@@ -170,6 +170,19 @@
 	font-size: 0.82rem;
 }
 
+/* Select bloccato (tipo socio famiglia) */
+.sd-select-locked {
+	pointer-events: none;
+	opacity: 0.75;
+	background-color: var(--sd-bg-light, #f0f4f8);
+	cursor: not-allowed;
+}
+
+.sd-input-error {
+	border-color: #dc3545 !important;
+	background-color: #fff5f5;
+}
+
 .sd-textarea {
 	resize: vertical;
 	min-height: 80px;
@@ -573,6 +586,25 @@
 	color: var(--sd-primary, #0055a5);
 	border-bottom-color: var(--sd-primary, #0055a5);
 	font-weight: 600;
+}
+
+.sd-tab-btn-highlight {
+	font-weight: 600;
+}
+
+.sd-tab-badge {
+	display: inline-block;
+	background: var(--sd-primary, #0055a5);
+	color: #fff;
+	border-radius: 50%;
+	min-width: 18px;
+	height: 18px;
+	font-size: 11px;
+	text-align: center;
+	line-height: 18px;
+	padding: 0 3px;
+	margin-left: 4px;
+	vertical-align: middle;
 }
 
 .sd-tab-content {

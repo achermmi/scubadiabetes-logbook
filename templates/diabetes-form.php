@@ -56,7 +56,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     <!-- Grafico glicemico (canvas) -->
     <div class="sd-glycemia-chart-wrap">
-        <canvas id="sd-glycemia-chart" width="560" height="200"></canvas>
+        <canvas id="sd-glycemia-chart" width="560" height="260"></canvas>
+        <div id="sd-glycemia-tooltip" class="sd-glycemia-tooltip"></div>
         <div class="sd-chart-legend" id="sd-chart-legend">
             <!-- Populated by JS based on unit -->
         </div>
@@ -80,36 +81,28 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <?php echo esc_html( $cp['label'] ); ?>
             </div>
 
-            <!-- Glicemia -->
+            <!-- Glicemia capillare -->
             <div class="sd-cp-field">
-                <label class="sd-glic-label" data-cp="<?php echo esc_attr( $key ); ?>">
-                    <!-- Label set by JS -->
-                </label>
+                <label class="sd-glic-label-cap" data-cp="<?php echo esc_attr( $key ); ?>"><?php esc_html_e( 'Capillare (mg/dL)', 'sd-logbook' ); ?></label>
                 <input type="number"
-                       name="glic_<?php echo esc_attr( $key ); ?>_value"
-                       class="sd-glic-input"
+                       name="glic_<?php echo esc_attr( $key ); ?>_cap"
+                       class="sd-glic-input sd-glic-cap"
                        data-cp="<?php echo esc_attr( $key ); ?>"
                        inputmode="numeric">
             </div>
 
-            <!-- Metodo C / S -->
+            <!-- Glicemia sensore -->
             <div class="sd-cp-field">
-                <label><?php esc_html_e( 'Metodo', 'sd-logbook' ); ?></label>
-                <div class="sd-method-toggle" data-cp="<?php echo esc_attr( $key ); ?>">
-                    <button type="button" class="sd-method-btn" data-value="C" data-name="glic_<?php echo esc_attr( $key ); ?>_method">
-                        <span class="sd-method-letter">C</span>
-                        <span class="sd-method-label"><?php esc_html_e( 'Capillare', 'sd-logbook' ); ?></span>
-                    </button>
-                    <button type="button" class="sd-method-btn" data-value="S" data-name="glic_<?php echo esc_attr( $key ); ?>_method">
-                        <span class="sd-method-letter">S</span>
-                        <span class="sd-method-label"><?php esc_html_e( 'Sensore', 'sd-logbook' ); ?></span>
-                    </button>
-                </div>
-                <input type="hidden" name="glic_<?php echo esc_attr( $key ); ?>_method" value="">
+                <label class="sd-glic-label-sens" data-cp="<?php echo esc_attr( $key ); ?>"><?php esc_html_e( 'Sensore (mg/dL)', 'sd-logbook' ); ?></label>
+                <input type="number"
+                       name="glic_<?php echo esc_attr( $key ); ?>_sens"
+                       class="sd-glic-input sd-glic-sens"
+                       data-cp="<?php echo esc_attr( $key ); ?>"
+                       inputmode="numeric">
             </div>
 
-            <!-- Freccia trend (solo se S) -->
-            <div class="sd-cp-field sd-trend-field" data-cp="<?php echo esc_attr( $key ); ?>" style="display:none;">
+            <!-- Freccia trend sensore -->
+            <div class="sd-cp-field sd-trend-field" data-cp="<?php echo esc_attr( $key ); ?>">
                 <label><?php esc_html_e( 'Freccia sensore', 'sd-logbook' ); ?></label>
                 <div class="sd-trend-select" data-cp="<?php echo esc_attr( $key ); ?>">
                     <button type="button" class="sd-trend-btn" data-value="salita_rapida" title="<?php esc_attr_e( 'Salita rapida', 'sd-logbook' ); ?>">
@@ -157,6 +150,105 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
         <?php endforeach; ?>
 
+    </div>
+
+    <!-- 4 Misure Extra -->
+    <div class="sd-checkpoints-extra">
+        <?php
+        $sd_extras = array(
+            'extra1' => array( 'label' => 'Extra 1', 'bg' => '#FEFCE8', 'border' => '#FEF08A' ),
+            'extra2' => array( 'label' => 'Extra 2', 'bg' => '#FEF08A', 'border' => '#FDE68A' ),
+            'extra3' => array( 'label' => 'Extra 3', 'bg' => '#FCD34D', 'border' => '#FBBF24' ),
+            'extra4' => array( 'label' => 'Extra 4', 'bg' => '#F59E0B', 'border' => '#D97706' ),
+        );
+        foreach ( $sd_extras as $key => $ex ) :
+        ?>
+        <div class="sd-checkpoint-card sd-checkpoint-extra" style="border-color:<?php echo esc_attr( $ex['border'] ); ?>">
+            <div class="sd-checkpoint-header-extra" style="background:<?php echo esc_attr( $ex['bg'] ); ?>">
+                <?php echo esc_html( strtoupper( $ex['label'] ) ); ?>
+            </div>
+
+            <!-- Quando -->
+            <div class="sd-cp-field">
+                <label><?php esc_html_e( 'Momento', 'sd-logbook' ); ?></label>
+                <select name="glic_<?php echo esc_attr( $key ); ?>_when" class="sd-extra-when-select">
+                    <option value=""><?php esc_html_e( '— Seleziona quando —', 'sd-logbook' ); ?></option>
+                    <option value="prima_60"><?php esc_html_e( '- 90 MIN', 'sd-logbook' ); ?></option>
+                    <option value="prima_30"><?php esc_html_e( '- 45 MIN', 'sd-logbook' ); ?></option>
+                    <option value="prima_10"><?php esc_html_e( '- 20 MIN', 'sd-logbook' ); ?></option>
+                    <option value="prima_post"><?php esc_html_e( '- 5 MIN', 'sd-logbook' ); ?></option>
+                    <option value="dopo_post"><?php esc_html_e( '+ 30 MIN', 'sd-logbook' ); ?></option>
+                </select>
+            </div>
+
+            <!-- Capillare extra -->
+            <div class="sd-cp-field">
+                <label class="sd-glic-label-cap" data-cp="<?php echo esc_attr( $key ); ?>"><?php esc_html_e( 'Capillare (mg/dL)', 'sd-logbook' ); ?></label>
+                <input type="number"
+                       name="glic_<?php echo esc_attr( $key ); ?>_cap"
+                       class="sd-glic-input sd-glic-cap"
+                       data-cp="<?php echo esc_attr( $key ); ?>"
+                       inputmode="numeric">
+            </div>
+
+            <!-- Sensore extra -->
+            <div class="sd-cp-field">
+                <label class="sd-glic-label-sens" data-cp="<?php echo esc_attr( $key ); ?>"><?php esc_html_e( 'Sensore (mg/dL)', 'sd-logbook' ); ?></label>
+                <input type="number"
+                       name="glic_<?php echo esc_attr( $key ); ?>_sens"
+                       class="sd-glic-input sd-glic-sens"
+                       data-cp="<?php echo esc_attr( $key ); ?>"
+                       inputmode="numeric">
+            </div>
+
+            <!-- Trend extra -->
+            <div class="sd-cp-field sd-trend-field" data-cp="<?php echo esc_attr( $key ); ?>">
+                <label><?php esc_html_e( 'Freccia sensore', 'sd-logbook' ); ?></label>
+                <div class="sd-trend-select" data-cp="<?php echo esc_attr( $key ); ?>">
+                    <button type="button" class="sd-trend-btn" data-value="salita_rapida" title="<?php esc_attr_e( 'Salita rapida', 'sd-logbook' ); ?>">
+                        <span class="sd-arrow sd-arrow-up-fast">↑↑</span>
+                    </button>
+                    <button type="button" class="sd-trend-btn" data-value="salita" title="<?php esc_attr_e( 'Salita', 'sd-logbook' ); ?>">
+                        <span class="sd-arrow sd-arrow-up">↑</span>
+                    </button>
+                    <button type="button" class="sd-trend-btn" data-value="stabile" title="<?php esc_attr_e( 'Stabile', 'sd-logbook' ); ?>">
+                        <span class="sd-arrow sd-arrow-stable">→</span>
+                    </button>
+                    <button type="button" class="sd-trend-btn" data-value="discesa" title="<?php esc_attr_e( 'Discesa', 'sd-logbook' ); ?>">
+                        <span class="sd-arrow sd-arrow-down">↓</span>
+                    </button>
+                    <button type="button" class="sd-trend-btn" data-value="discesa_rapida" title="<?php esc_attr_e( 'Discesa rapida', 'sd-logbook' ); ?>">
+                        <span class="sd-arrow sd-arrow-down-fast">↓↓</span>
+                    </button>
+                </div>
+                <input type="hidden" name="glic_<?php echo esc_attr( $key ); ?>_trend" value="">
+            </div>
+
+            <!-- CHO rapidi extra -->
+            <div class="sd-cp-field">
+                <label><?php esc_html_e( 'CHO rapidi (gr)', 'sd-logbook' ); ?></label>
+                <input type="number" name="glic_<?php echo esc_attr( $key ); ?>_cho_rapidi" step="0.5" min="0" placeholder="0" inputmode="decimal">
+            </div>
+
+            <!-- CHO lenti extra -->
+            <div class="sd-cp-field">
+                <label><?php esc_html_e( 'CHO lenti (gr)', 'sd-logbook' ); ?></label>
+                <input type="number" name="glic_<?php echo esc_attr( $key ); ?>_cho_lenti" step="0.5" min="0" placeholder="0" inputmode="decimal">
+            </div>
+
+            <!-- Insulina extra -->
+            <div class="sd-cp-field">
+                <label><?php esc_html_e( 'INS (U)', 'sd-logbook' ); ?></label>
+                <input type="number" name="glic_<?php echo esc_attr( $key ); ?>_insulin" step="0.1" min="0" placeholder="0" inputmode="decimal">
+            </div>
+
+            <!-- Note extra -->
+            <div class="sd-cp-field">
+                <label><?php esc_html_e( 'Provvedimenti', 'sd-logbook' ); ?></label>
+                <input type="text" name="glic_<?php echo esc_attr( $key ); ?>_notes" placeholder="<?php esc_attr_e( 'es: 2 biscotti', 'sd-logbook' ); ?>">
+            </div>
+        </div>
+        <?php endforeach; ?>
     </div>
 
     <!-- Decisione immersione (protocollo DS) -->

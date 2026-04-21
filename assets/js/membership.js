@@ -27,6 +27,7 @@
 		bindMedications();
 		bindCompanions();
 		bindFamilyMembers();
+		bindEmailConfirm();
 		bindFormSubmit();
 	});
 
@@ -111,8 +112,16 @@
 			var fee = $(this).val();
 			if (fee === '75') {
 				$('#sd-family-section').slideDown(200);
+				// Blocca il campo "Tipo di socio" su "Attivo Capo Famiglia"
+				$('#member_type').val('attivo_capo_famiglia').addClass('sd-select-locked').attr('data-family-locked', '1');
+				$('#sd-member-type-locked-note').show();
 			} else {
 				$('#sd-family-section').slideUp(200);
+				// Sblocca il campo "Tipo di socio"
+				if ($('#member_type').attr('data-family-locked') === '1') {
+					$('#member_type').val('attivo').removeClass('sd-select-locked').removeAttr('data-family-locked');
+					$('#sd-member-type-locked-note').hide();
+				}
 			}
 		});
 	}
@@ -300,6 +309,20 @@
 		$(containerSelector).append($row);
 	}
 
+	// ===== CONFERMA EMAIL =====
+	function bindEmailConfirm() {
+		// Feedback visivo real-time sull'email dell'intestatario
+		$('#email_confirm').on('input blur', function () {
+			var val     = $.trim($(this).val());
+			var original = $.trim($('#email').val());
+			if (val && original && val !== original) {
+				$(this).addClass('sd-input-error');
+			} else {
+				$(this).removeClass('sd-input-error');
+			}
+		});
+	}
+
 	// ===== SUBMIT FORM =====
 	function bindFormSubmit() {
 		$('#sd-registration-form').on('submit', function (e) {
@@ -321,6 +344,15 @@
 				return;
 			}
 
+			// Validazione corrispondenza email intestatario
+			var emailVal    = $.trim($('#email').val());
+			var emailConfirm = $.trim($('#email_confirm').val());
+			if (emailVal !== emailConfirm) {
+				showMessage('error', 'Le due email non corrispondono. Controlla il campo "Conferma Email".');
+				$('#email_confirm')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+				return;
+			}
+
 			// Validazione tassa
 			if (!$('input[name="fee_amount"]:checked').val()) {
 				showMessage('error', 'Seleziona una tassa associativa.');
@@ -339,6 +371,45 @@
 					$('#sd-guardian-section')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
 					return;
 				}
+			}
+
+			// Validazione famigliari (obbligatori se tassa = 75 CHF)
+			var fee = $('input[name="fee_amount"]:checked').val();
+			if (fee === '75') {
+				var $famRows = $('#sd-family-members-list .sd-family-member-row');
+				if ($famRows.length === 0) {
+					showMessage('error', 'Aggiungi almeno un familiare per l\'iscrizione famiglia.');
+					$('#sd-family-section')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+					return;
+				}
+				var famError = false;
+				$famRows.each(function (idx) {
+					var $row = $(this);
+					var fname        = $.trim($row.find('input[name*="[first_name]"]').val());
+					var lname        = $.trim($row.find('input[name*="[last_name]"]').val());
+					var dob          = $.trim($row.find('input[name*="[date_of_birth]"]').val());
+					var phone        = $.trim($row.find('input[name*="[phone]"]').val());
+					var email        = $.trim($row.find('.sd-fam-email').val());
+					var emailConfirm = $.trim($row.find('.sd-fam-email-confirm').val());
+					if (!fname || !lname || !dob || !phone || !email) {
+						showMessage('error', 'Compila tutti i campi obbligatori del Familiare ' + (idx + 1) + ' (Nome, Cognome, Data di nascita, Telefono, Email).');
+						$('#sd-family-section')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+						famError = true;
+						return false;
+					}
+					if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+						showMessage('error', 'L\'email del Familiare ' + (idx + 1) + ' non è valida.');
+						famError = true;
+						return false;
+					}
+					if (email !== emailConfirm) {
+						showMessage('error', 'Le email del Familiare ' + (idx + 1) + ' non corrispondono. Controlla il campo "Conferma Email".');
+						$('#sd-family-section')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+						famError = true;
+						return false;
+					}
+				});
+				if (famError) return;
 			}
 
 			// Aggiorna hidden fields

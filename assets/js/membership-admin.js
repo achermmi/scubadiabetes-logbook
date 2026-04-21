@@ -109,7 +109,7 @@
 				'<td>CHF ' + parseFloat(m.fee_amount || 0).toFixed(2) + '</td>' +
 				'<td>' + paidBadge + '</td>' +
 				'<td>' + escapeHtml(payDate) + '</td>' +
-				'<td>' + escapeHtml(m.member_type || '—') + '</td>' +
+				'<td>' + formatMemberType(m.member_type) + '</td>' +
 				'<td>' + scubaBadge + '</td>' +
 				'<td>' + escapeHtml(m.wp_role_label || '—') + '</td>' +
 				'<td>' +
@@ -275,6 +275,17 @@
 		var parts = String(val).split('-');
 		if (parts.length !== 3) { return escapeHtml(val); }
 		return parts[2] + '.' + parts[1] + '.' + parts[0];
+	}
+
+	function formatMemberType(type) {
+		var labels = {
+			'attivo':              'Attivo',
+			'attivo_famigliare':   'Attivo famigliare',
+			'attivo_capo_famiglia':'Attivo capo famiglia',
+			'sostenitore':         'Sostenitore',
+			'onorario':            'Onorario',
+		};
+		return escapeHtml(labels[type] || type || '—');
 	}
 
 	function escapeHtml(str) {

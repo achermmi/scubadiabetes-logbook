@@ -217,6 +217,8 @@ class SD_Database {
 			glic_60_value smallint unsigned DEFAULT NULL,
 			glic_60_method varchar(1) DEFAULT NULL,
 			glic_60_trend varchar(20) DEFAULT NULL,
+			glic_60_cap smallint unsigned DEFAULT NULL,
+			glic_60_sens smallint unsigned DEFAULT NULL,
 			glic_60_cho_rapidi decimal(5,1) DEFAULT NULL,
 			glic_60_cho_lenti decimal(5,1) DEFAULT NULL,
 			glic_60_insulin decimal(5,2) DEFAULT NULL,
@@ -224,6 +226,8 @@ class SD_Database {
 			glic_30_value smallint unsigned DEFAULT NULL,
 			glic_30_method varchar(1) DEFAULT NULL,
 			glic_30_trend varchar(20) DEFAULT NULL,
+			glic_30_cap smallint unsigned DEFAULT NULL,
+			glic_30_sens smallint unsigned DEFAULT NULL,
 			glic_30_cho_rapidi decimal(5,1) DEFAULT NULL,
 			glic_30_cho_lenti decimal(5,1) DEFAULT NULL,
 			glic_30_insulin decimal(5,2) DEFAULT NULL,
@@ -231,6 +235,8 @@ class SD_Database {
 			glic_10_value smallint unsigned DEFAULT NULL,
 			glic_10_method varchar(1) DEFAULT NULL,
 			glic_10_trend varchar(20) DEFAULT NULL,
+			glic_10_cap smallint unsigned DEFAULT NULL,
+			glic_10_sens smallint unsigned DEFAULT NULL,
 			glic_10_cho_rapidi decimal(5,1) DEFAULT NULL,
 			glic_10_cho_lenti decimal(5,1) DEFAULT NULL,
 			glic_10_insulin decimal(5,2) DEFAULT NULL,
@@ -238,10 +244,20 @@ class SD_Database {
 			glic_post_value smallint unsigned DEFAULT NULL,
 			glic_post_method varchar(1) DEFAULT NULL,
 			glic_post_trend varchar(20) DEFAULT NULL,
+			glic_post_cap smallint unsigned DEFAULT NULL,
+			glic_post_sens smallint unsigned DEFAULT NULL,
 			glic_post_cho_rapidi decimal(5,1) DEFAULT NULL,
 			glic_post_cho_lenti decimal(5,1) DEFAULT NULL,
 			glic_post_insulin decimal(5,2) DEFAULT NULL,
 			glic_post_notes varchar(255) DEFAULT NULL,
+			glic_extra_when varchar(20) DEFAULT NULL,
+			glic_extra_cap smallint unsigned DEFAULT NULL,
+			glic_extra_sens smallint unsigned DEFAULT NULL,
+			glic_extra_trend varchar(20) DEFAULT NULL,
+			glic_extra_cho_rapidi decimal(5,1) DEFAULT NULL,
+			glic_extra_cho_lenti decimal(5,1) DEFAULT NULL,
+			glic_extra_insulin decimal(5,2) DEFAULT NULL,
+			glic_extra_notes varchar(255) DEFAULT NULL,
 			dive_decision varchar(15) DEFAULT NULL,
 			dive_decision_reason varchar(255) DEFAULT NULL,
 			ketone_checked tinyint(1) NOT NULL DEFAULT 0,
@@ -263,6 +279,34 @@ class SD_Database {
 			KEY idx_dive_decision (dive_decision)
 		) {$charset_collate};";
 		dbDelta( $sql_diabetes );
+
+		// Migrazione: aggiungi le nuove colonne cap/sens/extra se mancanti (aggiunto in v3.0.0).
+		$new_diabetes_cols = array(
+			'glic_60_cap'          => 'smallint unsigned DEFAULT NULL',
+			'glic_60_sens'         => 'smallint unsigned DEFAULT NULL',
+			'glic_30_cap'          => 'smallint unsigned DEFAULT NULL',
+			'glic_30_sens'         => 'smallint unsigned DEFAULT NULL',
+			'glic_10_cap'          => 'smallint unsigned DEFAULT NULL',
+			'glic_10_sens'         => 'smallint unsigned DEFAULT NULL',
+			'glic_post_cap'        => 'smallint unsigned DEFAULT NULL',
+			'glic_post_sens'       => 'smallint unsigned DEFAULT NULL',
+			'glic_extra_when'      => "varchar(20) DEFAULT NULL",
+			'glic_extra_cap'       => 'smallint unsigned DEFAULT NULL',
+			'glic_extra_sens'      => 'smallint unsigned DEFAULT NULL',
+			'glic_extra_trend'     => "varchar(20) DEFAULT NULL",
+			'glic_extra_cho_rapidi'=> 'decimal(5,1) DEFAULT NULL',
+			'glic_extra_cho_lenti' => 'decimal(5,1) DEFAULT NULL',
+			'glic_extra_insulin'   => 'decimal(5,2) DEFAULT NULL',
+			'glic_extra_notes'     => "varchar(255) DEFAULT NULL",
+		);
+		foreach ( $new_diabetes_cols as $col_name => $col_def ) {
+			$exists = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->prepare( 'SHOW COLUMNS FROM ' . $table_diabetes . ' LIKE %s', $col_name ) // phpcs:ignore
+			);
+			if ( empty( $exists ) ) {
+				$wpdb->query( 'ALTER TABLE ' . $table_diabetes . ' ADD COLUMN ' . $col_name . ' ' . $col_def ); // phpcs:ignore
+			}
+		}
 
 		// =====================================================================
 		// TABELLA 4: SESSIONI DI IMMERSIONE (sd_dive_sessions)
@@ -506,6 +550,67 @@ class SD_Database {
 		);
 		if ( empty( $col ) ) {
 			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN diabetology_center varchar(200) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// =====================================================================
+		// MIGRAZIONI v2.8.0: Iscrizione famiglia con utenti WP per ogni famigliare
+		// =====================================================================
+
+		// sd_members: colonna parent_member_id per tracciare i famigliari dell'intestatario
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_members . ' LIKE %s', // phpcs:ignore
+				'parent_member_id'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD COLUMN parent_member_id int(11) DEFAULT NULL' ); // phpcs:ignore
+			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD KEY idx_parent_member (parent_member_id)' ); // phpcs:ignore
+		}
+
+		// sd_family_members: colonna wp_user_id per il link all'utente WP creato
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_family . ' LIKE %s', // phpcs:ignore
+				'wp_user_id'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_family . ' ADD COLUMN wp_user_id int(11) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// sd_family_members: colonna gender
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_family . ' LIKE %s', // phpcs:ignore
+				'gender'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_family . ' ADD COLUMN gender varchar(5) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// sd_family_members: colonna is_scuba per determinare il ruolo WP
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_family . ' LIKE %s', // phpcs:ignore
+				'is_scuba'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_family . ' ADD COLUMN is_scuba tinyint(1) DEFAULT 0' ); // phpcs:ignore
+		}
+
+		// sd_family_members: colonna member_id nel senso dell'intestatario (già esiste),
+		// aggiunta colonna family_member_id che punta al record sd_members del famigliare
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_family . ' LIKE %s', // phpcs:ignore
+				'family_member_id'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_family . ' ADD COLUMN family_member_id int(11) DEFAULT NULL' ); // phpcs:ignore
 		}
 	}
 

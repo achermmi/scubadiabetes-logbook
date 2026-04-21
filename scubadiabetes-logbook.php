@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.1.0' );
+define( 'SD_LOGBOOK_VERSION', '1.1.6' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '2.7.0';
+	const DB_VERSION = '2.8.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -88,6 +88,27 @@ final class SD_Logbook {
 		add_filter( 'plugin_locale', array( $this, 'force_italian_locale' ), 10, 2 );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'init_components' ) );
+
+		// Blocca il login degli account disabilitati (is_active = 0)
+		add_filter( 'authenticate', array( $this, 'block_disabled_accounts' ), 30, 1 );
+	}
+
+	/**
+	 * Blocca il login se l'account è stato disabilitato da un amministratore
+	 *
+	 * @param WP_User|WP_Error|null $user Risultato dell'autenticazione
+	 * @return WP_User|WP_Error
+	 */
+	public function block_disabled_accounts( $user ) {
+		if ( $user instanceof WP_User ) {
+			if ( get_user_meta( $user->ID, 'sd_account_disabled', true ) ) {
+				return new WP_Error(
+					'account_disabled',
+					__( 'Il tuo account è stato disabilitato. Contatta il segretariato per maggiori informazioni.', 'sd-logbook' )
+				);
+			}
+		}
+		return $user;
 	}
 
 	/**

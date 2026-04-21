@@ -35,6 +35,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<span class="sd-stat-value">CHF <?php echo esc_html( number_format( $stats['income'], 2 ) ); ?></span>
 			<span class="sd-stat-label"><?php echo esc_html( sprintf( __( 'Incassato %s', 'sd-logbook' ), $current_year ) ); ?></span>
 		</div>
+		<div class="sd-stat-card sd-stat-danger">
+			<span class="sd-stat-value">CHF <?php echo esc_html( number_format( $stats['expected'], 2 ) ); ?></span>
+			<span class="sd-stat-label"><?php echo esc_html( sprintf( __( 'Non pagato %s', 'sd-logbook' ), $current_year ) ); ?></span>
+		</div>
 	</div>
 
 	<!-- Barra filtri -->
@@ -94,6 +98,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<select name="member_type" id="sd-filter-type" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti i tipi', 'sd-logbook' ); ?></option>
 						<option value="attivo"><?php esc_html_e( 'Attivo', 'sd-logbook' ); ?></option>
+						<option value="attivo_capo_famiglia"><?php esc_html_e( 'Attivo Capo Famiglia', 'sd-logbook' ); ?></option>
+						<option value="attivo_famigliare"><?php esc_html_e( 'Attivo Famigliare', 'sd-logbook' ); ?></option>
 						<option value="passivo"><?php esc_html_e( 'Passivo', 'sd-logbook' ); ?></option>
 						<option value="accompagnatore"><?php esc_html_e( 'Accompagnatore', 'sd-logbook' ); ?></option>
 						<option value="sostenitore"><?php esc_html_e( 'Sostenitore', 'sd-logbook' ); ?></option>

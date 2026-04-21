@@ -102,8 +102,56 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="sd-field-note"><?php esc_html_e( 'Sarà usata come username per accedere al portale', 'sd-logbook' ); ?></div>
 				</div>
 				<div class="sd-field-group sd-field-half">
+					<label for="email_confirm" class="sd-label sd-label-required"><?php esc_html_e( 'Conferma Email', 'sd-logbook' ); ?></label>
+					<input type="email" id="email_confirm" name="email_confirm" class="sd-input" required autocomplete="off">
+					<div class="sd-field-note"><?php esc_html_e( 'Ripeti l\'indirizzo email per conferma', 'sd-logbook' ); ?></div>
+				</div>
+			</div>
+
+			<div class="sd-field-row">
+				<div class="sd-field-group sd-field-half">
 					<label for="phone" class="sd-label sd-label-required"><?php esc_html_e( 'Telefono', 'sd-logbook' ); ?></label>
 					<input type="tel" id="phone" name="phone" class="sd-input" required placeholder="+41 79 000 00 00" autocomplete="tel">
+				</div>
+				<div class="sd-field-group sd-field-half">
+					<label for="tshirt_size" class="sd-label"><?php esc_html_e( 'Taglia Maglietta', 'sd-logbook' ); ?></label>
+					<select id="tshirt_size" name="tshirt_size" class="sd-select">
+						<option value=""><?php esc_html_e( '-- Seleziona taglia --', 'sd-logbook' ); ?></option>
+						<optgroup label="<?php esc_attr_e( 'Bambino/a', 'sd-logbook' ); ?>">
+							<option value="baby_2-3"><?php esc_html_e( '2–3 anni', 'sd-logbook' ); ?></option>
+							<option value="baby_4-5"><?php esc_html_e( '4–5 anni', 'sd-logbook' ); ?></option>
+							<option value="baby_6-8"><?php esc_html_e( '6–8 anni', 'sd-logbook' ); ?></option>
+							<option value="baby_9-11"><?php esc_html_e( '9–11 anni', 'sd-logbook' ); ?></option>
+							<option value="baby_12-14"><?php esc_html_e( '12–14 anni', 'sd-logbook' ); ?></option>
+						</optgroup>
+						<optgroup label="<?php esc_attr_e( 'Adulto/a', 'sd-logbook' ); ?>">
+							<option value="XXS">XXS</option>
+							<option value="XS">XS</option>
+							<option value="S">S</option>
+							<option value="M">M</option>
+							<option value="L">L</option>
+							<option value="XL">XL</option>
+							<option value="XXL">XXL</option>
+							<option value="XXXL">XXXL</option>
+						</optgroup>
+					</select>
+				</div>
+			</div>
+
+			<div class="sd-field-row">
+				<div class="sd-field-group sd-field-half">
+					<label for="diabetes_type" class="sd-label"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
+					<select id="diabetes_type" name="diabetes_type" class="sd-select">
+						<option value="non_diabetico" selected><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
+						<option value="tipo_1"><?php esc_html_e( 'Diabete Tipo 1', 'sd-logbook' ); ?></option>
+						<option value="tipo_2"><?php esc_html_e( 'Diabete Tipo 2', 'sd-logbook' ); ?></option>
+						<option value="non_specificato"><?php esc_html_e( 'Non specificato', 'sd-logbook' ); ?></option>
+						<option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+				<div class="sd-field-group sd-field-half" id="sd-diabetology-section" style="display:none;">
+					<label for="diabetology_center" class="sd-label"><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
+					<input type="text" id="diabetology_center" name="diabetology_center" class="sd-input" placeholder="<?php esc_attr_e( 'es. Ospedale Regionale Lugano', 'sd-logbook' ); ?>">
 				</div>
 			</div>
 
@@ -307,7 +355,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<option value="attivo"><?php esc_html_e( 'Socio Attivo', 'sd-logbook' ); ?></option>
 						<option value="accompagnatore"><?php esc_html_e( 'Accompagnatore', 'sd-logbook' ); ?></option>
 						<option value="sostenitore"><?php esc_html_e( 'Sostenitore', 'sd-logbook' ); ?></option>
+						<option value="attivo_capo_famiglia"><?php esc_html_e( 'Attivo Capo Famiglia', 'sd-logbook' ); ?></option>
 					</select>
+					<div id="sd-member-type-locked-note" class="sd-field-note" style="display:none;">
+						<?php esc_html_e( 'Il tipo è impostato automaticamente per l\'iscrizione famiglia.', 'sd-logbook' ); ?>
+					</div>
 				</div>
 				<div class="sd-field-group sd-field-half">
 					<label class="sd-label">&nbsp;</label>
@@ -350,7 +402,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<!-- Familiari (mostrata se 75 CHF) -->
 			<div id="sd-family-section" style="display:none;">
 				<h4 class="sd-subsection-title"><?php esc_html_e( 'Membri del nucleo familiare', 'sd-logbook' ); ?></h4>
-				<p class="sd-field-note"><?php esc_html_e( 'Aggiungi i familiari che usufruiranno dell\'iscrizione famiglia.', 'sd-logbook' ); ?></p>
+				<p class="sd-field-note"><?php esc_html_e( 'Aggiungi i familiari che usufruiranno dell\'iscrizione famiglia. Verrà creato un account per ogni famigliare.', 'sd-logbook' ); ?></p>
 
 				<div id="sd-family-members-list"></div>
 
@@ -368,16 +420,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<div class="sd-field-row">
 							<div class="sd-field-group sd-field-quarter">
 								<label class="sd-label sd-label-required"><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></label>
-								<input type="text" name="family_members[__idx__][first_name]" class="sd-input" required>
+								<input type="text" name="family_members[__idx__][first_name]" class="sd-input sd-fam-required" required>
 							</div>
 							<div class="sd-field-group sd-field-quarter">
 								<label class="sd-label sd-label-required"><?php esc_html_e( 'Cognome', 'sd-logbook' ); ?></label>
-								<input type="text" name="family_members[__idx__][last_name]" class="sd-input" required>
+								<input type="text" name="family_members[__idx__][last_name]" class="sd-input sd-fam-required" required>
 							</div>
 							<div class="sd-field-group sd-field-quarter">
-								<label class="sd-label"><?php esc_html_e( 'Data nascita', 'sd-logbook' ); ?></label>
-								<input type="date" name="family_members[__idx__][date_of_birth]" class="sd-input">
+								<label class="sd-label sd-label-required"><?php esc_html_e( 'Data di nascita', 'sd-logbook' ); ?></label>
+								<input type="date" name="family_members[__idx__][date_of_birth]" class="sd-input sd-fam-required" required>
 							</div>
+							<div class="sd-field-group sd-field-quarter">
+								<label class="sd-label"><?php esc_html_e( 'Genere', 'sd-logbook' ); ?></label>
+								<select name="family_members[__idx__][gender]" class="sd-select">
+									<option value=""><?php esc_html_e( '-- Seleziona --', 'sd-logbook' ); ?></option>
+									<option value="M"><?php esc_html_e( 'Maschile (M)', 'sd-logbook' ); ?></option>
+									<option value="F"><?php esc_html_e( 'Femminile (F)', 'sd-logbook' ); ?></option>
+									<option value="NB"><?php esc_html_e( 'Non binario (NB)', 'sd-logbook' ); ?></option>
+									<option value="U"><?php esc_html_e( 'Non indicato (U)', 'sd-logbook' ); ?></option>
+								</select>
+							</div>
+						</div>
+						<div class="sd-field-row">
 							<div class="sd-field-group sd-field-quarter">
 								<label class="sd-label"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
 								<select name="family_members[__idx__][diabetes_type]" class="sd-select sd-fam-diabetes-type">
@@ -389,18 +453,63 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</select>
 							</div>
 							<div class="sd-field-group sd-field-half sd-fam-diabetology-section" style="display:none;">
-								<label class="sd-label"><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
+								<label class="sd-label"><?php esc_html_e( 'Centro diabetologico', 'sd-logbook' ); ?></label>
 								<input type="text" name="family_members[__idx__][diabetology_center]" class="sd-input" placeholder="<?php esc_attr_e( 'es. Ospedale Regionale Lugano', 'sd-logbook' ); ?>">
+							</div>
+							<div class="sd-field-group sd-field-quarter" style="justify-content:center;">
+								<label class="sd-checkbox-label" style="margin-bottom:0;">
+									<input type="checkbox" name="family_members[__idx__][is_scuba]" value="1" class="sd-fam-scuba-check">
+									<span><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></span>
+								</label>
 							</div>
 						</div>
 						<div class="sd-field-row">
 							<div class="sd-field-group sd-field-half">
-								<label class="sd-label"><?php esc_html_e( 'Telefono', 'sd-logbook' ); ?></label>
-								<input type="tel" name="family_members[__idx__][phone]" class="sd-input">
+								<label class="sd-label sd-label-required"><?php esc_html_e( 'Telefono', 'sd-logbook' ); ?></label>
+								<input type="tel" name="family_members[__idx__][phone]" class="sd-input sd-fam-required" placeholder="+41 79 000 00 00" required>
 							</div>
 							<div class="sd-field-group sd-field-half">
-								<label class="sd-label"><?php esc_html_e( 'Email', 'sd-logbook' ); ?></label>
-								<input type="email" name="family_members[__idx__][email]" class="sd-input">
+							<label class="sd-label"><?php esc_html_e( 'Taglia Maglietta', 'sd-logbook' ); ?></label>
+							<select name="family_members[__idx__][tshirt_size]" class="sd-select">
+								<option value=""><?php esc_html_e( '-- Seleziona taglia --', 'sd-logbook' ); ?></option>
+								<optgroup label="<?php esc_attr_e( 'Bambino/a', 'sd-logbook' ); ?>">
+									<option value="baby_2-3"><?php esc_html_e( '2–3 anni', 'sd-logbook' ); ?></option>
+									<option value="baby_4-5"><?php esc_html_e( '4–5 anni', 'sd-logbook' ); ?></option>
+									<option value="baby_6-8"><?php esc_html_e( '6–8 anni', 'sd-logbook' ); ?></option>
+									<option value="baby_9-11"><?php esc_html_e( '9–11 anni', 'sd-logbook' ); ?></option>
+									<option value="baby_12-14"><?php esc_html_e( '12–14 anni', 'sd-logbook' ); ?></option>
+								</optgroup>
+								<optgroup label="<?php esc_attr_e( 'Adulto/a', 'sd-logbook' ); ?>">
+									<option value="XXS">XXS</option>
+									<option value="XS">XS</option>
+									<option value="S">S</option>
+									<option value="M">M</option>
+									<option value="L">L</option>
+									<option value="XL">XL</option>
+									<option value="XXL">XXL</option>
+									<option value="XXXL">XXXL</option>
+								</optgroup>
+							</select>
+						</div>
+					</div>
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-half">
+							<label class="sd-label sd-label-required"><?php esc_html_e( 'Email', 'sd-logbook' ); ?></label>
+							<input type="email" name="family_members[__idx__][email]" class="sd-input sd-fam-required sd-fam-email" required>
+						</div>
+						<div class="sd-field-group sd-field-half">
+							<label class="sd-label sd-label-required"><?php esc_html_e( 'Conferma Email', 'sd-logbook' ); ?></label>
+							<input type="email" name="family_members[__idx__][email_confirm]" class="sd-input sd-fam-required sd-fam-email-confirm" required>
+						</div>
+					</div>
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-full">
+							<div class="sd-consent-block">
+								<label class="sd-checkbox-label">
+									<input type="checkbox" name="family_members[__idx__][default_shared_for_research]" value="1" checked>
+									<span><?php esc_html_e( 'Acconsento alla condivisione anonima dei miei dati per la ricerca scientifica sul diabete e le immersioni subacquee (protocollo Diabete Sommerso). I dati saranno trattati in forma anonima.', 'sd-logbook' ); ?></span>
+								</label>
+							</div>
 							</div>
 						</div>
 					</div>
@@ -488,23 +597,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</template>
 			</div>
 
-			<!-- Tipo diabete -->
-			<div class="sd-field-row" style="margin-top:1rem;">
-				<div class="sd-field-group sd-field-half">
-					<label for="diabetes_type" class="sd-label sd-label-required"><?php esc_html_e( 'Tipo di diabete', 'sd-logbook' ); ?></label>
-					<select id="diabetes_type" name="diabetes_type" class="sd-select">
-						<option value="non_diabetico" selected><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
-						<option value="tipo_1"><?php esc_html_e( 'Diabete Tipo 1', 'sd-logbook' ); ?></option>
-						<option value="tipo_2"><?php esc_html_e( 'Diabete Tipo 2', 'sd-logbook' ); ?></option>
-						<option value="non_specificato"><?php esc_html_e( 'Non specificato', 'sd-logbook' ); ?></option>
-						<option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
-					</select>
-				</div>
-				<div class="sd-field-group sd-field-half" id="sd-diabetology-section" style="display:none;">
-					<label for="diabetology_center" class="sd-label"><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
-					<input type="text" id="diabetology_center" name="diabetology_center" class="sd-input" placeholder="<?php esc_attr_e( 'es. Ospedale Regionale Lugano', 'sd-logbook' ); ?>">
-				</div>
-			</div>
 		</div>
 
 		<!-- ===== SEZIONE 5: CONSENSI ===== -->
