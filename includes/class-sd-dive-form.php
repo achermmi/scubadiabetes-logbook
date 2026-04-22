@@ -221,10 +221,12 @@ class SD_Dive_Form {
 
 		if ( $saved_dive_id ) {
 			// UPDATE: verifica che l'immersione appartenga all'utente corrente
-			$owner = $wpdb->get_var( $wpdb->prepare(
-				"SELECT user_id FROM {$table} WHERE id = %d",
-				$saved_dive_id
-			) );
+			$owner = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT user_id FROM {$table} WHERE id = %d",
+					$saved_dive_id
+				)
+			);
 			if ( (int) $owner !== $user_id ) {
 				wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
 			}
@@ -352,10 +354,13 @@ class SD_Dive_Form {
 		// Note
 		$diabetes_data['diabetes_notes'] = sanitize_textarea_field( $_POST['diabetes_notes'] ?? '' ) ?: null;
 
-		$existing_diabetes_id = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$table} WHERE dive_id = %d AND user_id = %d",
-			$dive_id, $user_id
-		) );
+		$existing_diabetes_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$table} WHERE dive_id = %d AND user_id = %d",
+				$dive_id,
+				$user_id
+			)
+		);
 
 		if ( $existing_diabetes_id ) {
 			$wpdb->update( $table, $diabetes_data, array( 'id' => $existing_diabetes_id ) );

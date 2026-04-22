@@ -364,7 +364,7 @@ class SD_Dive_Edit {
 			// Normalizza glicemie mmol/L: evita phantom changes da arrotondamento
 			if ( $is_mmol && $old_diabetes ) {
 				$glic_fields = array_merge(
-					array_map( fn( $cp ) => 'glic_' . $cp . '_cap',  array_merge( $checkpoints, array( 'extra1', 'extra2', 'extra3', 'extra4' ) ) ),
+					array_map( fn( $cp ) => 'glic_' . $cp . '_cap', array_merge( $checkpoints, array( 'extra1', 'extra2', 'extra3', 'extra4' ) ) ),
 					array_map( fn( $cp ) => 'glic_' . $cp . '_sens', array_merge( $checkpoints, array( 'extra1', 'extra2', 'extra3', 'extra4' ) ) )
 				);
 				foreach ( $glic_fields as $fld ) {
