@@ -641,3 +641,103 @@
         max-height: 90vh;
     }
 }
+
+/* ============================================================
+   BOTTONE ELIMINA SU CARD
+   ============================================================ */
+.sd-btn-card-delete {
+    border: 1.5px solid #EF4444 !important;
+    background: #FEF2F2 !important;
+    color: #EF4444 !important;
+    width: 34px;
+    padding: 0;
+    flex-shrink: 0;
+}
+.sd-btn-card-delete:hover {
+    background: #EF4444 !important;
+    color: #fff !important;
+    border-color: #EF4444 !important;
+}
+
+/* ============================================================
+   MODAL CONFERMA ELIMINAZIONE
+   ============================================================ */
+.sd-confirm-delete-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 100002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sd-confirm-delete-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 32px 28px 24px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.sd-confirm-delete-icon {
+    margin-bottom: 12px;
+}
+.sd-confirm-delete-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+.sd-confirm-delete-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 12px;
+}
+.sd-confirm-delete-warning {
+    font-size: 13px;
+    color: #DC2626;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+.sd-confirm-delete-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.sd-confirm-delete-btn {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+.sd-confirm-delete-btn--cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+.sd-confirm-delete-btn--cancel:hover {
+    background: #e2e8f0;
+}
+.sd-confirm-delete-btn--confirm {
+    background: #DC2626;
+    color: #fff;
+    border-color: #DC2626;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.sd-confirm-delete-btn--confirm:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}

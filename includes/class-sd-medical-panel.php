@@ -29,21 +29,21 @@ class SD_Medical_Panel {
 	}
 
 	public function enqueue_assets() {
-		global $post;
-		if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'sd_medical_panel' ) ) {
-			wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
-			wp_enqueue_style( 'sd-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dashboard.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-			wp_enqueue_style( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/css/medical-panel.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-			wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
-			wp_localize_script(
-				'sd-medical',
-				'sdMedical',
-				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'sd_medical_nonce' ),
-				)
-			);
-		}
+		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'sd-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dashboard.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/css/medical-panel.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', array(), '1.9.4' );
+		wp_enqueue_script( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', array(), '1.9.4', true );
+		wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery', 'leaflet' ), SD_LOGBOOK_VERSION, true );
+		wp_localize_script(
+			'sd-medical',
+			'sdMedical',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'sd_medical_nonce' ),
+			)
+		);
 	}
 
 	public function render_panel( $atts ) {
@@ -185,11 +185,7 @@ class SD_Medical_Panel {
 		// Immersioni con dati diabete
 		$dives = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT d.*, dd.glic_60_value, dd.glic_60_method, dd.glic_60_trend,
-					dd.glic_30_value, dd.glic_30_method, dd.glic_30_trend,
-					dd.glic_10_value, dd.glic_10_method, dd.glic_10_trend,
-					dd.glic_post_value, dd.glic_post_method, dd.glic_post_trend,
-					dd.dive_decision, dd.dive_decision_reason
+				"SELECT d.*, dd.*
 			 FROM {$db->table('dives')} d
 			 LEFT JOIN {$db->table('dive_diabetes')} dd ON d.id = dd.dive_id
 			 WHERE d.user_id = %d AND d.shared_for_research = 1
@@ -223,10 +219,14 @@ class SD_Medical_Panel {
 		$certs      = get_user_meta( $diver_id, 'sd_certifications', true ) ?: array();
 		$clearances = get_user_meta( $diver_id, 'sd_medical_clearances', true ) ?: array();
 
+		$badges     = SD_Roles::get_role_badges( $diver_id );
+		$role_label = ! empty( $badges ) ? $badges[0]['label'] : '';
+
 		wp_send_json_success(
 			array(
 				'name'        => $name,
 				'is_diabetic' => $is_diabetic,
+				'role_label'  => $role_label,
 				'profile'     => $profile,
 				'dives'       => $dives,
 				'notes'       => $notes,

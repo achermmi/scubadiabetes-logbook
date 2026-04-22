@@ -644,4 +644,20 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- Messaggi globali -->
     <div class="sd-form-messages sd-profile-messages" id="sd-profile-messages" style="display:none;"></div>
 
+    <!-- RECORD DETAIL MODAL -->
+    <div class="sd-record-modal-overlay" id="sd-record-modal-overlay" style="display:none;">
+        <div class="sd-record-modal">
+            <div class="sd-record-modal-header">
+                <h3 id="sd-record-modal-title"></h3>
+                <button type="button" class="sd-record-modal-close" id="sd-record-modal-close" aria-label="<?php esc_attr_e('Chiudi','sd-logbook'); ?>">&times;</button>
+            </div>
+            <div class="sd-record-modal-body" id="sd-record-modal-body"></div>
+            <div class="sd-record-modal-footer">
+                <button type="button" class="sd-btn-record-modal-edit" id="sd-btn-record-modal-edit"><?php esc_html_e('Modifica','sd-logbook'); ?></button>
+                <button type="button" class="sd-btn-record-modal-delete" id="sd-btn-record-modal-delete"><?php esc_html_e('Elimina','sd-logbook'); ?></button>
+                <button type="button" class="sd-btn-record-modal-close"><?php esc_html_e('Chiudi','sd-logbook'); ?></button>
+            </div>
+        </div>
+    </div>
+
 </div>

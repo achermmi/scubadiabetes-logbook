@@ -388,10 +388,171 @@
 }
 
 /* ============================================================
+   MAP BUTTONS
+   ============================================================ */
+.sd-btn-form-map {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-500);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: not-allowed;
+    transition: all 0.2s;
+}
+
+.sd-btn-form-map:disabled {
+    opacity: 0.6;
+}
+
+.sd-btn-form-map.sd-btn-form-map--active {
+    background: var(--sd-blue);
+    color: var(--sd-white);
+    border-color: var(--sd-blue);
+    cursor: pointer;
+}
+
+.sd-btn-form-map.sd-btn-form-map--active:hover {
+    background: #2563EB;
+    border-color: #2563EB;
+    box-shadow: var(--sd-shadow-md);
+}
+
+.sd-form-map-label {
+    font-weight: 600;
+}
+
+/* Map button in dive card */
+.sd-btn-map-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--sd-blue);
+    color: var(--sd-white);
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.sd-btn-map-card:hover {
+    background: #2563EB;
+    box-shadow: var(--sd-shadow-md);
+}
+
+/* ============================================================
+   MAP MODAL (Leaflet)
+   ============================================================ */
+.sd-map-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sd-map-modal {
+    background: var(--sd-white);
+    border-radius: var(--sd-radius-md);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 900px;
+    height: 80vh;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    animation: sdMapModalSlideIn 0.3s ease;
+}
+
+@keyframes sdMapModalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.sd-map-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--sd-blue-deep);
+    color: var(--sd-white);
+    border-radius: var(--sd-radius-md) var(--sd-radius-md) 0 0;
+}
+
+.sd-map-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.sd-map-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 50%;
+    color: var(--sd-white);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sd-map-modal-close:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.sd-map-modal-body {
+    flex: 1;
+    overflow: hidden;
+    border-radius: 0 0 var(--sd-radius-md) var(--sd-radius-md);
+}
+
+/* Leaflet map overrides */
+#sd-map-container {
+    width: 100%;
+    height: 100%;
+}
+
+#sd-map-container .leaflet-control-zoom {
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+}
+
+#sd-map-container .leaflet-control-zoom-in,
+#sd-map-container .leaflet-control-zoom-out {
+    color: var(--sd-gray-700);
+    font-weight: 700;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 480px) {
-    .sd-panel {
-        max-width: 100%;
+@media (max-width: 768px) {
+    .sd-map-modal {
+        width: 95%;
+        max-height: 90vh;
     }
 }

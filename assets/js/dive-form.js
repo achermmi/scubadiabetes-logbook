@@ -53,21 +53,22 @@
         // ============================================================
         // CALCOLO AUTOMATICO TEMPO IMMERSIONE
         // ============================================================
-        $('#sd-time-in, #sd-time-out').on('change', function() {
-            var timeIn = $('#sd-time-in').val();
-            var timeOut = $('#sd-time-out').val();
-            if (timeIn && timeOut) {
-                var start = timeToMinutes(timeIn);
-                var end = timeToMinutes(timeOut);
-                if (end > start) {
-                    var duration = end - start;
+        var _diveTimeTimer = null;
+        $('#sd-time-out').on('change blur input', function() {
+            clearTimeout(_diveTimeTimer);
+            var $out = $(this);
+            _diveTimeTimer = setTimeout(function() {
+                var timeIn  = $('#sd-time-in').val();
+                var timeOut = $out.val();
+                if (timeIn && timeOut && /^\d{2}:\d{2}$/.test(timeOut)) {
+                    var start    = timeToMinutes(timeIn);
+                    var end      = timeToMinutes(timeOut);
                     var $diveTime = $('#sd-dive-time');
-                    // Solo se il campo è vuoto
-                    if (!$diveTime.val()) {
-                        $diveTime.val(duration);
+                    if (end > start) {
+                        $diveTime.val(end - start);
                     }
                 }
-            }
+            }, 800);
         });
 
         function timeToMinutes(timeStr) {
@@ -114,13 +115,37 @@
                     if (response.success) {
                         showMessage($messages, 'success', response.data.message);
 
-                        // Se diabetico, prepara per step dati glicemici
-                        if (response.data.is_diabetic) {
-                            // Salva dive_id per il form glicemie (Step 4)
+                        // Aggiorna/imposta saved_dive_id per trasformare i save successivi in UPDATE
+                        var $existingId = $form.find('[name="saved_dive_id"]');
+                        if ($existingId.length) {
+                            $existingId.val(response.data.dive_id);
+                        } else {
                             $form.append('<input type="hidden" name="saved_dive_id" value="' + response.data.dive_id + '">');
-                            // Mostra messaggio specifico
-                            showMessage($messages, 'success',
-                                response.data.message + '<br><strong>Ora compila i dati glicemici →</strong>');
+                        }
+
+                        // Mostra pulsante Chiudi → Dashboard
+                        if (!$('#sd-btn-close').length) {
+                            $btn.after('<a id="sd-btn-close" href="' + sdLogbook.dashboardUrl + '" class="sd-btn-close-form">✕ Chiudi</a>');
+                        }
+
+                        // Se diabetico, controlla se i 4 checkpoint capillari obbligatori sono compilati
+                        if (response.data.is_diabetic) {
+                            var requiredCaps = ['glic_60_cap', 'glic_30_cap', 'glic_10_cap', 'glic_post_cap'];
+                            var missing = [];
+                            requiredCaps.forEach(function(name) {
+                                var $field = $form.find('[name="' + name + '"]');
+                                if (!$field.val() || $field.val().trim() === '') {
+                                    missing.push(name);
+                                    $field.addClass('sd-field-required-missing');
+                                } else {
+                                    $field.removeClass('sd-field-required-missing');
+                                }
+                            });
+
+                            if (missing.length > 0) {
+                                showMessage($messages, 'success',
+                                    response.data.message + '<br><strong>Ora compila i dati glicemici →</strong>');
+                            }
                         }
 
                         // Scroll al messaggio

@@ -549,3 +549,173 @@
 .sd-unit-btn.active:hover {
     background: var(--sd-blue);
 }
+
+/* ============================================================
+   RECORD DETAIL MODAL
+   ============================================================ */
+.sd-record-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.sd-record-modal {
+    background: var(--sd-white);
+    border-radius: var(--sd-radius);
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.sd-record-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--sd-gray-200);
+}
+
+.sd-record-modal-header h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+}
+
+.sd-record-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--sd-gray-100);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--sd-gray-500);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sd-record-modal-close:hover {
+    background: var(--sd-red);
+    color: var(--sd-white);
+}
+
+.sd-record-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sd-record-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.sd-record-detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.sd-record-detail-item.sd-record-detail-full {
+    grid-column: 1 / -1;
+}
+
+.sd-record-detail-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sd-gray-500);
+    margin-bottom: 4px;
+}
+
+.sd-record-detail-value {
+    font-size: 13px;
+    color: var(--sd-gray-900);
+    line-height: 1.5;
+}
+
+.sd-record-detail-value a {
+    color: var(--sd-blue);
+    text-decoration: none;
+}
+
+.sd-record-detail-value a:hover {
+    text-decoration: underline;
+}
+
+.sd-record-detail-value em {
+    color: var(--sd-gray-500);
+    font-style: italic;
+}
+
+.sd-record-detail-empty {
+    color: var(--sd-gray-400);
+    font-style: italic;
+    font-size: 12px;
+}
+
+.sd-record-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--sd-gray-200);
+}
+
+.sd-btn-record-modal-edit,
+.sd-btn-record-modal-delete,
+.sd-btn-record-modal-close {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sd-btn-record-modal-edit {
+    background: var(--sd-blue);
+    color: var(--sd-white);
+}
+
+.sd-btn-record-modal-edit:hover {
+    background: #1565C0;
+}
+
+.sd-btn-record-modal-delete {
+    background: transparent;
+    color: var(--sd-red);
+    border: 1px solid var(--sd-red);
+}
+
+.sd-btn-record-modal-delete:hover {
+    background: #FEE2E2;
+}
+
+.sd-btn-record-modal-close {
+    background: var(--sd-white);
+    color: var(--sd-gray-500);
+    border: 1px solid var(--sd-gray-200);
+}
+
+.sd-btn-record-modal-close:hover {
+    background: var(--sd-gray-50);
+}

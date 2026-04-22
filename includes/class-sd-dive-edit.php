@@ -302,16 +302,43 @@ class SD_Dive_Edit {
 			foreach ( $checkpoints as $cp ) {
 				$prefix = 'glic_' . $cp . '_';
 
-				// Valore glicemico — converti in mg/dL se mmol/L
-				$raw = ! empty( $_POST[ $prefix . 'value' ] ) ? floatval( $_POST[ $prefix . 'value' ] ) : null;
-				if ( null !== $raw && $is_mmol ) {
-					$raw = (int) round( $raw * 18.018 );
-				} elseif ( null !== $raw ) {
-					$raw = absint( $raw );
+				$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
+				if ( null !== $raw_cap ) {
+					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18.018 ) : absint( $raw_cap );
 				}
-				$diabetes_data[ $prefix . 'value' ] = $raw;
+				$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
+				if ( null !== $raw_sens ) {
+					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18.018 ) : absint( $raw_sens );
+				}
 
-				$diabetes_data[ $prefix . 'method' ]     = in_array( $_POST[ $prefix . 'method' ] ?? '', array( 'C', 'S' ), true ) ? $_POST[ $prefix . 'method' ] : null;
+				$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
+				$diabetes_data[ $prefix . 'sens' ]       = $raw_sens;
+				$diabetes_data[ $prefix . 'trend' ]      = sanitize_text_field( $_POST[ $prefix . 'trend' ] ?? '' ) ?: null;
+				$diabetes_data[ $prefix . 'cho_rapidi' ] = ! empty( $_POST[ $prefix . 'cho_rapidi' ] ) ? floatval( $_POST[ $prefix . 'cho_rapidi' ] ) : null;
+				$diabetes_data[ $prefix . 'cho_lenti' ]  = ! empty( $_POST[ $prefix . 'cho_lenti' ] ) ? floatval( $_POST[ $prefix . 'cho_lenti' ] ) : null;
+				$diabetes_data[ $prefix . 'insulin' ]    = ! empty( $_POST[ $prefix . 'insulin' ] ) ? floatval( $_POST[ $prefix . 'insulin' ] ) : null;
+				$diabetes_data[ $prefix . 'notes' ]      = sanitize_text_field( $_POST[ $prefix . 'notes' ] ?? '' ) ?: null;
+			}
+
+			// Extra 1-4
+			$valid_when = array( 'prima_60', 'prima_30', 'prima_10', 'prima_post', 'dopo_post' );
+			foreach ( array( 'extra1', 'extra2', 'extra3', 'extra4' ) as $ex ) {
+				$prefix = 'glic_' . $ex . '_';
+
+				$diabetes_data[ $prefix . 'when' ] = in_array( $_POST[ $prefix . 'when' ] ?? '', $valid_when, true )
+					? $_POST[ $prefix . 'when' ] : null;
+
+				$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
+				if ( null !== $raw_cap ) {
+					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18.018 ) : absint( $raw_cap );
+				}
+				$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
+				if ( null !== $raw_sens ) {
+					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18.018 ) : absint( $raw_sens );
+				}
+
+				$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
+				$diabetes_data[ $prefix . 'sens' ]       = $raw_sens;
 				$diabetes_data[ $prefix . 'trend' ]      = sanitize_text_field( $_POST[ $prefix . 'trend' ] ?? '' ) ?: null;
 				$diabetes_data[ $prefix . 'cho_rapidi' ] = ! empty( $_POST[ $prefix . 'cho_rapidi' ] ) ? floatval( $_POST[ $prefix . 'cho_rapidi' ] ) : null;
 				$diabetes_data[ $prefix . 'cho_lenti' ]  = ! empty( $_POST[ $prefix . 'cho_lenti' ] ) ? floatval( $_POST[ $prefix . 'cho_lenti' ] ) : null;
@@ -336,10 +363,13 @@ class SD_Dive_Edit {
 
 			// Normalizza glicemie mmol/L: evita phantom changes da arrotondamento
 			if ( $is_mmol && $old_diabetes ) {
-				foreach ( $checkpoints as $cp ) {
-					$fld     = 'glic_' . $cp . '_value';
+				$glic_fields = array_merge(
+					array_map( fn( $cp ) => 'glic_' . $cp . '_cap',  array_merge( $checkpoints, array( 'extra1', 'extra2', 'extra3', 'extra4' ) ) ),
+					array_map( fn( $cp ) => 'glic_' . $cp . '_sens', array_merge( $checkpoints, array( 'extra1', 'extra2', 'extra3', 'extra4' ) ) )
+				);
+				foreach ( $glic_fields as $fld ) {
 					$old_mgdl = $old_diabetes[ $fld ] ?? null;
-					$new_mgdl = $diabetes_data[ $fld ];
+					$new_mgdl = $diabetes_data[ $fld ] ?? null;
 					if ( null !== $old_mgdl && null !== $new_mgdl ) {
 						$old_display = round( floatval( $old_mgdl ) / 18.018, 1 );
 						$new_display = round( floatval( $new_mgdl ) / 18.018, 1 );

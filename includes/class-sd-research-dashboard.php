@@ -275,12 +275,12 @@ class SD_Research_Dashboard {
 		}
 		if ( ! empty( $_POST['glic_min'] ) ) {
 			$gm      = absint( $_POST['glic_min'] );
-			$where[] = '(COALESCE(dd.glic_60_value,0) >= %d OR COALESCE(dd.glic_30_value,0) >= %d OR COALESCE(dd.glic_10_value,0) >= %d OR COALESCE(dd.glic_post_value,0) >= %d)';
+			$where[] = '(COALESCE(dd.glic_60_cap, dd.glic_60_sens, 0) >= %d OR COALESCE(dd.glic_30_cap, dd.glic_30_sens, 0) >= %d OR COALESCE(dd.glic_10_cap, dd.glic_10_sens, 0) >= %d OR COALESCE(dd.glic_post_cap, dd.glic_post_sens, 0) >= %d)';
 			$vals    = array_merge( $vals, array( $gm, $gm, $gm, $gm ) );
 		}
 		if ( ! empty( $_POST['glic_max'] ) ) {
 			$gx      = absint( $_POST['glic_max'] );
-			$where[] = '(dd.glic_10_value <= %d OR dd.glic_10_value IS NULL)';
+			$where[] = '(COALESCE(dd.glic_10_cap, dd.glic_10_sens) <= %d OR (dd.glic_10_cap IS NULL AND dd.glic_10_sens IS NULL))';
 			$vals[]  = $gx;
 		}
 
@@ -289,10 +289,18 @@ class SD_Research_Dashboard {
 		$sql = "SELECT d.id, d.user_id, d.dive_number, d.dive_date, d.site_name,
 					   d.time_in, d.time_out, d.max_depth, d.avg_depth, d.dive_time,
 					   d.gas_mix, d.nitrox_percentage, d.temp_water,
-					   dd.glic_60_value, dd.glic_60_method, dd.glic_60_trend, dd.glic_60_cho_rapidi, dd.glic_60_cho_lenti, dd.glic_60_insulin, dd.glic_60_notes,
-					   dd.glic_30_value, dd.glic_30_method, dd.glic_30_trend, dd.glic_30_cho_rapidi, dd.glic_30_cho_lenti, dd.glic_30_insulin, dd.glic_30_notes,
-					   dd.glic_10_value, dd.glic_10_method, dd.glic_10_trend, dd.glic_10_cho_rapidi, dd.glic_10_cho_lenti, dd.glic_10_insulin, dd.glic_10_notes,
-					   dd.glic_post_value, dd.glic_post_method, dd.glic_post_trend, dd.glic_post_cho_rapidi, dd.glic_post_cho_lenti, dd.glic_post_insulin, dd.glic_post_notes,
+					   COALESCE(dd.glic_60_cap, dd.glic_60_sens) AS glic_60_value,
+					   CASE WHEN dd.glic_60_cap IS NOT NULL THEN 'C' WHEN dd.glic_60_sens IS NOT NULL THEN 'S' END AS glic_60_method,
+					   dd.glic_60_trend, dd.glic_60_cho_rapidi, dd.glic_60_cho_lenti, dd.glic_60_insulin, dd.glic_60_notes,
+					   COALESCE(dd.glic_30_cap, dd.glic_30_sens) AS glic_30_value,
+					   CASE WHEN dd.glic_30_cap IS NOT NULL THEN 'C' WHEN dd.glic_30_sens IS NOT NULL THEN 'S' END AS glic_30_method,
+					   dd.glic_30_trend, dd.glic_30_cho_rapidi, dd.glic_30_cho_lenti, dd.glic_30_insulin, dd.glic_30_notes,
+					   COALESCE(dd.glic_10_cap, dd.glic_10_sens) AS glic_10_value,
+					   CASE WHEN dd.glic_10_cap IS NOT NULL THEN 'C' WHEN dd.glic_10_sens IS NOT NULL THEN 'S' END AS glic_10_method,
+					   dd.glic_10_trend, dd.glic_10_cho_rapidi, dd.glic_10_cho_lenti, dd.glic_10_insulin, dd.glic_10_notes,
+					   COALESCE(dd.glic_post_cap, dd.glic_post_sens) AS glic_post_value,
+					   CASE WHEN dd.glic_post_cap IS NOT NULL THEN 'C' WHEN dd.glic_post_sens IS NOT NULL THEN 'S' END AS glic_post_method,
+					   dd.glic_post_trend, dd.glic_post_cho_rapidi, dd.glic_post_cho_lenti, dd.glic_post_insulin, dd.glic_post_notes,
 					   dd.dive_decision, dd.dive_decision_reason, dd.ketone_value, dd.hypo_during_dive,
 					   u.display_name, um_fn.meta_value as fn, um_ln.meta_value as ln
 				FROM {$db->table('dives')} d

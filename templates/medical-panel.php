@@ -1,6 +1,6 @@
 <?php
 /**
- * Template: Pannello Medico / Staff
+ * Template: Pannello Medico
  * @package SD_Logbook
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -99,6 +99,33 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
         </div>
         <div class="sd-panel-body" id="sd-panel-body">
             <div class="sd-loading"><?php esc_html_e( 'Caricamento...', 'sd-logbook' ); ?></div>
+        </div>
+    </div>
+</div>
+
+<!-- RECORD DETAIL MODAL (for medical clearance details in medical panel) -->
+<div class="sd-record-modal-overlay" id="sd-record-modal-overlay" style="display:none;">
+    <div class="sd-record-modal">
+        <div class="sd-record-modal-header">
+            <h3 id="sd-record-modal-title"></h3>
+            <button type="button" class="sd-record-modal-close" id="sd-record-modal-close" aria-label="<?php esc_attr_e('Chiudi','sd-logbook'); ?>">&times;</button>
+        </div>
+        <div class="sd-record-modal-body" id="sd-record-modal-body"></div>
+        <div class="sd-record-modal-footer">
+            <button type="button" class="sd-btn-record-modal-close"><?php esc_html_e('Chiudi','sd-logbook'); ?></button>
+        </div>
+    </div>
+</div>
+
+<!-- MAP MODAL (Leaflet) -->
+<div class="sd-map-modal-overlay" id="sd-map-modal-overlay" style="display:none;">
+    <div class="sd-map-modal">
+        <div class="sd-map-modal-header">
+            <h3 id="sd-map-modal-title"></h3>
+            <button type="button" class="sd-map-modal-close" id="sd-map-modal-close" aria-label="<?php esc_attr_e('Chiudi','sd-logbook'); ?>">&times;</button>
+        </div>
+        <div class="sd-map-modal-body" id="sd-map-modal-body">
+            <div id="sd-map-container" style="width: 100%; height: 100%;"></div>
         </div>
     </div>
 </div>

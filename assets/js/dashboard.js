@@ -236,19 +236,18 @@
                 ];
 
                 checkpoints.forEach(function(cp) {
-                    var val    = diabetes['glic_' + cp.key + '_value'];
-                    var method = diabetes['glic_' + cp.key + '_method'];
+                    var cap    = diabetes['glic_' + cp.key + '_cap'];
+                    var sens   = diabetes['glic_' + cp.key + '_sens'];
                     var trend  = diabetes['glic_' + cp.key + '_trend'];
                     var cho_r  = diabetes['glic_' + cp.key + '_cho_rapidi'];
                     var cho_l  = diabetes['glic_' + cp.key + '_cho_lenti'];
                     var ins    = diabetes['glic_' + cp.key + '_insulin'];
                     var notes  = diabetes['glic_' + cp.key + '_notes'];
 
-                    if (!val) return;
+                    if (!cap && !sens) return;
 
-                    var methodBadge = method ? '<span class="sd-detail-method-badge sd-method-' + method + '">' + method + '</span>' : '';
-                    var trendArrow  = '';
-                    if (trend && method === 'S') {
+                    var trendArrow = '';
+                    if (trend && sens) {
                         var arrows = { salita_rapida: '↑↑', salita: '↑', stabile: '→', discesa: '↓', discesa_rapida: '↓↓' };
                         trendArrow = arrows[trend] || '';
                     }
@@ -261,9 +260,42 @@
 
                     html += '<div class="sd-detail-glic-row">';
                     html += '<span class="sd-detail-glic-label">' + cp.label + '</span>';
-                    html += '<span class="sd-detail-glic-value">' + displayGlic(val) + '</span>';
-                    html += '<span>' + methodBadge + ' ' + trendArrow + '</span>';
-                    html += '<span style="font-size:11px;color:#64748B;">' + extras.join(' · ') + '</span>';
+                    if (cap)  html += '<span class="sd-detail-glic-value"><span class="sd-detail-method-badge sd-method-C">C</span> ' + displayGlic(cap)  + '</span>';
+                    if (sens) html += '<span class="sd-detail-glic-value"><span class="sd-detail-method-badge sd-method-S">S</span> ' + displayGlic(sens) + (trendArrow ? ' ' + trendArrow : '') + '</span>';
+                    if (extras.length) html += '<span style="font-size:11px;color:#64748B;">' + extras.join(' · ') + '</span>';
+                    html += '</div>';
+                });
+
+                // EXTRA 1-4
+                var extraKeys = [
+                    { key: 'extra1', label: 'Extra 1' },
+                    { key: 'extra2', label: 'Extra 2' },
+                    { key: 'extra3', label: 'Extra 3' },
+                    { key: 'extra4', label: 'Extra 4' }
+                ];
+                var whenLabels = { prima_60: '-90 min', prima_30: '-45 min', prima_10: '-20 min', prima_post: '-5 min', dopo_post: '+30 min' };
+                extraKeys.forEach(function(ex) {
+                    var exWhen = diabetes['glic_' + ex.key + '_when'];
+                    var exCap  = diabetes['glic_' + ex.key + '_cap'];
+                    var exSens = diabetes['glic_' + ex.key + '_sens'];
+                    if (!exCap && !exSens) return;
+                    var exTrend = diabetes['glic_' + ex.key + '_trend'];
+                    var exChoR  = diabetes['glic_' + ex.key + '_cho_rapidi'];
+                    var exChoL  = diabetes['glic_' + ex.key + '_cho_lenti'];
+                    var exIns   = diabetes['glic_' + ex.key + '_insulin'];
+                    var exNotes = diabetes['glic_' + ex.key + '_notes'];
+                    var exArrow = (exTrend && exSens) ? ({ salita_rapida:'↑↑',salita:'↑',stabile:'→',discesa:'↓',discesa_rapida:'↓↓' }[exTrend] || '') : '';
+                    var exExtras = [];
+                    if (exChoR && parseFloat(exChoR) > 0) exExtras.push('CHOr: ' + exChoR + 'g');
+                    if (exChoL && parseFloat(exChoL) > 0) exExtras.push('CHOl: ' + exChoL + 'g');
+                    if (exIns  && parseFloat(exIns)  > 0) exExtras.push('INS: ' + exIns + 'U');
+                    if (exNotes) exExtras.push(exNotes);
+                    var whenStr = exWhen ? (whenLabels[exWhen] || exWhen) : '';
+                    html += '<div class="sd-detail-glic-row sd-detail-glic-extra">';
+                    html += '<span class="sd-detail-glic-label">' + ex.label + (whenStr ? ' (' + whenStr + ')' : '') + '</span>';
+                    if (exCap)  html += '<span class="sd-detail-glic-value"><span class="sd-detail-method-badge sd-method-C">C</span> ' + displayGlic(exCap)  + '</span>';
+                    if (exSens) html += '<span class="sd-detail-glic-value"><span class="sd-detail-method-badge sd-method-S">S</span> ' + displayGlic(exSens) + (exArrow ? ' ' + exArrow : '') + '</span>';
+                    if (exExtras.length) html += '<span style="font-size:11px;color:#64748B;">' + exExtras.join(' · ') + '</span>';
                     html += '</div>';
                 });
 
@@ -324,11 +356,21 @@
         });
 
         // ============================================================
-        // DELETE DIVE
+        // DELETE DIVE — modal di conferma custom
         // ============================================================
-        $('#sd-btn-delete-dive').on('click', function() {
-            if (!currentDiveId) return;
-            if (!confirm('Sei sicuro di voler eliminare questa immersione? L\'azione non è reversibile.')) return;
+        var _deleteTargetId = null;
+
+        function showDeleteConfirm(diveId, diveLabel) {
+            _deleteTargetId = diveId;
+            $('#sd-confirm-delete-label').text(diveLabel || '');
+            $('#sd-confirm-delete-overlay').css({ display: 'flex', opacity: 0 }).animate({ opacity: 1 }, 150);
+        }
+
+        function executeDelete() {
+            if (!_deleteTargetId) return;
+            var diveId = _deleteTargetId;
+            _deleteTargetId = null;
+            $('#sd-confirm-delete-overlay').animate({ opacity: 0 }, 150, function() { $(this).css('display','none'); });
 
             $.ajax({
                 url: sdDashboard.ajaxUrl,
@@ -336,11 +378,11 @@
                 data: {
                     action: 'sd_delete_dive',
                     nonce: sdDashboard.nonce,
-                    dive_id: currentDiveId
+                    dive_id: diveId
                 },
                 success: function(response) {
                     if (response.success) {
-                        $('.sd-dive-card[data-dive-id="' + currentDiveId + '"]').fadeOut(300, function() {
+                        $('.sd-dive-card[data-dive-id="' + diveId + '"]').fadeOut(300, function() {
                             $(this).remove();
                         });
                         $('#sd-modal-overlay').fadeOut(200);
@@ -350,6 +392,35 @@
                     }
                 }
             });
+        }
+
+        // Bottone Elimina sulla card
+        $(document).on('click', '.sd-btn-card-delete-inline', function(e) {
+            e.stopPropagation();
+            var diveId = $(this).data('dive-id');
+            var diveLabel = $(this).data('dive-label');
+            showDeleteConfirm(diveId, diveLabel);
+        });
+
+        // Bottone Elimina nel modal dettagli
+        $('#sd-btn-delete-dive').on('click', function() {
+            if (!currentDiveId) return;
+            var $card = $('.sd-dive-card[data-dive-id="' + currentDiveId + '"]');
+            var diveLabel = $card.find('.sd-btn-card-delete-inline').data('dive-label') || '';
+            showDeleteConfirm(currentDiveId, diveLabel);
+        });
+
+        // Conferma / Annulla nel modal
+        $('#sd-confirm-delete-ok').on('click', executeDelete);
+        $('#sd-confirm-delete-cancel').on('click', function() {
+            _deleteTargetId = null;
+            $('#sd-confirm-delete-overlay').animate({ opacity: 0 }, 150, function() { $(this).css('display','none'); });
+        });
+        $('#sd-confirm-delete-overlay').on('click', function(e) {
+            if ($(e.target).is('#sd-confirm-delete-overlay')) {
+                _deleteTargetId = null;
+                $(this).fadeOut(150);
+            }
         });
 
         // ============================================================
@@ -439,9 +510,9 @@
     // DECISION REASON — ricalcola in unità utente da valori mg/dL
     // ============================================================
     function generateDecisionReason(dd) {
-        var g60 = parseInt(dd.glic_60_value)   || 0;
-        var g30 = parseInt(dd.glic_30_value)   || 0;
-        var g10 = parseInt(dd.glic_10_value)   || 0;
+        var g60 = parseInt(dd.glic_60_cap)   || 0;
+        var g30 = parseInt(dd.glic_30_cap)   || 0;
+        var g10 = parseInt(dd.glic_10_cap)   || 0;
 
         if (!g10) return dd.dive_decision_reason || '';
 

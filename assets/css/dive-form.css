@@ -572,6 +572,27 @@ body.page .container.single-page-container {
     flex-shrink: 0;
 }
 
+.sd-btn-close-form {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    text-align: center;
+    background: #fff;
+    color: var(--sd-primary, #0B3D6E);
+    border: 2px solid var(--sd-primary, #0B3D6E);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.sd-btn-close-form:hover {
+    background: var(--sd-primary, #0B3D6E);
+    color: #fff;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */

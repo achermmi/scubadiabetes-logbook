@@ -253,31 +253,72 @@
 
             html += '<div class="sd-edit-checkpoints">';
             cps.forEach(function(cp) {
-                var val = diabetes['glic_' + cp.key + '_value'];
-                var displayVal = val ? displayGlic(val) : '';
-                var met = diabetes['glic_' + cp.key + '_method'] || '';
-                var trend = diabetes['glic_' + cp.key + '_trend'] || '';
-                var choR = diabetes['glic_' + cp.key + '_cho_rapidi'] || '';
-                var choL = diabetes['glic_' + cp.key + '_cho_lenti'] || '';
-                var ins = diabetes['glic_' + cp.key + '_insulin'] || '';
+                var cap     = diabetes['glic_' + cp.key + '_cap']  || '';
+                var sens    = diabetes['glic_' + cp.key + '_sens'] || '';
+                var displayCap  = cap  ? displayGlic(cap)  : '';
+                var displaySens = sens ? displayGlic(sens) : '';
+                var trend   = diabetes['glic_' + cp.key + '_trend'] || '';
+                var choR    = diabetes['glic_' + cp.key + '_cho_rapidi'] || '';
+                var choL    = diabetes['glic_' + cp.key + '_cho_lenti'] || '';
+                var ins     = diabetes['glic_' + cp.key + '_insulin'] || '';
                 var cpNotes = diabetes['glic_' + cp.key + '_notes'] || '';
 
                 html += '<div class="sd-edit-cp-card">';
                 html += '<div class="sd-edit-cp-header" style="background:' + cp.color + '">' + cp.label + '</div>';
                 html += '<div class="sd-edit-cp-body">';
-                html += '<div class="sd-field-row">';
-                html += field('glic_' + cp.key + '_value', 'Glic (' + glicUnit() + ')', 'number', displayVal, glicPlaceholder(), 'half', glicStep(), glicMin(), glicMax(), glicInputmode());
-                html += selectField('glic_' + cp.key + '_method', 'Metodo', met, {'':'—',C:'Capillare',S:'Sensore'}, 'half');
-                html += '</div>';
+                html += field('glic_' + cp.key + '_cap',  'Capillare (' + glicUnit() + ')', 'number', displayCap,  glicPlaceholder(), '', glicStep(), glicMin(), glicMax(), glicInputmode());
+                html += field('glic_' + cp.key + '_sens', 'Sensore (' + glicUnit() + ')',   'number', displaySens, glicPlaceholder(), '', glicStep(), glicMin(), glicMax(), glicInputmode());
                 html += '<div class="sd-field-row">';
                 html += selectField('glic_' + cp.key + '_trend', 'Freccia sensore', trend, {'':'—',salita_rapida:'↑↑ Salita rapida',salita:'↑ Salita',stabile:'→ Stabile',discesa:'↓ Discesa',discesa_rapida:'↓↓ Discesa rapida'}, 'half');
                 html += field('glic_' + cp.key + '_insulin', 'INS (U)', 'number', ins, '0', 'half', '0.1');
                 html += '</div>';
                 html += '<div class="sd-field-row">';
                 html += field('glic_' + cp.key + '_cho_rapidi', 'CHO rapidi (gr)', 'number', choR, '0', 'half', '0.5');
-                html += field('glic_' + cp.key + '_cho_lenti', 'CHO lenti (gr)', 'number', choL, '0', 'half', '0.5');
+                html += field('glic_' + cp.key + '_cho_lenti',  'CHO lenti (gr)',  'number', choL, '0', 'half', '0.5');
                 html += '</div>';
                 html += field('glic_' + cp.key + '_notes', 'Provvedimenti', 'text', cpNotes, 'es: 2 biscotti');
+                html += '</div></div>';
+            });
+            html += '</div>';
+
+            // EXTRA 1-4
+            var extraDefs = [
+                { key: 'extra1', label: 'EXTRA 1', bg: '#FEFCE8', border: '#EAB308', color: '#78350F' },
+                { key: 'extra2', label: 'EXTRA 2', bg: '#FEF08A', border: '#CA8A04', color: '#78350F' },
+                { key: 'extra3', label: 'EXTRA 3', bg: '#FCD34D', border: '#B45309', color: '#78350F' },
+                { key: 'extra4', label: 'EXTRA 4', bg: '#F59E0B', border: '#92400E', color: '#fff' }
+            ];
+            var whenOpts = {'':'— Seleziona quando —','prima_60':'- 90 MIN','prima_30':'- 45 MIN','prima_10':'- 20 MIN','prima_post':'- 5 MIN','dopo_post':'+ 30 MIN'};
+            var trendOpts = {'':'—',salita_rapida:'↑↑ Salita rapida',salita:'↑ Salita',stabile:'→ Stabile',discesa:'↓ Discesa',discesa_rapida:'↓↓ Discesa rapida'};
+
+            html += '<div class="sd-edit-checkpoints">';
+            extraDefs.forEach(function(ex) {
+                var exWhen  = diabetes['glic_' + ex.key + '_when']       || '';
+                var exCap   = diabetes['glic_' + ex.key + '_cap']        || '';
+                var exSens  = diabetes['glic_' + ex.key + '_sens']       || '';
+                var exTrend = diabetes['glic_' + ex.key + '_trend']      || '';
+                var exChoR  = diabetes['glic_' + ex.key + '_cho_rapidi'] || '';
+                var exChoL  = diabetes['glic_' + ex.key + '_cho_lenti']  || '';
+                var exIns   = diabetes['glic_' + ex.key + '_insulin']    || '';
+                var exNotes = diabetes['glic_' + ex.key + '_notes']      || '';
+                var dispCap  = exCap  ? displayGlic(exCap)  : '';
+                var dispSens = exSens ? displayGlic(exSens) : '';
+
+                html += '<div class="sd-edit-cp-card" style="border-color:' + ex.border + '">';
+                html += '<div class="sd-edit-cp-header" style="background:' + ex.bg + ';color:' + ex.color + '">' + ex.label + '</div>';
+                html += '<div class="sd-edit-cp-body">';
+                html += selectField('glic_' + ex.key + '_when', 'Momento', exWhen, whenOpts, '');
+                html += field('glic_' + ex.key + '_cap',  'Capillare (' + glicUnit() + ')', 'number', dispCap,  glicPlaceholder(), '', glicStep(), glicMin(), glicMax(), glicInputmode());
+                html += field('glic_' + ex.key + '_sens', 'Sensore (' + glicUnit() + ')',   'number', dispSens, glicPlaceholder(), '', glicStep(), glicMin(), glicMax(), glicInputmode());
+                html += '<div class="sd-field-row">';
+                html += selectField('glic_' + ex.key + '_trend', 'Freccia sensore', exTrend, trendOpts, 'half');
+                html += field('glic_' + ex.key + '_insulin', 'INS (U)', 'number', exIns, '0', 'half', '0.1');
+                html += '</div>';
+                html += '<div class="sd-field-row">';
+                html += field('glic_' + ex.key + '_cho_rapidi', 'CHO rapidi (gr)', 'number', exChoR, '0', 'half', '0.5');
+                html += field('glic_' + ex.key + '_cho_lenti',  'CHO lenti (gr)',  'number', exChoL, '0', 'half', '0.5');
+                html += '</div>';
+                html += field('glic_' + ex.key + '_notes', 'Provvedimenti', 'text', exNotes, 'es: 2 biscotti');
                 html += '</div></div>';
             });
             html += '</div>';
@@ -366,6 +407,32 @@
     function checkboxField(name, label, checked) {
         var chk = (checked == 1 || checked === true || checked === '1') ? ' checked' : '';
         return '<div class="sd-field sd-field-quarter"><label><input type="checkbox" name="' + name + '" value="1"' + chk + '> ' + esc(label) + '</label></div>';
+    }
+
+    // ============================================================
+    // CALCOLO AUTOMATICO DURATA (form di modifica, renderizzato dinamicamente)
+    // ============================================================
+    var _editDiveTimeTimer = null;
+    $(document).on('change blur input', '#sd-edit-form input[name="time_out"]', function() {
+        clearTimeout(_editDiveTimeTimer);
+        var $form = $(this).closest('form');
+        var $out  = $(this);
+        _editDiveTimeTimer = setTimeout(function() {
+            var timeIn  = $form.find('input[name="time_in"]').val();
+            var timeOut = $out.val();
+            if (timeIn && timeOut && /^\d{2}:\d{2}$/.test(timeOut)) {
+                var start = timeToMinutes(timeIn);
+                var end   = timeToMinutes(timeOut);
+                if (end > start) {
+                    $form.find('input[name="dive_time"]').val(end - start);
+                }
+            }
+        }, 800);
+    });
+
+    function timeToMinutes(t) {
+        var p = t.split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
     }
 
     // ============================================================

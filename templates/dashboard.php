@@ -161,6 +161,9 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         <?php esc_html_e( 'Storico', 'sd-logbook' ); ?>
                     </button>
+                    <button type="button" class="sd-btn-card-action sd-btn-card-delete sd-btn-card-delete-inline" data-dive-id="<?php echo esc_attr( $dive->id ); ?>" data-dive-label="<?php echo esc_attr( '#' . ( $dive->dive_number ?: $dive->id ) . ' ' . $dive->site_name . ' — ' . $dive->dive_date ); ?>" title="<?php esc_attr_e( 'Elimina', 'sd-logbook' ); ?>">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
                     <button type="button"
                         class="sd-btn-card-action sd-btn-card-map<?php echo $has_coords ? ' sd-btn-card-map--active sd-btn-open-map' : ' sd-btn-card-map--disabled'; ?>"
                         <?php if ( $has_coords ) : ?>
@@ -244,6 +247,29 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <?php esc_html_e( 'Chiudi', 'sd-logbook' ); ?>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL CONFERMA ELIMINAZIONE -->
+<!-- ============================================================ -->
+<div id="sd-confirm-delete-overlay" class="sd-confirm-delete-overlay" style="display:none;">
+    <div class="sd-confirm-delete-box">
+        <div class="sd-confirm-delete-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#DC2626" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3 class="sd-confirm-delete-title"><?php esc_html_e( 'Eliminare questa immersione?', 'sd-logbook' ); ?></h3>
+        <p class="sd-confirm-delete-label" id="sd-confirm-delete-label"></p>
+        <p class="sd-confirm-delete-warning"><?php esc_html_e( 'Questa azione è irreversibile. Tutti i dati glicemici associati verranno eliminati definitivamente.', 'sd-logbook' ); ?></p>
+        <div class="sd-confirm-delete-actions">
+            <button type="button" id="sd-confirm-delete-cancel" class="sd-confirm-delete-btn sd-confirm-delete-btn--cancel">
+                <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-confirm-delete-ok" class="sd-confirm-delete-btn sd-confirm-delete-btn--confirm">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <?php esc_html_e( 'Elimina', 'sd-logbook' ); ?>
+            </button>
         </div>
     </div>
 </div>

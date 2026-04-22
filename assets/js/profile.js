@@ -8,8 +8,43 @@
     'use strict';
 
     // ============================================================
+    // MESSAGE TOAST
+    // ============================================================
+    var _toastTimer = null;
+
+    function showMsg(text, type) {
+        // Toast fisso in alto, visibile ovunque nella pagina
+        var $toast = $('#sd-save-toast');
+        if (!$toast.length) {
+            $toast = $('<div id="sd-save-toast"></div>').appendTo('body');
+        }
+        var icon = type === 'error'
+            ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+            : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+
+        // Cancella il timer precedente per evitare fadeOut multipli
+        if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+
+        $toast
+            .stop(true, true)
+            .removeClass('sd-toast-success sd-toast-error')
+            .addClass(type === 'error' ? 'sd-toast-error' : 'sd-toast-success')
+            .html(icon + '<span>' + text + '</span>')
+            .css('display', 'flex')
+            .hide()
+            .fadeIn(250);
+
+        var delay = type === 'error' ? 4500 : 2500;
+        _toastTimer = setTimeout(function() {
+            $toast.fadeOut(400);
+            _toastTimer = null;
+        }, delay);
+    }
+
+    // ============================================================
     // COLLAPSIBLE SECTIONS
     // ============================================================
+    console.log('Profile.js loaded! jQuery:', typeof jQuery, 'Records found:', $('.sd-record-card').length);
     // Initialize: hide bodies of collapsed sections
     $('.sd-section-collapsible.sd-section-collapsed .sd-section-body').hide();
 
@@ -483,17 +518,197 @@
     });
 
     // ============================================================
-    // TOAST MESSAGE
+    // RECORD DETAIL MODAL
     // ============================================================
-    function showMsg(text, type) {
-        var $msg = $('#sd-profile-messages');
-        $msg.stop(true).removeClass('sd-msg-success sd-msg-error')
-            .addClass(type === 'error' ? 'sd-msg-error' : 'sd-msg-success')
-            .html(text).fadeIn(200);
+    var $modalOverlay = $('#sd-record-modal-overlay');
+    var $modalBody = $('#sd-record-modal-body');
+    var $modalTitle = $('#sd-record-modal-title');
+    var currentRecordData = {};
 
-        setTimeout(function() {
-            $msg.fadeOut(400);
-        }, 3000);
+    function openRecordModal(type, index, $card) {
+        currentRecordData = {
+            type: type,
+            index: index,
+            $card: $card
+        };
+
+        var title = '';
+        var html = '';
+
+        if (type === 'certification') {
+            var agency = $card.find('.sd-record-title').text().split(' — ')[0];
+            var level = $card.find('.sd-record-title').text().split(' — ')[1];
+            title = agency + ' — ' + level;
+
+            var subText = $card.find('.sd-record-sub').text();
+            var dateMatch = subText.match(/(\d{2}\/\d{2}\/\d{4})/);
+            var numberMatch = subText.match(/N° (.+?)(?:\s·|$)/);
+
+            html = '<div class="sd-record-detail-grid">' +
+                '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Agenzia</span><span class="sd-record-detail-value">' + esc(agency) + '</span></div>' +
+                '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Livello</span><span class="sd-record-detail-value">' + esc(level) + '</span></div>' +
+                (dateMatch ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Data</span><span class="sd-record-detail-value">' + esc(dateMatch[0]) + '</span></div>' : '') +
+                (numberMatch ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">N° Brevetto</span><span class="sd-record-detail-value">' + esc(numberMatch[1]) + '</span></div>' : '');
+
+            var docName = $card.data('doc-name');
+            var docUrl = $card.data('doc-url');
+            if (docName && docUrl) {
+                html += '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Documento</span><span class="sd-record-detail-value"><a href="' + esc(docUrl) + '" target="_blank">📎 ' + esc(docName) + '</a></span></div>';
+            }
+            html += '</div>';
+
+        } else if (type === 'medical_clearance') {
+            var titleText = $card.find('.sd-record-title').text();
+            title = titleText;
+
+            var dates = titleText.split('→');
+            var dateStart = dates[0] ? dates[0].trim() : '';
+            var dateEnd = dates[1] ? dates[1].trim().split(' ')[0] : '';
+
+            var subText = $card.find('.sd-record-sub').text();
+            var typeMatch = subText.match(/^([^ ·]+)/);
+            var doctorMatch = subText.match(/Dr\. (.+?)(?:\s·|$)/);
+            var docName = $card.data('doc-name');
+            var docUrl = $card.data('doc-url');
+
+            html = '<div class="sd-record-detail-grid">' +
+                (dateStart ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Data rilascio</span><span class="sd-record-detail-value">' + esc(dateStart) + '</span></div>' : '') +
+                (dateEnd ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Scadenza</span><span class="sd-record-detail-value">' + esc(dateEnd) + '</span></div>' : '') +
+                (typeMatch ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Tipo visita</span><span class="sd-record-detail-value">' + esc(typeMatch[1]) + '</span></div>' : '') +
+                (doctorMatch ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Medico</span><span class="sd-record-detail-value">Dr. ' + esc(doctorMatch[1]) + '</span></div>' : '');
+
+            if (docName && docUrl) {
+                html += '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Documento</span><span class="sd-record-detail-value"><a href="' + esc(docUrl) + '" target="_blank">📎 ' + esc(docName) + '</a></span></div>';
+            }
+            html += '</div>';
+
+        } else if (type === 'emergency_contact') {
+            title = $card.find('.sd-record-title').text();
+            var subText = $card.find('.sd-record-sub').text();
+
+            var name = title;
+            var phone = '';
+            var email = '';
+            var relationship = '';
+            var notes = '';
+
+            var parts = subText.split('·').map(function(s) { return s.trim(); });
+            if (parts[0]) {
+                phone = parts[0];
+            }
+            if (parts.length > 1 && parts[1] && parts[1].includes('@')) {
+                email = parts[1];
+            }
+            if (parts.length > 1) {
+                var relStr = parts[parts.length - 1];
+                var validRels = ['coniuge', 'genitore', 'figlio', 'fratello', 'amico', 'medico', 'altro'];
+                if (validRels.includes(relStr.toLowerCase())) {
+                    relationship = relStr;
+                }
+            }
+
+            // Extract notes from italic text if present
+            var $italic = $card.find('.sd-record-sub em');
+            if ($italic.length) {
+                notes = $italic.text();
+            }
+
+            var relLabels = {
+                'coniuge': 'Coniuge/Partner',
+                'genitore': 'Genitore',
+                'figlio': 'Figlio/a',
+                'fratello': 'Fratello/Sorella',
+                'amico': 'Amico/a',
+                'medico': 'Medico curante',
+                'altro': 'Altro'
+            };
+
+            html = '<div class="sd-record-detail-grid">' +
+                '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Nome</span><span class="sd-record-detail-value">' + esc(name) + '</span></div>' +
+                '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Telefono</span><span class="sd-record-detail-value"><a href="tel:' + esc(phone) + '">' + esc(phone) + '</a></span></div>' +
+                (email ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">E-mail</span><span class="sd-record-detail-value"><a href="mailto:' + esc(email) + '">' + esc(email) + '</a></span></div>' : '') +
+                (relationship ? '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Relazione</span><span class="sd-record-detail-value">' + esc(relLabels[relationship.toLowerCase()] || relationship) + '</span></div>' : '') +
+                (notes ? '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Note</span><span class="sd-record-detail-value"><em>' + esc(notes) + '</em></span></div>' : '') +
+                '</div>';
+        }
+
+        $modalTitle.text(title);
+        $modalBody.html(html);
+        $modalOverlay.fadeIn(200);
+
+        // Update delete button handler
+        $('#sd-btn-record-modal-delete').off('click').on('click', function() {
+            if (confirm('Eliminare ' + (
+                type === 'certification' ? 'questa certificazione' :
+                type === 'medical_clearance' ? 'questa idoneità medica' :
+                'questo contatto'
+            ) + '?')) {
+                closeRecordModal();
+                $card.find('.sd-rec-delete').trigger('click');
+            }
+        });
+
+        // Update edit button handler
+        $('#sd-btn-record-modal-edit').off('click').on('click', function() {
+            closeRecordModal();
+            $card.find('.sd-rec-edit').trigger('click');
+        });
     }
+
+    function closeRecordModal() {
+        $modalOverlay.fadeOut(200);
+        currentRecordData = {};
+    }
+
+    function esc(str) {
+        return $('<div>').text(str).html();
+    }
+
+    // Click on record card (not on action buttons) opens modal
+    $(document).on('click', '.sd-record-card', function(e) {
+        console.log('Card clicked:', e.target, 'Card:', $(this));
+        // Don't open modal if click is on action buttons
+        if ($(e.target).closest('.sd-record-actions').length > 0) {
+            console.log('Click was on action buttons, returning');
+            return;
+        }
+
+        var $card = $(this);
+        var type = '';
+        var listId = $card.closest('.sd-record-list').attr('id');
+        console.log('List ID:', listId);
+
+        if (listId === 'sd-cert-list') {
+            type = 'certification';
+        } else if (listId === 'sd-clearance-list') {
+            type = 'medical_clearance';
+        } else if (listId === 'sd-contact-list') {
+            type = 'emergency_contact';
+        }
+
+        if (type) {
+            var index = $card.data('index');
+            openRecordModal(type, index, $card);
+        }
+    });
+
+    // Close modal on overlay click (only if clicking directly on overlay)
+    $modalOverlay.on('click', function(e) {
+        if (e.target === this) {
+            closeRecordModal();
+        }
+    });
+
+    // Close modal on close button click
+    $('#sd-record-modal-close, .sd-btn-record-modal-close').on('click', function() {
+        closeRecordModal();
+    });
+
+    // Close modal on Escape key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $modalOverlay.is(':visible')) {
+            closeRecordModal();
+        }
+    });
 
 })(jQuery);

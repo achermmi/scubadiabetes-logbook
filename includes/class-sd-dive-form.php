@@ -87,6 +87,7 @@ class SD_Dive_Form {
 					'nonce'          => wp_create_nonce( 'sd_dive_form_nonce' ),
 					'glycemiaUnit'   => $glycemia_unit,
 					'defaultShared'  => $default_shared,
+					'dashboardUrl'   => home_url( '/dashboard-immersioni/' ),
 					'strings'      => array(
 						'saving'      => __( 'Salvataggio...', 'sd-logbook' ),
 						'saved'       => __( 'Immersione salvata!', 'sd-logbook' ),
@@ -211,18 +212,35 @@ class SD_Dive_Form {
 			wp_send_json_error( array( 'message' => __( 'Il sito di immersione è obbligatorio.', 'sd-logbook' ) ) );
 		}
 
-		// Inserisci nel database
+		// Inserisci o aggiorna nel database
 		global $wpdb;
 		$db    = new SD_Database();
 		$table = $db->table( 'dives' );
 
-		$result = $wpdb->insert( $table, $data );
+		$saved_dive_id = ! empty( $_POST['saved_dive_id'] ) ? absint( $_POST['saved_dive_id'] ) : 0;
 
-		if ( false === $result ) {
-			wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio. Riprova.', 'sd-logbook' ) ) );
+		if ( $saved_dive_id ) {
+			// UPDATE: verifica che l'immersione appartenga all'utente corrente
+			$owner = $wpdb->get_var( $wpdb->prepare(
+				"SELECT user_id FROM {$table} WHERE id = %d",
+				$saved_dive_id
+			) );
+			if ( (int) $owner !== $user_id ) {
+				wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+			}
+			$result = $wpdb->update( $table, $data, array( 'id' => $saved_dive_id ) );
+			if ( false === $result ) {
+				wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio. Riprova.', 'sd-logbook' ) ) );
+			}
+			$dive_id = $saved_dive_id;
+		} else {
+			// INSERT
+			$result = $wpdb->insert( $table, $data );
+			if ( false === $result ) {
+				wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio. Riprova.', 'sd-logbook' ) ) );
+			}
+			$dive_id = $wpdb->insert_id;
 		}
-
-		$dive_id = $wpdb->insert_id;
 
 		// Se utente diabetico, salva anche i dati diabete
 		if ( SD_Roles::is_diabetic_diver( $user_id ) ) {
@@ -285,24 +303,31 @@ class SD_Dive_Form {
 			$diabetes_data[ $prefix . 'notes' ]      = sanitize_text_field( $_POST[ $prefix . 'notes' ] ?? '' ) ?: null;
 		}
 
-		// Misura extra
-		$diabetes_data['glic_extra_when'] = in_array( $_POST['glic_extra_when'] ?? '', array( 'prima_60', 'prima_30', 'prima_10', 'prima_post', 'dopo_post' ), true )
-			? $_POST['glic_extra_when'] : null;
-		$raw_extra_cap = ! empty( $_POST['glic_extra_cap'] ) ? floatval( $_POST['glic_extra_cap'] ) : null;
-		if ( null !== $raw_extra_cap ) {
-			$raw_extra_cap = $is_mmol ? round( $raw_extra_cap * 18.018 ) : absint( $raw_extra_cap );
+		// 4 misure extra (extra1-extra4)
+		$valid_when = array( 'prima_60', 'prima_30', 'prima_10', 'prima_post', 'dopo_post' );
+		foreach ( array( 'extra1', 'extra2', 'extra3', 'extra4' ) as $ex ) {
+			$prefix = 'glic_' . $ex . '_';
+
+			$diabetes_data[ $prefix . 'when' ] = in_array( $_POST[ $prefix . 'when' ] ?? '', $valid_when, true )
+				? $_POST[ $prefix . 'when' ] : null;
+
+			$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
+			if ( null !== $raw_cap ) {
+				$raw_cap = $is_mmol ? round( $raw_cap * 18.018 ) : absint( $raw_cap );
+			}
+			$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
+			if ( null !== $raw_sens ) {
+				$raw_sens = $is_mmol ? round( $raw_sens * 18.018 ) : absint( $raw_sens );
+			}
+
+			$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
+			$diabetes_data[ $prefix . 'sens' ]       = $raw_sens;
+			$diabetes_data[ $prefix . 'trend' ]      = sanitize_text_field( $_POST[ $prefix . 'trend' ] ?? '' ) ?: null;
+			$diabetes_data[ $prefix . 'cho_rapidi' ] = ! empty( $_POST[ $prefix . 'cho_rapidi' ] ) ? floatval( $_POST[ $prefix . 'cho_rapidi' ] ) : null;
+			$diabetes_data[ $prefix . 'cho_lenti' ]  = ! empty( $_POST[ $prefix . 'cho_lenti' ] ) ? floatval( $_POST[ $prefix . 'cho_lenti' ] ) : null;
+			$diabetes_data[ $prefix . 'insulin' ]    = ! empty( $_POST[ $prefix . 'insulin' ] ) ? floatval( $_POST[ $prefix . 'insulin' ] ) : null;
+			$diabetes_data[ $prefix . 'notes' ]      = sanitize_text_field( $_POST[ $prefix . 'notes' ] ?? '' ) ?: null;
 		}
-		$raw_extra_sens = ! empty( $_POST['glic_extra_sens'] ) ? floatval( $_POST['glic_extra_sens'] ) : null;
-		if ( null !== $raw_extra_sens ) {
-			$raw_extra_sens = $is_mmol ? round( $raw_extra_sens * 18.018 ) : absint( $raw_extra_sens );
-		}
-		$diabetes_data['glic_extra_cap']        = $raw_extra_cap;
-		$diabetes_data['glic_extra_sens']       = $raw_extra_sens;
-		$diabetes_data['glic_extra_trend']      = sanitize_text_field( $_POST['glic_extra_trend'] ?? '' ) ?: null;
-		$diabetes_data['glic_extra_cho_rapidi'] = ! empty( $_POST['glic_extra_cho_rapidi'] ) ? floatval( $_POST['glic_extra_cho_rapidi'] ) : null;
-		$diabetes_data['glic_extra_cho_lenti']  = ! empty( $_POST['glic_extra_cho_lenti'] ) ? floatval( $_POST['glic_extra_cho_lenti'] ) : null;
-		$diabetes_data['glic_extra_insulin']    = ! empty( $_POST['glic_extra_insulin'] ) ? floatval( $_POST['glic_extra_insulin'] ) : null;
-		$diabetes_data['glic_extra_notes']      = sanitize_text_field( $_POST['glic_extra_notes'] ?? '' ) ?: null;
 
 		// Decisione immersione
 		$diabetes_data['dive_decision']        = sanitize_text_field( $_POST['dive_decision'] ?? '' ) ?: null;
@@ -327,7 +352,16 @@ class SD_Dive_Form {
 		// Note
 		$diabetes_data['diabetes_notes'] = sanitize_textarea_field( $_POST['diabetes_notes'] ?? '' ) ?: null;
 
-		$wpdb->insert( $table, $diabetes_data );
+		$existing_diabetes_id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$table} WHERE dive_id = %d AND user_id = %d",
+			$dive_id, $user_id
+		) );
+
+		if ( $existing_diabetes_id ) {
+			$wpdb->update( $table, $diabetes_data, array( 'id' => $existing_diabetes_id ) );
+		} else {
+			$wpdb->insert( $table, $diabetes_data );
+		}
 	}
 
 	/**

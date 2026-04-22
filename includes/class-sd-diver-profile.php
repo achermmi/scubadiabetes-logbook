@@ -38,20 +38,17 @@ class SD_Diver_Profile {
 	}
 
 	public function enqueue_assets() {
-		global $post;
-		if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'sd_diver_profile' ) ) {
-			wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
-			wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-			wp_enqueue_script( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/js/profile.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
-			wp_localize_script(
-				'sd-profile',
-				'sdProfile',
-				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'sd_profile_nonce' ),
-				)
-			);
-		}
+		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+		wp_enqueue_script( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/js/profile.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		wp_localize_script(
+			'sd-profile',
+			'sdProfile',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'sd_profile_nonce' ),
+			)
+		);
 	}
 
 	public function render_profile( $atts ) {
