@@ -114,8 +114,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="tel" id="phone" name="phone" class="sd-input" required placeholder="+41 79 000 00 00" autocomplete="tel">
 				</div>
 				<div class="sd-field-group sd-field-half">
-					<label for="tshirt_size" class="sd-label"><?php esc_html_e( 'Taglia Maglietta', 'sd-logbook' ); ?></label>
-					<select id="tshirt_size" name="tshirt_size" class="sd-select">
+					<label for="tshirt_size" class="sd-label sd-label-required"><?php esc_html_e( 'Taglia Maglietta', 'sd-logbook' ); ?></label>
+					<select id="tshirt_size" name="tshirt_size" class="sd-select" required>
 						<option value=""><?php esc_html_e( '-- Seleziona taglia --', 'sd-logbook' ); ?></option>
 						<optgroup label="<?php esc_attr_e( 'Bambino/a', 'sd-logbook' ); ?>">
 							<option value="baby_2-3"><?php esc_html_e( '2–3 anni', 'sd-logbook' ); ?></option>
@@ -140,9 +140,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="sd-field-row">
 				<div class="sd-field-group sd-field-half">
-					<label for="diabetes_type" class="sd-label"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
-					<select id="diabetes_type" name="diabetes_type" class="sd-select">
-						<option value="non_diabetico" selected><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
+					<label for="diabetes_type" class="sd-label sd-label-required"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
+					<select id="diabetes_type" name="diabetes_type" class="sd-select" required>
+						<option value=""><?php esc_html_e( '-- Seleziona --', 'sd-logbook' ); ?></option>
+						<option value="non_diabetico"><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
 						<option value="tipo_1"><?php esc_html_e( 'Diabete Tipo 1', 'sd-logbook' ); ?></option>
 						<option value="tipo_2"><?php esc_html_e( 'Diabete Tipo 2', 'sd-logbook' ); ?></option>
 						<option value="non_specificato"><?php esc_html_e( 'Non specificato', 'sd-logbook' ); ?></option>
@@ -174,8 +175,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="text" id="address_city" name="address_city" class="sd-input" required autocomplete="address-level2">
 				</div>
 				<div class="sd-field-group sd-field-quarter">
-					<label for="address_country" class="sd-label"><?php esc_html_e( 'Nazione', 'sd-logbook' ); ?></label>
-					<select id="address_country" name="address_country" class="sd-select" autocomplete="country">
+					<label for="address_country" class="sd-label sd-label-required"><?php esc_html_e( 'Nazione', 'sd-logbook' ); ?></label>
+					<select id="address_country" name="address_country" class="sd-select" required autocomplete="country">
 						<?php foreach ( $countries as $code => $label ) : ?>
 							<option value="<?php echo esc_attr( $code ); ?>" <?php selected( 'CH', $code ); ?>>
 								<?php echo esc_html( $label ); ?>
@@ -371,7 +372,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 
 			<!-- Selezione tassa -->
-			<h4 class="sd-subsection-title"><?php esc_html_e( 'Tassa associativa', esc_html( $current_year ) ); ?></h4>
+			<h4 class="sd-subsection-title sd-label-required"><?php esc_html_e( 'Tassa associativa', esc_html( $current_year ) ); ?></h4>
 			<div class="sd-fee-cards" id="sd-fee-cards">
 				<label class="sd-fee-card">
 					<input type="radio" name="fee_amount" value="30" required>

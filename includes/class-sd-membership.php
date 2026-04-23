@@ -119,7 +119,9 @@ class SD_Membership {
 		// Campi iscrizione
 		$is_scuba      = ! empty( $_POST['is_scuba'] ) ? 1 : 0;
 		$tshirt_size   = sanitize_text_field( wp_unslash( $_POST['tshirt_size'] ?? '' ) );
-		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
+		$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
+		$diabetes_type_raw = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
+		$diabetes_type = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : '';		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
 		// Per fee=75, il tipo di socio è sempre "attivo_capo_famiglia" (server-side enforcement)
 		if ( $fee_amount >= 75 ) {
 			$member_type = 'attivo_capo_famiglia';
@@ -158,6 +160,15 @@ class SD_Membership {
 		}
 		if ( ! in_array( $gender, array( 'M', 'F', 'NB', 'U' ), true ) ) {
 			$errors[] = __( 'Seleziona il genere.', 'sd-logbook' );
+		}
+		if ( empty( $tshirt_size ) ) {
+			$errors[] = __( 'Seleziona la taglia maglietta.', 'sd-logbook' );
+		}
+		if ( empty( $diabetes_type ) ) {
+			$errors[] = __( 'Seleziona il tipo di diabete.', 'sd-logbook' );
+		}
+		if ( empty( $address_country ) ) {
+			$errors[] = __( 'Seleziona la nazione.', 'sd-logbook' );
 		}
 
 		// Verifica unicità email (WP users + tabella soci)
@@ -221,7 +232,6 @@ class SD_Membership {
 		}
 
 		// === 3. Dati subacqueo ===
-		$diabetes_type      = 'non_diabetico';
 		$is_diabetic        = 0;
 		$weight             = null;
 		$height             = null;
@@ -234,9 +244,6 @@ class SD_Membership {
 			$weight             = ! empty( $_POST['weight'] ) ? floatval( $_POST['weight'] ) : null;
 			$height             = ! empty( $_POST['height'] ) ? absint( $_POST['height'] ) : null;
 			$blood_type         = sanitize_text_field( wp_unslash( $_POST['blood_type'] ?? '' ) );
-			$diabetes_type_raw  = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? 'non_diabetico' ) );
-			$allowed_types      = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
-			$diabetes_type      = in_array( $diabetes_type_raw, $allowed_types, true ) ? $diabetes_type_raw : 'non_diabetico';
 			$is_diabetic        = in_array( $diabetes_type, array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' ), true ) ? 1 : 0;
 			$diabetology_center = sanitize_text_field( wp_unslash( $_POST['diabetology_center'] ?? '' ) );
 

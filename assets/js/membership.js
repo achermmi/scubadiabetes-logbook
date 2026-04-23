@@ -360,6 +360,20 @@
 				return;
 			}
 
+			// Validazione taglia maglietta
+			if (!$.trim($('#tshirt_size').val())) {
+				showMessage('error', 'Seleziona la taglia maglietta.');
+				$('#tshirt_size')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+				return;
+			}
+
+			// Validazione diabete
+			if (!$.trim($('#diabetes_type').val())) {
+				showMessage('error', 'Seleziona il tipo di diabete.');
+				$('#diabetes_type')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+				return;
+			}
+
 			// Validazione minore
 			if (isMinorState) {
 				var gName = $.trim($('#guardian_first_name').val());
