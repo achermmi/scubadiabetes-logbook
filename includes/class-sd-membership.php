@@ -122,6 +122,7 @@ class SD_Membership {
 		$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
 		$diabetes_type_raw = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
 		$diabetes_type = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : '';
+		$diabetology_center = sanitize_text_field( wp_unslash( $_POST['diabetology_center'] ?? '' ) );
 		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
 		// Per fee=75, il tipo di socio è sempre "attivo_capo_famiglia" (server-side enforcement)
 		if ( $fee_amount >= 75 ) {
@@ -167,6 +168,10 @@ class SD_Membership {
 		}
 		if ( empty( $diabetes_type ) ) {
 			$errors[] = __( 'Seleziona il tipo di diabete.', 'sd-logbook' );
+		}
+		$diabetic_types = array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
+		if ( in_array( $diabetes_type, $diabetic_types, true ) && empty( $diabetology_center ) ) {
+			$errors[] = __( 'Inserisci il centro diabetologico di riferimento.', 'sd-logbook' );
 		}
 		if ( empty( $address_country ) ) {
 			$errors[] = __( 'Seleziona la nazione.', 'sd-logbook' );
@@ -239,14 +244,12 @@ class SD_Membership {
 		$blood_type         = '';
 		$allergies_json     = '';
 		$medications_json   = '';
-		$diabetology_center = '';
 
 		if ( $is_scuba ) {
 			$weight             = ! empty( $_POST['weight'] ) ? floatval( $_POST['weight'] ) : null;
 			$height             = ! empty( $_POST['height'] ) ? absint( $_POST['height'] ) : null;
 			$blood_type         = sanitize_text_field( wp_unslash( $_POST['blood_type'] ?? '' ) );
 			$is_diabetic        = in_array( $diabetes_type, array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' ), true ) ? 1 : 0;
-			$diabetology_center = sanitize_text_field( wp_unslash( $_POST['diabetology_center'] ?? '' ) );
 
 			// Allergie: array di stringhe
 			$allergies_raw = isset( $_POST['allergies'] ) ? wp_unslash( $_POST['allergies'] ) : array();

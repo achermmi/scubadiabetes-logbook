@@ -152,8 +152,10 @@
 			var isDiabetic = type !== 'non_diabetico' && type !== '';
 			if (isDiabetic) {
 				$('#sd-diabetology-section').slideDown(150);
+				$('#diabetology_center').prop('required', true);
 			} else {
 				$('#sd-diabetology-section').slideUp(150);
+				$('#diabetology_center').prop('required', false).val('');
 			}
 		});
 
@@ -371,6 +373,15 @@
 			if (!$.trim($('#diabetes_type').val())) {
 				showMessage('error', 'Seleziona il tipo di diabete.');
 				$('#diabetes_type')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+				return;
+			}
+
+			// Validazione centro diabetologico (obbligatorio se diabetico)
+			var diabetesType = $('#diabetes_type').val();
+			var isDiabetic = diabetesType !== 'non_diabetico' && diabetesType !== '';
+			if (isDiabetic && !$.trim($('#diabetology_center').val())) {
+				showMessage('error', 'Inserisci il centro diabetologico di riferimento.');
+				$('#diabetology_center')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 				return;
 			}
 

@@ -151,7 +151,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</select>
 				</div>
 				<div class="sd-field-group sd-field-half" id="sd-diabetology-section" style="display:none;">
-					<label for="diabetology_center" class="sd-label"><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
+					<label for="diabetology_center" class="sd-label sd-label-required"><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
 					<input type="text" id="diabetology_center" name="diabetology_center" class="sd-input" placeholder="<?php esc_attr_e( 'es. Ospedale Regionale Lugano', 'sd-logbook' ); ?>">
 				</div>
 			</div>
