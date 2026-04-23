@@ -121,7 +121,8 @@ class SD_Membership {
 		$tshirt_size   = sanitize_text_field( wp_unslash( $_POST['tshirt_size'] ?? '' ) );
 		$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
 		$diabetes_type_raw = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
-		$diabetes_type = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : '';		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
+		$diabetes_type = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : '';
+		$fee_amount    = intval( $_POST['fee_amount'] ?? 0 );
 		// Per fee=75, il tipo di socio è sempre "attivo_capo_famiglia" (server-side enforcement)
 		if ( $fee_amount >= 75 ) {
 			$member_type = 'attivo_capo_famiglia';
