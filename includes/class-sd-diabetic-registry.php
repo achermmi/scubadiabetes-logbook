@@ -152,7 +152,7 @@ class SD_Diabetic_Registry {
 			$diabetes_type_expr = "REPLACE(m.diabetes_type, 'tipo1', 'tipo_1') AS diabetes_type";
 		}
 
-		$sql = "SELECT
+		$sql = 'SELECT
 			m.id           AS member_id,
 			m.first_name,
 			m.last_name,
@@ -165,20 +165,20 @@ class SD_Diabetic_Registry {
 			m.membership_expiry,
 			m.is_scuba,
 			m.diabetology_center  AS member_center,
-			" . $diabetes_type_expr . ",
-			" . self::dp_col_select_expr( $dp_columns, 'diabetology_center', 'profile_center' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'therapy_type' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'therapy_detail' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'therapy_detail_other' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'hba1c_last' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'hba1c_unit' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'hba1c_date' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'uses_cgm' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'cgm_device' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'insulin_pump_model' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'insulin_pump_model_other' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'glycemia_unit' ) . ",
-			" . self::dp_col_select_expr( $dp_columns, 'notes' ) . "
+			' . $diabetes_type_expr . ',
+			' . self::dp_col_select_expr( $dp_columns, 'diabetology_center', 'profile_center' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'therapy_type' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'therapy_detail' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'therapy_detail_other' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'hba1c_last' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'hba1c_unit' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'hba1c_date' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'uses_cgm' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'cgm_device' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'insulin_pump_model' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'insulin_pump_model_other' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'glycemia_unit' ) . ',
+			' . self::dp_col_select_expr( $dp_columns, 'notes' ) . "
 		FROM {$db->table('members')} m
 		LEFT JOIN {$db->table('diver_profiles')} dp ON dp.user_id = m.wp_user_id
 		WHERE {$where_sql}
