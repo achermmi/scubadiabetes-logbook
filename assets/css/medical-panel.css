@@ -42,8 +42,49 @@
     box-shadow: var(--sd-shadow-md);
 }
 
+.sd-diver-card--diabetic {
+    border-left: 4px solid #D97706;
+    background: #FFFBEB;
+}
+
+.sd-diver-card--diabetic:hover {
+    border-color: #D97706;
+    border-left-color: #D97706;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+}
+
+/* Stat card cliccabile */
+.sd-stat-card--filter {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sd-stat-card--filter:hover {
+    border-color: var(--sd-blue);
+    box-shadow: var(--sd-shadow-md);
+    transform: translateY(-1px);
+}
+
+.sd-stat-card--active {
+    border-color: var(--sd-blue);
+    background: #EFF6FF;
+}
+
+.sd-stat-card--active .sd-stat-value {
+    color: var(--sd-blue);
+}
+
+.sd-stat-card--active .sd-stat-label {
+    color: var(--sd-blue);
+}
+
 .sd-diver-card.sd-hidden {
     display: none;
+}
+
+.sd-meta-no-diabetes {
+    background: #F0FDF4;
+    color: #16A34A;
 }
 
 .sd-diver-card-avatar {
@@ -191,6 +232,16 @@
     color: #D97706;
 }
 
+.sd-record-card.sd-record-clickable {
+    cursor: pointer;
+}
+
+.sd-panel-open-icon {
+    color: var(--sd-gray-400);
+    font-size: 14px;
+    font-weight: 700;
+}
+
 /* Glycemia table in panel */
 .sd-glic-table {
     width: 100%;
@@ -280,6 +331,62 @@
 .sd-note-status-sospesa { background: #FEF3C7; color: #D97706; }
 .sd-note-status-annullata { background: #FEE2E2; color: #DC2626; }
 .sd-note-status-in_revisione { background: var(--sd-gray-100); color: var(--sd-gray-500); }
+
+.sd-dive-note-status {
+    margin-right: 6px;
+    white-space: nowrap;
+}
+
+.sd-dive-card {
+    border-left-width: 4px;
+}
+
+.sd-dive-card.sd-dive-status-approvata {
+    border-left-color: #16A34A;
+}
+
+.sd-dive-card.sd-dive-status-sospesa {
+    border-left-color: #D97706;
+}
+
+.sd-dive-card.sd-dive-status-annullata {
+    border-left-color: #DC2626;
+}
+
+.sd-dive-card.sd-dive-status-in_revisione {
+    border-left-color: #6B7280;
+}
+
+.sd-dive-card.sd-dive-no-review {
+    background: #CCE5FF;
+}
+
+.sd-dive-status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 4px 0 10px;
+    font-size: 11px;
+    color: var(--sd-gray-600);
+}
+
+.sd-dive-status-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sd-dive-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.sd-dive-status-dot-approvata { background: #16A34A; }
+.sd-dive-status-dot-sospesa { background: #D97706; }
+.sd-dive-status-dot-annullata { background: #DC2626; }
+.sd-dive-status-dot-in_revisione { background: #6B7280; }
 
 /* Add note form in panel */
 .sd-add-note-form {

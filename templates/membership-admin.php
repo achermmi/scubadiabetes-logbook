@@ -90,7 +90,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<option value=""><?php esc_html_e( 'Tutti (diabete)', 'sd-logbook' ); ?></option>
 						<option value="tipo_1"><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
 						<option value="tipo_2"><?php esc_html_e( 'Tipo 2', 'sd-logbook' ); ?></option>
+						<option value="tipo_3c"><?php esc_html_e( 'Tipo 3c', 'sd-logbook' ); ?></option>
+						<option value="lada">LADA</option>
+						<option value="mody">MODY</option>
+						<option value="midd">MIDD</option>
 						<option value="non_diabetico"><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
+						<option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
 					</select>
 				</div>
 
@@ -157,6 +162,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<th><?php esc_html_e( 'Data Pag.', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Sub', 'sd-logbook' ); ?></th>
+					<th><?php esc_html_e( 'Diab.', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Taglia', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Ruolo WP', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
@@ -164,7 +170,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</thead>
 			<tbody id="sd-members-tbody">
 				<tr>
-					<td colspan="11" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
+					<td colspan="12" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
 				</tr>
 			</tbody>
 		</table>

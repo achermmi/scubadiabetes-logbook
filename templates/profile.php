@@ -553,6 +553,22 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <form id="sd-diabetes-form" class="sd-dive-form" novalidate>
             <input type="hidden" name="action" value="sd_save_diabetes_profile">
             <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('sd_profile_nonce'); ?>">
+            <?php
+            $selected_diabetes_type = $dp->diabetes_type ?? 'non_diabetico';
+            $selected_diabetes_type = in_array( $selected_diabetes_type, array( 'tipo1', 'tipo_1' ), true ) ? 'tipo_1' : $selected_diabetes_type;
+            $selected_diabetes_type = in_array( $selected_diabetes_type, array( 'tipo2', 'tipo_2' ), true ) ? 'tipo_2' : $selected_diabetes_type;
+            if ( in_array( $selected_diabetes_type, array( 'none', 'non_specificato' ), true ) ) {
+                $selected_diabetes_type = 'altro';
+            }
+
+            $selected_therapy_type = $dp->therapy_type ?? 'none';
+            if ( 'orale' === $selected_therapy_type ) {
+                $selected_therapy_type = 'ipoglicemizzante_orale';
+            }
+            if ( 'mista' === $selected_therapy_type ) {
+                $selected_therapy_type = 'iniettiva_non_insulinica';
+            }
+            ?>
 
             <div class="sd-field-row">
                 <div class="sd-field sd-field-half">
@@ -560,28 +576,44 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <select name="diabetes_type">
                         <?php foreach ( array(
                             'non_diabetico' => __( 'Non diabetico', 'sd-logbook' ),
-                            'none'          => __( 'Non specificato', 'sd-logbook' ),
-                            'tipo1'         => __( 'Tipo 1', 'sd-logbook' ),
-                            'tipo2'         => __( 'Tipo 2', 'sd-logbook' ),
+                            'tipo_1'        => __( 'Tipo 1', 'sd-logbook' ),
+                            'tipo_2'        => __( 'Tipo 2', 'sd-logbook' ),
+                            'tipo_3c'       => __( 'Tipo 3c (pancreasectomia, pancreatite)', 'sd-logbook' ),
+                            'lada'          => 'LADA',
+                            'mody'          => 'MODY',
+                            'midd'          => 'MIDD',
                             'altro'         => __( 'Altro', 'sd-logbook' ),
                         ) as $v => $l ) : ?>
-                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $dp->diabetes_type ?? 'none', $v ); ?>><?php echo esc_html( $l ); ?></option>
+                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $selected_diabetes_type, $v ); ?>><?php echo esc_html( $l ); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="sd-field sd-field-half">
                     <label><?php esc_html_e( 'Terapia', 'sd-logbook' ); ?></label>
-                    <select name="therapy_type">
+                    <select name="therapy_type" id="sd-therapy-type">
                         <?php foreach ( array(
                             'none'  => __( 'Non specificata', 'sd-logbook' ),
                             'mdi'   => __( 'MDI (multi-iniettiva)', 'sd-logbook' ),
-                            'csii'  => __( 'CSII (microinfusore)', 'sd-logbook' ),
-                            'orale' => __( 'Orale', 'sd-logbook' ),
-                            'mista' => __( 'Mista', 'sd-logbook' ),
+                            'csii'  => __( 'CSII (microinfusore open-loop)', 'sd-logbook' ),
+                            'ahcl'  => __( 'AHCL (microinfusore closed-loop)', 'sd-logbook' ),
+                            'ipoglicemizzante_orale' => __( 'Ipoglicemizzante orale', 'sd-logbook' ),
+                            'iniettiva_non_insulinica' => __( 'Iniettiva non insulinica', 'sd-logbook' ),
                         ) as $v => $l ) : ?>
-                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $dp->therapy_type ?? 'none', $v ); ?>><?php echo esc_html( $l ); ?></option>
+                        <option value="<?php echo esc_attr( $v ); ?>" <?php selected( $selected_therapy_type, $v ); ?>><?php echo esc_html( $l ); ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+            </div>
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label><?php esc_html_e( 'Dettaglio terapia', 'sd-logbook' ); ?></label>
+                    <select name="therapy_detail" id="sd-therapy-detail" data-current="<?php echo esc_attr( $dp->therapy_detail ?? '' ); ?>">
+                        <option value=""><?php esc_html_e( 'Seleziona terapia prima', 'sd-logbook' ); ?></option>
+                    </select>
+                </div>
+                <div class="sd-field sd-field-half" id="sd-therapy-detail-other-wrap" style="display:none;">
+                    <label><?php esc_html_e( 'Altro (specificare)', 'sd-logbook' ); ?></label>
+                    <input type="text" name="therapy_detail_other" id="sd-therapy-detail-other" value="<?php echo esc_attr( $dp->therapy_detail_other ?? '' ); ?>">
                 </div>
             </div>
             <div class="sd-field-row">
@@ -595,14 +627,21 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <input type="hidden" name="glycemia_unit" value="<?php echo esc_attr( $current_unit ); ?>">
                 </div>
                 <div class="sd-field sd-field-half">
-                    <label><?php esc_html_e( 'HbA1c (%)', 'sd-logbook' ); ?></label>
-                    <input type="number" name="hba1c_last" step="0.1" min="3" max="20" value="<?php echo esc_attr( $dp->hba1c_last ?? '' ); ?>">
+                    <label><?php esc_html_e( 'HbA1c', 'sd-logbook' ); ?></label>
+                    <input type="number" name="hba1c_last" step="0.1" min="3" max="130" value="<?php echo esc_attr( $dp->hba1c_last ?? '' ); ?>">
                 </div>
             </div>
             <div class="sd-field-row">
                 <div class="sd-field sd-field-half">
                     <label><?php esc_html_e( 'Data HbA1c', 'sd-logbook' ); ?></label>
                     <input type="date" name="hba1c_date" value="<?php echo esc_attr( $dp->hba1c_date ?? '' ); ?>">
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label><?php esc_html_e( 'Unità HbA1c', 'sd-logbook' ); ?></label>
+                    <select name="hba1c_unit">
+                        <option value="percent" <?php selected( $dp->hba1c_unit ?? 'percent', 'percent' ); ?>>%</option>
+                        <option value="mmol_mol" <?php selected( $dp->hba1c_unit ?? 'percent', 'mmol_mol' ); ?>>mmol/mol</option>
+                    </select>
                 </div>
             </div>
             <div class="sd-field">
@@ -613,13 +652,18 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <select name="cgm_device">
                     <option value=""><?php esc_html_e('Seleziona...','sd-logbook'); ?></option>
                     <?php foreach ( array(
-                        'FreeStyle Libre 2'  => 'FreeStyle Libre 2',
-                        'FreeStyle Libre 3'  => 'FreeStyle Libre 3',
+                        'Abbott FreeStyle Libre 2 / 2+'  => 'Abbott FreeStyle Libre 2 / 2+',
+                        'Abbott FreeStyle Libre 3 / 3+'  => 'Abbott FreeStyle Libre 3 / 3+',
                         'Dexcom G6'          => 'Dexcom G6',
                         'Dexcom G7'          => 'Dexcom G7',
                         'Dexcom ONE'         => 'Dexcom ONE',
+                        'Medtronic Guardian 3' => 'Medtronic Guardian 3',
                         'Medtronic Guardian 4' => 'Medtronic Guardian 4',
+                        'Medtronic Simplera' => 'Medtronic Simplera',
+                        'Accu-Chek SmartGuide' => 'Accu-Chek SmartGuide',
                         'Eversense E3'       => 'Eversense E3',
+                        'Eversense 365'      => 'Eversense 365',
+                        'Medtrum TouchCare Nano' => 'Medtrum TouchCare Nano',
                         'Altro'              => __( 'Altro', 'sd-logbook' ),
                     ) as $c_val => $c_lab ) : ?>
                     <option value="<?php echo esc_attr( $c_val ); ?>" <?php selected( $dp->cgm_device ?? '', $c_val ); ?>><?php echo esc_html( $c_lab ); ?></option>
@@ -627,8 +671,28 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 </select>
             </div>
             <div class="sd-field">
+                <label><?php esc_html_e( 'Centro diabetologico di riferimento', 'sd-logbook' ); ?></label>
+                <input type="text" name="diabetology_center" value="<?php echo esc_attr( $dp->diabetology_center ?? '' ); ?>" placeholder="<?php esc_attr_e( 'es: Ospedale Regionale Lugano', 'sd-logbook' ); ?>">
+            </div>
+            <div class="sd-field">
                 <label><?php esc_html_e( 'Microinfusore', 'sd-logbook' ); ?></label>
-                <input type="text" name="insulin_pump_model" value="<?php echo esc_attr( $dp->insulin_pump_model ?? '' ); ?>" placeholder="<?php esc_attr_e('es: Medtronic 780G','sd-logbook'); ?>">
+                <select name="insulin_pump_model" id="sd-insulin-pump-model" data-current="<?php echo esc_attr( $dp->insulin_pump_model ?? '' ); ?>">
+                    <option value=""><?php esc_html_e( 'Seleziona...', 'sd-logbook' ); ?></option>
+                    <?php foreach ( array(
+                        'Medtronic 780G' => 'Medtronic 780G',
+                        'Omnipod DASH' => 'Omnipod DASH',
+                        'Omnipod 5' => 'Omnipod 5',
+                        'Ypsopump CamAPS FX' => 'Ypsopump CamAPS FX',
+                        'Tandem Control IQ' => 'Tandem Control IQ',
+                        'Tandem Mobi' => 'Tandem Mobi',
+                        'Medtrum TouchCare Nano' => 'Medtrum TouchCare Nano',
+                        'Diabeloop DBLG1' => 'Diabeloop DBLG1',
+                        'Altro' => __( 'Altro', 'sd-logbook' ),
+                    ) as $p_val => $p_lab ) : ?>
+                    <option value="<?php echo esc_attr( $p_val ); ?>" <?php selected( $dp->insulin_pump_model ?? '', $p_val ); ?>><?php echo esc_html( $p_lab ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="text" name="insulin_pump_model_other" id="sd-insulin-pump-model-other" value="<?php echo esc_attr( $dp->insulin_pump_model_other ?? '' ); ?>" placeholder="<?php esc_attr_e('Altro microinfusore (specificare)','sd-logbook'); ?>" style="display:none;margin-top:8px;">
             </div>
             <div class="sd-field">
                 <label><?php esc_html_e( 'Note', 'sd-logbook' ); ?></label>

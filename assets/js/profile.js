@@ -155,6 +155,131 @@
     });
 
     // ============================================================
+    // DIABETES FORM: THERAPY DETAIL + PUMP "ALTRO"
+    // ============================================================
+    var therapyDetailMap = {
+        mdi: [
+            { value: 'mdi_basale_toujeo', label: 'MDI - Insulina basale: Toujeo' },
+            { value: 'mdi_basale_tresiba', label: 'MDI - Insulina basale: Tresiba' },
+            { value: 'mdi_basale_lantus', label: 'MDI - Insulina basale: Lantus' },
+            { value: 'mdi_basale_abasaglar', label: 'MDI - Insulina basale: Abasaglar' },
+            { value: 'mdi_basale_levemir', label: 'MDI - Insulina basale: Levemir' },
+            { value: 'mdi_basale_insulatard', label: 'MDI - Insulina basale: Insulatard' },
+            { value: 'mdi_basale_altro', label: 'MDI - Insulina basale: Altro (specificare)' },
+            { value: 'mdi_rapida_novorapid', label: 'MDI - Insulina rapida: Novorapid' },
+            { value: 'mdi_rapida_humalog', label: 'MDI - Insulina rapida: Humalog' },
+            { value: 'mdi_rapida_fiasp', label: 'MDI - Insulina rapida: FiAsp' },
+            { value: 'mdi_rapida_lyumjev', label: 'MDI - Insulina rapida: Lyumjev' },
+            { value: 'mdi_rapida_apidra', label: 'MDI - Insulina rapida: Apidra' }
+        ],
+        csii: [
+            { value: 'pump_novorapid', label: 'CSII/AHCL - Insulina: Novorapid' },
+            { value: 'pump_humalog', label: 'CSII/AHCL - Insulina: Humalog' },
+            { value: 'pump_fiasp', label: 'CSII/AHCL - Insulina: FiAsp' },
+            { value: 'pump_lyumjev', label: 'CSII/AHCL - Insulina: Lyumjev' },
+            { value: 'pump_apidra', label: 'CSII/AHCL - Insulina: Apidra' }
+        ],
+        ahcl: [
+            { value: 'pump_novorapid', label: 'CSII/AHCL - Insulina: Novorapid' },
+            { value: 'pump_humalog', label: 'CSII/AHCL - Insulina: Humalog' },
+            { value: 'pump_fiasp', label: 'CSII/AHCL - Insulina: FiAsp' },
+            { value: 'pump_lyumjev', label: 'CSII/AHCL - Insulina: Lyumjev' },
+            { value: 'pump_apidra', label: 'CSII/AHCL - Insulina: Apidra' }
+        ],
+        iniettiva_non_insulinica: [
+            { value: 'glp1ra_ozempic', label: 'GLP1ra: Ozempic' },
+            { value: 'glp1ra_trulicity', label: 'GLP1ra: Trulicity' },
+            { value: 'gip_glp1ra_mounjaro', label: 'GIP/GLP1ra: Mounjaro' }
+        ],
+        ipoglicemizzante_orale: [
+            { value: 'sglt2i_jardiance', label: 'SGLT2i: Jardiance' },
+            { value: 'sglt2i_forxiga', label: 'SGLT2i: Forxiga' },
+            { value: 'sglt2i_invokana', label: 'SGLT2i: Invokana' },
+            { value: 'sglt2i_altro', label: 'SGLT2i: Altro (specificare)' },
+            { value: 'dpp4i_januvia', label: 'DPP4i: Januvia' },
+            { value: 'dpp4i_trajenta', label: 'DPP4i: Trajenta' },
+            { value: 'dpp4i_altro', label: 'DPP4i: Altro (specificare)' },
+            { value: 'metformina', label: 'Metformina' },
+            { value: 'sulfanilurea_diamicron', label: 'Sulfanilurea/Repaglinide: Diamicron' },
+            { value: 'repaglinide_novonorm', label: 'Sulfanilurea/Repaglinide: NovoNorm' },
+            { value: 'sulfanilurea_altro', label: 'Sulfanilurea/Repaglinide: Altro (specificare)' },
+            { value: 'glitazone_actos', label: 'Glitazone: Actos' },
+            { value: 'glitazone_altro', label: 'Glitazone: Altro (specificare)' }
+        ],
+        orale: [
+            { value: 'metformina', label: 'Metformina' }
+        ]
+    };
+
+    function toggleTherapyDetailOther() {
+        var val = $('#sd-therapy-detail').val() || '';
+        var show = val.indexOf('altro') !== -1;
+        $('#sd-therapy-detail-other-wrap').toggle(show);
+        if (!show) {
+            $('#sd-therapy-detail-other').val('');
+        }
+    }
+
+    function togglePumpOther() {
+        var selected = $('#sd-insulin-pump-model').val();
+        $('#sd-insulin-pump-model-other').toggle(selected === 'Altro');
+        if (selected !== 'Altro') {
+            $('#sd-insulin-pump-model-other').val('');
+        }
+    }
+
+    function renderTherapyDetailOptions() {
+        var $therapyType = $('#sd-therapy-type');
+        var $detail = $('#sd-therapy-detail');
+        if (!$therapyType.length || !$detail.length) return;
+
+        var type = $therapyType.val() || 'none';
+        var options = therapyDetailMap[type] || [];
+        var current = $detail.data('current') || $detail.val() || '';
+        var html = '<option value="">Seleziona...</option>';
+
+        options.forEach(function(item) {
+            var sel = item.value === current ? ' selected' : '';
+            html += '<option value="' + item.value + '"' + sel + '>' + item.label + '</option>';
+        });
+
+        $detail.html(html);
+        if (!options.some(function(item) { return item.value === current; })) {
+            $detail.val('');
+        }
+        toggleTherapyDetailOther();
+    }
+
+    function initDiabetesFormUi() {
+        var $detail = $('#sd-therapy-detail');
+        var $pump = $('#sd-insulin-pump-model');
+
+        if ($detail.length) {
+            $('#sd-therapy-type').on('change', function() {
+                $detail.data('current', '');
+                renderTherapyDetailOptions();
+            });
+            $detail.on('change', toggleTherapyDetailOther);
+            renderTherapyDetailOptions();
+        }
+
+        if ($pump.length) {
+            var currentPump = ($pump.data('current') || '').trim();
+            var hasKnownPump = $pump.find('option').filter(function() {
+                return $(this).val() === currentPump;
+            }).length > 0;
+            if (currentPump && !hasKnownPump) {
+                $pump.val('Altro');
+                $('#sd-insulin-pump-model-other').val(currentPump);
+            }
+            $pump.on('change', togglePumpOther);
+            togglePumpOther();
+        }
+    }
+
+    initDiabetesFormUi();
+
+    // ============================================================
     // SHOW / HIDE INLINE FORMS & EDIT FUNCTIONALITY
     // ============================================================
     $(document).on('click', '.sd-btn-add-record', function() {

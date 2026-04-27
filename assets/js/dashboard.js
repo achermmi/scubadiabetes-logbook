@@ -12,7 +12,7 @@
     // UNIT HELPERS — valori dal DB sono sempre in mg/dL
     // ============================================================
     var isMmol = (typeof sdDashboard !== 'undefined' && sdDashboard.glycemiaUnit === 'mmol/l');
-    var FACTOR = 18.018;
+    var FACTOR = 18;
 
     function displayGlic(mgdlVal) {
         if (!mgdlVal) return '';

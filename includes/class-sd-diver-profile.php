@@ -77,6 +77,23 @@ class SD_Diver_Profile {
 			)
 		);
 
+		// Fallback: se il centro diabetologico e stato valorizzato in iscrizione (sd_members)
+		// ma non ancora in sd_diver_profiles, lo mostriamo comunque nel profilo subacqueo.
+		if ( ! $diabetes_profile || empty( $diabetes_profile->diabetology_center ) ) {
+			$member_diabetology_center = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT diabetology_center FROM {$db->table('members')} WHERE wp_user_id = %d ORDER BY id DESC LIMIT 1",
+					$user_id
+				)
+			);
+			if ( ! empty( $member_diabetology_center ) ) {
+				if ( ! $diabetes_profile ) {
+					$diabetes_profile = new stdClass();
+				}
+				$diabetes_profile->diabetology_center = $member_diabetology_center;
+			}
+		}
+
 		$current_user = wp_get_current_user();
 		$display_name = trim( $current_user->first_name . ' ' . $current_user->last_name );
 		if ( empty( $display_name ) ) {
@@ -302,18 +319,53 @@ class SD_Diver_Profile {
 			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
 
-		$diabetes_type = sanitize_text_field( $_POST['diabetes_type'] ?? 'non_diabetico' );
-		$is_diabetic   = in_array( $diabetes_type, array( 'non_diabetico', 'none' ), true ) ? 0 : 1;
+		$legacy_diabetes_map = array(
+			'tipo1' => 'tipo_1',
+			'tipo2' => 'tipo_2',
+			'none'  => 'non_diabetico',
+		);
+		$diabetes_type_raw   = sanitize_text_field( $_POST['diabetes_type'] ?? 'non_diabetico' );
+		$diabetes_type_raw   = $legacy_diabetes_map[ $diabetes_type_raw ] ?? $diabetes_type_raw;
+		$allowed_diabetes    = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' );
+		$diabetes_type       = in_array( $diabetes_type_raw, $allowed_diabetes, true ) ? $diabetes_type_raw : 'non_diabetico';
+
+		$legacy_therapy_map = array(
+			'orale' => 'ipoglicemizzante_orale',
+			'mista' => 'iniettiva_non_insulinica',
+		);
+		$therapy_type_raw  = sanitize_text_field( $_POST['therapy_type'] ?? 'none' );
+		$therapy_type_raw  = $legacy_therapy_map[ $therapy_type_raw ] ?? $therapy_type_raw;
+		$allowed_therapy   = array( 'none', 'mdi', 'csii', 'ahcl', 'ipoglicemizzante_orale', 'iniettiva_non_insulinica' );
+		$therapy_type      = in_array( $therapy_type_raw, $allowed_therapy, true ) ? $therapy_type_raw : 'none';
+
+		$therapy_detail       = sanitize_text_field( $_POST['therapy_detail'] ?? '' );
+		$therapy_detail_other = sanitize_text_field( $_POST['therapy_detail_other'] ?? '' );
+
+		$hba1c_unit_raw = sanitize_text_field( $_POST['hba1c_unit'] ?? 'percent' );
+		$hba1c_unit     = in_array( $hba1c_unit_raw, array( 'percent', 'mmol_mol' ), true ) ? $hba1c_unit_raw : 'percent';
+
+		$pump_raw   = sanitize_text_field( $_POST['insulin_pump_model'] ?? '' );
+		$pump_other = sanitize_text_field( $_POST['insulin_pump_model_other'] ?? '' );
+		if ( 'Altro' === $pump_raw && ! empty( $pump_other ) ) {
+			$pump_raw = $pump_other;
+		}
+
+		$is_diabetic = 'non_diabetico' === $diabetes_type ? 0 : 1;
 
 		$data = array(
 			'is_diabetic'        => $is_diabetic,
 			'diabetes_type'      => $diabetes_type,
-			'therapy_type'       => sanitize_text_field( $_POST['therapy_type'] ?? 'none' ),
+			'diabetology_center' => sanitize_text_field( $_POST['diabetology_center'] ?? '' ) ?: null,
+			'therapy_type'       => $therapy_type,
+			'therapy_detail'     => $therapy_detail ?: null,
+			'therapy_detail_other' => $therapy_detail_other ?: null,
 			'hba1c_last'         => ! empty( $_POST['hba1c_last'] ) ? floatval( $_POST['hba1c_last'] ) : null,
+			'hba1c_unit'         => $hba1c_unit,
 			'hba1c_date'         => sanitize_text_field( $_POST['hba1c_date'] ?? '' ) ?: null,
 			'uses_cgm'           => ! empty( $_POST['uses_cgm'] ) ? 1 : 0,
 			'cgm_device'         => sanitize_text_field( $_POST['cgm_device'] ?? '' ) ?: null,
-			'insulin_pump_model' => sanitize_text_field( $_POST['insulin_pump_model'] ?? '' ) ?: null,
+			'insulin_pump_model' => $pump_raw ?: null,
+			'insulin_pump_model_other' => $pump_other ?: null,
 			'glycemia_unit'      => in_array( $_POST['glycemia_unit'] ?? '', array( 'mg/dl', 'mmol/l' ), true ) ? $_POST['glycemia_unit'] : 'mg/dl',
 			'notes'              => sanitize_textarea_field( $_POST['diabetes_notes'] ?? '' ) ?: null,
 		);
@@ -338,6 +390,8 @@ class SD_Diver_Profile {
 			$wp_user->remove_role( 'sd_diver_diabetic' );
 			$wp_user->add_role( 'sd_diver' );
 		}
+
+		SD_Membership_Helper::sync_diabetes_consistency_for_user( $user_id, $diabetes_type );
 
 		$this->update_research_id( $user_id );
 		wp_send_json_success( array( 'message' => __( 'Dati diabete aggiornati.', 'sd-logbook' ) ) );

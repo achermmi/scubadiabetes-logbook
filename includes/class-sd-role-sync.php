@@ -9,7 +9,7 @@
  * e sd_diver_profiles.
  *
  * Regola diabetes_type per sd_diver_diabetic:
- *   - Nuovo record o valore attuale NULL → 'non_specificato'
+ *   - Nuovo record o valore attuale NULL → 'altro'
  *   - Valore già presente nel DB         → invariato
  *
  * @package SD_Logbook
@@ -58,6 +58,7 @@ class SD_Role_Sync {
 		$processing[ $user_id ] = true;
 
 		$this->maybe_create_member( $user_id, $role );
+		SD_Membership_Helper::sync_diabetes_consistency_for_user( $user_id );
 
 		unset( $processing[ $user_id ] );
 	}
@@ -93,10 +94,10 @@ class SD_Role_Sync {
 					'is_scuba'    => $attrs['is_scuba'],
 					'member_type' => $attrs['member_type'],
 				);
-				// Per sd_diver_diabetic: aggiorna diabetes_type solo se attualmente NULL/vuoto
+				// Per sd_diver_diabetic: correggi anche il caso legacy non_diabetico.
 				if ( 'sd_diver_diabetic' === $role ) {
-					if ( empty( $existing->diabetes_type ) ) {
-						$update['diabetes_type'] = 'non_specificato';
+					if ( empty( $existing->diabetes_type ) || 'non_diabetico' === $existing->diabetes_type ) {
+						$update['diabetes_type'] = 'altro';
 					}
 					// altrimenti mantieni il valore presente
 				} else {
@@ -132,8 +133,8 @@ class SD_Role_Sync {
 				$update['is_scuba']   = $attrs['is_scuba'];
 				$update['member_type'] = $attrs['member_type'];
 				if ( 'sd_diver_diabetic' === $role ) {
-					if ( empty( $by_email->diabetes_type ) ) {
-						$update['diabetes_type'] = 'non_specificato';
+					if ( empty( $by_email->diabetes_type ) || 'non_diabetico' === $by_email->diabetes_type ) {
+						$update['diabetes_type'] = 'altro';
 					}
 				} else {
 					$update['diabetes_type'] = $attrs['diabetes_type'];
@@ -196,7 +197,7 @@ class SD_Role_Sync {
 
 		$attrs = $this->role_to_attrs( $role );
 
-		// diabetes_type per sd_diver_diabetic: 'non_specificato' come default
+		// diabetes_type per sd_diver_diabetic: 'altro' come default
 		// (il profilo non sovrascrive: l'operatore deve impostarlo esplicitamente)
 		$diabetes_type = $attrs['diabetes_type'];
 
@@ -250,7 +251,8 @@ class SD_Role_Sync {
 
 	/**
 	 * Crea o aggiorna wp_sd_diver_profiles con i dati anagrafici da wp_sd_members.
-	 * Aggiorna solo i campi vuoti nel profilo per non sovrascrivere dati già inseriti dall'utente.
+	 * I campi anagrafici vengono compilati solo se vuoti; diabetology_center viene invece
+	 * mantenuto sincronizzato con sd_members (sorgente di verita lato iscrizione/admin).
 	 *
 	 * @param int         $user_id ID utente WordPress
 	 * @param SD_Database $db      Istanza database
@@ -294,6 +296,13 @@ class SD_Role_Sync {
 					$update[ $profile_field ] = $member_value;
 				}
 			}
+			if ( isset( $member->diabetology_center ) ) {
+				$member_center  = sanitize_text_field( (string) $member->diabetology_center );
+				$profile_center = isset( $profile->diabetology_center ) ? (string) $profile->diabetology_center : '';
+				if ( $member_center !== $profile_center ) {
+					$update['diabetology_center'] = '' !== $member_center ? $member_center : null;
+				}
+			}
 			if ( ! empty( $update ) ) {
 				$wpdb->update( $db->table( 'diver_profiles' ), $update, array( 'user_id' => $user_id ) );
 			}
@@ -304,6 +313,9 @@ class SD_Role_Sync {
 				if ( ! empty( $member_value ) ) {
 					$insert[ $profile_field ] = $member_value;
 				}
+			}
+			if ( ! empty( $member->diabetology_center ) ) {
+				$insert['diabetology_center'] = sanitize_text_field( (string) $member->diabetology_center );
 			}
 			$wpdb->insert( $db->table( 'diver_profiles' ), $insert );
 		}
@@ -322,7 +334,7 @@ class SD_Role_Sync {
 				return array(
 					'member_type'   => 'attivo',
 					'is_scuba'      => 1,
-					'diabetes_type' => 'non_specificato',
+					'diabetes_type' => 'altro',
 				);
 
 			case 'sd_diver':

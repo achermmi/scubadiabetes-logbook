@@ -14,7 +14,7 @@
         // ============================================================
         // UNIT STATE
         // ============================================================
-        var FACTOR = 18.018;
+        var FACTOR = 18;
         var currentUnit = $('#sd-glycemia-input-unit').val() || 'mg/dl';
 
         function isMmol() { return currentUnit === 'mmol/l'; }

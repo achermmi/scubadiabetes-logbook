@@ -418,8 +418,12 @@ function sd_val( $obj, $key, $default = '' ) {
 							<option value="non_diabetico" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_diabetico' ); ?>><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
 							<option value="tipo_1" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_1' ); ?>><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
 							<option value="tipo_2" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_2' ); ?>><?php esc_html_e( 'Tipo 2', 'sd-logbook' ); ?></option>
-							<option value="non_specificato" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_specificato' ); ?>><?php esc_html_e( 'Non specificato', 'sd-logbook' ); ?></option>
+							<option value="tipo_3c" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_3c' ); ?>><?php esc_html_e( 'Tipo 3c (pancreasectomia, pancreatite)', 'sd-logbook' ); ?></option>
+							<option value="lada" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'lada' ); ?>>LADA</option>
+							<option value="mody" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'mody' ); ?>>MODY</option>
+							<option value="midd" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'midd' ); ?>>MIDD</option>
 							<option value="altro" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'altro' ); ?>><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+							<option value="non_specificato" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_specificato' ); ?>><?php esc_html_e( 'Non specificato (legacy)', 'sd-logbook' ); ?></option>
 						</select>
 					</div>
 				</div>

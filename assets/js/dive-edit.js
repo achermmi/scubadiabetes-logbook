@@ -7,7 +7,7 @@
 
     var currentDiveId    = null;
     var _formSnapshot    = null; // serializzazione form al momento del caricamento
-    var FACTOR = 18.018;
+    var FACTOR = 18;
     var isMmol = (typeof sdDiveEdit !== 'undefined' && sdDiveEdit.glycemiaUnit === 'mmol/l');
 
     function displayGlic(mgdlVal) {

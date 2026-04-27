@@ -271,7 +271,8 @@ class SD_Membership_Admin {
 			$params  = array_merge( $params, array( $like, $like, $like ) );
 		}
 		if ( null !== $pagato ) {
-			$where[]  = 'm.has_paid_fee = %d';
+			// Per attivo_famigliare il pagamento è ereditato dal capo famiglia (parent)
+			$where[]  = "(CASE WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d";
 			$params[] = $pagato;
 		}
 		if ( null !== $is_scuba ) {
@@ -293,8 +294,11 @@ class SD_Membership_Admin {
 
 		$where_sql = 'WHERE ' . implode( ' AND ', $where );
 
+		// Il JOIN con pm (parent) serve anche nel count quando si filtra per pagato (CASE famigliare)
+		$pm_join = "LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'";
+
 		// Count totale
-		$count_sql  = "SELECT COUNT(*) FROM {$db->table('members')} m {$where_sql}";
+		$count_sql  = "SELECT COUNT(*) FROM {$db->table('members')} m {$pm_join} {$where_sql}";
 		$total      = $wpdb->get_var( ! empty( $params ) ? $wpdb->prepare( $count_sql, $params ) : $count_sql ); // phpcs:ignore
 
 		// Query principale
@@ -312,8 +316,7 @@ class SD_Membership_Admin {
 		              FROM {$db->table('members')} m
 		              LEFT JOIN {$db->table('payments')} p
 		                ON p.member_id = m.id AND p.payment_year = %d
-		              LEFT JOIN {$db->table('members')} pm
-		                ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
+		              {$pm_join}
 		              {$where_sql}
 		              ORDER BY m.last_name ASC, m.first_name ASC
 		              LIMIT %d OFFSET %d";
@@ -478,6 +481,11 @@ class SD_Membership_Admin {
 		if ( isset( $_POST['fee_amount'] ) ) {
 			$update_data['fee_amount'] = floatval( $_POST['fee_amount'] );
 		}
+		if ( isset( $_POST['diabetes_type'] ) ) {
+			$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' );
+			$diabetes_type_raw      = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ) );
+			$update_data['diabetes_type'] = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : 'non_diabetico';
+		}
 		if ( null !== $has_paid_fee ) {
 			$update_data['has_paid_fee'] = $has_paid_fee;
 		}
@@ -588,6 +596,12 @@ class SD_Membership_Admin {
 				fn( $r ) => in_array( $r, $allowed_wp, true )
 			);
 
+			// Se il ruolo include Subacqueo o Subacqueo Diabetico, forza is_scuba = 1
+			$diver_roles = array( 'sd_diver', 'sd_diver_diabetic' );
+			if ( ! empty( array_intersect( array_values( $new_roles ), $diver_roles ) ) ) {
+				$update_data['is_scuba'] = 1;
+			}
+
 			$wp_user = new WP_User( $old_data->wp_user_id );
 
 			// Rimuovi tutti i ruoli SD precedenti (mai il ruolo administrator)
@@ -619,6 +633,14 @@ class SD_Membership_Admin {
 			if ( isset( $_POST['blood_type'] ) ) {
 				$dp_fields['blood_type'] = sanitize_text_field( wp_unslash( $_POST['blood_type'] ) );
 			}
+			if ( isset( $_POST['diabetology_center'] ) ) {
+				$dp_fields['diabetology_center'] = sanitize_text_field( wp_unslash( $_POST['diabetology_center'] ) ) ?: null;
+			}
+			if ( isset( $_POST['diabetes_type'] ) ) {
+				$diabetes_type_for_dp = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ) );
+				$dp_fields['is_diabetic']   = SD_Membership_Helper::is_diabetic_type( $diabetes_type_for_dp ) ? 1 : 0;
+				$dp_fields['diabetes_type'] = SD_Membership_Helper::is_diabetic_type( $diabetes_type_for_dp ) ? $diabetes_type_for_dp : 'non_diabetico';
+			}
 
 			if ( ! empty( $dp_fields ) ) {
 				$existing_dp = $wpdb->get_var(
@@ -629,8 +651,21 @@ class SD_Membership_Admin {
 				);
 				if ( $existing_dp ) {
 					$wpdb->update( $db->table( 'diver_profiles' ), $dp_fields, array( 'user_id' => $old_data->wp_user_id ) );
+				} else {
+					$wpdb->insert(
+						$db->table( 'diver_profiles' ),
+						array_merge(
+							array( 'user_id' => $old_data->wp_user_id ),
+							$dp_fields
+						)
+					);
 				}
 			}
+		}
+
+		if ( $old_data->wp_user_id ) {
+			$preferred_type = isset( $update_data['diabetes_type'] ) ? $update_data['diabetes_type'] : null;
+			SD_Membership_Helper::sync_diabetes_consistency_for_user( (int) $old_data->wp_user_id, $preferred_type );
 		}
 
 		// Audit log
@@ -666,7 +701,11 @@ class SD_Membership_Admin {
 				        m.member_type, m.membership_type,
 				        m.taglia_maglietta,
 				        m.is_scuba, m.diabetes_type, m.diabetology_center,
-				        m.fee_amount, m.has_paid_fee,
+		        m.fee_amount,
+		        CASE WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+		             THEN COALESCE(pm_exp.has_paid_fee, 0)
+		             ELSE m.has_paid_fee
+		        END AS has_paid_fee,
 				        m.member_since, m.membership_expiry,
 				        m.medical_cert_expiry,
 				        m.privacy_consent, m.consent_date,
@@ -684,6 +723,8 @@ class SD_Membership_Admin {
 				 LEFT JOIN {$db->table('payments')} p
 				   ON p.member_id = m.id AND p.payment_year = %d
 				 LEFT JOIN {$wpdb->users} u ON u.ID = m.wp_user_id
+				 LEFT JOIN {$db->table('members')} pm_exp
+				   ON pm_exp.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
 				 WHERE m.is_active = 1
 				 ORDER BY m.last_name, m.first_name",
 				$year

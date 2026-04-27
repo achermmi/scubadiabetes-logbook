@@ -21,11 +21,11 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
 
     <!-- Stats -->
     <div class="sd-stats-grid">
-        <div class="sd-stat-card">
+        <div class="sd-stat-card sd-stat-card--filter sd-stat-card--active" data-filter="all" title="<?php esc_attr_e( 'Mostra tutti i subacquei', 'sd-logbook' ); ?>">
             <div class="sd-stat-value"><?php echo $total_divers; ?></div>
             <div class="sd-stat-label"><?php esc_html_e( 'Subacquei', 'sd-logbook' ); ?></div>
         </div>
-        <div class="sd-stat-card">
+        <div class="sd-stat-card sd-stat-card--filter" data-filter="diabetic" title="<?php esc_attr_e( 'Mostra solo i diabetici', 'sd-logbook' ); ?>">
             <div class="sd-stat-value"><?php echo $diabetic_count; ?></div>
             <div class="sd-stat-label"><?php esc_html_e( 'Diabetici', 'sd-logbook' ); ?></div>
         </div>
@@ -58,7 +58,7 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
     <div class="sd-diver-list" id="sd-diver-list">
         <?php foreach ( $divers as $diver ) : ?>
         <?php if ( $diver->dive_count < 1 ) continue; ?>
-        <div class="sd-diver-card" data-diver-id="<?php echo esc_attr( $diver->ID ); ?>" data-diabetic="<?php echo $diver->is_diabetic ? '1' : '0'; ?>">
+        <div class="sd-diver-card<?php echo $diver->is_diabetic ? ' sd-diver-card--diabetic' : ''; ?>" data-diver-id="<?php echo esc_attr( $diver->ID ); ?>" data-diabetic="<?php echo $diver->is_diabetic ? '1' : '0'; ?>">
             <div class="sd-diver-card-avatar">
                 <?php echo get_avatar( $diver->ID, 36, '', $diver->full_name, array('class'=>'sd-avatar-img') ); ?>
             </div>
@@ -68,7 +68,11 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
                     <?php if ( $diver->is_diabetic ) : ?>
                         <span class="sd-meta-badge sd-meta-diabetes">
                             <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor"><path d="M8 1C8 1 3 6 3 9a5 5 0 0 0 10 0c0-3-5-8-5-8z"/></svg>
-                            DM
+                            <?php esc_html_e( 'Diabetico', 'sd-logbook' ); ?>
+                        </span>
+                    <?php else : ?>
+                        <span class="sd-meta-badge sd-meta-no-diabetes">
+                            <?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?>
                         </span>
                     <?php endif; ?>
                 </div>

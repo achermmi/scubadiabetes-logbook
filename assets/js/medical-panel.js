@@ -6,18 +6,30 @@
 
     var currentDiverId = null;
     var currentDiverData = {};
+    var selectedNoteDiveId = 0;
+    var currentModalDiveId = 0;
 
     // ============================================================
     // FILTER DIVERS
     // ============================================================
-    $('#sd-filter-role').on('change', function() {
-        var filter = $(this).val();
+    function applyDiverFilter(filter) {
         $('.sd-diver-card').each(function() {
             var isDiabetic = $(this).data('diabetic') == 1;
             if (filter === 'all') $(this).removeClass('sd-hidden');
             else if (filter === 'diabetic') $(this).toggleClass('sd-hidden', !isDiabetic);
             else $(this).toggleClass('sd-hidden', isDiabetic);
         });
+        $('#sd-filter-role').val(filter);
+        $('.sd-stat-card--filter').removeClass('sd-stat-card--active');
+        $('.sd-stat-card--filter[data-filter="' + filter + '"]').addClass('sd-stat-card--active');
+    }
+
+    $('#sd-filter-role').on('change', function() {
+        applyDiverFilter($(this).val());
+    });
+
+    $(document).on('click', '.sd-stat-card--filter', function() {
+        applyDiverFilter($(this).data('filter'));
     });
 
     // ============================================================
@@ -50,8 +62,111 @@
         });
     }
 
+    function diabetesLabel(value) {
+        var map = {
+            tipo_1: 'Tipo 1',
+            tipo_2: 'Tipo 2',
+            tipo_3c: 'Tipo 3c (pancreasectomia, pancreatite)',
+            lada: 'LADA',
+            mody: 'MODY',
+            midd: 'MIDD',
+            altro: 'Altro',
+            non_specificato: 'Non specificato'
+        };
+        return map[value] || value;
+    }
+
+    function therapyLabel(value) {
+        var map = {
+            mdi: 'MDI',
+            csii: 'CSII',
+            ahcl: 'AHCL',
+            ipoglicemizzante_orale: 'Ipoglicemizzante orale',
+            iniettiva_non_insulinica: 'Iniettiva non insulinica',
+            orale: 'Ipoglicemizzante orale',
+            mista: 'Iniettiva non insulinica'
+        };
+        return map[value] || value;
+    }
+
+    function therapyDetailLabel(value) {
+        var map = {
+            mdi_basale_toujeo: 'MDI - Basale: Toujeo',
+            mdi_basale_tresiba: 'MDI - Basale: Tresiba',
+            mdi_basale_lantus: 'MDI - Basale: Lantus',
+            mdi_basale_abasaglar: 'MDI - Basale: Abasaglar',
+            mdi_basale_levemir: 'MDI - Basale: Levemir',
+            mdi_basale_insulatard: 'MDI - Basale: Insulatard',
+            mdi_basale_altro: 'MDI - Basale: Altro',
+            mdi_rapida_novorapid: 'MDI - Rapida: Novorapid',
+            mdi_rapida_humalog: 'MDI - Rapida: Humalog',
+            mdi_rapida_fiasp: 'MDI - Rapida: FiAsp',
+            mdi_rapida_lyumjev: 'MDI - Rapida: Lyumjev',
+            mdi_rapida_apidra: 'MDI - Rapida: Apidra',
+            pump_novorapid: 'CSII/AHCL - Novorapid',
+            pump_humalog: 'CSII/AHCL - Humalog',
+            pump_fiasp: 'CSII/AHCL - FiAsp',
+            pump_lyumjev: 'CSII/AHCL - Lyumjev',
+            pump_apidra: 'CSII/AHCL - Apidra',
+            glp1ra_ozempic: 'GLP1ra: Ozempic',
+            glp1ra_trulicity: 'GLP1ra: Trulicity',
+            gip_glp1ra_mounjaro: 'GIP/GLP1ra: Mounjaro',
+            sglt2i_jardiance: 'SGLT2i: Jardiance',
+            sglt2i_forxiga: 'SGLT2i: Forxiga',
+            sglt2i_invokana: 'SGLT2i: Invokana',
+            sglt2i_altro: 'SGLT2i: Altro',
+            dpp4i_januvia: 'DPP4i: Januvia',
+            dpp4i_trajenta: 'DPP4i: Trajenta',
+            dpp4i_altro: 'DPP4i: Altro',
+            metformina: 'Metformina',
+            sulfanilurea_diamicron: 'Sulfanilurea/Repaglinide: Diamicron',
+            repaglinide_novonorm: 'Sulfanilurea/Repaglinide: NovoNorm',
+            sulfanilurea_altro: 'Sulfanilurea/Repaglinide: Altro',
+            glitazone_actos: 'Glitazone: Actos',
+            glitazone_altro: 'Glitazone: Altro'
+        };
+        return map[value] || value;
+    }
+
+    function supervisionStatusLabel(value) {
+        var map = {
+            in_revisione: 'In revisione',
+            approvata: 'Approvata',
+            sospesa: 'Sospesa',
+            annullata: 'Annullata'
+        };
+        return map[value] || value;
+    }
+
+    function getDiveId(dive) {
+        if (!dive) return 0;
+        return parseInt(dive.dive_id || dive.id || dive.dive_base_id || dive.dd_dive_id, 10) || 0;
+    }
+
+    function hba1cUnitLabel(value) {
+        return value === 'mmol_mol' ? 'mmol/mol' : '%';
+    }
+
+    function formatHumanDate(dateStr) {
+        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr || '';
+        return formatDate(dateStr);
+    }
+
+    function isFilled(value) {
+        return value !== null && value !== undefined && String(value).trim() !== '';
+    }
+
+    function displayValue(value, formatter, emptyLabel) {
+        if (!isFilled(value)) return emptyLabel || 'Non compilato';
+        return formatter ? formatter(value) : String(value);
+    }
+
     function renderPanel(data) {
         currentDiverData = data; // Store diver data for use in modals
+        if (!currentDiverId && data && data.diver_id) {
+            currentDiverId = parseInt(data.diver_id, 10) || null;
+        }
+        selectedNoteDiveId = (data.dives && data.dives.length > 0) ? getDiveId(data.dives[0]) : 0;
         $('#sd-panel-title').text(data.name);
         var html = '';
 
@@ -60,13 +175,23 @@
             var p = data.profile;
             html += '<div class="sd-panel-section">';
             html += '<div class="sd-panel-section-title">Profilo diabete</div>';
-            html += '<div class="sd-panel-profile-row">';
-            if (data.role_label) html += tag(data.role_label, 'diabetes');
-            if (p.diabetes_type && p.diabetes_type !== 'none' && p.diabetes_type !== 'non_diabetico') html += tag(p.diabetes_type.replace('tipo','Tipo '), 'diabetes');
-            if (p.therapy_type && p.therapy_type !== 'none') html += tag(p.therapy_type.toUpperCase());
-            if (p.hba1c_last) html += tag('HbA1c: ' + p.hba1c_last + '%');
-            if (p.uses_cgm == 1) html += tag('CGM: ' + (p.cgm_device || 'Sì'));
-            if (p.insulin_pump_model) html += tag('Pump: ' + p.insulin_pump_model);
+            html += '<div class="sd-record-list" id="sd-diabetes-profile-list">';
+            html += '<div class="sd-record-card sd-record-clickable" data-index="0">';
+            html += '<div class="sd-record-main">';
+            html += '<div class="sd-record-title">Profilo diabetologico completo</div>';
+            html += '<div class="sd-record-sub">';
+            var profileMeta = [];
+            if (data.role_label) profileMeta.push(esc(data.role_label));
+            if (p.diabetes_type && p.diabetes_type !== 'none' && p.diabetes_type !== 'non_diabetico') profileMeta.push(esc(diabetesLabel(p.diabetes_type)));
+            if (p.therapy_type && p.therapy_type !== 'none') profileMeta.push('Terapia: ' + esc(therapyLabel(p.therapy_type)));
+            if (p.hba1c_last) profileMeta.push('HbA1c: ' + esc(p.hba1c_last + ' ' + hba1cUnitLabel(p.hba1c_unit)));
+            html += profileMeta.join(' · ') || 'Apri per visualizzare tutti i dettagli diabetologici';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="sd-record-actions">';
+            html += '<span class="sd-panel-open-icon" aria-hidden="true">→</span>';
+            html += '</div>';
+            html += '</div>';
             html += '</div>';
             html += '</div>';
         }
@@ -130,6 +255,29 @@
         // === IMMERSIONI ===
         html += '<div class="sd-panel-section">';
         html += '<div class="sd-panel-section-title">Immersioni (' + data.dives.length + ')</div>';
+        if (data.can_access_supervision) {
+            html += '<div class="sd-dive-status-legend">';
+            html += '<span class="sd-dive-status-legend-item"><span class="sd-dive-status-dot sd-dive-status-dot-approvata"></span>Approvata</span>';
+            html += '<span class="sd-dive-status-legend-item"><span class="sd-dive-status-dot sd-dive-status-dot-sospesa"></span>Sospesa</span>';
+            html += '<span class="sd-dive-status-legend-item"><span class="sd-dive-status-dot sd-dive-status-dot-annullata"></span>Annullata</span>';
+            html += '<span class="sd-dive-status-legend-item"><span class="sd-dive-status-dot sd-dive-status-dot-in_revisione"></span>In revisione</span>';
+            html += '</div>';
+        }
+
+        // Stato supervisione piu recente per immersione.
+        var latestSupervisionByDive = {};
+        if (data.can_access_supervision && data.notes && data.notes.length > 0) {
+            data.notes.forEach(function(note) {
+                var diveId = parseInt(note.dive_id, 10) || 0;
+                if (!diveId) return;
+
+                var key = String(diveId);
+                var existing = latestSupervisionByDive[key];
+                if (!existing || String(note.created_at || '') > String(existing.created_at || '')) {
+                    latestSupervisionByDive[key] = note;
+                }
+            });
+        }
 
         if (data.dives.length === 0) {
             html += '<p style="color:#94A3B8;font-size:13px;">Nessuna immersione registrata.</p>';
@@ -141,14 +289,27 @@
                 if (dive.dive_time) meta.push(dive.dive_time + "'");
                 if (dive.temp_water) meta.push(dive.temp_water + '°C');
 
-                html += '<div class="sd-record-card" data-index="' + idx + '">';
+                var diveId = getDiveId(dive);
+                var supervisionNote = latestSupervisionByDive[String(diveId)] || null;
+                var diveStatusClass = '';
+                var noReviewClass = '';
+                if (supervisionNote && supervisionNote.status) {
+                    diveStatusClass = ' sd-dive-status-' + supervisionNote.status;
+                } else {
+                    noReviewClass = ' sd-dive-no-review';
+                }
+
+                html += '<div class="sd-record-card sd-dive-card' + diveStatusClass + noReviewClass + '" data-index="' + idx + '">';
                 html += '<div class="sd-record-main">';
-                html += '<div class="sd-record-title">#' + (dive.dive_number || dive.id) + ' ' + esc(dive.site_name) + '</div>';
+                html += '<div class="sd-record-title">#' + (dive.dive_number || diveId) + ' ' + esc(dive.site_name) + '</div>';
                 html += '<div class="sd-record-sub">' + formatDate(dive.dive_date);
                 if (meta.length) html += ' · ' + meta.join(' · ');
                 html += '</div>';
                 html += '</div>';
                 html += '<div class="sd-record-actions">';
+                if (supervisionNote && supervisionNote.status) {
+                    html += '<span class="sd-note-status sd-note-status-' + supervisionNote.status + ' sd-dive-note-status">' + esc(supervisionStatusLabel(supervisionNote.status)) + '</span>';
+                }
                 if (dive.site_latitude && dive.site_longitude) {
                     html += '<button type="button" class="sd-btn-map-card" data-lat="' + parseFloat(dive.site_latitude) + '" data-lng="' + parseFloat(dive.site_longitude) + '" data-title="' + esc(dive.site_name) + '" title="Vedi mappa"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></button>';
                 }
@@ -157,35 +318,6 @@
             });
             html += '</div>';
         }
-        html += '</div>';
-
-        // === NOTE SUPERVISIONE ===
-        html += '<div class="sd-panel-section">';
-        html += '<div class="sd-panel-section-title">Note di supervisione</div>';
-
-        if (data.notes && data.notes.length > 0) {
-            data.notes.forEach(function(note) {
-                html += '<div class="sd-note-item">';
-                html += '<div class="sd-note-header">';
-                html += '<span>' + esc(note.supervisor) + '</span>';
-                html += '<span>' + esc(note.created_at) + ' <span class="sd-note-status sd-note-status-' + note.status + '">' + note.status + '</span></span>';
-                html += '</div>';
-                html += '<div class="sd-note-text">' + esc(note.notes) + '</div>';
-                html += '</div>';
-            });
-        } else {
-            html += '<p style="color:#94A3B8;font-size:12px;">Nessuna nota.</p>';
-        }
-
-        // Form per aggiungere nota
-        html += '<div class="sd-add-note-form">';
-        html += '<textarea id="sd-note-text" placeholder="Aggiungi nota di supervisione..."></textarea>';
-        html += '<div class="sd-add-note-row">';
-        html += '<select id="sd-note-type"><option value="note">Nota</option><option value="pre_dive">Pre-immersione</option><option value="post_dive">Post-immersione</option><option value="review">Revisione</option></select>';
-        html += '<select id="sd-note-status"><option value="in_revisione">In revisione</option><option value="approvata">Approvata</option><option value="sospesa">Sospesa</option><option value="annullata">Annullata</option></select>';
-        html += '<button type="button" class="sd-btn-add-note" id="sd-btn-add-note">Salva nota</button>';
-        html += '</div></div>';
-
         html += '</div>';
 
         $('#sd-panel-body').html(html);
@@ -209,11 +341,49 @@
     });
 
     // ============================================================
-    // ADD SUPERVISION NOTE
+    // SAVE SUPERVISION (PER DIVE FROM MODAL)
     // ============================================================
-    $(document).on('click', '#sd-btn-add-note', function() {
-        var text = $('#sd-note-text').val().trim();
-        if (!text || !currentDiverId) return;
+    $(document).on('click', '#sd-btn-save-dive-review', function() {
+        var modalDiveId = parseInt($('#sd-dive-review-dive-id').val(), 10) || 0;
+        var attrDiveId = parseInt($(this).attr('data-dive-id'), 10) || 0;
+        var stateDiveId = parseInt(currentModalDiveId, 10) || 0;
+        var recordDiveId = parseInt(currentRecordData && currentRecordData.diveId, 10) || 0;
+        var indexDiveId = 0;
+        if (!modalDiveId && !attrDiveId && !stateDiveId && !recordDiveId && currentRecordData && typeof currentRecordData.index !== 'undefined') {
+            var idx = parseInt(currentRecordData.index, 10);
+            if (!isNaN(idx) && currentDiverData.dives && currentDiverData.dives[idx]) {
+                indexDiveId = getDiveId(currentDiverData.dives[idx]);
+            }
+        }
+        var diveId = modalDiveId || attrDiveId || stateDiveId || recordDiveId || indexDiveId || 0;
+
+        var diverId = parseInt(currentDiverId, 10) || parseInt(currentDiverData.diver_id, 10) || 0;
+        if (!diverId && currentDiverData.dives && currentDiverData.dives.length > 0) {
+            diverId = parseInt(currentDiverData.dives[0].dive_user_id || currentDiverData.dives[0].user_id, 10) || 0;
+        }
+        if (!diverId || !diveId) {
+            alert('Impossibile identificare immersione o subacqueo. Ricarica la pagina e riprova.');
+            return;
+        }
+
+        var text = $('#sd-dive-review-note').val().trim();
+        var noteType = $('#sd-dive-review-type').val() || 'review';
+        var noteStatus = $('#sd-dive-review-status').val() || 'in_revisione';
+        var reviewId = parseInt($('#sd-dive-review-id').val(), 10) || 0;
+
+        // Prevent accidental duplicate insert when no effective change is made.
+        if (!reviewId) {
+            var latestReview = getLatestReviewForDive(diveId);
+            if (latestReview) {
+                var latestText = String(latestReview.notes || '').trim();
+                var latestType = String(latestReview.supervision_type || 'review');
+                var latestStatus = String(latestReview.status || 'in_revisione');
+                if (latestText === text && latestType === noteType && latestStatus === noteStatus) {
+                    alert('Revisione identica all\'ultima gia salvata: nessun duplicato creato.');
+                    return;
+                }
+            }
+        }
 
         var $btn = $(this);
         $btn.prop('disabled', true).text('Salvataggio...');
@@ -221,20 +391,133 @@
         $.post(sdMedical.ajaxUrl, {
             action: 'sd_medical_save_note',
             nonce: sdMedical.nonce,
-            diver_id: currentDiverId,
-            dive_id: 0,
-            note_type: $('#sd-note-type').val(),
-            note_status: $('#sd-note-status').val(),
+            diver_id: diverId,
+            dive_id: diveId,
+            review_id: reviewId,
+            note_type: noteType,
+            note_status: noteStatus,
             note_text: text
         }, function(resp) {
             if (resp.success) {
-                // Ricarica pannello
-                openPanel(currentDiverId);
+                if (!currentDiverData.notes) currentDiverData.notes = [];
+
+                var savedReview = resp.data && resp.data.review ? resp.data.review : null;
+                if (savedReview) {
+                    var savedId = parseInt(savedReview.id, 10) || reviewId || 0;
+                    var replaced = false;
+                    if (savedId) {
+                        currentDiverData.notes = currentDiverData.notes.map(function(note) {
+                            if ((parseInt(note.id, 10) || 0) === savedId) {
+                                replaced = true;
+                                return savedReview;
+                            }
+                            return note;
+                        });
+                    }
+                    if (!replaced) {
+                        currentDiverData.notes.unshift(savedReview);
+                    }
+                } else {
+                    currentDiverData.notes.unshift({
+                        id: reviewId || Date.now(),
+                        dive_id: diveId,
+                        supervision_type: noteType,
+                        status: noteStatus,
+                        notes: text,
+                        created_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                        supervisor: ''
+                    });
+                }
+
+                $('#sd-dive-review-id').val('');
+                $('#sd-dive-review-note').val('');
+                $('#sd-btn-save-dive-review').text('Salva revisione');
+                $('#sd-btn-cancel-edit-review').hide();
+
+                var saveModalIndex = (currentRecordData && typeof currentRecordData.index !== 'undefined') ? parseInt(currentRecordData.index, 10) : NaN;
+                applyDiveCardStatusLive(diveId, saveModalIndex);
+                rerenderCurrentDiveModal();
             } else {
                 alert(resp.data.message || 'Errore');
-                $btn.prop('disabled', false).text('Salva nota');
+                $btn.prop('disabled', false).text('Salva revisione');
             }
         });
+    });
+
+    $(document).on('click', '.sd-btn-edit-review', function(e) {
+        e.preventDefault();
+        var reviewId = parseInt($(this).attr('data-review-id'), 10) || 0;
+        if (!reviewId || !currentRecordData || !currentRecordData.reviewsById || !currentRecordData.reviewsById[reviewId]) {
+            return;
+        }
+
+        var review = currentRecordData.reviewsById[reviewId];
+        $('#sd-dive-review-id').val(reviewId);
+        $('#sd-dive-review-note').val(review.notes || '');
+        $('#sd-dive-review-type').val(review.supervision_type || 'review');
+        $('#sd-dive-review-status').val(review.status || 'in_revisione');
+        $('#sd-btn-save-dive-review').text('Aggiorna revisione');
+        $('#sd-btn-cancel-edit-review').show();
+    });
+
+    $(document).on('click', '.sd-btn-delete-review', function(e) {
+        e.preventDefault();
+
+        var reviewId = parseInt($(this).attr('data-review-id'), 10) || 0;
+        if (!reviewId) return;
+
+        var diveId = parseInt($('#sd-dive-review-dive-id').val(), 10) || parseInt(currentModalDiveId, 10) || 0;
+        var diverId = parseInt(currentDiverId, 10) || parseInt(currentDiverData.diver_id, 10) || 0;
+        if (!diverId && currentDiverData.dives && currentDiverData.dives.length > 0) {
+            diverId = parseInt(currentDiverData.dives[0].dive_user_id || currentDiverData.dives[0].user_id, 10) || 0;
+        }
+        if (!diverId || !diveId) {
+            alert('Impossibile eliminare: dati immersione non validi.');
+            return;
+        }
+
+        if (!window.confirm('Confermi eliminazione della revisione selezionata?')) {
+            return;
+        }
+
+        $.post(sdMedical.ajaxUrl, {
+            action: 'sd_medical_delete_note',
+            nonce: sdMedical.nonce,
+            review_id: reviewId,
+            diver_id: diverId,
+            dive_id: diveId
+        }, function(resp) {
+            if (resp.success) {
+                // Aggiorna solo stato locale e modal senza chiudere/riaprire il pannello.
+                if (currentDiverData.notes && currentDiverData.notes.length > 0) {
+                    currentDiverData.notes = currentDiverData.notes.filter(function(note) {
+                        return parseInt(note.id, 10) !== reviewId;
+                    });
+                }
+
+                if (currentRecordData && currentRecordData.reviewsById) {
+                    delete currentRecordData.reviewsById[reviewId];
+                }
+
+                var deleteModalIndex = (currentRecordData && typeof currentRecordData.index !== 'undefined') ? parseInt(currentRecordData.index, 10) : NaN;
+                applyDiveCardStatusLive(diveId, deleteModalIndex);
+                rerenderCurrentDiveModal();
+            } else {
+                alert((resp.data && resp.data.message) ? resp.data.message : 'Errore durante eliminazione');
+            }
+        });
+    });
+
+    $(document).on('click', '#sd-btn-cancel-edit-review', function(e) {
+        e.preventDefault();
+        $('#sd-dive-review-id').val('');
+        $('#sd-dive-review-note').val('');
+        var defaultType = $('#sd-dive-review-type').attr('data-default') || 'review';
+        var defaultStatus = $('#sd-dive-review-status').attr('data-default') || 'in_revisione';
+        $('#sd-dive-review-type').val(defaultType);
+        $('#sd-dive-review-status').val(defaultStatus);
+        $('#sd-btn-save-dive-review').text('Salva revisione');
+        $(this).hide();
     });
 
     // ============================================================
@@ -339,6 +622,7 @@
     function closeRecordModal() {
         $modalOverlay.fadeOut(200);
         currentRecordData = {};
+        currentModalDiveId = 0;
     }
 
     // ============================================================
@@ -380,13 +664,78 @@
     });
 
     // ============================================================
+    // DIABETES PROFILE MODAL
+    // ============================================================
+    function openDiabetesProfileModal() {
+        if (!currentDiverData.profile) return;
+
+        var p = currentDiverData.profile;
+        var html = '<div class="sd-record-detail-grid">';
+
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Ruolo</span><span class="sd-record-detail-value">' + esc(displayValue(currentDiverData.role_label)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Stato diabetico</span><span class="sd-record-detail-value">' + (parseInt(p.is_diabetic, 10) === 1 ? 'Diabetico' : 'Non diabetico') + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Tipo diabete</span><span class="sd-record-detail-value">' + esc(displayValue(p.diabetes_type, diabetesLabel, 'Non specificato')) + '</span></div>';
+        html += '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Centro diabetologico</span><span class="sd-record-detail-value">' + esc(displayValue(p.diabetology_center)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Terapia</span><span class="sd-record-detail-value">' + esc(displayValue(p.therapy_type, function(v){ return v === 'none' ? 'Non specificata' : therapyLabel(v); }, 'Non specificata')) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Dettaglio terapia</span><span class="sd-record-detail-value">' + esc(displayValue(p.therapy_detail, therapyDetailLabel)) + '</span></div>';
+        html += '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Specifica dettaglio terapia</span><span class="sd-record-detail-value">' + esc(displayValue(p.therapy_detail_other)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">HbA1c ultimo valore</span><span class="sd-record-detail-value">' + esc(displayValue(p.hba1c_last, function(v){ return v + ' ' + hba1cUnitLabel(p.hba1c_unit); })) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Data HbA1c</span><span class="sd-record-detail-value">' + esc(displayValue(p.hba1c_date, formatHumanDate)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Unità HbA1c</span><span class="sd-record-detail-value">' + esc(displayValue(p.hba1c_unit, hba1cUnitLabel, '%')) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">CGM</span><span class="sd-record-detail-value">' + (parseInt(p.uses_cgm, 10) === 1 ? 'Sì' : 'No') + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Dispositivo CGM</span><span class="sd-record-detail-value">' + esc(displayValue(p.cgm_device)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Microinfusore</span><span class="sd-record-detail-value">' + esc(displayValue(p.insulin_pump_model)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Altro microinfusore</span><span class="sd-record-detail-value">' + esc(displayValue(p.insulin_pump_model_other)) + '</span></div>';
+        html += '<div class="sd-record-detail-item"><span class="sd-record-detail-label">Unità glicemia</span><span class="sd-record-detail-value">' + esc(displayValue(p.glycemia_unit, null, 'mg/dl')) + '</span></div>';
+        html += '<div class="sd-record-detail-item sd-record-detail-full"><span class="sd-record-detail-label">Note diabetologiche</span><span class="sd-record-detail-value">' + esc(displayValue(p.notes)) + '</span></div>';
+
+        html += '</div>';
+
+        $modalTitle.text('Profilo diabetologico');
+        $modalBody.html(html);
+        $modalOverlay.fadeIn(200);
+    }
+
+    $(document).on('click', '#sd-diabetes-profile-list .sd-record-card', function() {
+        openDiabetesProfileModal();
+    });
+
+    // ============================================================
     // DIVES MODAL
     // ============================================================
     function openDiveModal(index, $card) {
         if (!currentDiverData.dives || !currentDiverData.dives[index]) return;
 
         var dive = currentDiverData.dives[index];
-        var title = $card.find('.sd-record-title').text();
+        var diveId = getDiveId(dive);
+        currentModalDiveId = diveId;
+        currentRecordData = {
+            type: 'dive_panel',
+            index: index,
+            diveId: diveId
+        };
+        var diveReviews = [];
+        if (currentDiverData.notes && currentDiverData.notes.length > 0) {
+            diveReviews = currentDiverData.notes.filter(function(note) {
+                return parseInt(note.dive_id, 10) === diveId;
+            });
+            diveReviews.sort(function(a, b) {
+                return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+            });
+        }
+        currentRecordData.reviewsById = {};
+        diveReviews.forEach(function(note) {
+            var reviewId = parseInt(note.id, 10) || 0;
+            if (reviewId) currentRecordData.reviewsById[reviewId] = note;
+        });
+        var diveReview = diveReviews.length ? diveReviews[0] : null;
+        var title = '';
+        if ($card && $card.length) {
+            title = $card.find('.sd-record-title').text();
+        }
+        if (!title) {
+            title = '#' + (dive.dive_number || diveId) + ' ' + (dive.site_name || 'Immersione');
+        }
 
         var html = '';
 
@@ -583,9 +932,115 @@
             }
         }
 
+        if (currentDiverData.can_access_supervision) {
+            var selectedType = diveReview && diveReview.supervision_type ? diveReview.supervision_type : 'review';
+            var selectedStatus = diveReview && diveReview.status ? diveReview.status : 'in_revisione';
+            var reviewNote = '';
+
+            html += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #E2E8F0;">';
+            html += '<div class="sd-detail-section-title" style="margin-top:0;">Revisione medica immersione</div>';
+            html += '<input type="hidden" id="sd-dive-review-dive-id" value="' + diveId + '">';
+            html += '<input type="hidden" id="sd-dive-review-id" value="">';
+            html += '<textarea id="sd-dive-review-note" placeholder="Aggiungi nota di revisione (opzionale)..." style="width:100%;border:1px solid #CBD5E1;border-radius:8px;padding:10px;font-size:13px;min-height:72px;resize:vertical;">' + esc(reviewNote) + '</textarea>';
+            html += '<div class="sd-add-note-row" style="margin-top:10px;">';
+            html += '<select id="sd-dive-review-type" data-default="' + esc(selectedType) + '">';
+            html += '<option value="note"' + (selectedType === 'note' ? ' selected' : '') + '>Nota</option>';
+            html += '<option value="pre_dive"' + (selectedType === 'pre_dive' ? ' selected' : '') + '>Pre-immersione</option>';
+            html += '<option value="post_dive"' + (selectedType === 'post_dive' ? ' selected' : '') + '>Post-immersione</option>';
+            html += '<option value="review"' + (selectedType === 'review' ? ' selected' : '') + '>Revisione</option>';
+            html += '</select>';
+            html += '<select id="sd-dive-review-status" data-default="' + esc(selectedStatus) + '">';
+            html += '<option value="in_revisione"' + (selectedStatus === 'in_revisione' ? ' selected' : '') + '>In revisione</option>';
+            html += '<option value="approvata"' + (selectedStatus === 'approvata' ? ' selected' : '') + '>Approvata</option>';
+            html += '<option value="sospesa"' + (selectedStatus === 'sospesa' ? ' selected' : '') + '>Sospesa</option>';
+            html += '<option value="annullata"' + (selectedStatus === 'annullata' ? ' selected' : '') + '>Annullata</option>';
+            html += '</select>';
+            html += '<button type="button" class="sd-btn-add-note" id="sd-btn-save-dive-review" data-dive-id="' + diveId + '">Salva revisione</button>';
+            html += '<button type="button" class="sd-btn-add-note" id="sd-btn-cancel-edit-review" style="display:none;background:#64748B;">Annulla modifica</button>';
+            html += '</div>';
+            if (diveReview && diveReview.created_at) {
+                html += '<div style="margin-top:8px;font-size:11px;color:#64748B;">Ultimo aggiornamento: ' + esc(diveReview.created_at) + '</div>';
+            }
+            html += '<div style="margin-top:14px;">';
+            html += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;color:#475569;">Storico revisioni immersione</div>';
+            if (diveReviews.length > 0) {
+                diveReviews.forEach(function(note) {
+                    var reviewId = parseInt(note.id, 10) || 0;
+                    html += '<div class="sd-note-item" style="margin-bottom:8px;">';
+                    html += '<div class="sd-note-header">';
+                    html += '<span>' + esc(note.supervisor || 'Medico') + '</span>';
+                    html += '<span>' + esc(note.created_at || '') + ' <span class="sd-note-status sd-note-status-' + (note.status || 'in_revisione') + '">' + esc(supervisionStatusLabel(note.status || 'in_revisione')) + '</span></span>';
+                    html += '</div>';
+                    html += '<div style="font-size:11px;color:#64748B;margin-bottom:4px;">Tipo: ' + esc(note.supervision_type || 'review') + '</div>';
+                    if (note.notes && String(note.notes).trim() !== '') {
+                        html += '<div class="sd-note-text">' + esc(note.notes) + '</div>';
+                    } else {
+                        html += '<div class="sd-note-text" style="color:#94A3B8;">Nessuna nota testuale</div>';
+                    }
+                    if (reviewId) {
+                        html += '<div style="margin-top:6px;display:flex;gap:12px;align-items:center;">';
+                        html += '<button type="button" class="sd-btn-edit-review" data-review-id="' + reviewId + '" style="border:none;background:transparent;color:#0F766E;font-size:12px;cursor:pointer;padding:0;">Modifica revisione</button>';
+                        html += '<button type="button" class="sd-btn-delete-review" data-review-id="' + reviewId + '" style="border:none;background:transparent;color:#DC2626;font-size:12px;cursor:pointer;padding:0;">Elimina</button>';
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                });
+            } else {
+                html += '<div style="font-size:12px;color:#94A3B8;">Nessuna revisione registrata per questa immersione.</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
+
         $modalTitle.text(title);
         $modalBody.html(html);
         $modalOverlay.fadeIn(200);
+    }
+
+    function rerenderCurrentDiveModal() {
+        var modalIndex = (currentRecordData && typeof currentRecordData.index !== 'undefined') ? parseInt(currentRecordData.index, 10) : NaN;
+        if (isNaN(modalIndex) || !currentDiverData.dives || !currentDiverData.dives[modalIndex]) {
+            return;
+        }
+        var $card = $('#sd-dive-list .sd-record-card[data-index="' + modalIndex + '"]');
+        openDiveModal(modalIndex, $card);
+    }
+
+    function getLatestReviewForDive(diveId) {
+        if (!currentDiverData.notes || !currentDiverData.notes.length) return null;
+        var reviews = currentDiverData.notes.filter(function(note) {
+            return parseInt(note.dive_id, 10) === parseInt(diveId, 10);
+        });
+        if (!reviews.length) return null;
+        reviews.sort(function(a, b) {
+            return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+        });
+        return reviews[0];
+    }
+
+    function applyDiveCardStatusLive(diveId, modalIndex) {
+        var idx = parseInt(modalIndex, 10);
+        if (isNaN(idx) && currentDiverData.dives && currentDiverData.dives.length) {
+            idx = currentDiverData.dives.findIndex(function(dive) {
+                return parseInt(getDiveId(dive), 10) === parseInt(diveId, 10);
+            });
+        }
+        if (isNaN(idx) || idx < 0) return;
+
+        var $card = $('#sd-dive-list .sd-record-card[data-index="' + idx + '"]');
+        if (!$card.length) return;
+
+        $card.removeClass('sd-dive-status-approvata sd-dive-status-sospesa sd-dive-status-annullata sd-dive-status-in_revisione sd-dive-no-review');
+        $card.find('.sd-dive-note-status').remove();
+
+        var latest = getLatestReviewForDive(diveId);
+        if (latest && latest.status) {
+            $card.addClass('sd-dive-status-' + latest.status);
+            var badge = '<span class="sd-note-status sd-note-status-' + latest.status + ' sd-dive-note-status">' + esc(supervisionStatusLabel(latest.status)) + '</span>';
+            $card.find('.sd-record-actions').prepend(badge);
+        } else {
+            $card.addClass('sd-dive-no-review');
+        }
     }
 
     function getTrendIcon(trend) {

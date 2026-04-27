@@ -119,7 +119,7 @@ class SD_Membership {
 		// Campi iscrizione
 		$is_scuba      = ! empty( $_POST['is_scuba'] ) ? 1 : 0;
 		$tshirt_size   = sanitize_text_field( wp_unslash( $_POST['tshirt_size'] ?? '' ) );
-		$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
+		$allowed_diabetes_types = array( 'non_diabetico', 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' );
 		$diabetes_type_raw = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
 		$diabetes_type = in_array( $diabetes_type_raw, $allowed_diabetes_types, true ) ? $diabetes_type_raw : '';
 		$diabetology_center = sanitize_text_field( wp_unslash( $_POST['diabetology_center'] ?? '' ) );
@@ -169,7 +169,7 @@ class SD_Membership {
 		if ( empty( $diabetes_type ) ) {
 			$errors[] = __( 'Seleziona il tipo di diabete.', 'sd-logbook' );
 		}
-		$diabetic_types = array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' );
+		$diabetic_types = array( 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' );
 		if ( in_array( $diabetes_type, $diabetic_types, true ) && empty( $diabetology_center ) ) {
 			$errors[] = __( 'Inserisci il centro diabetologico di riferimento.', 'sd-logbook' );
 		}
@@ -249,7 +249,7 @@ class SD_Membership {
 			$weight             = ! empty( $_POST['weight'] ) ? floatval( $_POST['weight'] ) : null;
 			$height             = ! empty( $_POST['height'] ) ? absint( $_POST['height'] ) : null;
 			$blood_type         = sanitize_text_field( wp_unslash( $_POST['blood_type'] ?? '' ) );
-			$is_diabetic        = in_array( $diabetes_type, array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' ), true ) ? 1 : 0;
+			$is_diabetic        = in_array( $diabetes_type, $diabetic_types, true ) ? 1 : 0;
 
 			// Allergie: array di stringhe
 			$allergies_raw = isset( $_POST['allergies'] ) ? wp_unslash( $_POST['allergies'] ) : array();
@@ -323,7 +323,7 @@ class SD_Membership {
 			'address_country'     => $address_country,
 			'address_canton'      => $address_canton,
 			'membership_type'     => $fee_amount >= 75 ? 'famiglia' : ( $fee_amount <= 30 ? 'individuale' : 'individuale' ),
-			'diabetes_type'       => $is_diabetic ? ( 'tipo_1' === $diabetes_type || 'tipo_2' === $diabetes_type ? $diabetes_type : 'tipo_1' ) : 'non_diabetico',
+			'diabetes_type'       => $is_diabetic ? ( in_array( $diabetes_type, $diabetic_types, true ) ? $diabetes_type : 'altro' ) : 'non_diabetico',
 			'member_since'        => gmdate( 'Y-m-d' ),
 			'membership_expiry'   => gmdate( 'Y-12-31' ),
 			'is_active'           => 1,
@@ -443,9 +443,9 @@ class SD_Membership {
 
 				$fm_dob_val     = ! empty( $fm_dob ) && strtotime( $fm_dob ) ? $fm_dob : null;
 				$fm_diab_type   = sanitize_text_field( $fm['diabetes_type'] ?? 'non_diabetico' );
-				$allowed_diab   = array( 'tipo_1', 'tipo_2', 'non_diabetico', 'non_specificato', 'altro' );
+				$allowed_diab   = array( 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'non_diabetico', 'altro', 'non_specificato' );
 				$fm_diab_type   = in_array( $fm_diab_type, $allowed_diab, true ) ? $fm_diab_type : 'non_diabetico';
-				$fm_is_diabetic = in_array( $fm_diab_type, array( 'tipo_1', 'tipo_2', 'non_specificato', 'altro' ), true ) ? 1 : 0;
+				$fm_is_diabetic = in_array( $fm_diab_type, array( 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' ), true ) ? 1 : 0;
 				$fm_diab_center = sanitize_text_field( $fm['diabetology_center'] ?? '' );
 
 				// Controlla duplicati email (WP + soci)

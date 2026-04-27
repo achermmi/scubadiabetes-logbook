@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.0.0';
+	const DB_VERSION = '3.1.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -69,6 +69,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-diver-profile.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-medical-panel.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-research-dashboard.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-diabetic-registry.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-edit.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-helper.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership.php';
@@ -159,6 +160,12 @@ final class SD_Logbook {
 			$db = new SD_Database();
 			$db->create_tables();
 			$db->create_membership_tables();
+
+			// v3.1.0: corregge valori non validi in member_type
+			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
+				$db->fix_invalid_member_types();
+			}
+
 			update_option( 'sd_logbook_db_version', self::DB_VERSION );
 		}
 	}
@@ -193,6 +200,7 @@ final class SD_Logbook {
 		new SD_Diver_Profile();
 		new SD_Medical_Panel();
 		new SD_Research_Dashboard();
+		new SD_Diabetic_Registry();
 		new SD_Dive_Edit();
 		new SD_Membership();
 		new SD_Membership_Admin();
@@ -235,7 +243,7 @@ final class SD_Logbook {
 		if ( ! is_a( $post, 'WP_Post' ) ) {
 			return false;
 		}
-		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_dive_edit', 'sd_iscrizione', 'sd_gestione_soci', 'sd_iscrizione_edit' );
+		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_diabetic_registry', 'sd_dive_edit', 'sd_iscrizione', 'sd_gestione_soci', 'sd_iscrizione_edit' );
 		foreach ( $shortcodes as $sc ) {
 			if ( has_shortcode( $post->post_content, $sc ) ) {
 				return true;

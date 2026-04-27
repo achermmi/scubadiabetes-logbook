@@ -284,14 +284,14 @@ class SD_Dive_Form {
 			// Capillare
 			$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
 			if ( null !== $raw_cap && $is_mmol ) {
-				$raw_cap = round( $raw_cap * 18.018 );
+				$raw_cap = round( $raw_cap * 18 );
 			} elseif ( null !== $raw_cap ) {
 				$raw_cap = absint( $raw_cap );
 			}
 			// Sensore
 			$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
 			if ( null !== $raw_sens && $is_mmol ) {
-				$raw_sens = round( $raw_sens * 18.018 );
+				$raw_sens = round( $raw_sens * 18 );
 			} elseif ( null !== $raw_sens ) {
 				$raw_sens = absint( $raw_sens );
 			}
@@ -315,11 +315,11 @@ class SD_Dive_Form {
 
 			$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
 			if ( null !== $raw_cap ) {
-				$raw_cap = $is_mmol ? round( $raw_cap * 18.018 ) : absint( $raw_cap );
+				$raw_cap = $is_mmol ? round( $raw_cap * 18 ) : absint( $raw_cap );
 			}
 			$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
 			if ( null !== $raw_sens ) {
-				$raw_sens = $is_mmol ? round( $raw_sens * 18.018 ) : absint( $raw_sens );
+				$raw_sens = $is_mmol ? round( $raw_sens * 18 ) : absint( $raw_sens );
 			}
 
 			$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;

@@ -304,11 +304,11 @@ class SD_Dive_Edit {
 
 				$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
 				if ( null !== $raw_cap ) {
-					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18.018 ) : absint( $raw_cap );
+					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18 ) : absint( $raw_cap );
 				}
 				$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
 				if ( null !== $raw_sens ) {
-					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18.018 ) : absint( $raw_sens );
+					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18 ) : absint( $raw_sens );
 				}
 
 				$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
@@ -330,11 +330,11 @@ class SD_Dive_Edit {
 
 				$raw_cap = ! empty( $_POST[ $prefix . 'cap' ] ) ? floatval( $_POST[ $prefix . 'cap' ] ) : null;
 				if ( null !== $raw_cap ) {
-					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18.018 ) : absint( $raw_cap );
+					$raw_cap = $is_mmol ? (int) round( $raw_cap * 18 ) : absint( $raw_cap );
 				}
 				$raw_sens = ! empty( $_POST[ $prefix . 'sens' ] ) ? floatval( $_POST[ $prefix . 'sens' ] ) : null;
 				if ( null !== $raw_sens ) {
-					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18.018 ) : absint( $raw_sens );
+					$raw_sens = $is_mmol ? (int) round( $raw_sens * 18 ) : absint( $raw_sens );
 				}
 
 				$diabetes_data[ $prefix . 'cap' ]        = $raw_cap;
@@ -371,8 +371,8 @@ class SD_Dive_Edit {
 					$old_mgdl = $old_diabetes[ $fld ] ?? null;
 					$new_mgdl = $diabetes_data[ $fld ] ?? null;
 					if ( null !== $old_mgdl && null !== $new_mgdl ) {
-						$old_display = round( floatval( $old_mgdl ) / 18.018, 1 );
-						$new_display = round( floatval( $new_mgdl ) / 18.018, 1 );
+						$old_display = round( floatval( $old_mgdl ) / 18, 1 );
+						$new_display = round( floatval( $new_mgdl ) / 18, 1 );
 						if ( abs( $old_display - $new_display ) < 0.01 ) {
 							$diabetes_data[ $fld ] = (int) $old_mgdl;
 						}

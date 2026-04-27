@@ -1,0 +1,326 @@
+/* =============================================================
+   Registro Soci Diabetici — sd-diabetic-registry.css
+   ============================================================= */
+
+/* ---- Wrapper principale ------------------------------------ */
+.sd-dreg-wrap {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    font-family: inherit;
+}
+
+/* ---- Titolo pagina ----------------------------------------- */
+.sd-dreg-page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 20px;
+}
+.sd-dreg-page-title svg {
+    color: #e04040;
+    flex-shrink: 0;
+}
+
+/* ---- Blocco filtri ----------------------------------------- */
+.sd-dreg-filters {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.sd-dreg-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px 18px;
+    align-items: end;
+}
+
+.sd-dreg-filter-wide {
+    grid-column: span 2;
+}
+
+@media (max-width: 700px) {
+    .sd-dreg-filter-wide { grid-column: span 1; }
+    .sd-dreg-filter-grid { grid-template-columns: 1fr; }
+}
+
+.sd-dreg-filter-item label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.sd-dreg-input,
+.sd-dreg-select {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    font-size: .9rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fafafa;
+    color: #222;
+    box-sizing: border-box;
+    transition: border-color .18s;
+}
+.sd-dreg-input:focus,
+.sd-dreg-select:focus {
+    outline: none;
+    border-color: #0073aa;
+    background: #fff;
+}
+
+/* ricerca con icona */
+.sd-dreg-search-wrap {
+    position: relative;
+}
+.sd-dreg-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    pointer-events: none;
+}
+.sd-dreg-search-wrap .sd-dreg-input {
+    padding-left: 34px;
+}
+
+/* ---- Pulsanti azione --------------------------------------- */
+.sd-dreg-filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sd-dreg-btn-primary,
+.sd-dreg-btn-secondary,
+.sd-dreg-btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    font-size: .88rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background .18s, opacity .18s;
+}
+.sd-dreg-btn-primary {
+    background: #0073aa;
+    color: #fff;
+}
+.sd-dreg-btn-primary:hover { background: #005d8c; }
+
+.sd-dreg-btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+.sd-dreg-btn-secondary:hover { background: #e2e2e2; }
+
+.sd-dreg-btn-export {
+    background: #1b7e3d;
+    color: #fff;
+}
+.sd-dreg-btn-export:hover { background: #145f2e; }
+
+/* ---- Stats strip ------------------------------------------ */
+.sd-dreg-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #e8f4fd;
+    border-left: 4px solid #0073aa;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 16px;
+    font-size: .88rem;
+    color: #005d8c;
+    font-weight: 600;
+}
+
+/* ---- Loading / Empty -------------------------------------- */
+.sd-dreg-loading,
+.sd-dreg-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: #888;
+    font-size: .95rem;
+}
+.sd-dreg-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sd-dreg-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #ddd;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: sd-dreg-spin .7s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes sd-dreg-spin { to { transform: rotate(360deg); } }
+
+/* ---- Tabella --------------------------------------------- */
+.sd-dreg-table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    background: #fff;
+}
+
+.sd-dreg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+}
+
+.sd-dreg-table thead tr {
+    background: #f5f7fa;
+    border-bottom: 2px solid #dee2e8;
+}
+
+.sd-dreg-table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: .76rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.sd-dreg-col-expand { width: 36px; }
+.sd-dreg-col-name   { min-width: 160px; }
+.sd-dreg-col-center { min-width: 160px; }
+
+/* ---- Righe ------------------------------------------------ */
+.sd-dreg-table tbody tr.sd-dreg-row {
+    border-bottom: 1px solid #eeeff2;
+    cursor: pointer;
+    transition: background .14s;
+}
+.sd-dreg-table tbody tr.sd-dreg-row:hover {
+    background: #f0f7ff;
+}
+.sd-dreg-table tbody tr.sd-dreg-row.sd-dreg-expanded {
+    background: #e8f4fd;
+}
+
+.sd-dreg-table td {
+    padding: 11px 14px;
+    vertical-align: middle;
+    color: #222;
+}
+
+/* icona expand */
+.sd-dreg-expand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    color: #888;
+    transition: transform .2s;
+}
+.sd-dreg-expanded .sd-dreg-expand-icon {
+    transform: rotate(90deg);
+    color: #0073aa;
+}
+
+/* ---- Nome ------------------------------------------------- */
+.sd-dreg-member-name {
+    font-weight: 600;
+    color: #111;
+}
+.sd-dreg-member-email {
+    font-size: .78rem;
+    color: #888;
+    margin-top: 1px;
+}
+
+/* ---- Badge ------------------------------------------------ */
+.sd-dreg-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: .77rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+.sd-dreg-badge-tipo_1  { background: #fde8e8; color: #c0392b; }
+.sd-dreg-badge-tipo_2  { background: #fef0d9; color: #b7580e; }
+.sd-dreg-badge-tipo_3c { background: #fce8ff; color: #8e24aa; }
+.sd-dreg-badge-lada    { background: #e8f8f0; color: #1b7e3d; }
+.sd-dreg-badge-mody    { background: #e8f4fd; color: #0d5ea6; }
+.sd-dreg-badge-midd    { background: #f3f3f3; color: #555; }
+.sd-dreg-badge-altro   { background: #fffbe6; color: #856404; }
+.sd-dreg-badge-default { background: #f0f0f0; color: #666; }
+
+.sd-dreg-badge-mdi  { background: #e9f5e9; color: #256029; }
+.sd-dreg-badge-csii { background: #e8f4fd; color: #0d5ea6; }
+.sd-dreg-badge-ahcl { background: #f0e8ff; color: #6a1b9a; }
+.sd-dreg-badge-oral { background: #fffbe6; color: #856404; }
+
+.sd-dreg-cgm-yes { color: #1b7e3d; font-weight: 700; }
+.sd-dreg-cgm-no  { color: #aaa; }
+
+/* ---- Riga espansa (dettaglio completo) -------------------- */
+tr.sd-dreg-detail-row td {
+    padding: 0;
+    background: #f8fbff;
+    border-bottom: 2px solid #c8dff0;
+}
+
+.sd-dreg-detail-inner {
+    padding: 18px 24px 20px 48px;
+}
+
+.sd-dreg-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px 20px;
+}
+
+.sd-dreg-detail-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sd-dreg-detail-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.sd-dreg-detail-value {
+    font-size: .88rem;
+    color: #222;
+}
+.sd-dreg-detail-value.sd-empty {
+    color: #bbb;
+    font-style: italic;
+}

@@ -449,6 +449,104 @@ class SD_Membership_Helper {
 	}
 
 	/**
+	 * Ritorna true se il diabetes_type indica un profilo diabetico.
+	 *
+	 * @param string $diabetes_type Tipo diabete.
+	 * @return bool
+	 */
+	public static function is_diabetic_type( $diabetes_type ) {
+		$diabetes_type = sanitize_text_field( (string) $diabetes_type );
+		return in_array( $diabetes_type, array( 'tipo_1', 'tipo_2', 'tipo_3c', 'lada', 'mody', 'midd', 'altro', 'non_specificato' ), true );
+	}
+
+	/**
+	 * Mantiene coerenti wp_sd_members.diabetes_type e wp_sd_diver_profiles.is_diabetic/diabetes_type.
+	 *
+	 * Regole:
+	 * - Se dp.is_diabetic = 1, m.diabetes_type non puo essere non_diabetico.
+	 * - Se m.diabetes_type != non_diabetico, dp.is_diabetic deve essere 1.
+	 *
+	 * @param int         $user_id        ID utente WordPress.
+	 * @param string|null $preferred_type Tipo diabete preferito (opzionale).
+	 */
+	public static function sync_diabetes_consistency_for_user( $user_id, $preferred_type = null ) {
+		$user_id = absint( $user_id );
+		if ( ! $user_id ) {
+			return;
+		}
+
+		global $wpdb;
+		$db = new SD_Database();
+
+		$member = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, diabetes_type FROM {$db->table('members')} WHERE wp_user_id = %d ORDER BY id DESC LIMIT 1",
+				$user_id
+			)
+		);
+
+		$profile = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, is_diabetic, diabetes_type FROM {$db->table('diver_profiles')} WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+
+		if ( ! $member && ! $profile ) {
+			return;
+		}
+
+		$preferred_type      = sanitize_text_field( (string) $preferred_type );
+		$member_type         = $member ? sanitize_text_field( (string) $member->diabetes_type ) : '';
+		$profile_type        = $profile ? sanitize_text_field( (string) $profile->diabetes_type ) : '';
+		$member_is_diabetic  = self::is_diabetic_type( $member_type );
+		$profile_is_diabetic = $profile ? ( 1 === (int) $profile->is_diabetic ) : false;
+		$effective_diabetic  = $member_is_diabetic || $profile_is_diabetic;
+
+		$effective_type = 'non_diabetico';
+		if ( $effective_diabetic ) {
+			if ( self::is_diabetic_type( $preferred_type ) ) {
+				$effective_type = $preferred_type;
+			} elseif ( $member_is_diabetic ) {
+				$effective_type = $member_type;
+			} elseif ( self::is_diabetic_type( $profile_type ) ) {
+				$effective_type = $profile_type;
+			} else {
+				$effective_type = 'altro';
+			}
+		}
+
+		if ( $member && $member_type !== $effective_type ) {
+			$wpdb->update(
+				$db->table( 'members' ),
+				array( 'diabetes_type' => $effective_type ),
+				array( 'id' => (int) $member->id )
+			);
+		}
+
+		if ( $profile ) {
+			$profile_update = array();
+			$target_is_diabetic = $effective_diabetic ? 1 : 0;
+			if ( (int) $profile->is_diabetic !== $target_is_diabetic ) {
+				$profile_update['is_diabetic'] = $target_is_diabetic;
+			}
+
+			$target_profile_type = $effective_diabetic ? $effective_type : 'non_diabetico';
+			if ( $profile_type !== $target_profile_type ) {
+				$profile_update['diabetes_type'] = $target_profile_type;
+			}
+
+			if ( ! empty( $profile_update ) ) {
+				$wpdb->update(
+					$db->table( 'diver_profiles' ),
+					$profile_update,
+					array( 'user_id' => $user_id )
+				);
+			}
+		}
+	}
+
+	/**
 	 * Programma il cron giornaliero per i reminder di rinnovo
 	 */
 	public static function schedule_cron() {

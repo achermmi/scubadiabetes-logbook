@@ -98,7 +98,9 @@
 				? '<span class="sd-paid-badge">Sì</span>'
 				: '<span class="sd-unpaid-badge">No</span>';
 
-			var scubaBadge = m.is_scuba == 1 ? '✓' : '—';
+			var scubaBadge    = m.is_scuba == 1 ? '✓' : '—';
+			var diabeticTypes = ['tipo_1','tipo_2','tipo_3c','lada','mody','midd','altro'];
+			var diabeticBadge = (m.diabetes_type && diabeticTypes.indexOf(m.diabetes_type) !== -1) ? '✓' : '—';
 
 			var payDate = (function() {
 				if ( ! m.payment_date ) { return '—'; }
@@ -115,6 +117,7 @@
 				'<td>' + escapeHtml(payDate) + '</td>' +
 				'<td>' + formatMemberType(m.member_type) + '</td>' +
 				'<td>' + scubaBadge + '</td>' +
+				'<td>' + diabeticBadge + '</td>' +
 				'<td>' + escapeHtml(m.taglia_maglietta || '—') + '</td>' +
 				'<td>' + escapeHtml(m.wp_role_label || '—') + '</td>' +
 				'<td>' +
@@ -265,6 +268,13 @@
 			});
 		});
 
+		// Auto-imposta is_scuba quando si cambiano i ruoli WP
+		$form.on('change', 'input[name="wp_roles[]"]', function () {
+			var $diverCheckboxes = $form.find('input[name="wp_roles[]"][value="sd_diver"], input[name="wp_roles[]"][value="sd_diver_diabetic"]');
+			var diverChecked = $diverCheckboxes.is(':checked');
+			$form.find('select[name="is_scuba"]').val(diverChecked ? '1' : '0');
+		});
+
 		// Pulsante elimina (solo admin)
 		$('#sd-edit-delete').on('click', function () {
 			if (!confirm('Sei sicuro di voler eliminare questo socio? L\'operazione non può essere annullata.')) {
@@ -284,13 +294,16 @@
 
 	function formatMemberType(type) {
 		var labels = {
-			'attivo':              'Attivo',
-			'attivo_famigliare':   'Attivo famigliare',
-			'attivo_capo_famiglia':'Attivo capo famiglia',
-			'sostenitore':         'Sostenitore',
-			'onorario':            'Onorario',
+			'attivo':               'Attivo',
+			'attivo_capo_famiglia': 'Attivo Capo Famiglia',
+			'attivo_famigliare':    'Attivo Famigliare',
+			'passivo':              'Passivo',
+			'accompagnatore':       'Accompagnatore',
+			'sostenitore':          'Sostenitore',
+			'onorario':             'Onorario',
+			'fondatore':            'Fondatore',
 		};
-		return escapeHtml(labels[type] || type || '—');
+		return escapeHtml(labels[type] || '—');
 	}
 
 	function escapeHtml(str) {

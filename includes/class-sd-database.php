@@ -52,7 +52,9 @@ class SD_Database {
 			user_id bigint(20) unsigned NOT NULL,
 			is_diabetic tinyint(1) NOT NULL DEFAULT 0,
 			diabetes_type varchar(20) DEFAULT 'none',
-			therapy_type varchar(10) DEFAULT 'none',
+			therapy_type varchar(40) DEFAULT 'none',
+			therapy_detail varchar(100) DEFAULT NULL,
+			therapy_detail_other varchar(120) DEFAULT NULL,
 			certification_level varchar(50) DEFAULT NULL,
 			certification_agency varchar(50) DEFAULT NULL,
 			certification_date date DEFAULT NULL,
@@ -73,10 +75,12 @@ class SD_Database {
 			weight decimal(5,1) DEFAULT NULL,
 			height smallint(5) unsigned DEFAULT NULL,
 			hba1c_last decimal(4,1) DEFAULT NULL,
+			hba1c_unit varchar(10) NOT NULL DEFAULT 'percent',
 			hba1c_date date DEFAULT NULL,
 			uses_cgm tinyint(1) NOT NULL DEFAULT 0,
 			cgm_device varchar(50) DEFAULT NULL,
-			insulin_pump_model varchar(50) DEFAULT NULL,
+			insulin_pump_model varchar(100) DEFAULT NULL,
+			insulin_pump_model_other varchar(120) DEFAULT NULL,
 			glycemia_unit varchar(10) NOT NULL DEFAULT 'mg/dl',
 			default_shared_for_research tinyint(1) NOT NULL DEFAULT 1,
 			blood_type varchar(10) DEFAULT NULL,
@@ -617,6 +621,53 @@ class SD_Database {
 			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN diabetology_center varchar(200) DEFAULT NULL' ); // phpcs:ignore
 		}
 
+		// TABELLA: DIVER_PROFILES - allinea tipo colonna therapy_type
+		$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . " MODIFY COLUMN therapy_type varchar(40) DEFAULT 'none'" ); // phpcs:ignore
+
+		// TABELLA: DIVER_PROFILES - dettaglio terapia (nuovi campi)
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $this->table( 'diver_profiles' ) . ' LIKE %s',
+				'therapy_detail'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN therapy_detail varchar(100) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $this->table( 'diver_profiles' ) . ' LIKE %s',
+				'therapy_detail_other'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN therapy_detail_other varchar(120) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// TABELLA: DIVER_PROFILES - unita HbA1c
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $this->table( 'diver_profiles' ) . ' LIKE %s',
+				'hba1c_unit'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( "ALTER TABLE " . $this->table( 'diver_profiles' ) . " ADD COLUMN hba1c_unit varchar(10) NOT NULL DEFAULT 'percent'" ); // phpcs:ignore
+		}
+
+		// TABELLA: DIVER_PROFILES - estende modello microinfusore + campo altro
+		$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' MODIFY COLUMN insulin_pump_model varchar(100) DEFAULT NULL' ); // phpcs:ignore
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $this->table( 'diver_profiles' ) . ' LIKE %s',
+				'insulin_pump_model_other'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $this->table( 'diver_profiles' ) . ' ADD COLUMN insulin_pump_model_other varchar(120) DEFAULT NULL' ); // phpcs:ignore
+		}
+
 		// =====================================================================
 		// MIGRAZIONI v2.8.0: Iscrizione famiglia con utenti WP per ogni famigliare
 		// =====================================================================
@@ -692,6 +743,63 @@ class SD_Database {
 		if ( empty( $col ) ) {
 			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD COLUMN taglia_maglietta varchar(15) DEFAULT NULL' ); // phpcs:ignore
 		}
+	}
+
+	/**
+	 * Corregge i valori non validi del campo member_type.
+	 *
+	 * Regole (da membership-form e membership.php):
+	 *   - fee >= 75 + senza genitore → attivo_capo_famiglia
+	 *   - parent_member_id non nullo  → attivo_famigliare
+	 *   - tutti gli altri invalidi    → attivo
+	 */
+	public function fix_invalid_member_types() {
+		global $wpdb;
+		$table = $this->table( 'members' );
+
+		$valid = array(
+			'attivo',
+			'attivo_capo_famiglia',
+			'attivo_famigliare',
+			'passivo',
+			'accompagnatore',
+			'sostenitore',
+			'onorario',
+			'fondatore',
+		);
+
+		$placeholders = implode( ', ', array_fill( 0, count( $valid ), '%s' ) );
+
+		// 1. fee >= 75 e nessun genitore → attivo_capo_famiglia
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"UPDATE {$table} SET member_type = 'attivo_capo_famiglia'
+				 WHERE member_type NOT IN ({$placeholders})
+				   AND fee_amount >= 75
+				   AND (parent_member_id IS NULL OR parent_member_id = 0)",
+				...$valid
+			)
+		);
+
+		// 2. Ha un genitore → attivo_famigliare
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"UPDATE {$table} SET member_type = 'attivo_famigliare'
+				 WHERE member_type NOT IN ({$placeholders})
+				   AND parent_member_id IS NOT NULL
+				   AND parent_member_id > 0",
+				...$valid
+			)
+		);
+
+		// 3. Tutti i restanti invalidi → attivo
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"UPDATE {$table} SET member_type = 'attivo'
+				 WHERE member_type NOT IN ({$placeholders})",
+				...$valid
+			)
+		);
 	}
 
 	/**

@@ -20,22 +20,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SD_Medical_Panel {
 
+	/**
+	 * Accesso gestione supervisione: medico SD o amministratore WP.
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool
+	 */
+	private static function can_manage_supervision( $user_id ) {
+		return SD_Roles::is_medical( $user_id ) || user_can( $user_id, 'manage_options' );
+	}
+
 	public function __construct() {
 		add_shortcode( 'sd_medical_panel', array( $this, 'render_panel' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_sd_medical_get_diver', array( $this, 'get_diver_data' ) );
 		add_action( 'wp_ajax_sd_medical_save_note', array( $this, 'save_supervision_note' ) );
+		add_action( 'wp_ajax_sd_medical_delete_note', array( $this, 'delete_supervision_note' ) );
 		add_action( 'wp_ajax_sd_medical_export', array( $this, 'export_research_data' ) );
 	}
 
 	public function enqueue_assets() {
+		$medical_js_path = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/medical-panel.js';
+		$medical_js_ver  = file_exists( $medical_js_path ) ? (string) filemtime( $medical_js_path ) : SD_LOGBOOK_VERSION;
+
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dashboard.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/css/medical-panel.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', array(), '1.9.4' );
 		wp_enqueue_script( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', array(), '1.9.4', true );
-		wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery', 'leaflet' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery', 'leaflet' ), $medical_js_ver, true );
 		wp_localize_script(
 			'sd-medical',
 			'sdMedical',
@@ -154,9 +168,12 @@ class SD_Medical_Panel {
 	public function get_diver_data() {
 		check_ajax_referer( 'sd_medical_nonce', 'nonce' );
 
-		if ( ! SD_Roles::can_view_all( get_current_user_id() ) ) {
+		$current_user_id = get_current_user_id();
+		if ( ! SD_Roles::can_view_all( $current_user_id ) ) {
 			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
 		}
+
+		$can_access_supervision = self::can_manage_supervision( $current_user_id );
 
 		$diver_id = absint( $_POST['diver_id'] ?? 0 );
 		if ( ! $diver_id ) {
@@ -180,12 +197,32 @@ class SD_Medical_Panel {
 					$diver_id
 				)
 			);
+
+			// Fallback da iscrizione: se il centro diabetologico e presente in sd_members
+			// ma non in sd_diver_profiles, aggiungilo al payload del pannello medico.
+			if ( ! $profile || empty( $profile->diabetology_center ) ) {
+				$member_diabetology_center = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT diabetology_center FROM {$db->table('members')} WHERE wp_user_id = %d ORDER BY id DESC LIMIT 1",
+						$diver_id
+					)
+				);
+				if ( ! empty( $member_diabetology_center ) ) {
+					if ( ! $profile ) {
+						$profile = new stdClass();
+					}
+					$profile->diabetology_center = $member_diabetology_center;
+				}
+			}
 		}
 
 		// Immersioni con dati diabete
 		$dives = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT d.*, dd.*
+				"SELECT d.*, dd.*,
+				d.id AS dive_id,
+				d.id AS dive_base_id,
+				d.user_id AS dive_user_id
 			 FROM {$db->table('dives')} d
 			 LEFT JOIN {$db->table('dive_diabetes')} dd ON d.id = dd.dive_id
 			 WHERE d.user_id = %d AND d.shared_for_research = 1
@@ -195,24 +232,27 @@ class SD_Medical_Panel {
 			)
 		);
 
-		// Note supervisione per questo sub
-		$notes = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT ms.*, u.display_name as supervisor_name,
-					um_fn.meta_value as sup_first, um_ln.meta_value as sup_last
-			 FROM {$db->table('medical_supervision')} ms
-			 LEFT JOIN {$wpdb->users} u ON ms.supervisor_user_id = u.ID
-			 LEFT JOIN {$wpdb->usermeta} um_fn ON u.ID = um_fn.user_id AND um_fn.meta_key = 'first_name'
-			 LEFT JOIN {$wpdb->usermeta} um_ln ON u.ID = um_ln.user_id AND um_ln.meta_key = 'last_name'
-			 WHERE ms.diver_user_id = %d
-			 ORDER BY ms.created_at DESC
-			 LIMIT 30",
-				$diver_id
-			)
-		);
+		$notes = array();
+		if ( $can_access_supervision ) {
+			// Note supervisione per questo sub, collegate alla singola immersione tramite dive_id.
+			$notes = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT ms.*, u.display_name as supervisor_name,
+						um_fn.meta_value as sup_first, um_ln.meta_value as sup_last
+					 FROM {$db->table('medical_supervision')} ms
+					 LEFT JOIN {$wpdb->users} u ON ms.supervisor_user_id = u.ID
+					 LEFT JOIN {$wpdb->usermeta} um_fn ON u.ID = um_fn.user_id AND um_fn.meta_key = 'first_name'
+					 LEFT JOIN {$wpdb->usermeta} um_ln ON u.ID = um_ln.user_id AND um_ln.meta_key = 'last_name'
+					 WHERE ms.diver_user_id = %d
+					 ORDER BY ms.created_at DESC
+					 LIMIT 50",
+					$diver_id
+				)
+			);
 
-		foreach ( $notes as &$note ) {
-			$note->supervisor = trim( $note->sup_first . ' ' . $note->sup_last ) ?: $note->supervisor_name;
+			foreach ( $notes as &$note ) {
+				$note->supervisor = trim( $note->sup_first . ' ' . $note->sup_last ) ?: $note->supervisor_name;
+			}
 		}
 
 		// Certificazioni e clearances
@@ -224,8 +264,10 @@ class SD_Medical_Panel {
 
 		wp_send_json_success(
 			array(
+				'diver_id'    => $diver_id,
 				'name'        => $name,
 				'is_diabetic' => $is_diabetic,
+				'can_access_supervision' => $can_access_supervision,
 				'role_label'  => $role_label,
 				'profile'     => $profile,
 				'dives'       => $dives,
@@ -243,45 +285,168 @@ class SD_Medical_Panel {
 		check_ajax_referer( 'sd_medical_nonce', 'nonce' );
 
 		$user_id = get_current_user_id();
-		if ( ! SD_Roles::can_supervise( $user_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Non autorizzato a supervisionare', 'sd-logbook' ) ) );
+		if ( ! self::can_manage_supervision( $user_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Solo i medici possono gestire le note di supervisione', 'sd-logbook' ) ) );
 		}
 
 		$diver_id = absint( $_POST['diver_id'] ?? 0 );
 		$dive_id  = absint( $_POST['dive_id'] ?? 0 );
+		$review_id = absint( $_POST['review_id'] ?? 0 );
 		$type     = sanitize_text_field( $_POST['note_type'] ?? 'note' );
 		$status   = sanitize_text_field( $_POST['note_status'] ?? 'in_revisione' );
 		$text     = sanitize_textarea_field( $_POST['note_text'] ?? '' );
 
-		if ( ! $diver_id || empty( $text ) ) {
+		if ( ! $diver_id || ! $dive_id ) {
 			wp_send_json_error( array( 'message' => __( 'Dati incompleti', 'sd-logbook' ) ) );
 		}
 
 		global $wpdb;
 		$db = new SD_Database();
+		$table = $db->table( 'medical_supervision' );
 
-		$wpdb->insert(
-			$db->table( 'medical_supervision' ),
-			array(
-				'dive_id'            => $dive_id ?: null,
-				'diver_user_id'      => $diver_id,
-				'supervisor_user_id' => $user_id,
-				'supervision_type'   => $type,
-				'status'             => $status,
-				'notes'              => $text,
+		$valid_dive = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$db->table('dives')} WHERE id = %d AND user_id = %d LIMIT 1",
+				$dive_id,
+				$diver_id
 			)
 		);
+		if ( ! $valid_dive ) {
+			wp_send_json_error( array( 'message' => __( 'Immersione non valida per il subacqueo selezionato', 'sd-logbook' ) ) );
+		}
+
+		$payload = array(
+			'dive_id'            => $dive_id,
+			'diver_user_id'      => $diver_id,
+			'supervisor_user_id' => $user_id,
+			'supervision_type'   => $type,
+			'status'             => $status,
+			'notes'              => $text,
+		);
+
+		if ( $review_id > 0 ) {
+			$existing_review = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE id = %d AND diver_user_id = %d AND dive_id = %d LIMIT 1",
+					$review_id,
+					$diver_id,
+					$dive_id
+				)
+			);
+
+			if ( ! $existing_review ) {
+				wp_send_json_error( array( 'message' => __( 'Revisione non trovata o non valida', 'sd-logbook' ) ) );
+			}
+
+			$payload['created_at'] = current_time( 'mysql' );
+			$wpdb->update(
+				$table,
+				$payload,
+				array( 'id' => $review_id )
+			);
+			$saved_review_id = $review_id;
+		} else {
+			$recent_duplicate_id = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id
+					 FROM {$table}
+					 WHERE dive_id = %d
+					   AND diver_user_id = %d
+					   AND supervisor_user_id = %d
+					   AND supervision_type = %s
+					   AND status = %s
+					   AND notes = %s
+					   AND created_at >= DATE_SUB(%s, INTERVAL 2 MINUTE)
+					 ORDER BY created_at DESC, id DESC
+					 LIMIT 1",
+					$dive_id,
+					$diver_id,
+					$user_id,
+					$type,
+					$status,
+					$text,
+					current_time( 'mysql' )
+				)
+			);
+
+			if ( $recent_duplicate_id > 0 ) {
+				$saved_review_id = $recent_duplicate_id;
+			} else {
+				$wpdb->insert( $table, $payload );
+				$saved_review_id = (int) $wpdb->insert_id;
+			}
+		}
 
 		$current_user = wp_get_current_user();
 		$sup_name     = trim( $current_user->first_name . ' ' . $current_user->last_name ) ?: $current_user->display_name;
+
+		$saved_review = null;
+		if ( ! empty( $saved_review_id ) ) {
+			$saved_review = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id, dive_id, supervision_type, status, notes, created_at FROM {$table} WHERE id = %d LIMIT 1",
+					$saved_review_id
+				),
+				ARRAY_A
+			);
+			if ( is_array( $saved_review ) ) {
+				$saved_review['supervisor'] = $sup_name;
+			}
+		}
 
 		wp_send_json_success(
 			array(
 				'message'    => __( 'Nota salvata.', 'sd-logbook' ),
 				'supervisor' => $sup_name,
 				'date'       => date_i18n( 'd/m/Y H:i' ),
+				'review'     => $saved_review,
 			)
 		);
+	}
+
+	/**
+	 * AJAX: elimina revisione supervisione medica
+	 */
+	public function delete_supervision_note() {
+		check_ajax_referer( 'sd_medical_nonce', 'nonce' );
+
+		$user_id = get_current_user_id();
+		if ( ! self::can_manage_supervision( $user_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Solo i medici possono eliminare le revisioni', 'sd-logbook' ) ) );
+		}
+
+		$review_id = absint( $_POST['review_id'] ?? 0 );
+		$diver_id  = absint( $_POST['diver_id'] ?? 0 );
+		$dive_id   = absint( $_POST['dive_id'] ?? 0 );
+
+		if ( ! $review_id || ! $diver_id || ! $dive_id ) {
+			wp_send_json_error( array( 'message' => __( 'Dati incompleti', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db    = new SD_Database();
+		$table = $db->table( 'medical_supervision' );
+
+		$valid_review = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$table} WHERE id = %d AND diver_user_id = %d AND dive_id = %d LIMIT 1",
+				$review_id,
+				$diver_id,
+				$dive_id
+			)
+		);
+
+		if ( ! $valid_review ) {
+			wp_send_json_error( array( 'message' => __( 'Revisione non trovata o non valida', 'sd-logbook' ) ) );
+		}
+
+		$wpdb->delete(
+			$table,
+			array( 'id' => $review_id ),
+			array( '%d' )
+		);
+
+		wp_send_json_success( array( 'message' => __( 'Revisione eliminata.', 'sd-logbook' ) ) );
 	}
 
 	/**
