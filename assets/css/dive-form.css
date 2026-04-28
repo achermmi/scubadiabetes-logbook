@@ -334,6 +334,7 @@ body.page .container.single-page-container {
 .sd-field input[type="time"],
 .sd-field input[type="email"],
 .sd-field input[type="tel"],
+.sd-field input[type="url"],
 .sd-field input[type="password"],
 .sd-field select,
 .sd-field textarea {
@@ -354,6 +355,7 @@ body.page .container.single-page-container {
 
 .sd-field input:focus,
 .sd-field select:focus,
+.sd-field input[type="url"]:focus,
 .sd-field textarea:focus {
     outline: none;
     border-color: var(--sd-blue);
@@ -361,6 +363,7 @@ body.page .container.single-page-container {
 }
 
 .sd-field input::placeholder,
+.sd-field input[type="url"]::placeholder,
 .sd-field textarea::placeholder {
     color: var(--sd-gray-300);
 }
