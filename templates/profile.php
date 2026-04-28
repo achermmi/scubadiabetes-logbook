@@ -781,8 +781,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <?php esc_html_e( 'Genera token', 'sd-logbook' ); ?>
                 </button>
                 <?php else : ?>
-                <button type="button" class="sd-btn-ns sd-btn-ns-disconnect" id="sd-ns-btn-regen-token">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-regen-token">
                     <?php esc_html_e( 'Rigenera token', 'sd-logbook' ); ?>
                 </button>
                 <?php endif; ?>
@@ -876,10 +875,10 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
 
         <!-- Pulsanti azioni -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-            <button type="button" id="sd-dx-btn-sync" class="sd-btn sd-btn-primary">
+            <button type="button" id="sd-dx-btn-sync" class="sd-btn-save-record">
                 <?php esc_html_e( 'Sync Ora', 'sd-logbook' ); ?>
             </button>
-            <button type="button" id="sd-dx-btn-disconnect" class="sd-btn sd-btn-danger">
+            <button type="button" id="sd-dx-btn-disconnect" class="sd-btn-cancel-record">
                 <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
             </button>
         </div>
@@ -887,10 +886,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <?php else : ?>
         <!-- Non ancora connesso -->
         <div style="margin-bottom:16px;">
-            <button type="button" id="sd-dx-btn-connect" class="sd-btn sd-btn-primary" style="font-size:15px;padding:10px 22px;">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px;">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
+            <button type="button" id="sd-dx-btn-connect" class="sd-btn-save-record">
                 <?php esc_html_e( 'Connetti con Dexcom', 'sd-logbook' ); ?>
             </button>
             <p class="sd-field-help" style="margin-top:8px;">
@@ -980,13 +976,13 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
 
         <!-- Pulsanti azioni -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-            <button type="button" id="sd-tp-btn-sync" class="sd-btn sd-btn-primary">
+            <button type="button" id="sd-tp-btn-sync" class="sd-btn-save-record">
                 <?php esc_html_e( 'Sync Ora', 'sd-logbook' ); ?>
             </button>
-            <button type="button" id="sd-tp-btn-edit" class="sd-btn sd-btn-secondary">
+            <button type="button" id="sd-tp-btn-edit" class="sd-btn-cancel-record">
                 <?php esc_html_e( 'Modifica Credenziali', 'sd-logbook' ); ?>
             </button>
-            <button type="button" id="sd-tp-btn-disconnect" class="sd-btn sd-btn-danger">
+            <button type="button" id="sd-tp-btn-disconnect" class="sd-btn-cancel-record">
                 <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
             </button>
         </div>
@@ -1018,14 +1014,14 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-                <button type="button" id="sd-tp-btn-save" class="sd-btn sd-btn-primary">
+                <button type="button" id="sd-tp-btn-save" class="sd-btn-save-record">
                     <?php esc_html_e( 'Salva e Connetti', 'sd-logbook' ); ?>
                 </button>
-                <button type="button" id="sd-tp-btn-test" class="sd-btn sd-btn-secondary">
+                <button type="button" id="sd-tp-btn-test" class="sd-btn-cancel-record">
                     <?php esc_html_e( 'Testa Connessione', 'sd-logbook' ); ?>
                 </button>
                 <?php if ( $tp['connected'] ) : ?>
-                <button type="button" id="sd-tp-btn-cancel-edit" class="sd-btn sd-btn-ghost">
+                <button type="button" id="sd-tp-btn-cancel-edit" class="sd-btn-cancel-record">
                     <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
                 </button>
                 <?php endif; ?>
@@ -1076,14 +1072,13 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <?php endif; ?>
             </div>
             <div class="sd-ns-actions">
-                <button type="button" class="sd-btn-ns sd-btn-ns-test" id="sd-ns-btn-test">
+                <button type="button" class="sd-btn-cancel-record" id="sd-ns-btn-test">
                     <?php esc_html_e( 'Test connessione', 'sd-logbook' ); ?>
                 </button>
-                <button type="button" class="sd-btn-ns sd-btn-ns-sync" id="sd-ns-btn-sync">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-sync">
                     <?php esc_html_e( 'Sync ora', 'sd-logbook' ); ?>
                 </button>
-                <button type="button" class="sd-btn-ns sd-btn-ns-disconnect" id="sd-ns-btn-disconnect">
+                <button type="button" class="sd-btn-cancel-record" id="sd-ns-btn-disconnect">
                     <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
                 </button>
             </div>
@@ -1108,11 +1103,11 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <p class="sd-field-help"><?php esc_html_e( 'Il tuo API_SECRET Nightscout. Viene cifrato prima di essere salvato.', 'sd-logbook' ); ?></p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-                <button type="button" class="sd-btn sd-btn-primary" id="sd-ns-btn-save">
+                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-save">
                     <?php esc_html_e( $ns_data['connected'] ? 'Aggiorna credenziali' : 'Connetti Nightscout', 'sd-logbook' ); ?>
                 </button>
                 <?php if ( $ns_data['connected'] ) : ?>
-                <button type="button" class="sd-btn sd-btn-ghost" id="sd-ns-btn-cancel-edit">
+                <button type="button" class="sd-btn-cancel-record" id="sd-ns-btn-cancel-edit">
                     <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
                 </button>
                 <?php endif; ?>
