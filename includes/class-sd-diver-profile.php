@@ -381,6 +381,16 @@ class SD_Diver_Profile {
 			$wpdb->insert( $table, array_merge( array( 'user_id' => $user_id ), $data ) );
 		}
 
+		// Aggiorna sd_members.diabetes_type subito, prima del role sync e della consistency check.
+		// Senza questo, se il ruolo WP non cambia (es. utente ha già sd_diver),
+		// on_role_assigned non scatta e sd_members rimane stale → sync_diabetes_consistency
+		// legge il vecchio valore e sovrascrive il profilo appena salvato.
+		$wpdb->update(
+			$db->table( 'members' ),
+			array( 'diabetes_type' => $diabetes_type ),
+			array( 'wp_user_id' => $user_id )
+		);
+
 		// Sync WordPress role based on is_diabetic
 		$wp_user = new WP_User( $user_id );
 		if ( $is_diabetic ) {
