@@ -537,8 +537,6 @@ class SD_Dexcom_OAuth {
 		$raw  = wp_remote_retrieve_body( $response );
 		$body = json_decode( $raw, true );
 
-		error_log( '[Dexcom dataRange] HTTP ' . $code . ' - Body: ' . $raw );
-
 		if ( 200 !== $code || empty( $body['egvs']['start']['systemTime'] ) ) {
 			return new WP_Error( 'no_range', 'Range dati non disponibile (HTTP ' . $code . ').' );
 		}
@@ -669,8 +667,6 @@ class SD_Dexcom_OAuth {
 		// (in sandbox i dati sono storici, non relativi a "ora").
 		$range  = $this->get_data_range( $token );
 		$end_ts = is_wp_error( $range ) ? time() : strtotime( $range['egvs_end'] );
-
-		error_log( '[Dexcom sync] is_first=' . ( $is_first ? '1' : '0' ) . ' existing=' . $existing_count . ' end_ts=' . gmdate( 'Y-m-d H:i:s', $end_ts ) . ( is_wp_error( $range ) ? ' (fallback: ' . $range->get_error_message() . ')' : '' ) );
 
 		if ( $is_first ) {
 			$start_ts = $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
