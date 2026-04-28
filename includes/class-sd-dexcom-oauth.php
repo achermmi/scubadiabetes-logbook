@@ -42,7 +42,7 @@ class SD_Dexcom_OAuth {
 	const CRON_HOOK = 'sd_dexcom_oauth_sync_cron';
 
 	/** @var int Ore di storico per il primo sync (nessun last_sync_at) */
-	const FIRST_SYNC_HOURS = 2160; // 90 giorni
+	const FIRST_SYNC_HOURS = 2136; // 89 giorni (API Dexcom limite massimo 90)
 
 	/** @var string Namespace REST API per la callback OAuth */
 	const REST_NAMESPACE = 'sd-logbook/v1';
@@ -519,13 +519,11 @@ class SD_Dexcom_OAuth {
 		$start = gmdate( 'Y-m-d\TH:i:s', strtotime( "-{$hours} hours" ) );
 		$end   = gmdate( 'Y-m-d\TH:i:s' );
 
-		$url = add_query_arg(
-			array(
-				'startDate' => $start,
-				'endDate'   => $end,
-			),
-			self::get_base_url() . self::EGV_PATH
-		);
+		// Costruiamo l'URL manualmente per evitare che add_query_arg
+		// URL-encodi i ':' nelle datetime (→ HTTP 400 dall'API Dexcom).
+		$url = self::get_base_url() . self::EGV_PATH
+			. '?startDate=' . rawurlencode( $start )
+			. '&endDate='   . rawurlencode( $end );
 
 		$response = wp_remote_get(
 			$url,
