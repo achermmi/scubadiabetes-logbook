@@ -38,6 +38,9 @@ class SD_Dexcom_OAuth {
 	/** @var string Path EGV readings */
 	const EGV_PATH = '/v3/users/self/egvs';
 
+	/** @var string Path data range */
+	const DATA_RANGE_PATH = '/v3/users/self/dataRange';
+
 	/** @var string Hook cron per sync automatico */
 	const CRON_HOOK = 'sd_dexcom_oauth_sync_cron';
 
@@ -509,22 +512,57 @@ class SD_Dexcom_OAuth {
 	// =========================================================================
 
 	/**
-	 * Scarica le letture EGV per il periodo indicato, in chunk da 30 giorni.
+	 * Recupera il range di date disponibili per l'utente.
 	 *
 	 * @param string $access_token Token di accesso valido.
-	 * @param int    $hours        Ore di storico da recuperare.
+	 * @return array{egvs_start:string,egvs_end:string}|WP_Error
+	 */
+	private function get_data_range( string $access_token ): array|WP_Error {
+		$url      = self::get_base_url() . self::DATA_RANGE_PATH;
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'request_failed', $response->get_error_message() );
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $code || empty( $body['egvs']['start']['systemTime'] ) ) {
+			return new WP_Error( 'no_range', 'Range dati non disponibile.' );
+		}
+
+		return array(
+			'egvs_start' => $body['egvs']['start']['systemTime'],
+			'egvs_end'   => $body['egvs']['end']['systemTime'],
+		);
+	}
+
+	/**
+	 * Scarica le letture EGV tra due timestamp, in chunk da 30 giorni.
+	 *
+	 * @param string $access_token Token di accesso valido.
+	 * @param int    $start_ts     Timestamp Unix inizio.
+	 * @param int    $end_ts       Timestamp Unix fine.
 	 * @return array{egvs:array,unit:string}|WP_Error
 	 */
-	private function fetch_egvs( string $access_token, int $hours = 24 ): array|WP_Error {
-		$chunk_hours = 720; // 30 giorni per chunk (limite API Dexcom: 90 giorni)
-		$now         = time();
-		$start_ts    = $now - ( $hours * 3600 );
-		$all_egvs    = array();
-		$unit        = 'mg/dL';
+	private function fetch_egvs( string $access_token, int $start_ts, int $end_ts ): array|WP_Error {
+		$chunk_secs = 720 * 3600; // 30 giorni per chunk
+		$all_egvs   = array();
+		$unit       = 'mg/dL';
+		$cursor     = $start_ts;
 
-		while ( $start_ts < $now ) {
-			$chunk_end_ts = min( $start_ts + ( $chunk_hours * 3600 ), $now );
-			$result       = $this->fetch_egvs_range( $access_token, $start_ts, $chunk_end_ts );
+		while ( $cursor < $end_ts ) {
+			$chunk_end = min( $cursor + $chunk_secs, $end_ts );
+			$result    = $this->fetch_egvs_range( $access_token, $cursor, $chunk_end );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -532,7 +570,7 @@ class SD_Dexcom_OAuth {
 
 			$all_egvs = array_merge( $all_egvs, $result['egvs'] );
 			$unit     = $result['unit'];
-			$start_ts = $chunk_end_ts;
+			$cursor   = $chunk_end;
 		}
 
 		return array(
@@ -613,11 +651,21 @@ class SD_Dexcom_OAuth {
 			);
 		}
 
-		// Primo sync (nessun last_sync_at) → scarica 90 giorni di storico
-		$conn  = $this->get_connection( $user_id );
-		$hours = ( $conn && ! empty( $conn->last_sync_at ) ) ? 24 : self::FIRST_SYNC_HOURS;
+		$conn      = $this->get_connection( $user_id );
+		$is_first  = ! $conn || empty( $conn->last_sync_at );
 
-		$data = $this->fetch_egvs( $token, $hours );
+		// Determina il range di fetch: per il primo sync usa il dataRange API
+		// per trovare il range reale dei dati (necessario in sandbox).
+		if ( $is_first ) {
+			$range    = $this->get_data_range( $token );
+			$end_ts   = is_wp_error( $range ) ? time() : strtotime( $range['egvs_end'] );
+			$start_ts = $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
+		} else {
+			$end_ts   = time();
+			$start_ts = max( strtotime( $conn->last_sync_at ), $end_ts - ( 48 * 3600 ) );
+		}
+
+		$data = $this->fetch_egvs( $token, $start_ts, $end_ts );
 
 		// Retry con refresh se il token era scaduto
 		if ( is_wp_error( $data ) && 'token_expired' === $data->get_error_code() ) {
@@ -626,7 +674,7 @@ class SD_Dexcom_OAuth {
 				$new_tokens = $this->refresh_tokens( $refresh );
 				if ( ! is_wp_error( $new_tokens ) ) {
 					$this->save_tokens( $user_id, $new_tokens );
-					$data = $this->fetch_egvs( $new_tokens['access_token'], $hours );
+					$data = $this->fetch_egvs( $new_tokens['access_token'], $start_ts, $end_ts );
 				}
 			}
 		}
