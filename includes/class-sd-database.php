@@ -802,6 +802,150 @@ class SD_Database {
 		);
 	}
 
+	// =====================================================================
+	// TABELLE NIGHTSCOUT (aggiunto in v3.2.0)
+	// =====================================================================
+
+	/**
+	 * Crea o aggiorna le tabelle per l'integrazione Nightscout.
+	 * Idempotente: sicuro da chiamare più volte (usa dbDelta).
+	 */
+	public function create_nightscout_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// Connessioni Nightscout (1 per utente)
+		$t_conn = $this->table( 'nightscout_connections' );
+		dbDelta( "CREATE TABLE {$t_conn} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			nightscout_url varchar(500) NOT NULL,
+			api_token_enc text NOT NULL,
+			sync_enabled tinyint(1) NOT NULL DEFAULT 1,
+			last_sync_at datetime DEFAULT NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_user_id (user_id)
+		) {$charset_collate};" );
+
+		// Cache letture CGM / capillari da Nightscout
+		$t_read = $this->table( 'nightscout_readings' );
+		dbDelta( "CREATE TABLE {$t_read} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			reading_time datetime NOT NULL,
+			glucose_value smallint unsigned NOT NULL,
+			glucose_unit varchar(10) NOT NULL DEFAULT 'mg/dl',
+			direction varchar(30) DEFAULT NULL,
+			reading_type varchar(5) NOT NULL DEFAULT 'sgv',
+			device varchar(100) DEFAULT NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_user_time (user_id, reading_time),
+			KEY idx_user_id (user_id),
+			KEY idx_time (reading_time)
+		) {$charset_collate};" );
+
+		// Cache trattamenti (boli insulina, carboidrati, ecc.) da Nightscout
+		$t_treat = $this->table( 'nightscout_treatments' );
+		dbDelta( "CREATE TABLE {$t_treat} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			treatment_time datetime NOT NULL,
+			event_type varchar(60) NOT NULL,
+			insulin_units decimal(5,2) DEFAULT NULL,
+			carbs_grams decimal(5,1) DEFAULT NULL,
+			notes text DEFAULT NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_user_id (user_id),
+			KEY idx_time (treatment_time)
+		) {$charset_collate};" );
+	}
+
+	/**
+	 * Crea/aggiorna la tabella per le connessioni Dexcom API Ufficiale (OAuth 2.0)
+	 */
+	public function create_dexcom_oauth_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$t_conn = $this->table( 'dexcom_oauth_connections' );
+		dbDelta( "CREATE TABLE {$t_conn} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			access_token text NOT NULL,
+			refresh_token text NOT NULL,
+			token_expires_at datetime NOT NULL,
+			sync_enabled tinyint(1) NOT NULL DEFAULT 1,
+			last_sync_at datetime DEFAULT NULL,
+			connected_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_user_id (user_id)
+		) {$charset_collate};" );
+	}
+
+	/**
+	 * Crea/aggiorna la tabella per le connessioni Tidepool
+	 */
+	public function create_tidepool_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$t_conn = $this->table( 'tidepool_connections' );
+		dbDelta( "CREATE TABLE {$t_conn} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			tidepool_email varchar(255) NOT NULL,
+			password_enc text NOT NULL,
+			tidepool_user_id varchar(100) DEFAULT NULL,
+			sync_enabled tinyint(1) NOT NULL DEFAULT 1,
+			last_sync_at datetime DEFAULT NULL,
+			session_token varchar(512) DEFAULT NULL,
+			session_expires datetime DEFAULT NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_user_id (user_id)
+		) {$charset_collate};" );
+	}
+
+	/**
+	 * Crea/aggiorna la tabella per le connessioni Dexcom Share
+	 */
+	public function create_dexcom_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$t_conn = $this->table( 'dexcom_connections' );
+		dbDelta( "CREATE TABLE {$t_conn} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			dexcom_username varchar(255) NOT NULL,
+			password_enc text NOT NULL,
+			server varchar(5) NOT NULL DEFAULT 'ous',
+			device_name varchar(100) DEFAULT NULL,
+			sync_enabled tinyint(1) NOT NULL DEFAULT 1,
+			last_sync_at datetime DEFAULT NULL,
+			session_id varchar(255) DEFAULT NULL,
+			session_expires datetime DEFAULT NULL,
+			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_user_id (user_id)
+		) {$charset_collate};" );
+	}
+
 	/**
 	 * Rimuovi tutte le tabelle (usata SOLO in uninstall, MAI in deactivate)
 	 */

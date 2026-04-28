@@ -836,4 +836,457 @@
         }
     });
 
+    // ============================================================
+    // NIGHTSCOUT — integrazione CGM
+    // ============================================================
+
+    /**
+     * Mostra un messaggio inline nella sezione Nightscout.
+     */
+    function nsMsg(text, type) {
+        var $el = $('#sd-ns-message');
+        $el.removeClass('sd-ns-msg-ok sd-ns-msg-error')
+           .addClass(type === 'error' ? 'sd-ns-msg-error' : 'sd-ns-msg-ok')
+           .text(text)
+           .show();
+        setTimeout(function() { $el.fadeOut(400); }, type === 'error' ? 6000 : 4000);
+    }
+
+    /**
+     * Imposta lo stato di caricamento di un bottone NS.
+     */
+    function nsBtnLoading($btn, loading, originalText) {
+        if (loading) {
+            $btn.prop('disabled', true).data('orig-text', $btn.text()).text('…');
+        } else {
+            $btn.prop('disabled', false).text(originalText || $btn.data('orig-text') || $btn.text());
+        }
+    }
+
+    // --- Salva / aggiorna credenziali ---
+    $(document).on('click', '#sd-ns-btn-save', function() {
+        var $btn = $(this);
+        var url   = $.trim($('#sd-ns-url').val());
+        var token = $.trim($('#sd-ns-token').val());
+
+        if (!url) { nsMsg(sdProfile.i18n ? sdProfile.i18n.nsUrlRequired : 'Inserisci l\'URL Nightscout.', 'error'); return; }
+
+        nsBtnLoading($btn, true);
+
+        $.post(sdProfile.ajaxUrl, {
+            action:   'sd_nightscout_save',
+            nonce:    sdProfile.nonce,
+            ns_url:   url,
+            ns_token: token
+        }, function(resp) {
+            nsBtnLoading($btn, false);
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+                // Ricarica la pagina per aggiornare lo stato connessione
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                nsMsg(resp.data.message || 'Errore sconosciuto.', 'error');
+            }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsMsg('Errore di rete. Riprova.', 'error');
+        });
+    });
+
+    // --- Test connessione ---
+    $(document).on('click', '#sd-ns-btn-test', function() {
+        var $btn = $(this);
+        nsBtnLoading($btn, true);
+
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_nightscout_test',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            nsBtnLoading($btn, false);
+            var type = resp.success ? 'success' : 'error';
+            nsMsg(resp.data.message || (resp.success ? 'OK' : 'Errore'), type);
+            if (resp.success) { showMsg(resp.data.message, 'success'); }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsMsg('Errore di rete durante il test.', 'error');
+        });
+    });
+
+    // --- Sync manuale ---
+    $(document).on('click', '#sd-ns-btn-sync', function() {
+        var $btn = $(this);
+        nsBtnLoading($btn, true);
+
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_nightscout_sync',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            nsBtnLoading($btn, false);
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+                // Aggiorna il testo "Ultimo sync"
+                $('.sd-ns-lastsync').text('Ultimo sync: adesso');
+            } else {
+                nsMsg(resp.data.message || 'Errore durante il sync.', 'error');
+            }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsMsg('Errore di rete durante il sync.', 'error');
+        });
+    });
+
+    // --- Disconnetti ---
+    $(document).on('click', '#sd-ns-btn-disconnect', function() {
+        if (!confirm('Rimuovere la connessione Nightscout e i dati locali sincronizzati?')) return;
+        var $btn = $(this);
+        nsBtnLoading($btn, true);
+
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_nightscout_disconnect',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                nsBtnLoading($btn, false);
+                nsMsg(resp.data.message || 'Errore durante la disconnessione.', 'error');
+            }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // --- Mostra/nascondi form credenziali ---
+    $(document).on('click', '#sd-ns-btn-edit-credentials', function() {
+        $('#sd-ns-form-wrap').slideDown(200);
+        $(this).hide();
+    });
+
+    $(document).on('click', '#sd-ns-btn-cancel-edit', function() {
+        $('#sd-ns-form-wrap').slideUp(200);
+        $('#sd-ns-btn-edit-credentials').show();
+    });
+
+    // ============================================================
+    // SERVER CGM INTERNO — token management + copy
+    // ============================================================
+
+    function nsSrvMsg(text, type) {
+        var $el = $('#sd-ns-srv-message');
+        $el.removeClass('sd-ns-msg-ok sd-ns-msg-error')
+           .addClass(type === 'error' ? 'sd-ns-msg-error' : 'sd-ns-msg-ok')
+           .text(text)
+           .show();
+        setTimeout(function() { $el.fadeOut(400); }, type === 'error' ? 6000 : 3500);
+    }
+
+    // Genera token (primo accesso)
+    $(document).on('click', '#sd-ns-btn-gen-token', function() {
+        var $btn = $(this);
+        nsBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_ns_generate_token',
+            nonce:  sdProfile.nonce,
+            regen:  0
+        }, function(resp) {
+            if (resp.success) {
+                // Ricarica per mostrare il token generato
+                location.reload();
+            } else {
+                nsBtnLoading($btn, false);
+                nsSrvMsg(resp.data.message || 'Errore nella generazione del token.', 'error');
+            }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsSrvMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Rigenera token
+    $(document).on('click', '#sd-ns-btn-regen-token', function() {
+        if (!confirm('Rigenerare il token? Le app CGM dovranno essere riconfigurate con il nuovo token.')) return;
+        var $btn = $(this);
+        nsBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_ns_generate_token',
+            nonce:  sdProfile.nonce,
+            regen:  1
+        }, function(resp) {
+            if (resp.success) {
+                showMsg('Token rigenerato. Aggiorna le tue app CGM.', 'success');
+                // Aggiorna il display e il data-token senza ricaricare
+                $('#sd-ns-token-display').text(resp.data.token).removeClass('sd-ns-token-masked');
+                $('#sd-ns-btn-reveal-token').data('token', resp.data.token);
+                nsBtnLoading($btn, false);
+            } else {
+                nsBtnLoading($btn, false);
+                nsSrvMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            nsBtnLoading($btn, false);
+            nsSrvMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Mostra/nascondi token + copia
+    var _tokenRevealed = false;
+    $(document).on('click', '#sd-ns-btn-reveal-token', function() {
+        var $display = $('#sd-ns-token-display');
+        var token    = $(this).data('token');
+        if (!token) return;
+
+        if (_tokenRevealed) {
+            // Ri-maschera
+            $display.text('••••••••••••••••••••••••').addClass('sd-ns-token-masked');
+            $('#sd-ns-reveal-label').text('Mostra');
+            _tokenRevealed = false;
+        } else {
+            // Mostra e copia
+            $display.text(token).removeClass('sd-ns-token-masked');
+            $('#sd-ns-reveal-label').text('Nascondi');
+            _tokenRevealed = true;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(token).then(function() {
+                    showMsg('Token copiato negli appunti.', 'success');
+                });
+            }
+            // Ri-maschera dopo 15s
+            setTimeout(function() {
+                $display.text('••••••••••••••••••••••••').addClass('sd-ns-token-masked');
+                $('#sd-ns-reveal-label').text('Mostra');
+                _tokenRevealed = false;
+            }, 15000);
+        }
+    });
+
+    // Copia URL server
+    $(document).on('click', '.sd-btn-ns-copy[data-target]', function() {
+        var targetId = $(this).data('target');
+        var text     = $('#' + targetId).text();
+        if (navigator.clipboard && text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showMsg('URL copiato negli appunti.', 'success');
+            });
+        }
+    });
+
+    // =========================================================================
+    // DEXCOM API UFFICIALE (OAuth 2.0)
+    // =========================================================================
+
+    // Toggle mostra/nascondi password (condiviso con Tidepool)
+    $(document).on('click', '.sd-password-toggle', function() {
+        var targetId = $(this).data('target');
+        var $input   = $('#' + targetId);
+        var isHidden = $input.attr('type') === 'password';
+        $input.attr('type', isHidden ? 'text' : 'password');
+        $(this).find('.sd-pw-icon-show').toggle(!isHidden);
+        $(this).find('.sd-pw-icon-hide').toggle(isHidden);
+    });
+
+    function dxMsg(text, type) {
+        var $m = $('#sd-dx-message');
+        $m.removeClass('sd-ns-msg-success sd-ns-msg-error sd-ns-msg-info')
+          .addClass('sd-ns-msg-' + (type || 'info'))
+          .text(text).show();
+    }
+
+    function dxBtnLoading($btn, loading) {
+        if (loading) {
+            $btn.data('original-text', $btn.text().trim()).prop('disabled', true).text('Attendere…');
+        } else {
+            $btn.prop('disabled', false).text($btn.data('original-text') || $btn.text());
+        }
+    }
+
+    // Avvia flusso OAuth → redirect a Dexcom
+    $(document).on('click', '#sd-dx-btn-connect', function() {
+        var $btn = $(this);
+        dxBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action:     'sd_dexcom_oauth_connect',
+            nonce:      sdProfile.nonce,
+            return_url: window.location.href
+        }, function(resp) {
+            if (resp.success && resp.data.auth_url) {
+                // Reindirizza al portale Dexcom per autorizzare
+                window.location.href = resp.data.auth_url;
+            } else {
+                dxBtnLoading($btn, false);
+                dxMsg(resp.data.message || 'Impossibile avviare l\'autenticazione Dexcom.', 'error');
+            }
+        }).fail(function() {
+            dxBtnLoading($btn, false);
+            dxMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Sync manuale
+    $(document).on('click', '#sd-dx-btn-sync', function() {
+        var $btn = $(this);
+        dxBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_dexcom_oauth_sync',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            dxBtnLoading($btn, false);
+            if (resp.success) {
+                dxMsg(resp.data.message, 'success');
+            } else {
+                dxMsg(resp.data.message || 'Sync fallito.', 'error');
+            }
+        }).fail(function() {
+            dxBtnLoading($btn, false);
+            dxMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Disconnetti account Dexcom
+    $(document).on('click', '#sd-dx-btn-disconnect', function() {
+        if (!confirm('Disconnettere l\'account Dexcom? Le letture già salvate non vengono eliminate.')) return;
+        var $btn = $(this);
+        dxBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_dexcom_oauth_disconnect',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            dxBtnLoading($btn, false);
+            if (resp.success) {
+                dxMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                dxMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            dxBtnLoading($btn, false);
+            dxMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // =========================================================================
+    // TIDEPOOL
+    // =========================================================================
+
+    function tpMsg(text, type) {
+        var $m = $('#sd-tp-message');
+        $m.removeClass('sd-ns-msg-success sd-ns-msg-error sd-ns-msg-info')
+          .addClass('sd-ns-msg-' + (type || 'info'))
+          .text(text).show();
+    }
+
+    function tpBtnLoading($btn, loading) {
+        if (loading) {
+            $btn.data('original-text', $btn.text().trim()).prop('disabled', true).text('Attendere…');
+        } else {
+            $btn.prop('disabled', false).text($btn.data('original-text') || $btn.text());
+        }
+    }
+
+    // Salva credenziali
+    $(document).on('click', '#sd-tp-btn-save', function() {
+        var $btn     = $(this);
+        var email    = $('#sd-tp-email').val().trim();
+        var password = $('#sd-tp-password').val();
+
+        if (!email || !password) {
+            tpMsg('Email e password sono obbligatorie.', 'error');
+            return;
+        }
+
+        tpBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action:            'sd_tidepool_save',
+            nonce:             sdProfile.nonce,
+            tidepool_email:    email,
+            tidepool_password: password
+        }, function(resp) {
+            tpBtnLoading($btn, false);
+            if (resp.success) {
+                tpMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                tpMsg(resp.data.message || 'Errore nel salvataggio.', 'error');
+            }
+        }).fail(function() {
+            tpBtnLoading($btn, false);
+            tpMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Testa connessione
+    $(document).on('click', '#sd-tp-btn-test', function() {
+        var $btn = $(this);
+        tpBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_tidepool_test',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            tpBtnLoading($btn, false);
+            if (resp.success) {
+                tpMsg(resp.data.message, 'success');
+            } else {
+                tpMsg(resp.data.message || 'Test fallito.', 'error');
+            }
+        }).fail(function() {
+            tpBtnLoading($btn, false);
+            tpMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Sync manuale
+    $(document).on('click', '#sd-tp-btn-sync', function() {
+        var $btn = $(this);
+        tpBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_tidepool_sync',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            tpBtnLoading($btn, false);
+            if (resp.success) {
+                tpMsg(resp.data.message, 'success');
+            } else {
+                tpMsg(resp.data.message || 'Sync fallito.', 'error');
+            }
+        }).fail(function() {
+            tpBtnLoading($btn, false);
+            tpMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Modifica credenziali
+    $(document).on('click', '#sd-tp-btn-edit', function() {
+        $('#sd-tp-form').show();
+        $('#sd-tp-password').val('');
+    });
+
+    // Annulla modifica
+    $(document).on('click', '#sd-tp-btn-cancel-edit', function() {
+        $('#sd-tp-form').hide();
+        $('#sd-tp-message').hide();
+    });
+
+    // Disconnetti
+    $(document).on('click', '#sd-tp-btn-disconnect', function() {
+        if (!confirm('Disconnettere l\'account Tidepool? Le letture già salvate non vengono eliminate.')) return;
+        var $btn = $(this);
+        tpBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_tidepool_disconnect',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            tpBtnLoading($btn, false);
+            if (resp.success) {
+                tpMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                tpMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            tpBtnLoading($btn, false);
+            tpMsg('Errore di rete.', 'error');
+        });
+    });
+
 })(jQuery);

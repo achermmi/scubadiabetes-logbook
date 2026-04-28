@@ -194,7 +194,7 @@
 }
 
 .sd-btn-save-record:hover {
-    background: #00695C;
+    background: #0d47a1;
 }
 
 .sd-btn-save-record:disabled {
@@ -718,4 +718,407 @@
 
 .sd-btn-record-modal-close:hover {
     background: var(--sd-gray-50);
+}
+
+/* ============================================================
+   NIGHTSCOUT SECTION
+   ============================================================ */
+.sd-section-nightscout {
+    border-left: 3px solid #16a34a;
+}
+
+.sd-section-nightscout .sd-section-title {
+    color: #166534;
+}
+
+.sd-section-nightscout .sd-section-icon {
+    color: #16a34a;
+}
+
+/* ============================================================
+   DEXCOM SECTION
+   ============================================================ */
+.sd-section-dexcom {
+    border-left: 3px solid #00adef;
+}
+
+.sd-section-dexcom .sd-section-title {
+    color: #006ba6;
+}
+
+.sd-section-dexcom .sd-section-icon {
+    color: #00adef;
+}
+
+.sd-section-tidepool {
+    border-left: 3px solid #0d9488;
+}
+
+.sd-section-tidepool .sd-section-title {
+    color: #0f766e;
+}
+
+.sd-section-tidepool .sd-section-icon {
+    color: #0d9488;
+}
+
+/* Password input con toggle mostra/nascondi */
+.sd-password-wrap {
+    position: relative;
+    display: block;
+}
+
+.sd-password-wrap input[type="password"],
+.sd-password-wrap input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 44px;
+}
+
+.sd-password-toggle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sd-gray-400, #9ca3af);
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.sd-password-toggle:hover {
+    color: var(--sd-gray-600, #4b5563);
+}
+
+/* Badge stato connessione */
+.sd-ns-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+.sd-ns-badge-connected {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sd-ns-badge-disconnected {
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-500);
+}
+
+/* Barra stato connessione attiva */
+.sd-ns-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--sd-radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.sd-ns-status-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sd-ns-url {
+    font-size: 13px;
+    font-weight: 600;
+    color: #166534;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sd-ns-lastsync {
+    font-size: 11px;
+    color: #4ade80;
+    color: #16a34a;
+}
+
+.sd-ns-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Bottoni azione Nightscout */
+.sd-btn-ns {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: var(--sd-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.sd-btn-ns:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sd-btn-ns-test {
+    background: #eff6ff;
+    color: var(--sd-blue);
+    border-color: #bfdbfe;
+}
+
+.sd-btn-ns-test:hover:not(:disabled) {
+    background: #dbeafe;
+}
+
+.sd-btn-ns-sync {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #bbf7d0;
+}
+
+.sd-btn-ns-sync:hover:not(:disabled) {
+    background: #dcfce7;
+}
+
+.sd-btn-ns-disconnect {
+    background: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+.sd-btn-ns-disconnect:hover:not(:disabled) {
+    background: #ffe4e6;
+}
+
+/* Form wrap Nightscout */
+.sd-ns-form-wrap {
+    padding: 14px 0 4px;
+}
+
+/* Messaggio inline Nightscout */
+.sd-ns-message {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sd-ns-msg-ok {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.sd-ns-msg-error {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+}
+
+/* ============================================================
+   SERVER CGM INTERNO
+   ============================================================ */
+.sd-section-ns-server {
+    border-left: 3px solid #7c3aed;
+}
+
+.sd-section-ns-server .sd-section-title {
+    color: #4c1d95;
+}
+
+.sd-section-ns-server .sd-section-icon {
+    color: #7c3aed;
+}
+
+/* Stats bar (letture ricevute) */
+.sd-ns-stats-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 16px;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: var(--sd-radius-sm);
+    overflow: hidden;
+}
+
+.sd-ns-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px;
+    text-align: center;
+    border-right: 1px solid #ddd6fe;
+}
+
+.sd-ns-stat:last-child {
+    border-right: none;
+}
+
+.sd-ns-stat-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #5b21b6;
+    line-height: 1.1;
+}
+
+.sd-ns-stat-val small {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.sd-ns-stat-lbl {
+    font-size: 10px;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* Credenziali */
+.sd-ns-credentials {
+    background: #fafaf9;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sd-ns-cred-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sd-ns-cred-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sd-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.sd-ns-cred-copy-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sd-ns-cred-value {
+    flex: 1;
+    display: block;
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: #1e293b;
+    word-break: break-all;
+    min-height: 32px;
+    user-select: all;
+}
+
+.sd-ns-token-masked {
+    letter-spacing: 3px;
+    color: var(--sd-gray-400);
+}
+
+.sd-btn-ns-copy {
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #1565C0;
+    background: #e3f2fd;
+    border-radius: var(--sd-radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #1565C0;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.sd-btn-ns-copy:hover {
+    background: #1565C0;
+    color: #fff;
+}
+
+.sd-btn-ns-copy:hover svg {
+    stroke: #fff;
+}
+
+.sd-ns-cred-actions {
+    margin-top: 4px;
+}
+
+/* Guida configurazione app */
+.sd-ns-app-guide {
+    background: var(--sd-gray-50);
+    border-radius: var(--sd-radius-sm);
+    padding: 14px 16px;
+}
+
+.sd-ns-guide-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sd-gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 12px;
+}
+
+.sd-ns-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.sd-ns-guide-app {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.sd-ns-guide-app strong {
+    display: block;
+    font-size: 13px;
+    color: #5b21b6;
+    margin-bottom: 4px;
+}
+
+.sd-ns-guide-app p {
+    font-size: 11px;
+    color: var(--sd-gray-500);
+    margin: 0;
+    line-height: 1.5;
 }

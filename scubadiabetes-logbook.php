@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.1.0';
+	const DB_VERSION = '3.3.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -76,6 +76,11 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-admin.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-role-sync.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-import.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-nightscout.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-nightscout-server.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dexcom-oauth.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dexcom-settings.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-tidepool.php';
 	}
 
 	/**
@@ -120,6 +125,10 @@ final class SD_Logbook {
 		$db = new SD_Database();
 		$db->create_tables();
 		$db->create_membership_tables();
+		$db->create_nightscout_tables();
+		$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
+		$db->create_dexcom_oauth_tables();
+		$db->create_tidepool_tables();
 
 		// Crea ruoli utente personalizzati
 		$roles = new SD_Roles();
@@ -134,8 +143,11 @@ final class SD_Logbook {
 			update_option( 'sd_secretariat_email', get_option( 'admin_email' ) );
 		}
 
-		// Programma cron rinnovi
+		// Programma cron rinnovi e sync Nightscout e Dexcom
 		SD_Membership_Helper::schedule_cron();
+		SD_Nightscout::schedule_cron();
+		SD_Dexcom_OAuth::schedule_cron();
+		SD_Tidepool::schedule_cron();
 
 		// Pulisci rewrite rules
 		flush_rewrite_rules();
@@ -148,6 +160,9 @@ final class SD_Logbook {
 		// NON rimuoviamo le tabelle alla disattivazione (dati scientifici!)
 		// I ruoli vengono mantenuti
 		wp_clear_scheduled_hook( 'sd_membership_renewal_check' );
+		SD_Nightscout::unschedule_cron();
+		SD_Dexcom_OAuth::unschedule_cron();
+		SD_Tidepool::unschedule_cron();
 		flush_rewrite_rules();
 	}
 
@@ -160,6 +175,10 @@ final class SD_Logbook {
 			$db = new SD_Database();
 			$db->create_tables();
 			$db->create_membership_tables();
+			$db->create_nightscout_tables();
+			$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
+			$db->create_dexcom_oauth_tables();
+			$db->create_tidepool_tables();
 
 			// v3.1.0: corregge valori non validi in member_type
 			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
@@ -206,9 +225,17 @@ final class SD_Logbook {
 		new SD_Membership_Admin();
 		new SD_Role_Sync();
 		new SD_Dive_Import();
+		new SD_Nightscout();
+		new SD_Nightscout_Server();
+		new SD_Dexcom_OAuth();
+		new SD_Dexcom_Settings();
+		new SD_Tidepool();
 
-		// Cron rinnovi (registra se non già programmato)
+		// Cron rinnovi e sync Nightscout, Dexcom OAuth e Tidepool (registra se non già programmato)
 		SD_Membership_Helper::schedule_cron();
+		SD_Nightscout::schedule_cron();
+		SD_Dexcom_OAuth::schedule_cron();
+		SD_Tidepool::schedule_cron();
 
 		// Neve PRO theme compatibility
 		add_filter( 'neve_sidebar_position', array( $this, 'neve_force_fullwidth' ) );

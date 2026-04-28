@@ -705,6 +705,431 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     </div>
     <?php endif; ?>
 
+    <!-- ============================================================ -->
+    <!-- SERVER CGM INTERNO SCUBADIABETES (solo diabetici) -->
+    <!-- ============================================================ -->
+    <?php if ( SD_Roles::is_diver( $user_id ) ) :
+        $ns_data    = SD_Nightscout::get_profile_data( $user_id );
+        $ns_srv     = SD_Nightscout_Server::get_server_profile_data( $user_id );
+    ?>
+    <div class="sd-section sd-section-ns-server">
+        <div class="sd-section-title">
+            <span class="sd-section-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                    <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+                </svg>
+            </span>
+            <?php esc_html_e( 'Server CGM ScubaDiabetes', 'sd-logbook' ); ?>
+            <span class="sd-ns-badge sd-ns-badge-connected"><?php esc_html_e( 'Interno', 'sd-logbook' ); ?></span>
+        </div>
+
+        <p class="sd-field-help" style="margin:0 0 16px;">
+            <?php esc_html_e( 'Configura le tue app CGM (xDrip+, Loop, AndroidAPS, Spike, Juggluco…) per inviare i dati direttamente a ScubaDiabetes, senza bisogno di un server Nightscout esterno. I dati vengono usati per pre-compilare automaticamente il log immersioni.', 'sd-logbook' ); ?>
+        </p>
+
+        <?php if ( $ns_srv['readings_count'] > 0 && $ns_srv['last_reading'] ) :
+            $lr = $ns_srv['last_reading'];
+        ?>
+        <div class="sd-ns-stats-bar">
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-val"><?php echo esc_html( $ns_srv['readings_count'] ); ?></span>
+                <span class="sd-ns-stat-lbl"><?php esc_html_e( 'Letture CGM', 'sd-logbook' ); ?></span>
+            </div>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-val"><?php echo esc_html( $lr->glucose_value ); ?> <small><?php echo esc_html( $lr->glucose_unit ); ?></small></span>
+                <span class="sd-ns-stat-lbl"><?php esc_html_e( 'Ultima lettura', 'sd-logbook' ); ?></span>
+            </div>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-val"><?php echo esc_html( human_time_diff( strtotime( $lr->reading_time ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'fa', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-lbl"><?php echo esc_html( $lr->device ?: 'CGM' ); ?></span>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Credenziali per configurazione app CGM -->
+        <div class="sd-ns-credentials" id="sd-ns-credentials">
+            <div class="sd-ns-cred-field">
+                <label class="sd-ns-cred-label"><?php esc_html_e( 'URL server (Nightscout URL)', 'sd-logbook' ); ?></label>
+                <div class="sd-ns-cred-copy-row">
+                    <code class="sd-ns-cred-value" id="sd-ns-srv-url"><?php echo esc_html( $ns_srv['api_url'] ); ?></code>
+                    <button type="button" class="sd-btn-ns-copy" data-target="sd-ns-srv-url" title="<?php esc_attr_e( 'Copia URL', 'sd-logbook' ); ?>">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#1565C0" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span><?php esc_html_e( 'Copia', 'sd-logbook' ); ?></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sd-ns-cred-field">
+                <label class="sd-ns-cred-label"><?php esc_html_e( 'API_SECRET (token personale)', 'sd-logbook' ); ?></label>
+                <?php if ( $ns_srv['has_token'] ) : ?>
+                <div class="sd-ns-cred-copy-row">
+                    <code class="sd-ns-cred-value sd-ns-token-masked" id="sd-ns-token-display">••••••••••••••••••••••••</code>
+                    <button type="button" class="sd-btn-ns-copy" id="sd-ns-btn-reveal-token" data-token="<?php echo esc_attr( $ns_srv['token'] ); ?>" title="<?php esc_attr_e( 'Mostra / Copia', 'sd-logbook' ); ?>">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#1565C0" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span id="sd-ns-reveal-label"><?php esc_html_e( 'Mostra', 'sd-logbook' ); ?></span>
+                    </button>
+                </div>
+                <?php else : ?>
+                <p class="sd-field-help" style="margin:4px 0 8px;"><?php esc_html_e( 'Nessun token generato.', 'sd-logbook' ); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <div class="sd-ns-cred-actions">
+                <?php if ( ! $ns_srv['has_token'] ) : ?>
+                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-gen-token">
+                    <?php esc_html_e( 'Genera token', 'sd-logbook' ); ?>
+                </button>
+                <?php else : ?>
+                <button type="button" class="sd-btn-ns sd-btn-ns-disconnect" id="sd-ns-btn-regen-token">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    <?php esc_html_e( 'Rigenera token', 'sd-logbook' ); ?>
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Guida configurazione app -->
+        <div class="sd-ns-app-guide">
+            <div class="sd-ns-guide-title"><?php esc_html_e( 'Come configurare le app CGM', 'sd-logbook' ); ?></div>
+            <div class="sd-ns-guide-grid">
+                <div class="sd-ns-guide-app">
+                    <strong>xDrip+</strong>
+                    <p><?php esc_html_e( 'Impostazioni → Cloud Upload → Nightscout sync → inserisci URL + API_SECRET', 'sd-logbook' ); ?></p>
+                </div>
+                <div class="sd-ns-guide-app">
+                    <strong>AndroidAPS / Loop</strong>
+                    <p><?php esc_html_e( 'Config → Nightscout Client → Nightscout URL + API secret', 'sd-logbook' ); ?></p>
+                </div>
+                <div class="sd-ns-guide-app">
+                    <strong>Spike (iOS)</strong>
+                    <p><?php esc_html_e( 'Impostazioni → Followers → Nightscout → URL + API_SECRET', 'sd-logbook' ); ?></p>
+                </div>
+                <div class="sd-ns-guide-app">
+                    <strong>Juggluco</strong>
+                    <p><?php esc_html_e( 'Mirror → Nightscout → inserisci URL e API_SECRET', 'sd-logbook' ); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sd-ns-message" id="sd-ns-srv-message" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INTEGRAZIONE DEXCOM API UFFICIALE (solo diabetici) -->
+    <!-- ============================================================ -->
+    <?php $dx = SD_Dexcom_OAuth::get_profile_data( $user_id ); ?>
+    <div class="sd-section sd-section-dexcom">
+        <div class="sd-section-title">
+            <span class="sd-section-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12h8M12 8l4 4-4 4"/>
+                </svg>
+            </span>
+            <?php esc_html_e( 'Integrazione Dexcom', 'sd-logbook' ); ?>
+            <?php if ( $dx['connected'] ) : ?>
+                <span class="sd-ns-badge sd-ns-badge-connected"><?php esc_html_e( 'Connesso', 'sd-logbook' ); ?></span>
+            <?php else : ?>
+                <span class="sd-ns-badge sd-ns-badge-disconnected"><?php esc_html_e( 'Non connesso', 'sd-logbook' ); ?></span>
+            <?php endif; ?>
+        </div>
+
+        <p class="sd-field-help" style="margin:0 0 16px;">
+            <?php esc_html_e( 'Collega il tuo account Dexcom tramite l\'API ufficiale OAuth 2.0. Non vengono mai salvate le tue credenziali Dexcom: verrai reindirizzato alla pagina login di Dexcom dove potrai autenticarti direttamente.', 'sd-logbook' ); ?>
+        </p>
+
+        <?php if ( ! SD_Dexcom_OAuth::is_configured() ) : ?>
+        <!-- App non configurata dall'admin -->
+        <div class="sd-notice" style="background:#fff8e5;border-left:4px solid #ffb900;padding:12px 16px;border-radius:3px;">
+            ⚠️ <?php esc_html_e( 'L\'integrazione Dexcom API non è ancora configurata. Contatta l\'amministratore del sito.', 'sd-logbook' ); ?>
+        </div>
+
+        <?php elseif ( $dx['connected'] ) : ?>
+        <!-- Stato connessione attiva -->
+        <div class="sd-ns-stats-bar" style="margin-bottom:16px;">
+            <?php if ( $dx['last_glucose'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultima lettura', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $dx['last_glucose'] ); ?> mg/dL
+                    <?php if ( $dx['last_trend'] ) : ?><small><?php echo esc_html( $dx['last_trend'] ); ?></small><?php endif; ?>
+                </span>
+            </div>
+            <?php endif; ?>
+            <?php if ( $dx['last_read_time'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ora lettura', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $dx['last_read_time'] ) ) ); ?></span>
+            </div>
+            <?php endif; ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Letture salvate', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $dx['readings_count'] ); ?></span>
+            </div>
+            <?php if ( $dx['last_sync_at'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultimo sync', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $dx['last_sync_at'] ) ) ); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pulsanti azioni -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+            <button type="button" id="sd-dx-btn-sync" class="sd-btn sd-btn-primary">
+                <?php esc_html_e( 'Sync Ora', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-dx-btn-disconnect" class="sd-btn sd-btn-danger">
+                <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
+            </button>
+        </div>
+
+        <?php else : ?>
+        <!-- Non ancora connesso -->
+        <div style="margin-bottom:16px;">
+            <button type="button" id="sd-dx-btn-connect" class="sd-btn sd-btn-primary" style="font-size:15px;padding:10px 22px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px;">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                <?php esc_html_e( 'Connetti con Dexcom', 'sd-logbook' ); ?>
+            </button>
+            <p class="sd-field-help" style="margin-top:8px;">
+                <?php esc_html_e( 'Verrai reindirizzato al sito Dexcom per autenticarti e autorizzare l\'accesso. Torna qui al termine.', 'sd-logbook' ); ?>
+                <?php if ( SD_Dexcom_OAuth::is_sandbox() ) : ?>
+                <br><strong><?php esc_html_e( '⚠ Modalità Sandbox attiva (dati di test)', 'sd-logbook' ); ?></strong>
+                <?php endif; ?>
+            </p>
+        </div>
+        <?php endif; ?>
+
+        <?php
+        // Mostra messaggio da OAuth callback (es. ?dexcom_connected=1 o ?dexcom_error=...)
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $oauth_conn  = sanitize_text_field( wp_unslash( $_GET['dexcom_connected'] ?? '' ) );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $oauth_error = sanitize_text_field( wp_unslash( $_GET['dexcom_error'] ?? '' ) );
+        if ( '1' === $oauth_conn ) : ?>
+        <div class="sd-ns-message sd-ns-msg-success" style="display:block;">
+            ✅ <?php esc_html_e( 'Account Dexcom connesso con successo!', 'sd-logbook' ); ?>
+        </div>
+        <?php elseif ( $oauth_error ) : ?>
+        <div class="sd-ns-message sd-ns-msg-error" style="display:block;">
+            <?php
+            $err_map = array(
+                'access_denied'  => __( 'Autorizzazione negata dall\'utente.', 'sd-logbook' ),
+                'invalid_state'  => __( 'Sessione scaduta. Riprova.', 'sd-logbook' ),
+                'missing_params' => __( 'Parametri OAuth mancanti.', 'sd-logbook' ),
+            );
+            echo esc_html( $err_map[ $oauth_error ] ?? $oauth_error );
+            ?>
+        </div>
+        <?php endif; ?>
+
+        <div class="sd-ns-message" id="sd-dx-message" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INTEGRAZIONE TIDEPOOL (solo diabetici) -->
+    <!-- ============================================================ -->
+    <?php $tp = SD_Tidepool::get_profile_data( $user_id ); ?>
+    <div class="sd-section sd-section-tidepool">
+        <div class="sd-section-title">
+            <span class="sd-section-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M3 12h18M3 18h18"/>
+                </svg>
+            </span>
+            <?php esc_html_e( 'Integrazione Tidepool', 'sd-logbook' ); ?>
+            <?php if ( $tp['connected'] ) : ?>
+                <span class="sd-ns-badge sd-ns-badge-connected"><?php esc_html_e( 'Connesso', 'sd-logbook' ); ?></span>
+            <?php else : ?>
+                <span class="sd-ns-badge sd-ns-badge-disconnected"><?php esc_html_e( 'Non connesso', 'sd-logbook' ); ?></span>
+            <?php endif; ?>
+        </div>
+
+        <p class="sd-field-help" style="margin:0 0 16px;">
+            <?php esc_html_e( 'Collega il tuo account Tidepool per importare automaticamente le letture CGM. Tidepool è una piattaforma open-source gratuita che aggrega dati da sensori CGM, microinfusori e misuratori. I dati vengono sincronizzati ogni ora.', 'sd-logbook' ); ?>
+        </p>
+
+        <?php if ( $tp['connected'] ) : ?>
+        <!-- Stato connessione -->
+        <div class="sd-ns-stats-bar" style="margin-bottom:16px;">
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Account', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $tp['email'] ); ?></span>
+            </div>
+            <?php if ( $tp['last_glucose'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultima lettura', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $tp['last_glucose'] ); ?> mg/dL
+                    <?php if ( $tp['last_trend'] ) : ?><small><?php echo esc_html( $tp['last_trend'] ); ?></small><?php endif; ?>
+                </span>
+            </div>
+            <?php endif; ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Letture salvate', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $tp['readings_count'] ); ?></span>
+            </div>
+            <?php if ( $tp['last_sync_at'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultimo sync', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $tp['last_sync_at'] ) ) ); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pulsanti azioni -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+            <button type="button" id="sd-tp-btn-sync" class="sd-btn sd-btn-primary">
+                <?php esc_html_e( 'Sync Ora', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-tp-btn-edit" class="sd-btn sd-btn-secondary">
+                <?php esc_html_e( 'Modifica Credenziali', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-tp-btn-disconnect" class="sd-btn sd-btn-danger">
+                <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
+            </button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Form credenziali -->
+        <div id="sd-tp-form" <?php echo $tp['connected'] ? 'style="display:none;"' : ''; ?>>
+            <div class="sd-form-grid">
+                <div class="sd-field">
+                    <label for="sd-tp-email"><?php esc_html_e( 'Email Tidepool', 'sd-logbook' ); ?></label>
+                    <input type="email" id="sd-tp-email" name="tidepool_email" autocomplete="off"
+                           value="<?php echo $tp['connected'] ? esc_attr( $tp['email'] ) : ''; ?>"
+                           placeholder="<?php esc_attr_e( 'es. mario.rossi@email.com', 'sd-logbook' ); ?>">
+                </div>
+                <div class="sd-field">
+                    <label for="sd-tp-password"><?php esc_html_e( 'Password Tidepool', 'sd-logbook' ); ?></label>
+                    <div class="sd-password-wrap">
+                        <input type="password" id="sd-tp-password" name="tidepool_password" autocomplete="new-password"
+                               placeholder="<?php esc_attr_e( 'Password account Tidepool', 'sd-logbook' ); ?>">
+                        <button type="button" class="sd-password-toggle" data-target="sd-tp-password" aria-label="<?php esc_attr_e( 'Mostra/Nascondi password', 'sd-logbook' ); ?>">
+                            <svg class="sd-pw-icon-show" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="sd-pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                <button type="button" id="sd-tp-btn-save" class="sd-btn sd-btn-primary">
+                    <?php esc_html_e( 'Salva e Connetti', 'sd-logbook' ); ?>
+                </button>
+                <button type="button" id="sd-tp-btn-test" class="sd-btn sd-btn-secondary">
+                    <?php esc_html_e( 'Testa Connessione', 'sd-logbook' ); ?>
+                </button>
+                <?php if ( $tp['connected'] ) : ?>
+                <button type="button" id="sd-tp-btn-cancel-edit" class="sd-btn sd-btn-ghost">
+                    <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="sd-ns-message" id="sd-tp-message" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INTEGRAZIONE NIGHTSCOUT (solo diabetici) -->
+    <!-- ============================================================ -->
+    <div class="sd-section sd-section-nightscout">
+        <div class="sd-section-title">
+            <span class="sd-section-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                </svg>
+            </span>
+            <?php esc_html_e( 'Connessione Nightscout', 'sd-logbook' ); ?>
+            <?php if ( $ns_data['connected'] ) : ?>
+                <span class="sd-ns-badge sd-ns-badge-connected"><?php esc_html_e( 'Connesso', 'sd-logbook' ); ?></span>
+            <?php else : ?>
+                <span class="sd-ns-badge sd-ns-badge-disconnected"><?php esc_html_e( 'Non connesso', 'sd-logbook' ); ?></span>
+            <?php endif; ?>
+        </div>
+
+        <p class="sd-field-help" style="margin:0 0 16px;">
+            <?php esc_html_e( 'Collega il tuo server Nightscout per importare automaticamente valori CGM e somministrazioni di insulina. I dati vengono sincronizzati ogni ora e possono essere usati per pre-compilare il log immersioni.', 'sd-logbook' ); ?>
+            <a href="https://nightscout.github.io/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Cos\'è Nightscout?', 'sd-logbook' ); ?></a>
+        </p>
+
+        <?php if ( $ns_data['connected'] ) : ?>
+        <!-- Stato connessione attiva -->
+        <div class="sd-ns-status-bar" id="sd-ns-status-bar">
+            <div class="sd-ns-status-info">
+                <span class="sd-ns-url"><?php echo esc_html( $ns_data['url'] ); ?></span>
+                <?php if ( $ns_data['last_sync'] ) : ?>
+                <span class="sd-ns-lastsync">
+                    <?php echo esc_html(
+                        sprintf(
+                            /* translators: %s: relative time string */
+                            __( 'Ultimo sync: %s', 'sd-logbook' ),
+                            human_time_diff( strtotime( $ns_data['last_sync'] ), current_time( 'timestamp' ) ) . ' ' . __( 'fa', 'sd-logbook' )
+                        )
+                    ); ?>
+                </span>
+                <?php endif; ?>
+            </div>
+            <div class="sd-ns-actions">
+                <button type="button" class="sd-btn-ns sd-btn-ns-test" id="sd-ns-btn-test">
+                    <?php esc_html_e( 'Test connessione', 'sd-logbook' ); ?>
+                </button>
+                <button type="button" class="sd-btn-ns sd-btn-ns-sync" id="sd-ns-btn-sync">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    <?php esc_html_e( 'Sync ora', 'sd-logbook' ); ?>
+                </button>
+                <button type="button" class="sd-btn-ns sd-btn-ns-disconnect" id="sd-ns-btn-disconnect">
+                    <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Form credenziali (sempre visibile se non connesso, collassabile se connesso) -->
+        <div class="sd-ns-form-wrap" id="sd-ns-form-wrap" <?php echo $ns_data['connected'] ? 'style="display:none;"' : ''; ?>>
+            <div class="sd-field">
+                <label><?php esc_html_e( 'URL del server Nightscout', 'sd-logbook' ); ?> *</label>
+                <input type="url" id="sd-ns-url" name="ns_url"
+                       value="<?php echo esc_attr( $ns_data['url'] ); ?>"
+                       placeholder="https://mio-nightscout.fly.dev">
+                <p class="sd-field-help"><?php esc_html_e( 'URL completo del tuo server Nightscout (es. Fly.io, Render, Railway). Si raccomanda HTTPS.', 'sd-logbook' ); ?></p>
+            </div>
+            <div class="sd-field">
+                <label><?php esc_html_e( 'API_SECRET (token)', 'sd-logbook' ); ?> *</label>
+                <input type="password" id="sd-ns-token" name="ns_token"
+                       value=""
+                       placeholder="<?php echo $ns_data['connected'] ? esc_attr__( '(invariato)', 'sd-logbook' ) : ''; ?>"
+                       autocomplete="new-password">
+                <p class="sd-field-help"><?php esc_html_e( 'Il tuo API_SECRET Nightscout. Viene cifrato prima di essere salvato.', 'sd-logbook' ); ?></p>
+            </div>
+            <div class="sd-add-form-actions">
+                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-save">
+                    <?php esc_html_e( $ns_data['connected'] ? 'Aggiorna credenziali' : 'Connetti Nightscout', 'sd-logbook' ); ?>
+                </button>
+                <?php if ( $ns_data['connected'] ) : ?>
+                <button type="button" class="sd-btn-cancel-record" id="sd-ns-btn-cancel-edit">
+                    <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if ( $ns_data['connected'] ) : ?>
+        <button type="button" class="sd-btn-add-record" id="sd-ns-btn-edit-credentials" style="margin-top:8px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <?php esc_html_e( 'Modifica credenziali', 'sd-logbook' ); ?>
+        </button>
+        <?php endif; ?>
+
+        <div class="sd-ns-message" id="sd-ns-message" style="display:none;"></div>
+    </div>
+    <?php endif; ?>
+
     <!-- Messaggi globali -->
     <div class="sd-form-messages sd-profile-messages" id="sd-profile-messages" style="display:none;"></div>
 

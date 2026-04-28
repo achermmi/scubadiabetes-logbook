@@ -12,7 +12,7 @@
     --sd-blue-light: #E3F2FD;
     --sd-blue-pale: #F0F7FF;
     --sd-cyan: #0097A7;
-    --sd-teal: #00897B;
+    --sd-teal: #1565C0;
     --sd-white: #FFFFFF;
     --sd-gray-50: #F8FAFC;
     --sd-gray-100: #F1F5F9;
@@ -334,6 +334,7 @@ body.page .container.single-page-container {
 .sd-field input[type="time"],
 .sd-field input[type="email"],
 .sd-field input[type="tel"],
+.sd-field input[type="password"],
 .sd-field select,
 .sd-field textarea {
     width: 100%;
