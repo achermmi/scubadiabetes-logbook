@@ -232,7 +232,8 @@ class SD_Dexcom_OAuth {
 
 		// Utente ha negato l'accesso
 		if ( $error ) {
-			wp_safe_redirect( add_query_arg( 'dexcom_error', rawurlencode( $error ), home_url( '/' ) ) );
+			$fallback = add_query_arg( 'dexcom_error', rawurlencode( $error ), home_url( '/' ) );
+			wp_safe_redirect( $fallback );
 			exit;
 		}
 
@@ -244,6 +245,7 @@ class SD_Dexcom_OAuth {
 		// Valida stato (CSRF check)
 		$state_data = $this->validate_oauth_state( $state );
 		if ( false === $state_data ) {
+			// Il transient è scaduto o non trovato — mostrare errore diagnostico
 			wp_safe_redirect( add_query_arg( 'dexcom_error', 'invalid_state', home_url( '/' ) ) );
 			exit;
 		}
@@ -669,15 +671,14 @@ class SD_Dexcom_OAuth {
 		}
 
 		$state    = $this->generate_oauth_state( $user_id, $return_url );
-		$auth_url = add_query_arg(
+		$auth_url = self::get_base_url() . self::AUTH_PATH . '?' . http_build_query(
 			array(
 				'client_id'     => self::get_client_id(),
-				'redirect_uri'  => rawurlencode( self::get_redirect_uri() ),
+				'redirect_uri'  => self::get_redirect_uri(),
 				'response_type' => 'code',
 				'scope'         => 'offline_access',
 				'state'         => $state,
-			),
-			self::get_base_url() . self::AUTH_PATH
+			)
 		);
 
 		wp_send_json_success( array( 'auth_url' => $auth_url ) );
