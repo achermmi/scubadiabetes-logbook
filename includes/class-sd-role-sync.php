@@ -108,6 +108,9 @@ class SD_Role_Sync {
 					$update,
 					array( 'id' => $existing->id )
 				);
+				// Aggiorna is_diabetic/diabetes_type nel profilo subacqueo per coerenza con il ruolo.
+				$new_diabetes_type = isset( $update['diabetes_type'] ) ? $update['diabetes_type'] : $existing->diabetes_type;
+				$this->sync_profile_diabetes_for_role( $user_id, $new_diabetes_type, $db );
 				// Sincronizza diver profile se ruolo subacqueo
 				if ( $attrs['is_scuba'] ) {
 					$this->sync_diver_profile_from_member( $user_id, $db, $wpdb );
@@ -146,6 +149,10 @@ class SD_Role_Sync {
 				$update,
 				array( 'id' => $by_email->id )
 			);
+			// Aggiorna is_diabetic/diabetes_type nel profilo subacqueo per coerenza con il ruolo.
+			if ( isset( $update['diabetes_type'] ) ) {
+				$this->sync_profile_diabetes_for_role( $user_id, $update['diabetes_type'], $db );
+			}
 			// Sincronizza diver profile se ruolo subacqueo
 			if ( $is_scuba_role ) {
 				$this->sync_diver_profile_from_member( $user_id, $db, $wpdb );
@@ -328,6 +335,35 @@ class SD_Role_Sync {
 	 * @param string $role Ruolo WordPress
 	 * @return array { member_type, is_scuba, diabetes_type }
 	 */
+	/**
+	 * Aggiorna is_diabetic e diabetes_type nel profilo subacqueo per allinearlo al ruolo.
+	 * Viene chiamato dopo ogni aggiornamento del ruolo in sd_members.
+	 *
+	 * @param int         $user_id       ID utente WordPress
+	 * @param string      $diabetes_type Tipo diabete effettivo da applicare al profilo
+	 * @param SD_Database $db            Istanza database
+	 */
+	private function sync_profile_diabetes_for_role( $user_id, $diabetes_type, $db ) {
+		global $wpdb;
+		$is_diabetic = ( 'non_diabetico' !== $diabetes_type && ! empty( $diabetes_type ) ) ? 1 : 0;
+		$profile_id  = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$db->table('diver_profiles')} WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+		if ( $profile_id ) {
+			$wpdb->update(
+				$db->table( 'diver_profiles' ),
+				array(
+					'is_diabetic'  => $is_diabetic,
+					'diabetes_type' => $diabetes_type,
+				),
+				array( 'user_id' => $user_id )
+			);
+		}
+	}
+
 	private function role_to_attrs( $role ) {
 		switch ( $role ) {
 			case 'sd_diver_diabetic':

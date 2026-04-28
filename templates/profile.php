@@ -543,7 +543,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- ============================================================ -->
     <!-- DATI DIABETE (solo diabetici — singolo record in DB) -->
     <!-- ============================================================ -->
-    <?php if ( SD_Roles::is_diver( $user_id ) ) : ?>
+    <?php if ( SD_Roles::is_diabetic_diver( $user_id ) ) : ?>
     <div class="sd-section sd-section-diabetes">
         <div class="sd-section-title sd-section-title-diabetes">
             <span class="sd-section-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12z"/><line x1="12" y1="18" x2="12" y2="14"/><line x1="10" y1="16" x2="14" y2="16"/></svg></span>
@@ -708,7 +708,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- ============================================================ -->
     <!-- SERVER CGM INTERNO SCUBADIABETES (solo diabetici) -->
     <!-- ============================================================ -->
-    <?php if ( SD_Roles::is_diver( $user_id ) ) :
+    <?php if ( SD_Roles::is_diabetic_diver( $user_id ) ) :
         $ns_data    = SD_Nightscout::get_profile_data( $user_id );
         $ns_srv     = SD_Nightscout_Server::get_server_profile_data( $user_id );
     ?>
