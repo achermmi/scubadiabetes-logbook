@@ -41,8 +41,8 @@ class SD_Dexcom_OAuth {
 	/** @var string Hook cron per sync automatico */
 	const CRON_HOOK = 'sd_dexcom_oauth_sync_cron';
 
-	/** @var int Ore di storico da recuperare per ogni sync */
-	const SYNC_HOURS = 24;
+	/** @var int Ore di storico per il primo sync (nessun last_sync_at) */
+	const FIRST_SYNC_HOURS = 2160; // 90 giorni
 
 	/** @var string Namespace REST API per la callback OAuth */
 	const REST_NAMESPACE = 'sd-logbook/v1';
@@ -515,7 +515,7 @@ class SD_Dexcom_OAuth {
 	 * @param int    $hours        Ore di storico da recuperare.
 	 * @return array{egvs:array,unit:string}|WP_Error
 	 */
-	private function fetch_egvs( string $access_token, int $hours = self::SYNC_HOURS ): array|WP_Error {
+	private function fetch_egvs( string $access_token, int $hours = 24 ): array|WP_Error {
 		$start = gmdate( 'Y-m-d\TH:i:s', strtotime( "-{$hours} hours" ) );
 		$end   = gmdate( 'Y-m-d\TH:i:s' );
 
@@ -550,14 +550,8 @@ class SD_Dexcom_OAuth {
 
 		if ( 200 !== $http_code ) {
 			$msg = $body['errors'][0]['message'] ?? "Errore HTTP {$http_code}";
-			// DEBUG TEMPORANEO
-			error_log( '[SD Dexcom] fetch_egvs HTTP ' . $http_code . ' body: ' . wp_json_encode( $body ) );
 			return new WP_Error( 'api_error', $msg );
 		}
-
-		// DEBUG TEMPORANEO
-		error_log( '[SD Dexcom] fetch_egvs OK - startDate: ' . $start . ' endDate: ' . $end );
-		error_log( '[SD Dexcom] fetch_egvs EGVs ricevuti: ' . count( $body['egvs'] ?? array() ) . ' unit: ' . ( $body['unit'] ?? 'n/a' ) );
 
 		return array(
 			'egvs' => $body['egvs'] ?? array(),
@@ -585,17 +579,20 @@ class SD_Dexcom_OAuth {
 			);
 		}
 
-		$data = $this->fetch_egvs( $token, self::SYNC_HOURS );
+		// Primo sync (nessun last_sync_at) → scarica 90 giorni di storico
+		$conn  = $this->get_connection( $user_id );
+		$hours = ( $conn && ! empty( $conn->last_sync_at ) ) ? 24 : self::FIRST_SYNC_HOURS;
+
+		$data = $this->fetch_egvs( $token, $hours );
 
 		// Retry con refresh se il token era scaduto
 		if ( is_wp_error( $data ) && 'token_expired' === $data->get_error_code() ) {
-			$conn    = $this->get_connection( $user_id );
 			$refresh = $conn ? $this->decrypt( $conn->refresh_token ) : '';
 			if ( $refresh ) {
 				$new_tokens = $this->refresh_tokens( $refresh );
 				if ( ! is_wp_error( $new_tokens ) ) {
 					$this->save_tokens( $user_id, $new_tokens );
-					$data = $this->fetch_egvs( $new_tokens['access_token'], self::SYNC_HOURS );
+					$data = $this->fetch_egvs( $new_tokens['access_token'], $hours );
 				}
 			}
 		}
@@ -694,10 +691,6 @@ class SD_Dexcom_OAuth {
 				'state'         => $state,
 			)
 		);
-
-		// DEBUG TEMPORANEO — rimuovere dopo il test
-		error_log( '[SD Dexcom] redirect_uri inviata: ' . self::get_redirect_uri() );
-		error_log( '[SD Dexcom] auth_url completa: ' . $auth_url );
 
 		wp_send_json_success( array( 'auth_url' => $auth_url ) );
 	}
