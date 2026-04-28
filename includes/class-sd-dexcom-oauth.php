@@ -547,7 +547,9 @@ class SD_Dexcom_OAuth {
 		}
 
 		if ( 200 !== $http_code ) {
-			$msg = $body['errors'][0]['message'] ?? "Errore HTTP {$http_code}";
+			$raw = wp_remote_retrieve_body( $response );
+			error_log( '[Dexcom] HTTP ' . $http_code . ' - URL: ' . $url . ' - Body: ' . $raw );
+			$msg = $body['message'] ?? ( $body['errors'][0]['message'] ?? "Errore HTTP {$http_code}" );
 			return new WP_Error( 'api_error', $msg );
 		}
 
