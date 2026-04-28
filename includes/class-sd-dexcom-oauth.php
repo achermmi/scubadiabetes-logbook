@@ -223,6 +223,16 @@ class SD_Dexcom_OAuth {
 			return;
 		}
 
+		// DEBUG TEMPORANEO — rimuovere dopo il test
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		error_log( '[SD Dexcom] Callback ricevuta. GET params: ' . wp_json_encode( array_keys( $_GET ) ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		error_log( '[SD Dexcom] code presente: ' . ( isset( $_GET['code'] ) ? 'SI (len=' . strlen( $_GET['code'] ) . ')' : 'NO' ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		error_log( '[SD Dexcom] state presente: ' . ( isset( $_GET['state'] ) ? 'SI' : 'NO' ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		error_log( '[SD Dexcom] error presente: ' . ( isset( $_GET['error'] ) ? wp_json_encode( $_GET['error'] ) : 'NO' ) );
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$code  = sanitize_text_field( wp_unslash( $_GET['code'] ?? '' ) );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -680,6 +690,10 @@ class SD_Dexcom_OAuth {
 				'state'         => $state,
 			)
 		);
+
+		// DEBUG TEMPORANEO — rimuovere dopo il test
+		error_log( '[SD Dexcom] redirect_uri inviata: ' . self::get_redirect_uri() );
+		error_log( '[SD Dexcom] auth_url completa: ' . $auth_url );
 
 		wp_send_json_success( array( 'auth_url' => $auth_url ) );
 	}
