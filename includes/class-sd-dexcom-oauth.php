@@ -550,8 +550,14 @@ class SD_Dexcom_OAuth {
 
 		if ( 200 !== $http_code ) {
 			$msg = $body['errors'][0]['message'] ?? "Errore HTTP {$http_code}";
+			// DEBUG TEMPORANEO
+			error_log( '[SD Dexcom] fetch_egvs HTTP ' . $http_code . ' body: ' . wp_json_encode( $body ) );
 			return new WP_Error( 'api_error', $msg );
 		}
+
+		// DEBUG TEMPORANEO
+		error_log( '[SD Dexcom] fetch_egvs OK - startDate: ' . $start . ' endDate: ' . $end );
+		error_log( '[SD Dexcom] fetch_egvs EGVs ricevuti: ' . count( $body['egvs'] ?? array() ) . ' unit: ' . ( $body['unit'] ?? 'n/a' ) );
 
 		return array(
 			'egvs' => $body['egvs'] ?? array(),
