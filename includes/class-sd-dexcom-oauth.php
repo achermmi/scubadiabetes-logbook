@@ -61,9 +61,9 @@ class SD_Dexcom_OAuth {
 		add_action( 'template_redirect', array( $this, 'handle_oauth_callback' ) );
 
 		// Handler AJAX (solo utenti autenticati)
-		add_action( 'wp_ajax_sd_dexcom_oauth_connect',     array( $this, 'ajax_initiate_oauth' ) );
-		add_action( 'wp_ajax_sd_dexcom_oauth_sync',        array( $this, 'ajax_manual_sync' ) );
-		add_action( 'wp_ajax_sd_dexcom_oauth_disconnect',  array( $this, 'ajax_disconnect' ) );
+		add_action( 'wp_ajax_sd_dexcom_oauth_connect', array( $this, 'ajax_initiate_oauth' ) );
+		add_action( 'wp_ajax_sd_dexcom_oauth_sync', array( $this, 'ajax_manual_sync' ) );
+		add_action( 'wp_ajax_sd_dexcom_oauth_disconnect', array( $this, 'ajax_disconnect' ) );
 
 		// Cron sync automatico
 		add_action( self::CRON_HOOK, array( $this, 'cron_sync_all' ) );
@@ -102,7 +102,7 @@ class SD_Dexcom_OAuth {
 		$iv     = substr( $data, 0, 16 );
 		$cipher = substr( $data, 16 );
 		$plain  = openssl_decrypt( $cipher, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
-		return $plain !== false ? $plain : '';
+		return false !== $plain ? $plain : '';
 	}
 
 	/**
@@ -224,7 +224,7 @@ class SD_Dexcom_OAuth {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$code  = sanitize_text_field( wp_unslash( $_GET['code']  ?? '' ) );
+		$code  = sanitize_text_field( wp_unslash( $_GET['code'] ?? '' ) );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$state = sanitize_text_field( wp_unslash( $_GET['state'] ?? '' ) );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended

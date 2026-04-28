@@ -30,11 +30,11 @@ class SD_Nightscout {
 
 	public function __construct() {
 		// Handler AJAX (solo utenti autenticati)
-		add_action( 'wp_ajax_sd_nightscout_save',       array( $this, 'ajax_save_connection' ) );
-		add_action( 'wp_ajax_sd_nightscout_test',       array( $this, 'ajax_test_connection' ) );
-		add_action( 'wp_ajax_sd_nightscout_sync',       array( $this, 'ajax_manual_sync' ) );
+		add_action( 'wp_ajax_sd_nightscout_save', array( $this, 'ajax_save_connection' ) );
+		add_action( 'wp_ajax_sd_nightscout_test', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_sd_nightscout_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_nightscout_disconnect', array( $this, 'ajax_disconnect' ) );
-		add_action( 'wp_ajax_sd_nightscout_readings',   array( $this, 'ajax_get_readings' ) );
+		add_action( 'wp_ajax_sd_nightscout_readings', array( $this, 'ajax_get_readings' ) );
 
 		// Cron periodico
 		add_action( 'sd_nightscout_sync_cron', array( $this, 'cron_sync_all' ) );

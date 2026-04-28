@@ -27,8 +27,8 @@ class SD_Dexcom_Settings {
 	const OPTION_GROUP = 'sd_dexcom_oauth_options';
 
 	public function __construct() {
-		add_action( 'admin_menu',  array( $this, 'add_settings_page' ) );
-		add_action( 'admin_init',  array( $this, 'register_settings' ) );
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	/**
@@ -102,13 +102,15 @@ class SD_Dexcom_Settings {
 				<div style="background:#fff;border:1px solid #ccd0d4;border-left:4px solid #0073aa;padding:16px 20px;margin:20px 0;border-radius:3px;">
 					<h3 style="margin-top:0;"><?php esc_html_e( 'Come configurare l\'integrazione Dexcom', 'sd-logbook' ); ?></h3>
 					<ol style="line-height:1.9;">
-						<li><?php
+						<li>
+							<?php
 							printf(
 								/* translators: %s = URL portale Dexcom */
 								esc_html__( 'Vai su %s e accedi con il tuo account developer.', 'sd-logbook' ),
 								'<a href="https://developer.dexcom.com" target="_blank" rel="noopener">developer.dexcom.com</a>'
 							);
-						?></li>
+							?>
+						</li>
 						<li><?php esc_html_e( 'Crea o modifica la tua app e copia Client ID e Client Secret.', 'sd-logbook' ); ?></li>
 						<li>
 							<?php esc_html_e( 'Nel portale Dexcom, imposta il seguente Redirect URI nella sezione "Redirect URIs" della tua app:', 'sd-logbook' ); ?><br>

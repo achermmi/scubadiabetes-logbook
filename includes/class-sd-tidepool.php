@@ -49,9 +49,9 @@ class SD_Tidepool {
 		$this->prefix = $wpdb->prefix . 'sd_';
 
 		// AJAX autenticato
-		add_action( 'wp_ajax_sd_tidepool_save',       array( $this, 'ajax_save_credentials' ) );
-		add_action( 'wp_ajax_sd_tidepool_test',       array( $this, 'ajax_test_connection' ) );
-		add_action( 'wp_ajax_sd_tidepool_sync',       array( $this, 'ajax_manual_sync' ) );
+		add_action( 'wp_ajax_sd_tidepool_save', array( $this, 'ajax_save_credentials' ) );
+		add_action( 'wp_ajax_sd_tidepool_test', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_sd_tidepool_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_tidepool_disconnect', array( $this, 'ajax_disconnect' ) );
 
 		// Cron sync automatico
@@ -394,12 +394,20 @@ class SD_Tidepool {
 
 		$conn = $this->get_connection( $user_id );
 		if ( ! $conn || ! $conn->sync_enabled ) {
-			return array( 'ok' => false, 'inserted' => 0, 'message' => 'Sync disabilitato o nessuna connessione.' );
+			return array(
+				'ok'       => false,
+				'inserted' => 0,
+				'message'  => 'Sync disabilitato o nessuna connessione.',
+			);
 		}
 
 		$result = $this->login_and_fetch( $conn );
 		if ( is_wp_error( $result ) ) {
-			return array( 'ok' => false, 'inserted' => 0, 'message' => $result->get_error_message() );
+			return array(
+				'ok'       => false,
+				'inserted' => 0,
+				'message'  => $result->get_error_message(),
+			);
 		}
 
 		$inserted = $this->save_readings( $user_id, $result['readings'], 'Tidepool' );

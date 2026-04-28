@@ -52,11 +52,11 @@ class SD_Dexcom {
 		$this->prefix = $wpdb->prefix . 'sd_';
 
 		// AJAX autenticato
-		add_action( 'wp_ajax_sd_dexcom_save',       array( $this, 'ajax_save_credentials' ) );
-		add_action( 'wp_ajax_sd_dexcom_test',       array( $this, 'ajax_test_connection' ) );
-		add_action( 'wp_ajax_sd_dexcom_sync',       array( $this, 'ajax_manual_sync' ) );
+		add_action( 'wp_ajax_sd_dexcom_save', array( $this, 'ajax_save_credentials' ) );
+		add_action( 'wp_ajax_sd_dexcom_test', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_sd_dexcom_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_dexcom_disconnect', array( $this, 'ajax_disconnect' ) );
-		add_action( 'wp_ajax_sd_dexcom_readings',   array( $this, 'ajax_get_readings' ) );
+		add_action( 'wp_ajax_sd_dexcom_readings', array( $this, 'ajax_get_readings' ) );
 
 		// Cron sync automatico
 		add_action( self::CRON_HOOK, array( $this, 'cron_sync_all' ) );
@@ -397,12 +397,20 @@ class SD_Dexcom {
 
 		$conn = $this->get_connection( $user_id );
 		if ( ! $conn || ! $conn->sync_enabled ) {
-			return array( 'ok' => false, 'inserted' => 0, 'message' => 'Sync disabilitato o nessuna connessione.' );
+			return array(
+				'ok'       => false,
+				'inserted' => 0,
+				'message'  => 'Sync disabilitato o nessuna connessione.',
+			);
 		}
 
 		$result = $this->login_and_fetch( $conn );
 		if ( is_wp_error( $result ) ) {
-			return array( 'ok' => false, 'inserted' => 0, 'message' => $result->get_error_message() );
+			return array(
+				'ok'       => false,
+				'inserted' => 0,
+				'message'  => $result->get_error_message(),
+			);
 		}
 
 		// Stima nome dispositivo dalla configurazione utente

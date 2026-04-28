@@ -73,60 +73,93 @@ class SD_Nightscout_Server {
 		$ns = self::NS;
 
 		// --- Status (no auth) ---
-		register_rest_route( $ns, '/status(?:\.json)?', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'route_status' ),
-			'permission_callback' => '__return_true',
-		) );
+		register_rest_route(
+			$ns,
+			'/status(?:\.json)?',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'route_status' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 
 		// --- Profile (auth required) ---
-		register_rest_route( $ns, '/profile(?:\.json)?', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'route_profile' ),
-			'permission_callback' => array( $this, 'authenticate_request' ),
-		) );
+		register_rest_route(
+			$ns,
+			'/profile(?:\.json)?',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'route_profile' ),
+				'permission_callback' => array( $this, 'authenticate_request' ),
+			)
+		);
 
 		// --- Entries (letture CGM) ---
-		register_rest_route( $ns, '/entries(?:\.json)?', array(
+		register_rest_route(
+			$ns,
+			'/entries(?:\.json)?',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'route_entries_get' ),
-				'permission_callback' => array( $this, 'authenticate_request' ),
-				'args'                => array(
-					'count' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => self::MAX_COUNT, 'default' => 100 ),
-					'find'  => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'route_entries_get' ),
+					'permission_callback' => array( $this, 'authenticate_request' ),
+					'args'                => array(
+						'count' => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+							'maximum' => self::MAX_COUNT,
+							'default' => 100,
+						),
+						'find'  => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
 				),
-			),
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'route_entries_post' ),
-				'permission_callback' => array( $this, 'authenticate_request' ),
-			),
-		) );
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( $this, 'route_entries_post' ),
+					'permission_callback' => array( $this, 'authenticate_request' ),
+				),
+			)
+		);
 
 		// --- Treatments (insulina / carboidrati) ---
-		register_rest_route( $ns, '/treatments(?:\.json)?', array(
+		register_rest_route(
+			$ns,
+			'/treatments(?:\.json)?',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'route_treatments_get' ),
-				'permission_callback' => array( $this, 'authenticate_request' ),
-				'args'                => array(
-					'count' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => self::MAX_COUNT, 'default' => 100 ),
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'route_treatments_get' ),
+					'permission_callback' => array( $this, 'authenticate_request' ),
+					'args'                => array(
+						'count' => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+							'maximum' => self::MAX_COUNT,
+							'default' => 100,
+						),
+					),
 				),
-			),
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'route_treatments_post' ),
-				'permission_callback' => array( $this, 'authenticate_request' ),
-			),
-		) );
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( $this, 'route_treatments_post' ),
+					'permission_callback' => array( $this, 'authenticate_request' ),
+				),
+			)
+		);
 
 		// --- DELETE entries/treatments (per compatibilità Nightscout) ---
-		register_rest_route( $ns, '/entries/(?P<id>[0-9]+)', array(
-			'methods'             => 'DELETE',
-			'callback'            => array( $this, 'route_entries_delete' ),
-			'permission_callback' => array( $this, 'authenticate_request' ),
-		) );
+		register_rest_route(
+			$ns,
+			'/entries/(?P<id>[0-9]+)',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( $this, 'route_entries_delete' ),
+				'permission_callback' => array( $this, 'authenticate_request' ),
+			)
+		);
 	}
 
 	// ================================================================
@@ -231,18 +264,21 @@ class SD_Nightscout_Server {
 	// ================================================================
 
 	public function route_status( WP_REST_Request $request ): WP_REST_Response {
-		return new WP_REST_Response( array(
-			'status'         => 'ok',
-			'name'           => 'ScubaDiabetes Nightscout',
-			'version'        => self::SERVER_VERSION,
-			'apiEnabled'     => true,
-			'careportalEnabled' => true,
-			'head'           => 'SD-INTERNAL',
-			'settings'       => array(
-				'units' => 'mg/dl',
+		return new WP_REST_Response(
+			array(
+				'status'           => 'ok',
+				'name'             => 'ScubaDiabetes Nightscout',
+				'version'          => self::SERVER_VERSION,
+				'apiEnabled'       => true,
+				'careportalEnabled' => true,
+				'head'             => 'SD-INTERNAL',
+				'settings'         => array(
+					'units' => 'mg/dl',
+				),
+				'extendedSettings' => array(),
 			),
-			'extendedSettings' => array(),
-		), 200 );
+			200
+		);
 	}
 
 	// ================================================================
@@ -263,17 +299,20 @@ class SD_Nightscout_Server {
 
 		$units = ( $row && 'mmol/l' === $row->glycemia_unit ) ? 'mmol' : 'mg/dl';
 
-		return new WP_REST_Response( array(
-			'_id'        => 'default',
-			'defaultProfile' => 'Default',
-			'store'      => array(
-				'Default' => array(
-					'units' => $units,
+		return new WP_REST_Response(
+			array(
+				'_id'            => 'default',
+				'defaultProfile' => 'Default',
+				'store'          => array(
+					'Default' => array(
+						'units' => $units,
+					),
 				),
+				'startDate'      => '2000-01-01T00:00:00.000Z',
+				'units'          => $units,
 			),
-			'startDate'  => '2000-01-01T00:00:00.000Z',
-			'units'      => $units,
-		), 200 );
+			200
+		);
 	}
 
 	// ================================================================
@@ -328,7 +367,13 @@ class SD_Nightscout_Server {
 		}
 
 		if ( ! is_array( $body ) || empty( $body ) ) {
-			return new WP_REST_Response( array( 'status' => 'error', 'message' => 'No entries provided.' ), 400 );
+			return new WP_REST_Response(
+				array(
+					'status'  => 'error',
+					'message' => 'No entries provided.',
+				),
+				400
+			);
 		}
 
 		global $wpdb;
@@ -393,7 +438,11 @@ class SD_Nightscout_Server {
 		}
 
 		return new WP_REST_Response(
-			array( 'status' => 'ok', 'saved' => $saved, 'skipped' => $skipped ),
+			array(
+				'status'  => 'ok',
+				'saved'   => $saved,
+				'skipped' => $skipped,
+			),
 			200
 		);
 	}
@@ -454,7 +503,13 @@ class SD_Nightscout_Server {
 		}
 
 		if ( ! is_array( $body ) || empty( $body ) ) {
-			return new WP_REST_Response( array( 'status' => 'error', 'message' => 'No treatments provided.' ), 400 );
+			return new WP_REST_Response(
+				array(
+					'status'  => 'error',
+					'message' => 'No treatments provided.',
+				),
+				400
+			);
 		}
 
 		global $wpdb;
@@ -473,7 +528,7 @@ class SD_Nightscout_Server {
 
 			$event_type    = sanitize_text_field( $treat['eventType'] ?? 'Note' );
 			$insulin_units = isset( $treat['insulin'] ) ? (float) $treat['insulin'] : null;
-			$carbs_grams   = isset( $treat['carbs'] )   ? (float) $treat['carbs']   : null;
+			$carbs_grams   = isset( $treat['carbs'] ) ? (float) $treat['carbs'] : null;
 			$notes         = sanitize_textarea_field( $treat['notes'] ?? '' );
 
 			// Evita duplicati (stessa ora + stesso tipo)
@@ -508,7 +563,11 @@ class SD_Nightscout_Server {
 		}
 
 		return new WP_REST_Response(
-			array( 'status' => 'ok', 'saved' => $saved, 'skipped' => $skipped ),
+			array(
+				'status'  => 'ok',
+				'saved'   => $saved,
+				'skipped' => $skipped,
+			),
 			200
 		);
 	}
@@ -525,7 +584,10 @@ class SD_Nightscout_Server {
 		$db = new SD_Database();
 		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$db->table( 'nightscout_readings' ),
-			array( 'id' => $id, 'user_id' => $user_id ),
+			array(
+				'id'      => $id,
+				'user_id' => $user_id,
+			),
 			array( '%d', '%d' )
 		);
 
@@ -581,10 +643,12 @@ class SD_Nightscout_Server {
 
 		$api_url = rest_url( self::NS );
 
-		wp_send_json_success( array(
-			'token'   => $token,
-			'api_url' => $api_url,
-		) );
+		wp_send_json_success(
+			array(
+				'token'   => $token,
+				'api_url' => $api_url,
+			)
+		);
 	}
 
 	/**
