@@ -629,8 +629,8 @@ class SD_Dexcom_OAuth {
 		}
 
 		return array(
-			'egvs' => $body['egvs'] ?? array(),
-			'unit' => $body['unit'] ?? 'mg/dL',
+			'egvs' => $body['records'] ?? array(),
+			'unit' => $body['records'][0]['unit'] ?? 'mg/dL',
 		);
 	}
 
