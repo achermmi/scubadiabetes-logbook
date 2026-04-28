@@ -534,10 +534,13 @@ class SD_Dexcom_OAuth {
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$raw  = wp_remote_retrieve_body( $response );
+		$body = json_decode( $raw, true );
+
+		error_log( '[Dexcom dataRange] HTTP ' . $code . ' - Body: ' . $raw );
 
 		if ( 200 !== $code || empty( $body['egvs']['start']['systemTime'] ) ) {
-			return new WP_Error( 'no_range', 'Range dati non disponibile.' );
+			return new WP_Error( 'no_range', 'Range dati non disponibile (HTTP ' . $code . ').' );
 		}
 
 		return array(
@@ -651,18 +654,23 @@ class SD_Dexcom_OAuth {
 			);
 		}
 
-		$conn      = $this->get_connection( $user_id );
-		$is_first  = ! $conn || empty( $conn->last_sync_at );
+		$conn     = $this->get_connection( $user_id );
+		$is_first = ! $conn || empty( $conn->last_sync_at );
 
-		// Determina il range di fetch: per il primo sync usa il dataRange API
-		// per trovare il range reale dei dati (necessario in sandbox).
+		// Usa sempre /dataRange per determinare end_ts reale dei dati disponibili
+		// (in sandbox i dati sono storici, non relativi a "ora").
+		$range  = $this->get_data_range( $token );
+		$end_ts = is_wp_error( $range ) ? time() : strtotime( $range['egvs_end'] );
+
+		error_log( '[Dexcom sync] is_first=' . ( $is_first ? '1' : '0' ) . ' end_ts=' . gmdate( 'Y-m-d H:i:s', $end_ts ) . ( is_wp_error( $range ) ? ' (fallback: ' . $range->get_error_message() . ')' : '' ) );
+
 		if ( $is_first ) {
-			$range    = $this->get_data_range( $token );
-			$end_ts   = is_wp_error( $range ) ? time() : strtotime( $range['egvs_end'] );
 			$start_ts = $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
 		} else {
-			$end_ts   = time();
-			$start_ts = max( strtotime( $conn->last_sync_at ), $end_ts - ( 48 * 3600 ) );
+			// Se last_sync_at è successivo a end_ts (es. sandbox storico),
+			// riparte da FIRST_SYNC_HOURS indietro rispetto a end_ts.
+			$last_ts  = strtotime( $conn->last_sync_at );
+			$start_ts = ( $last_ts < $end_ts ) ? max( $last_ts, $end_ts - ( 48 * 3600 ) ) : $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
 		}
 
 		$data = $this->fetch_egvs( $token, $start_ts, $end_ts );
