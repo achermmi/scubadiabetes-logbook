@@ -519,11 +519,11 @@ class SD_Dexcom_OAuth {
 		$start = gmdate( 'Y-m-d\TH:i:s', strtotime( "-{$hours} hours" ) );
 		$end   = gmdate( 'Y-m-d\TH:i:s' );
 
-		// Costruiamo l'URL manualmente per evitare che add_query_arg
-		// URL-encodi i ':' nelle datetime (causa HTTP 400 dall'API Dexcom).
+		// Le datetime contengono solo caratteri safe (cifre, T, :, -, Z):
+		// non vanno codificate altrimenti i ':' diventano %3A e Dexcom restituisce 400.
 		$url = self::get_base_url() . self::EGV_PATH
-			. '?startDate=' . rawurlencode( $start )
-			. '&endDate=' . rawurlencode( $end );
+			. '?startDate=' . $start
+			. '&endDate=' . $end;
 
 		$response = wp_remote_get(
 			$url,
