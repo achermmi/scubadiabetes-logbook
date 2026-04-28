@@ -1107,12 +1107,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                        autocomplete="new-password">
                 <p class="sd-field-help"><?php esc_html_e( 'Il tuo API_SECRET Nightscout. Viene cifrato prima di essere salvato.', 'sd-logbook' ); ?></p>
             </div>
-            <div class="sd-add-form-actions">
-                <button type="button" class="sd-btn-save-record" id="sd-ns-btn-save">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                <button type="button" class="sd-btn sd-btn-primary" id="sd-ns-btn-save">
                     <?php esc_html_e( $ns_data['connected'] ? 'Aggiorna credenziali' : 'Connetti Nightscout', 'sd-logbook' ); ?>
                 </button>
                 <?php if ( $ns_data['connected'] ) : ?>
-                <button type="button" class="sd-btn-cancel-record" id="sd-ns-btn-cancel-edit">
+                <button type="button" class="sd-btn sd-btn-ghost" id="sd-ns-btn-cancel-edit">
                     <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
                 </button>
                 <?php endif; ?>
