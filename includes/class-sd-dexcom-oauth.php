@@ -645,6 +645,7 @@ class SD_Dexcom_OAuth {
 	 * @return array{success:bool,message:string,saved:int}
 	 */
 	public function sync_user( int $user_id ): array {
+		global $wpdb;
 		$token = $this->get_valid_access_token( $user_id );
 		if ( is_wp_error( $token ) ) {
 			return array(
@@ -655,22 +656,27 @@ class SD_Dexcom_OAuth {
 		}
 
 		$conn     = $this->get_connection( $user_id );
-		$is_first = ! $conn || empty( $conn->last_sync_at );
+
+		// Forza primo sync se non ci sono ancora letture salvate nel DB
+		// (gestisce il caso in cui last_sync_at sia impostato ma con 0 risultati).
+		$readings_table  = $this->table( 'nightscout_readings' );
+		$existing_count  = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$readings_table} WHERE user_id = %d", $user_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+		$is_first = ! $conn || empty( $conn->last_sync_at ) || 0 === $existing_count;
 
 		// Usa sempre /dataRange per determinare end_ts reale dei dati disponibili
 		// (in sandbox i dati sono storici, non relativi a "ora").
 		$range  = $this->get_data_range( $token );
 		$end_ts = is_wp_error( $range ) ? time() : strtotime( $range['egvs_end'] );
 
-		error_log( '[Dexcom sync] is_first=' . ( $is_first ? '1' : '0' ) . ' end_ts=' . gmdate( 'Y-m-d H:i:s', $end_ts ) . ( is_wp_error( $range ) ? ' (fallback: ' . $range->get_error_message() . ')' : '' ) );
+		error_log( '[Dexcom sync] is_first=' . ( $is_first ? '1' : '0' ) . ' existing=' . $existing_count . ' end_ts=' . gmdate( 'Y-m-d H:i:s', $end_ts ) . ( is_wp_error( $range ) ? ' (fallback: ' . $range->get_error_message() . ')' : '' ) );
 
 		if ( $is_first ) {
 			$start_ts = $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
 		} else {
-			// Se last_sync_at è successivo a end_ts (es. sandbox storico),
-			// riparte da FIRST_SYNC_HOURS indietro rispetto a end_ts.
 			$last_ts  = strtotime( $conn->last_sync_at );
-			$start_ts = ( $last_ts < $end_ts ) ? max( $last_ts, $end_ts - ( 48 * 3600 ) ) : $end_ts - ( self::FIRST_SYNC_HOURS * 3600 );
+			$start_ts = ( $last_ts < $end_ts ) ? max( $last_ts, $end_ts - ( 48 * 3600 ) ) : $end_ts - ( 48 * 3600 );
 		}
 
 		$data = $this->fetch_egvs( $token, $start_ts, $end_ts );
@@ -698,7 +704,6 @@ class SD_Dexcom_OAuth {
 		$saved = $this->save_readings( $user_id, $data['egvs'], $data['unit'] );
 
 		// Aggiorna timestamp ultimo sync
-		global $wpdb;
 		$table = $this->table( 'dexcom_oauth_connections' );
 		$wpdb->update(
 			$table,
