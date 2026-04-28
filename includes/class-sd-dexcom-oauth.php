@@ -44,8 +44,11 @@ class SD_Dexcom_OAuth {
 	/** @var int Ore di storico da recuperare per ogni sync */
 	const SYNC_HOURS = 24;
 
-	/** @var string Query param usato nel redirect URI OAuth */
-	const CALLBACK_PARAM = 'sd_dexcom_oauth_callback';
+	/** @var string Namespace REST API per la callback OAuth */
+	const REST_NAMESPACE = 'sd-logbook/v1';
+
+	/** @var string Path REST endpoint callback OAuth */
+	const REST_CALLBACK = '/dexcom-callback';
 
 	/** @var string Prefisso tabelle DB */
 	private string $prefix;
@@ -57,8 +60,8 @@ class SD_Dexcom_OAuth {
 		global $wpdb;
 		$this->prefix = $wpdb->prefix . 'sd_';
 
-		// Gestione callback OAuth (intercetta il redirect da Dexcom)
-		add_action( 'template_redirect', array( $this, 'handle_oauth_callback' ) );
+		// Gestione callback OAuth via REST API
+		add_action( 'rest_api_init', array( $this, 'register_rest_callback_route' ) );
 
 		// Handler AJAX (solo utenti autenticati)
 		add_action( 'wp_ajax_sd_dexcom_oauth_connect', array( $this, 'ajax_initiate_oauth' ) );
@@ -164,7 +167,7 @@ class SD_Dexcom_OAuth {
 	 * Restituisce il redirect URI da registrare nel portale Dexcom.
 	 */
 	public static function get_redirect_uri(): string {
-		return add_query_arg( self::CALLBACK_PARAM, '1', home_url( '/' ) );
+		return rest_url( self::REST_NAMESPACE . self::REST_CALLBACK );
 	}
 
 	// =========================================================================
@@ -212,38 +215,34 @@ class SD_Dexcom_OAuth {
 	// =========================================================================
 
 	/**
-	 * Intercetta il redirect OAuth di Dexcom, scambia il codice con i token
-	 * e salva la connessione.
-	 *
-	 * Agganciato a template_redirect.
+	 * Registra il REST endpoint per la callback OAuth Dexcom.
 	 */
-	public function handle_oauth_callback(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( empty( $_GET[ self::CALLBACK_PARAM ] ) ) {
-			return;
-		}
+	public function register_rest_callback_route(): void {
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::REST_CALLBACK,
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'handle_oauth_callback_rest' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
 
-		// DEBUG TEMPORANEO — rimuovere dopo il test
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		error_log( '[SD Dexcom] Callback ricevuta. GET params: ' . wp_json_encode( array_keys( $_GET ) ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		error_log( '[SD Dexcom] code presente: ' . ( isset( $_GET['code'] ) ? 'SI (len=' . strlen( $_GET['code'] ) . ')' : 'NO' ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		error_log( '[SD Dexcom] state presente: ' . ( isset( $_GET['state'] ) ? 'SI' : 'NO' ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		error_log( '[SD Dexcom] error presente: ' . ( isset( $_GET['error'] ) ? wp_json_encode( $_GET['error'] ) : 'NO' ) );
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$code  = sanitize_text_field( wp_unslash( $_GET['code'] ?? '' ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$state = sanitize_text_field( wp_unslash( $_GET['state'] ?? '' ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$error = sanitize_text_field( wp_unslash( $_GET['error'] ?? '' ) );
+	/**
+	 * Gestisce la callback OAuth Dexcom via REST API.
+	 * Questo endpoint bypassa il routing WordPress e i filtri sui query param.
+	 *
+	 * @param WP_REST_Request $request Richiesta REST.
+	 */
+	public function handle_oauth_callback_rest( WP_REST_Request $request ): void {
+		$code  = sanitize_text_field( $request->get_param( 'code' ) ?? '' );
+		$state = sanitize_text_field( $request->get_param( 'state' ) ?? '' );
+		$error = sanitize_text_field( $request->get_param( 'error' ) ?? '' );
 
 		// Utente ha negato l'accesso
 		if ( $error ) {
-			$fallback = add_query_arg( 'dexcom_error', rawurlencode( $error ), home_url( '/' ) );
-			wp_safe_redirect( $fallback );
+			wp_safe_redirect( add_query_arg( 'dexcom_error', rawurlencode( $error ), home_url( '/' ) ) );
 			exit;
 		}
 
@@ -255,7 +254,6 @@ class SD_Dexcom_OAuth {
 		// Valida stato (CSRF check)
 		$state_data = $this->validate_oauth_state( $state );
 		if ( false === $state_data ) {
-			// Il transient è scaduto o non trovato — mostrare errore diagnostico
 			wp_safe_redirect( add_query_arg( 'dexcom_error', 'invalid_state', home_url( '/' ) ) );
 			exit;
 		}
