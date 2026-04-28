@@ -509,18 +509,52 @@ class SD_Dexcom_OAuth {
 	// =========================================================================
 
 	/**
-	 * Scarica le letture EGV per il periodo indicato.
+	 * Scarica le letture EGV per il periodo indicato, in chunk da 30 giorni.
 	 *
 	 * @param string $access_token Token di accesso valido.
 	 * @param int    $hours        Ore di storico da recuperare.
 	 * @return array{egvs:array,unit:string}|WP_Error
 	 */
 	private function fetch_egvs( string $access_token, int $hours = 24 ): array|WP_Error {
-		$start = gmdate( 'Y-m-d\TH:i:s', strtotime( "-{$hours} hours" ) );
-		$end   = gmdate( 'Y-m-d\TH:i:s' );
+		$chunk_hours = 720; // 30 giorni per chunk (limite API Dexcom: 90 giorni)
+		$now         = time();
+		$start_ts    = $now - ( $hours * 3600 );
+		$all_egvs    = array();
+		$unit        = 'mg/dL';
 
-		// Le datetime contengono solo caratteri safe (cifre, T, :, -, Z):
-		// non vanno codificate altrimenti i ':' diventano %3A e Dexcom restituisce 400.
+		while ( $start_ts < $now ) {
+			$chunk_end_ts = min( $start_ts + ( $chunk_hours * 3600 ), $now );
+			$result       = $this->fetch_egvs_range( $access_token, $start_ts, $chunk_end_ts );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$all_egvs = array_merge( $all_egvs, $result['egvs'] );
+			$unit     = $result['unit'];
+			$start_ts = $chunk_end_ts;
+		}
+
+		return array(
+			'egvs' => $all_egvs,
+			'unit' => $unit,
+		);
+	}
+
+	/**
+	 * Scarica le letture EGV per un range di timestamp preciso.
+	 *
+	 * @param string $access_token Token di accesso valido.
+	 * @param int    $start_ts     Timestamp Unix inizio.
+	 * @param int    $end_ts       Timestamp Unix fine.
+	 * @return array{egvs:array,unit:string}|WP_Error
+	 */
+	private function fetch_egvs_range( string $access_token, int $start_ts, int $end_ts ): array|WP_Error {
+		$start = gmdate( 'Y-m-d\TH:i:s', $start_ts );
+		$end   = gmdate( 'Y-m-d\TH:i:s', $end_ts );
+
+		// Le datetime contengono solo caratteri safe: non vanno URL-encoded
+		// (rawurlencode o add_query_arg codificano i ':' in %3A → HTTP 400).
 		$url = self::get_base_url() . self::EGV_PATH
 			. '?startDate=' . $start
 			. '&endDate=' . $end;
