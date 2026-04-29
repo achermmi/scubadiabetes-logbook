@@ -1344,8 +1344,10 @@
         var $btn = $(this);
         lvBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {
-            action: 'sd_libreview_test',
-            nonce:  sdProfile.nonce
+            action:             'sd_libreview_test',
+            nonce:              sdProfile.nonce,
+            libreview_email:    $('#sd-lv-email').val() || '',
+            libreview_password: $('#sd-lv-password').val() || ''
         }, function(resp) {
             lvBtnLoading($btn, false);
             if (resp.success) {

@@ -166,7 +166,7 @@ class SD_LibreView {
 		if ( ! is_array( $payload ) ) {
 			return '';
 		}
-		return isset( $payload['sub'] ) ? strtolower( (string) $payload['sub'] ) : '';
+		return isset( $payload['sub'] ) ? trim( (string) $payload['sub'] ) : '';
 	}
 
 	/**
@@ -296,11 +296,12 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// Usa il claim "sub" del JWT come account_id (source of truth: combacia sempre col token).
-		// Fallback a data.user.id se il JWT non è decodificabile.
-		$account_id = $this->jwt_sub( $token );
+		// Usa data.user.id come fonte primaria (valore canonico dell'API LibreLinkUp).
+		// Fallback al claim "sub" del JWT se user.id è assente.
+		// Non lowercasare: l'API fa confronto case-sensitive.
+		$account_id = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
 		if ( empty( $account_id ) ) {
-			$account_id = strtolower( trim( (string) ( $data['data']['user']['id'] ?? '' ) ) );
+			$account_id = $this->jwt_sub( $token );
 		}
 
 		return array(
@@ -720,6 +721,7 @@ class SD_LibreView {
 			'auth_token'      => null,
 			'token_expires'   => null,
 			'api_base_url'    => null,
+			'account_id'      => null,
 		);
 
 		if ( $existing ) {
@@ -750,13 +752,24 @@ class SD_LibreView {
 			wp_send_json_error( array( 'message' => __( 'Non autenticato.', 'sd-logbook' ) ) );
 		}
 
-		$conn = $this->get_connection( $user_id );
-		if ( ! $conn ) {
-			wp_send_json_error( array( 'message' => __( 'Nessuna connessione LibreView configurata.', 'sd-logbook' ) ) );
+		// Prova prima con credenziali dal form (test prima di salvare), poi dal DB
+		$post_email    = sanitize_email( wp_unslash( $_POST['libreview_email'] ?? '' ) );
+		$post_password = wp_unslash( $_POST['libreview_password'] ?? '' );
+		$post_password = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $post_password );
+
+		if ( ! empty( $post_email ) && ! empty( $post_password ) ) {
+			$test_email    = $post_email;
+			$test_password = $post_password;
+		} else {
+			$conn = $this->get_connection( $user_id );
+			if ( ! $conn ) {
+				wp_send_json_error( array( 'message' => __( 'Nessuna connessione LibreView configurata.', 'sd-logbook' ) ) );
+			}
+			$test_email    = $conn->libreview_email;
+			$test_password = $this->decrypt( $conn->password_enc );
 		}
 
-		$password = $this->decrypt( $conn->password_enc );
-		$login    = $this->libreview_login( $conn->libreview_email, $password );
+		$login = $this->libreview_login( $test_email, $test_password );
 
 		if ( is_wp_error( $login ) ) {
 			wp_send_json_error( array( 'message' => $login->get_error_message() ) );
