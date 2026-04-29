@@ -750,6 +750,18 @@
     color: #00adef;
 }
 
+.sd-section-libreview {
+    border-left: 3px solid #f59e0b;
+}
+
+.sd-section-libreview .sd-section-title {
+    color: #b45309;
+}
+
+.sd-section-libreview .sd-section-icon {
+    color: #f59e0b;
+}
+
 .sd-section-tidepool {
     border-left: 3px solid #0d9488;
 }
