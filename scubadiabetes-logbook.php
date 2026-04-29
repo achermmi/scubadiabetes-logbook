@@ -81,6 +81,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dexcom-oauth.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dexcom-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-tidepool.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-libreview.php';
 	}
 
 	/**
@@ -129,6 +130,7 @@ final class SD_Logbook {
 		$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
 		$db->create_dexcom_oauth_tables();
 		$db->create_tidepool_tables();
+		$db->create_libreview_tables();
 
 		// Crea ruoli utente personalizzati
 		$roles = new SD_Roles();
@@ -148,6 +150,7 @@ final class SD_Logbook {
 		SD_Nightscout::schedule_cron();
 		SD_Dexcom_OAuth::schedule_cron();
 		SD_Tidepool::schedule_cron();
+		SD_LibreView::schedule_cron();
 
 		// Pulisci rewrite rules
 		flush_rewrite_rules();
@@ -163,6 +166,7 @@ final class SD_Logbook {
 		SD_Nightscout::unschedule_cron();
 		SD_Dexcom_OAuth::unschedule_cron();
 		SD_Tidepool::unschedule_cron();
+		SD_LibreView::unschedule_cron();
 		flush_rewrite_rules();
 	}
 
@@ -179,6 +183,7 @@ final class SD_Logbook {
 			$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
 			$db->create_dexcom_oauth_tables();
 			$db->create_tidepool_tables();
+			$db->create_libreview_tables();
 
 			// v3.1.0: corregge valori non validi in member_type
 			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
@@ -230,12 +235,14 @@ final class SD_Logbook {
 		new SD_Dexcom_OAuth();
 		new SD_Dexcom_Settings();
 		new SD_Tidepool();
+		new SD_LibreView();
 
-		// Cron rinnovi e sync Nightscout, Dexcom OAuth e Tidepool (registra se non già programmato)
+		// Cron rinnovi e sync Nightscout, Dexcom OAuth, Tidepool e LibreView (registra se non già programmato)
 		SD_Membership_Helper::schedule_cron();
 		SD_Nightscout::schedule_cron();
 		SD_Dexcom_OAuth::schedule_cron();
 		SD_Tidepool::schedule_cron();
+		SD_LibreView::schedule_cron();
 
 		// Neve PRO theme compatibility
 		add_filter( 'neve_sidebar_position', array( $this, 'neve_force_fullwidth' ) );

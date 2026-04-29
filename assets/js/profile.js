@@ -1289,4 +1289,128 @@
         });
     });
 
+    // =========================================================================
+    // LIBREVIEW (FreeStyle Libre)
+    // =========================================================================
+
+    function lvMsg(text, type) {
+        var $m = $('#sd-lv-message');
+        $m.removeClass('sd-ns-msg-success sd-ns-msg-error sd-ns-msg-info')
+          .addClass('sd-ns-msg-' + (type || 'info'))
+          .text(text).show();
+    }
+
+    function lvBtnLoading($btn, loading) {
+        if (loading) {
+            $btn.data('original-text', $btn.text().trim()).prop('disabled', true).text('Attendere…');
+        } else {
+            $btn.prop('disabled', false).text($btn.data('original-text') || $btn.text());
+        }
+    }
+
+    // Salva credenziali
+    $(document).on('click', '#sd-lv-btn-save', function() {
+        var $btn     = $(this);
+        var email    = $('#sd-lv-email').val().trim();
+        var password = $('#sd-lv-password').val();
+
+        if (!email || !password) {
+            lvMsg('Email e password sono obbligatorie.', 'error');
+            return;
+        }
+
+        lvBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action:             'sd_libreview_save',
+            nonce:              sdProfile.nonce,
+            libreview_email:    email,
+            libreview_password: password
+        }, function(resp) {
+            lvBtnLoading($btn, false);
+            if (resp.success) {
+                lvMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                lvMsg(resp.data.message || 'Errore nel salvataggio.', 'error');
+            }
+        }).fail(function() {
+            lvBtnLoading($btn, false);
+            lvMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Testa connessione
+    $(document).on('click', '#sd-lv-btn-test', function() {
+        var $btn = $(this);
+        lvBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_libreview_test',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            lvBtnLoading($btn, false);
+            if (resp.success) {
+                lvMsg(resp.data.message, 'success');
+            } else {
+                lvMsg(resp.data.message || 'Test fallito.', 'error');
+            }
+        }).fail(function() {
+            lvBtnLoading($btn, false);
+            lvMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Sync manuale
+    $(document).on('click', '#sd-lv-btn-sync', function() {
+        var $btn = $(this);
+        lvBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_libreview_sync',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            lvBtnLoading($btn, false);
+            if (resp.success) {
+                lvMsg(resp.data.message, 'success');
+            } else {
+                lvMsg(resp.data.message || 'Sync fallito.', 'error');
+            }
+        }).fail(function() {
+            lvBtnLoading($btn, false);
+            lvMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Modifica credenziali
+    $(document).on('click', '#sd-lv-btn-edit', function() {
+        $('#sd-lv-form').show();
+        $('#sd-lv-password').val('');
+    });
+
+    // Annulla modifica
+    $(document).on('click', '#sd-lv-btn-cancel-edit', function() {
+        $('#sd-lv-form').hide();
+        $('#sd-lv-message').hide();
+    });
+
+    // Disconnetti
+    $(document).on('click', '#sd-lv-btn-disconnect', function() {
+        if (!confirm('Disconnettere l\'account LibreView? Le letture già salvate non vengono eliminate.')) return;
+        var $btn = $(this);
+        lvBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_libreview_disconnect',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            lvBtnLoading($btn, false);
+            if (resp.success) {
+                lvMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                lvMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            lvBtnLoading($btn, false);
+            lvMsg('Errore di rete.', 'error');
+        });
+    });
+
 })(jQuery);

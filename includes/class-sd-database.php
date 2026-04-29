@@ -959,6 +959,35 @@ class SD_Database {
 	}
 
 	/**
+	 * Crea/aggiorna la tabella per le connessioni LibreView (FreeStyle Libre)
+	 */
+	public function create_libreview_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$t_conn = $this->table( 'libreview_connections' );
+		dbDelta(
+			"CREATE TABLE {$t_conn} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				user_id bigint(20) unsigned NOT NULL,
+				libreview_email varchar(255) NOT NULL,
+				password_enc text NOT NULL,
+				api_base_url varchar(255) DEFAULT NULL,
+				auth_token text DEFAULT NULL,
+				token_expires datetime DEFAULT NULL,
+				sync_enabled tinyint(1) NOT NULL DEFAULT 1,
+				last_sync_at datetime DEFAULT NULL,
+				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY  (id),
+				UNIQUE KEY idx_user_id (user_id)
+			) {$charset_collate};"
+		);
+	}
+
+	/**
 	 * Rimuovi tutte le tabelle (usata SOLO in uninstall, MAI in deactivate)
 	 */
 	public function drop_tables() {
