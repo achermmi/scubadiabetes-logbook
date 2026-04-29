@@ -515,21 +515,22 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_decrypt_failed', __( 'Impossibile decifrare la password LibreView.', 'sd-logbook' ) );
 		}
 
-		// Usa token in cache se ancora valido (con 5 minuti di margine)
+		// account_id valido = UUID nel formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
+		// Se in DB c'è un valore legacy (es. SHA-256 hex 64 char) forziamo il re-login.
+		$account_id_is_valid_uuid = ! empty( $conn->account_id ) &&
+			(bool) preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $conn->account_id );
+
+		// Usa token in cache se ancora valido (con 5 minuti di margine) E account_id è un UUID valido
 		if (
+			$account_id_is_valid_uuid &&
 			! empty( $conn->auth_token ) &&
 			! empty( $conn->token_expires ) &&
 			strtotime( $conn->token_expires ) > time() + 300
 		) {
-			// Usa account_id salvato in DB (estratto dal JWT sub al momento del login)
-			$account_id = ! empty( $conn->account_id ) ? $conn->account_id : $this->jwt_sub( $conn->auth_token );
-			if ( empty( $account_id ) ) {
-				$account_id = hash( 'sha256', strtolower( $conn->libreview_email ) );
-			}
 			return array(
 				'token'      => $conn->auth_token,
 				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
-				'account_id' => $account_id,
+				'account_id' => $conn->account_id,
 			);
 		}
 
