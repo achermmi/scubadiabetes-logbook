@@ -303,15 +303,12 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// Priorità account_id: authTicket.id → user.id → JWT sub.
-		// L'API LibreLinkUp v4.x usa authTicket.id come account-id canonico.
-		$account_id = trim( (string) ( $ticket['id'] ?? '' ) );
-		if ( empty( $account_id ) ) {
-			$account_id = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
-		}
-		if ( empty( $account_id ) ) {
-			$account_id = $this->jwt_sub( $token );
-		}
+		// Priorità account_id: JWT sub → authTicket.id → user.id
+		// Il claim "sub" del JWT è quello che il server valida internamente.
+		$jwt_sub    = $this->jwt_sub( $token );
+		$ticket_id  = trim( (string) ( $ticket['id'] ?? '' ) );
+		$user_id_v  = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
+		$account_id = $jwt_sub ?: $ticket_id ?: $user_id_v;
 
 		// === DIAGNOSTICA TEMPORANEA ===
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -323,7 +320,7 @@ class SD_LibreView {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[LibreView DEBUG] data.user.id: ' . ( $data['data']['user']['id'] ?? 'ABSENT' ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] JWT sub: ' . $this->jwt_sub( $token ) );
+		error_log( '[LibreView DEBUG] JWT sub: ' . $jwt_sub );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[LibreView DEBUG] account_id used: ' . $account_id );
 		// === FINE DIAGNOSTICA ===
@@ -334,6 +331,8 @@ class SD_LibreView {
 			'region'     => $region,
 			'base_url'   => $base_url,
 			'account_id' => $account_id,
+			'user_id'    => $user_id_v,
+			'jwt_sub'    => $jwt_sub,
 		);
 	}
 
@@ -379,10 +378,17 @@ class SD_LibreView {
 		$data = json_decode( $raw, true );
 
 		if ( 200 !== (int) $code ) {
-			/* translators: %1$d=HTTP code, %2$s=body, %3$s=account-id sent */
+			$jwt_sub_here = $this->jwt_sub( $token );
+			/* translators: %1$d=HTTP code, %2$s=body, %3$s=account-id sent, %4$s=jwt sub */
 			return new WP_Error(
 				'libreview_connections_failed',
-				sprintf( __( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s [account-id inviato: %3$s]', 'sd-logbook' ), $code, $raw, $account_id )
+				sprintf(
+					__( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s [inviato: %3$s | jwt.sub: %4$s]', 'sd-logbook' ),
+					$code,
+					$raw,
+					$account_id,
+					$jwt_sub_here
+				)
 			);
 		}
 
