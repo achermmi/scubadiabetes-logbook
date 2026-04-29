@@ -142,10 +142,19 @@ class SD_LibreView {
 	}
 
 	/**
-	 * Estrae il campo "sub" (subject = account-id) dal payload JWT senza validare la firma.
+	 * Estrae il claim "id" dal payload JWT — è il valore corretto per l'header account-id.
+	 * Fonte: nightscout-librelink-up (jwtDecode(token).id).
 	 *
-	 * Il claim "sub" è la fonte autorevole per l'header account-id: corrisponde sempre
-	 * all'account per cui il token è stato emesso.
+	 * @param string $token Bearer JWT.
+	 * @return string UUID account oppure stringa vuota.
+	 */
+	private function jwt_id( string $token ): string {
+		$payload = $this->jwt_payload( $token );
+		return isset( $payload['id'] ) ? trim( (string) $payload['id'] ) : '';
+	}
+
+	/**
+	 * Estrae il claim "sub" dal payload JWT.
 	 *
 	 * @param string $token Bearer JWT.
 	 * @return string UUID account oppure stringa vuota.
@@ -303,15 +312,19 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// L'account-id corretto è data.user.id dalla risposta di login (UUID utente Abbott).
-		// Fonte: nightscout-librelink-up e tutte le implementazioni DIY aggiornate.
-		$account_id = $data['data']['user']['id'] ?? '';
+		// Priorità per account-id (header richiesto da Abbott per le chiamate successive):
+		// 1. Claim "id" nel JWT — usato da nightscout-librelink-up (jwtDecode(token).id)
+		// 2. data.user.id dalla risposta di login
+		// 3. Claim "sub" nel JWT
+		// 4. SHA-256 dell'email (legacy, causa AccountIdMismatch sulle API recenti)
+		$account_id = $this->jwt_id( $token );
 		if ( empty( $account_id ) ) {
-			// Fallback: claim "sub" del JWT
+			$account_id = $data['data']['user']['id'] ?? '';
+		}
+		if ( empty( $account_id ) ) {
 			$account_id = $this->jwt_sub( $token );
 		}
 		if ( empty( $account_id ) ) {
-			// Ultimo fallback: SHA-256 dell'email
 			$account_id = hash( 'sha256', strtolower( $email ) );
 		}
 
@@ -517,8 +530,27 @@ class SD_LibreView {
 
 		// account_id valido = UUID nel formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
 		// Se in DB c'è un valore legacy (es. SHA-256 hex 64 char) forziamo il re-login.
+		$uuid_regex = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
 		$account_id_is_valid_uuid = ! empty( $conn->account_id ) &&
-			(bool) preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $conn->account_id );
+			(bool) preg_match( $uuid_regex, $conn->account_id );
+
+		// Se account_id in DB non è UUID, proviamo a ricavarlo dal JWT in cache prima di fare re-login
+		if ( ! $account_id_is_valid_uuid && ! empty( $conn->auth_token ) ) {
+			$jwt_account_id = $this->jwt_id( $conn->auth_token );
+			if ( ! empty( $jwt_account_id ) && preg_match( $uuid_regex, $jwt_account_id ) ) {
+				// Aggiorna il DB con il valore corretto estratto dal JWT
+				global $wpdb;
+				$wpdb->update(
+					$this->table( 'libreview_connections' ),
+					array( 'account_id' => $jwt_account_id ),
+					array( 'user_id' => (int) $conn->user_id ),
+					array( '%s' ),
+					array( '%d' )
+				);
+				$conn->account_id      = $jwt_account_id;
+				$account_id_is_valid_uuid = true;
+			}
+		}
 
 		// Usa token in cache se ancora valido (con 5 minuti di margine) E account_id è un UUID valido
 		if (
