@@ -151,22 +151,29 @@ class SD_LibreView {
 	 * @return string UUID account oppure stringa vuota.
 	 */
 	private function jwt_sub( string $token ): string {
+		$payload = $this->jwt_payload( $token );
+		return isset( $payload['sub'] ) ? trim( (string) $payload['sub'] ) : '';
+	}
+
+	/**
+	 * Decodifica e restituisce il payload JWT come array associativo.
+	 *
+	 * @param string $token Bearer JWT.
+	 * @return array<string, mixed>
+	 */
+	private function jwt_payload( string $token ): array {
 		$parts = explode( '.', $token );
 		if ( 3 !== count( $parts ) ) {
-			return '';
+			return array();
 		}
-		// Base64url → Base64 → decode del payload (seconda parte)
 		$b64 = strtr( $parts[1], '-_', '+/' );
 		$b64 = str_pad( $b64, (int) ceil( strlen( $b64 ) / 4 ) * 4, '=', STR_PAD_RIGHT );
 		$payload_raw = base64_decode( $b64 );
 		if ( false === $payload_raw ) {
-			return '';
+			return array();
 		}
 		$payload = json_decode( $payload_raw, true );
-		if ( ! is_array( $payload ) ) {
-			return '';
-		}
-		return isset( $payload['sub'] ) ? trim( (string) $payload['sub'] ) : '';
+		return is_array( $payload ) ? $payload : array();
 	}
 
 	/**
@@ -304,6 +311,17 @@ class SD_LibreView {
 			$account_id = $this->jwt_sub( $token );
 		}
 
+		// === DIAGNOSTICA TEMPORANEA ===
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] login response data.data keys: ' . implode( ', ', array_keys( $data['data'] ?? [] ) ) );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] data.user: ' . wp_json_encode( $data['data']['user'] ?? 'ABSENT' ) );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] JWT payload: ' . wp_json_encode( $this->jwt_payload( $token ) ) );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] account_id used: ' . $account_id );
+		// === FINE DIAGNOSTICA ===
+
 		return array(
 			'token'      => $token,
 			'expires'    => $expires,
@@ -355,10 +373,10 @@ class SD_LibreView {
 		$data = json_decode( $raw, true );
 
 		if ( 200 !== (int) $code ) {
-			/* translators: %1$d=HTTP code, %2$s=body */
+			/* translators: %1$d=HTTP code, %2$s=body, %3$s=account-id sent */
 			return new WP_Error(
 				'libreview_connections_failed',
-				sprintf( __( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s', 'sd-logbook' ), $code, $raw )
+				sprintf( __( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s [account-id inviato: %3$s]', 'sd-logbook' ), $code, $raw, $account_id )
 			);
 		}
 
