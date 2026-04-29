@@ -692,9 +692,11 @@ class SD_LibreView {
 		$n_devices = is_array( $connections ) ? count( $connections ) : 0;
 
 		if ( 0 === $n_devices ) {
-			wp_send_json_success( array(
-				'message' => __( 'Connessione LibreView OK. Nessun sensore attivo trovato nell\'account.', 'sd-logbook' ),
-			) );
+			wp_send_json_success(
+				array(
+					'message' => __( 'Connessione LibreView OK. Nessun sensore attivo trovato nell\'account.', 'sd-logbook' ),
+				)
+			);
 			return;
 		}
 
@@ -717,18 +719,20 @@ class SD_LibreView {
 			}
 		}
 
-		wp_send_json_success( array(
-			'message' => sprintf(
-				/* translators: %d=numero sensori */
-				_n(
-					'Connessione LibreView OK. %d sensore trovato.',
-					'Connessione LibreView OK. %d sensori trovati.',
-					$n_devices,
-					'sd-logbook'
-				),
-				$n_devices
-			) . $last_msg,
-		) );
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %d=numero sensori */
+					_n(
+						'Connessione LibreView OK. %d sensore trovato.',
+						'Connessione LibreView OK. %d sensori trovati.',
+						$n_devices,
+						'sd-logbook'
+					),
+					$n_devices
+				) . $last_msg,
+			)
+		);
 	}
 
 	/**
