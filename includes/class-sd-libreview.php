@@ -122,7 +122,7 @@ class SD_LibreView {
 	 * @param string|null $token Bearer token (null per la richiesta di login).
 	 * @return array<string, string>
 	 */
-	private function build_headers( ?string $token = null ): array {
+	private function build_headers( ?string $token = null, ?string $account_id = null ): array {
 		$headers = array(
 			'Content-Type'    => 'application/json',
 			'Accept-Encoding' => 'gzip',
@@ -134,6 +134,9 @@ class SD_LibreView {
 		);
 		if ( $token ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
+		}
+		if ( $account_id ) {
+			$headers['account-id'] = $account_id;
 		}
 		return $headers;
 	}
@@ -256,20 +259,22 @@ class SD_LibreView {
 			return $this->libreview_login( $email, $password, $new_url );
 		}
 
-		$ticket  = $data['data']['authTicket'] ?? array();
-		$token   = $ticket['token'] ?? '';
-		$expires = isset( $ticket['expires'] ) ? (int) $ticket['expires'] : ( time() + 3600 );
-		$region  = strtolower( $data['data']['region'] ?? '' );
+		$ticket     = $data['data']['authTicket'] ?? array();
+		$token      = $ticket['token'] ?? '';
+		$expires    = isset( $ticket['expires'] ) ? (int) $ticket['expires'] : ( time() + 3600 );
+		$region     = strtolower( $data['data']['region'] ?? '' );
+		$account_id = $data['data']['user']['id'] ?? '';
 
 		if ( empty( $token ) ) {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
 		return array(
-			'token'    => $token,
-			'expires'  => $expires,
-			'region'   => $region,
-			'base_url' => $base_url,
+			'token'      => $token,
+			'expires'    => $expires,
+			'region'     => $region,
+			'base_url'   => $base_url,
+			'account_id' => $account_id,
 		);
 	}
 
@@ -294,13 +299,13 @@ class SD_LibreView {
 	 * @param string $base_url Base URL regionale.
 	 * @return array|WP_Error Array connessioni oppure WP_Error.
 	 */
-	public function libreview_get_connections( string $token, string $base_url ) {
+	public function libreview_get_connections( string $token, string $base_url, string $account_id = '' ) {
 		$url = $base_url . self::CONNECTIONS_PATH;
 
 		$response = wp_remote_get(
 			$url,
 			array(
-				'headers'   => $this->build_headers( $token ),
+				'headers'   => $this->build_headers( $token, $account_id ),
 				'timeout'   => 20,
 				'sslverify' => true,
 			)
@@ -333,14 +338,14 @@ class SD_LibreView {
 	 * @param string $patient_id ID paziente (da connections).
 	 * @return array{connection: array, graphData: array}|WP_Error
 	 */
-	public function libreview_fetch_graph( string $token, string $base_url, string $patient_id ) {
+	public function libreview_fetch_graph( string $token, string $base_url, string $patient_id, string $account_id = '' ) {
 		$path = str_replace( '{patientId}', rawurlencode( $patient_id ), self::GRAPH_PATH );
 		$url  = $base_url . $path;
 
 		$response = wp_remote_get(
 			$url,
 			array(
-				'headers'   => $this->build_headers( $token ),
+				'headers'   => $this->build_headers( $token, $account_id ),
 				'timeout'   => 30,
 				'sslverify' => true,
 			)
@@ -471,8 +476,9 @@ class SD_LibreView {
 			strtotime( $conn->token_expires ) > time() + 300
 		) {
 			return array(
-				'token'    => $conn->auth_token,
-				'base_url' => $conn->api_base_url ?: self::API_BASE_EU,
+				'token'      => $conn->auth_token,
+				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
+				'account_id' => $conn->account_id ?? '',
 			);
 		}
 
@@ -484,7 +490,7 @@ class SD_LibreView {
 			return $login;
 		}
 
-		// Persiste token + nuova base URL
+		// Persiste token + nuova base URL + account_id
 		$table = $this->table( 'libreview_connections' );
 		$wpdb->update(
 			$table,
@@ -492,15 +498,17 @@ class SD_LibreView {
 				'auth_token'    => $login['token'],
 				'token_expires' => gmdate( 'Y-m-d H:i:s', $login['expires'] ),
 				'api_base_url'  => $login['base_url'],
+				'account_id'    => $login['account_id'],
 			),
 			array( 'user_id' => (int) $conn->user_id ),
-			array( '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
 		return array(
-			'token'    => $login['token'],
-			'base_url' => $login['base_url'],
+			'token'      => $login['token'],
+			'base_url'   => $login['base_url'],
+			'account_id' => $login['account_id'],
 		);
 	}
 
@@ -531,11 +539,12 @@ class SD_LibreView {
 			);
 		}
 
-		$token    = $auth['token'];
-		$base_url = $auth['base_url'];
+		$token      = $auth['token'];
+		$base_url   = $auth['base_url'];
+		$account_id = $auth['account_id'] ?? '';
 
 		// Recupera lista connessioni (pazienti/dispositivi)
-		$connections = $this->libreview_get_connections( $token, $base_url );
+		$connections = $this->libreview_get_connections( $token, $base_url, $account_id );
 		if ( is_wp_error( $connections ) || empty( $connections ) ) {
 			return array(
 				'ok'       => false,
@@ -557,7 +566,7 @@ class SD_LibreView {
 			$device_name = $patient['sensor']['sn'] ?? ( $patient['firstName'] ?? 'FreeStyle Libre' );
 			$device_name = 'LibreView/' . sanitize_text_field( $device_name );
 
-			$graph = $this->libreview_fetch_graph( $token, $base_url, $patient_id );
+			$graph = $this->libreview_fetch_graph( $token, $base_url, $patient_id, $account_id );
 			if ( is_wp_error( $graph ) ) {
 				continue;
 			}
@@ -715,7 +724,7 @@ class SD_LibreView {
 			wp_send_json_error( array( 'message' => $login->get_error_message() ) );
 		}
 
-		$connections = $this->libreview_get_connections( $login['token'], $login['base_url'] );
+		$connections = $this->libreview_get_connections( $login['token'], $login['base_url'], $login['account_id'] ?? '' );
 		if ( is_wp_error( $connections ) ) {
 			wp_send_json_error( array( 'message' => $connections->get_error_message() ) );
 		}
@@ -737,7 +746,7 @@ class SD_LibreView {
 		$last_msg      = '';
 
 		if ( $patient_id ) {
-			$graph = $this->libreview_fetch_graph( $login['token'], $login['base_url'], $patient_id );
+			$graph = $this->libreview_fetch_graph( $login['token'], $login['base_url'], $patient_id, $login['account_id'] ?? '' );
 			if ( ! is_wp_error( $graph ) ) {
 				$current = $graph['connection']['glucoseMeasurement'] ?? null;
 				if ( $current && isset( $current['Value'] ) ) {

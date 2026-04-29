@@ -974,6 +974,7 @@ class SD_Database {
 				user_id bigint(20) unsigned NOT NULL,
 				libreview_email varchar(255) NOT NULL,
 				password_enc text NOT NULL,
+				account_id varchar(100) DEFAULT NULL,
 				api_base_url varchar(255) DEFAULT NULL,
 				auth_token text DEFAULT NULL,
 				token_expires datetime DEFAULT NULL,
