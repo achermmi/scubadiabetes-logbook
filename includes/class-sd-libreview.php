@@ -124,11 +124,13 @@ class SD_LibreView {
 	 */
 	private function build_headers( ?string $token = null ): array {
 		$headers = array(
-			'Content-Type'   => 'application/json',
-			'Accept'         => 'application/json',
-			'product'        => self::PRODUCT,
-			'version'        => self::APP_VERSION,
-			'Cache-Control'  => 'no-cache',
+			'Content-Type'    => 'application/json',
+			'Accept-Encoding' => 'gzip',
+			'Connection'      => 'Keep-Alive',
+			'product'         => self::PRODUCT,
+			'version'         => self::APP_VERSION,
+			'Cache-Control'   => 'no-cache',
+			'pragma'          => 'no-cache',
 		);
 		if ( $token ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
@@ -225,7 +227,23 @@ class SD_LibreView {
 
 		// Errore applicativo (status != 0)
 		if ( 0 !== (int) $data['status'] ) {
-			$msg = $data['error']['message'] ?? __( 'Credenziali non valide.', 'sd-logbook' );
+			$status = (int) $data['status'];
+			// Status 4 = Terms of Service non accettati → utente deve accedere a LibreView.io
+			if ( 4 === $status ) {
+				return new WP_Error(
+					'libreview_tos_required',
+					__( 'Devi accettare i nuovi Termini di Servizio LibreView. Accedi a https://LibreView.io, accetta i termini e riprova.', 'sd-logbook' )
+				);
+			}
+			// Estrae il messaggio dal percorso più comune, poi fallback
+			$msg = $data['error']['message']
+				?? $data['errors']['message']
+				?? $data['message']
+				?? sprintf(
+					/* translators: %d=status code API */
+					__( 'Errore API LibreView (status %d). Verifica email e password.', 'sd-logbook' ),
+					$status
+				);
 			return new WP_Error( 'libreview_login_error', $msg );
 		}
 
@@ -627,7 +645,10 @@ class SD_LibreView {
 		}
 
 		$email    = sanitize_email( wp_unslash( $_POST['libreview_email'] ?? '' ) );
-		$password = sanitize_text_field( wp_unslash( $_POST['libreview_password'] ?? '' ) );
+		// Le password non vanno sanificate con sanitize_text_field (muta caratteri speciali)
+		$password = wp_unslash( $_POST['libreview_password'] ?? '' );
+		// Rimuoviamo solo caratteri di controllo (NUL, tab, newline) che non fanno parte di password reali
+		$password = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $password );
 
 		if ( empty( $email ) || ! is_email( $email ) ) {
 			wp_send_json_error( array( 'message' => __( 'Inserisci un indirizzo email valido.', 'sd-logbook' ) ) );
