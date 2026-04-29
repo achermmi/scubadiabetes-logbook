@@ -303,11 +303,15 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// L'account-id richiesto da Abbott è il claim "sub" del JWT token.
-		// SHA-256 dell'email era usato in vecchie implementazioni DIY ma causa AccountIdMismatch.
-		$account_id = $this->jwt_sub( $token );
+		// L'account-id corretto è data.user.id dalla risposta di login (UUID utente Abbott).
+		// Fonte: nightscout-librelink-up e tutte le implementazioni DIY aggiornate.
+		$account_id = $data['data']['user']['id'] ?? '';
 		if ( empty( $account_id ) ) {
-			// Fallback: SHA-256 dell'email (usato da alcune implementazioni DIY)
+			// Fallback: claim "sub" del JWT
+			$account_id = $this->jwt_sub( $token );
+		}
+		if ( empty( $account_id ) ) {
+			// Ultimo fallback: SHA-256 dell'email
 			$account_id = hash( 'sha256', strtolower( $email ) );
 		}
 
