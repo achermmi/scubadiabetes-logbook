@@ -312,21 +312,21 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// Priorità per account-id (header richiesto da Abbott per le chiamate successive):
-		// 1. Claim "id" nel JWT — usato da nightscout-librelink-up (jwtDecode(token).id)
-		// 2. data.user.id dalla risposta di login
-		// 3. Claim "sub" nel JWT
-		// 4. SHA-256 dell'email (legacy, causa AccountIdMismatch sulle API recenti)
-		$account_id = $this->jwt_id( $token );
-		if ( empty( $account_id ) ) {
-			$account_id = $data['data']['user']['id'] ?? '';
+		// account-id = sha256(jwt.id)  — confermato da nightscout-librelink-up issue #155 e #207.
+		// L'header deve contenere SHA256 hex dell'UUID estratto dal claim "id" del JWT.
+		$jwt_user_id = $this->jwt_id( $token );
+		if ( empty( $jwt_user_id ) ) {
+			// Fallback: user.id dalla risposta di login
+			$jwt_user_id = $data['data']['user']['id'] ?? '';
 		}
-		if ( empty( $account_id ) ) {
-			$account_id = $this->jwt_sub( $token );
+		if ( empty( $jwt_user_id ) ) {
+			// Fallback: claim sub
+			$jwt_user_id = $this->jwt_sub( $token );
 		}
-		if ( empty( $account_id ) ) {
-			$account_id = hash( 'sha256', strtolower( $email ) );
-		}
+		// Se abbiamo trovato un UUID/id, calcoliamo sha256 di esso; altrimenti sha256 dell'email
+		$account_id = ! empty( $jwt_user_id )
+			? hash( 'sha256', $jwt_user_id )
+			: hash( 'sha256', strtolower( $email ) );
 
 		return array(
 			'token'      => $token,
@@ -528,33 +528,15 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_decrypt_failed', __( 'Impossibile decifrare la password LibreView.', 'sd-logbook' ) );
 		}
 
-		// account_id valido = UUID nel formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
-		// Se in DB c'è un valore legacy (es. SHA-256 hex 64 char) forziamo il re-login.
-		$uuid_regex = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
-		$account_id_is_valid_uuid = ! empty( $conn->account_id ) &&
-			(bool) preg_match( $uuid_regex, $conn->account_id );
+		// account_id valido = stringa hex da 64 caratteri (SHA256 dell'UUID dal JWT).
+		// Valori legacy (SHA256 email, UUID grezzo, etc.) forzano il re-login.
+		$account_id_is_valid = ! empty( $conn->account_id ) &&
+			64 === strlen( $conn->account_id ) &&
+			ctype_xdigit( $conn->account_id );
 
-		// Se account_id in DB non è UUID, proviamo a ricavarlo dal JWT in cache prima di fare re-login
-		if ( ! $account_id_is_valid_uuid && ! empty( $conn->auth_token ) ) {
-			$jwt_account_id = $this->jwt_id( $conn->auth_token );
-			if ( ! empty( $jwt_account_id ) && preg_match( $uuid_regex, $jwt_account_id ) ) {
-				// Aggiorna il DB con il valore corretto estratto dal JWT
-				global $wpdb;
-				$wpdb->update(
-					$this->table( 'libreview_connections' ),
-					array( 'account_id' => $jwt_account_id ),
-					array( 'user_id' => (int) $conn->user_id ),
-					array( '%s' ),
-					array( '%d' )
-				);
-				$conn->account_id      = $jwt_account_id;
-				$account_id_is_valid_uuid = true;
-			}
-		}
-
-		// Usa token in cache se ancora valido (con 5 minuti di margine) E account_id è un UUID valido
+		// Usa token in cache solo se valido e account_id è corretto
 		if (
-			$account_id_is_valid_uuid &&
+			$account_id_is_valid &&
 			! empty( $conn->auth_token ) &&
 			! empty( $conn->token_expires ) &&
 			strtotime( $conn->token_expires ) > time() + 300
@@ -753,20 +735,27 @@ class SD_LibreView {
 			wp_send_json_error( array( 'message' => __( 'La password è obbligatoria.', 'sd-logbook' ) ) );
 		}
 
+		// Verifica le credenziali PRIMA di salvare: impedisce salvataggi con dati errati.
+		$login = $this->libreview_login( $email, $password );
+		if ( is_wp_error( $login ) ) {
+			wp_send_json_error( array( 'message' => $login->get_error_message() ) );
+		}
+
 		$password_enc = $this->encrypt( $password );
 
 		global $wpdb;
 		$table    = $this->table( 'libreview_connections' );
 		$existing = $this->get_connection( $user_id );
 
+		// Salva subito anche token e account_id ottenuti dal login appena eseguito.
 		$data = array(
 			'libreview_email' => $email,
 			'password_enc'    => $password_enc,
 			'sync_enabled'    => 1,
-			'auth_token'      => null,
-			'token_expires'   => null,
-			'api_base_url'    => null,
-			'account_id'      => null,
+			'auth_token'      => $login['token'],
+			'token_expires'   => gmdate( 'Y-m-d H:i:s', $login['expires'] ),
+			'api_base_url'    => $login['base_url'],
+			'account_id'      => $login['account_id'],
 		);
 
 		if ( $existing ) {
