@@ -653,10 +653,18 @@ class SD_LibreView {
 		);
 
 		if ( $existing ) {
-			$wpdb->update( $table, $data, array( 'user_id' => $user_id ), null, array( '%d' ) );
+			$result = $wpdb->update( $table, $data, array( 'user_id' => $user_id ), null, array( '%d' ) );
 		} else {
 			$data['user_id'] = $user_id;
-			$wpdb->insert( $table, $data );
+			$result = $wpdb->insert( $table, $data );
+		}
+
+		if ( false === $result ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Errore nel salvataggio delle credenziali. La tabella LibreView potrebbe non essere stata creata: riattiva il plugin dalle impostazioni WordPress.', 'sd-logbook' ),
+				)
+			);
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Credenziali LibreView salvate.', 'sd-logbook' ) ) );
