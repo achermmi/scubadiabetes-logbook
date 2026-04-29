@@ -51,7 +51,7 @@ class SD_LibreView {
 	const PRODUCT = 'llu.android';
 
 	/** @var string Versione app simulata */
-	const APP_VERSION = '4.12.0';
+	const APP_VERSION = '4.16.0';
 
 	/** @var string Hook cron per sync automatico */
 	const CRON_HOOK = 'sd_libreview_sync_cron';
@@ -228,11 +228,13 @@ class SD_LibreView {
 		// Errore applicativo (status != 0)
 		if ( 0 !== (int) $data['status'] ) {
 			$status = (int) $data['status'];
-			// Status 4 = Terms of Service non accettati → utente deve accedere a LibreView.io
+			// Status 4 = Terms of Service LibreLinkUp non accettati (ToS specifici dell'app LibreLinkUp,
+			// separati da quelli di LibreView web). L'utente deve aprire l'app LibreLinkUp sul telefono,
+			// effettuare il login e accettare i termini. Se non ha l'app: installarla da App Store/Google Play.
 			if ( 4 === $status ) {
 				return new WP_Error(
 					'libreview_tos_required',
-					__( 'Devi accettare i nuovi Termini di Servizio LibreView. Accedi a https://www.libreview.com/, accetta i termini e riprova.', 'sd-logbook' )
+					__( 'Devi accettare i Termini di Servizio dell\'app LibreLinkUp (Abbott). Installa l\'app "LibreLinkUp" su iOS/Android, accedi con le stesse credenziali e accetta i termini, quindi riprova.', 'sd-logbook' )
 				);
 			}
 			// Estrae il messaggio dal percorso più comune, poi fallback
