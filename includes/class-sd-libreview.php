@@ -303,27 +303,9 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// Priorità account_id: JWT sub → authTicket.id → user.id
-		// Il claim "sub" del JWT è quello che il server valida internamente.
-		$jwt_sub    = $this->jwt_sub( $token );
-		$ticket_id  = trim( (string) ( $ticket['id'] ?? '' ) );
-		$user_id_v  = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
-		$account_id = $jwt_sub ?: $ticket_id ?: $user_id_v;
-
-		// === DIAGNOSTICA TEMPORANEA ===
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] login response data.data keys: ' . implode( ', ', array_keys( $data['data'] ?? array() ) ) );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] authTicket keys: ' . implode( ', ', array_keys( $ticket ) ) );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] authTicket.id: ' . ( $ticket['id'] ?? 'ABSENT' ) );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] data.user.id: ' . ( $data['data']['user']['id'] ?? 'ABSENT' ) );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] JWT sub: ' . $jwt_sub );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] account_id used: ' . $account_id );
-		// === FINE DIAGNOSTICA ===
+		// L'header account-id è il SHA-256 hex dell'email lowercase.
+		// Fonte: nightscout-librelink-up, libre-linkup-go e altre impl. DIY.
+		$account_id = hash( 'sha256', strtolower( $email ) );
 
 		return array(
 			'token'      => $token,
@@ -331,8 +313,6 @@ class SD_LibreView {
 			'region'     => $region,
 			'base_url'   => $base_url,
 			'account_id' => $account_id,
-			'user_id'    => $user_id_v,
-			'jwt_sub'    => $jwt_sub,
 		);
 	}
 
@@ -378,17 +358,10 @@ class SD_LibreView {
 		$data = json_decode( $raw, true );
 
 		if ( 200 !== (int) $code ) {
-			$jwt_sub_here = $this->jwt_sub( $token );
-			/* translators: %1$d=HTTP code, %2$s=body, %3$s=account-id sent, %4$s=jwt sub */
+			/* translators: %1$d=HTTP code, %2$s=body */
 			return new WP_Error(
 				'libreview_connections_failed',
-				sprintf(
-					__( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s [inviato: %3$s | jwt.sub: %4$s]', 'sd-logbook' ),
-					$code,
-					$raw,
-					$account_id,
-					$jwt_sub_here
-				)
+				sprintf( __( 'Connessioni LibreView non recuperabili (HTTP %1$d): %2$s', 'sd-logbook' ), $code, $raw )
 			);
 		}
 
@@ -534,20 +507,17 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_decrypt_failed', __( 'Impossibile decifrare la password LibreView.', 'sd-logbook' ) );
 		}
 
-		// Usa token in cache se ancora valido (con 5 minuti di margine) E account_id noto
+		// Usa token in cache se ancora valido (con 5 minuti di margine)
 		if (
 			! empty( $conn->auth_token ) &&
 			! empty( $conn->token_expires ) &&
-			strtotime( $conn->token_expires ) > time() + 300 &&
-			! empty( $conn->account_id )
+			strtotime( $conn->token_expires ) > time() + 300
 		) {
-			// Rideriva sempre account_id dal claim "sub" del JWT per evitare AccountIdMismatch
-			// dovuto a valori obsoleti o corrotti in DB. Il JWT è già in cache, il decode è istantaneo.
-			$account_id_from_jwt = $this->jwt_sub( $conn->auth_token );
+			// account-id è sempre SHA256(email lowercase) - non dipende dal token
 			return array(
 				'token'      => $conn->auth_token,
 				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
-				'account_id' => $account_id_from_jwt ?: $conn->account_id,
+				'account_id' => hash( 'sha256', strtolower( $conn->libreview_email ) ),
 			);
 		}
 
