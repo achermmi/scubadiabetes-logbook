@@ -469,16 +469,17 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_decrypt_failed', __( 'Impossibile decifrare la password LibreView.', 'sd-logbook' ) );
 		}
 
-		// Usa token in cache se ancora valido (con 5 minuti di margine)
+		// Usa token in cache se ancora valido (con 5 minuti di margine) E account_id noto
 		if (
 			! empty( $conn->auth_token ) &&
 			! empty( $conn->token_expires ) &&
-			strtotime( $conn->token_expires ) > time() + 300
+			strtotime( $conn->token_expires ) > time() + 300 &&
+			! empty( $conn->account_id )
 		) {
 			return array(
 				'token'      => $conn->auth_token,
 				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
-				'account_id' => $conn->account_id ?? '',
+				'account_id' => $conn->account_id,
 			);
 		}
 
