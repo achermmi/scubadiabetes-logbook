@@ -142,6 +142,34 @@ class SD_LibreView {
 	}
 
 	/**
+	 * Estrae il campo "sub" (subject = account-id) dal payload JWT senza validare la firma.
+	 *
+	 * Il claim "sub" è la fonte autorevole per l'header account-id: corrisponde sempre
+	 * all'account per cui il token è stato emesso.
+	 *
+	 * @param string $token Bearer JWT.
+	 * @return string UUID account oppure stringa vuota.
+	 */
+	private function jwt_sub( string $token ): string {
+		$parts = explode( '.', $token );
+		if ( 3 !== count( $parts ) ) {
+			return '';
+		}
+		// Base64url → Base64 → decode del payload (seconda parte)
+		$b64 = strtr( $parts[1], '-_', '+/' );
+		$b64 = str_pad( $b64, (int) ceil( strlen( $b64 ) / 4 ) * 4, '=', STR_PAD_RIGHT );
+		$payload_raw = base64_decode( $b64 );
+		if ( false === $payload_raw ) {
+			return '';
+		}
+		$payload = json_decode( $payload_raw, true );
+		if ( ! is_array( $payload ) ) {
+			return '';
+		}
+		return isset( $payload['sub'] ) ? strtolower( (string) $payload['sub'] ) : '';
+	}
+
+	/**
 	 * Mappa il TrendArrow numerico LibreView verso il formato Nightscout.
 	 *
 	 * @param int $arrow Valore TrendArrow (1–7).
@@ -259,14 +287,20 @@ class SD_LibreView {
 			return $this->libreview_login( $email, $password, $new_url );
 		}
 
-		$ticket     = $data['data']['authTicket'] ?? array();
-		$token      = $ticket['token'] ?? '';
-		$expires    = isset( $ticket['expires'] ) ? (int) $ticket['expires'] : ( time() + 3600 );
-		$region     = strtolower( $data['data']['region'] ?? '' );
-		$account_id = $data['data']['user']['id'] ?? '';
+		$ticket  = $data['data']['authTicket'] ?? array();
+		$token   = $ticket['token'] ?? '';
+		$expires = isset( $ticket['expires'] ) ? (int) $ticket['expires'] : ( time() + 3600 );
+		$region  = strtolower( $data['data']['region'] ?? '' );
 
 		if ( empty( $token ) ) {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
+		}
+
+		// Usa il claim "sub" del JWT come account_id (source of truth: combacia sempre col token).
+		// Fallback a data.user.id se il JWT non è decodificabile.
+		$account_id = $this->jwt_sub( $token );
+		if ( empty( $account_id ) ) {
+			$account_id = strtolower( trim( (string) ( $data['data']['user']['id'] ?? '' ) ) );
 		}
 
 		return array(
@@ -476,10 +510,13 @@ class SD_LibreView {
 			strtotime( $conn->token_expires ) > time() + 300 &&
 			! empty( $conn->account_id )
 		) {
+			// Rideriva sempre account_id dal claim "sub" del JWT per evitare AccountIdMismatch
+			// dovuto a valori obsoleti o corrotti in DB. Il JWT è già in cache, il decode è istantaneo.
+			$account_id_from_jwt = $this->jwt_sub( $conn->auth_token );
 			return array(
 				'token'      => $conn->auth_token,
 				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
-				'account_id' => $conn->account_id,
+				'account_id' => $account_id_from_jwt ?: $conn->account_id,
 			);
 		}
 
