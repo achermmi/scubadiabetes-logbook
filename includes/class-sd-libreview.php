@@ -313,7 +313,7 @@ class SD_LibreView {
 
 		// === DIAGNOSTICA TEMPORANEA ===
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] login response data.data keys: ' . implode( ', ', array_keys( $data['data'] ?? [] ) ) );
+		error_log( '[LibreView DEBUG] login response data.data keys: ' . implode( ', ', array_keys( $data['data'] ?? array() ) ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[LibreView DEBUG] data.user: ' . wp_json_encode( $data['data']['user'] ?? 'ABSENT' ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
