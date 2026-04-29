@@ -232,7 +232,7 @@ class SD_LibreView {
 			if ( 4 === $status ) {
 				return new WP_Error(
 					'libreview_tos_required',
-					__( 'Devi accettare i nuovi Termini di Servizio LibreView. Accedi a https://LibreView.io, accetta i termini e riprova.', 'sd-logbook' )
+					__( 'Devi accettare i nuovi Termini di Servizio LibreView. Accedi a https://www.libreview.com/, accetta i termini e riprova.', 'sd-logbook' )
 				);
 			}
 			// Estrae il messaggio dal percorso più comune, poi fallback
