@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy via rsync over SSH
-        uses: burnett01/rsync-deployments@7.0.1
+        uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./

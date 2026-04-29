@@ -303,9 +303,13 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// L'header account-id è il SHA-256 hex dell'email lowercase.
-		// Fonte: nightscout-librelink-up, libre-linkup-go e altre impl. DIY.
-		$account_id = hash( 'sha256', strtolower( $email ) );
+		// L'account-id richiesto da Abbott è il claim "sub" del JWT token.
+		// SHA-256 dell'email era usato in vecchie implementazioni DIY ma causa AccountIdMismatch.
+		$account_id = $this->jwt_sub( $token );
+		if ( empty( $account_id ) ) {
+			// Fallback: SHA-256 dell'email (usato da alcune implementazioni DIY)
+			$account_id = hash( 'sha256', strtolower( $email ) );
+		}
 
 		return array(
 			'token'      => $token,
@@ -513,11 +517,15 @@ class SD_LibreView {
 			! empty( $conn->token_expires ) &&
 			strtotime( $conn->token_expires ) > time() + 300
 		) {
-			// account-id è sempre SHA256(email lowercase) - non dipende dal token
+			// Usa account_id salvato in DB (estratto dal JWT sub al momento del login)
+			$account_id = ! empty( $conn->account_id ) ? $conn->account_id : $this->jwt_sub( $conn->auth_token );
+			if ( empty( $account_id ) ) {
+				$account_id = hash( 'sha256', strtolower( $conn->libreview_email ) );
+			}
 			return array(
 				'token'      => $conn->auth_token,
 				'base_url'   => $conn->api_base_url ?: self::API_BASE_EU,
-				'account_id' => hash( 'sha256', strtolower( $conn->libreview_email ) ),
+				'account_id' => $account_id,
 			);
 		}
 
