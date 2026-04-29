@@ -303,10 +303,12 @@ class SD_LibreView {
 			return new WP_Error( 'libreview_bad_token', __( 'Token LibreView non ricevuto.', 'sd-logbook' ) );
 		}
 
-		// Usa data.user.id come fonte primaria (valore canonico dell'API LibreLinkUp).
-		// Fallback al claim "sub" del JWT se user.id è assente.
-		// Non lowercasare: l'API fa confronto case-sensitive.
-		$account_id = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
+		// Priorità account_id: authTicket.id → user.id → JWT sub.
+		// L'API LibreLinkUp v4.x usa authTicket.id come account-id canonico.
+		$account_id = trim( (string) ( $ticket['id'] ?? '' ) );
+		if ( empty( $account_id ) ) {
+			$account_id = trim( (string) ( $data['data']['user']['id'] ?? '' ) );
+		}
 		if ( empty( $account_id ) ) {
 			$account_id = $this->jwt_sub( $token );
 		}
@@ -315,9 +317,13 @@ class SD_LibreView {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[LibreView DEBUG] login response data.data keys: ' . implode( ', ', array_keys( $data['data'] ?? array() ) ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] data.user: ' . wp_json_encode( $data['data']['user'] ?? 'ABSENT' ) );
+		error_log( '[LibreView DEBUG] authTicket keys: ' . implode( ', ', array_keys( $ticket ) ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( '[LibreView DEBUG] JWT payload: ' . wp_json_encode( $this->jwt_payload( $token ) ) );
+		error_log( '[LibreView DEBUG] authTicket.id: ' . ( $ticket['id'] ?? 'ABSENT' ) );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] data.user.id: ' . ( $data['data']['user']['id'] ?? 'ABSENT' ) );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[LibreView DEBUG] JWT sub: ' . $this->jwt_sub( $token ) );
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( '[LibreView DEBUG] account_id used: ' . $account_id );
 		// === FINE DIAGNOSTICA ===
