@@ -1415,4 +1415,138 @@
         });
     });
 
+    // =========================================================================
+    // CARELINK (Medtronic)
+    // =========================================================================
+
+    function clMsg(text, type) {
+        var $m = $('#sd-cl-message');
+        $m.removeClass('sd-ns-msg-success sd-ns-msg-error sd-ns-msg-info')
+          .addClass('sd-ns-msg-' + (type || 'info'))
+          .text(text).show();
+    }
+
+    function clBtnLoading($btn, loading) {
+        if (loading) {
+            $btn.data('original-text', $btn.text().trim()).prop('disabled', true).text('Attendere…');
+        } else {
+            $btn.prop('disabled', false).text($btn.data('original-text') || $btn.text());
+        }
+    }
+
+    // Salva credenziali
+    $(document).on('click', '#sd-cl-btn-save', function() {
+        var $btn     = $(this);
+        var username = $('#sd-cl-username').val().trim();
+        var password = $('#sd-cl-password').val();
+        var server   = $('input[name="carelink_server"]:checked').val() || 'carelink.minimed.eu';
+        var country  = $('#sd-cl-country').val().trim() || 'ch';
+
+        if (!username || !password) {
+            clMsg('Username e password sono obbligatori.', 'error');
+            return;
+        }
+
+        clBtnLoading($btn, true);
+        clMsg('Verifica credenziali in corso (potrebbe richiedere 10-20 secondi)…', 'info');
+        $.post(sdProfile.ajaxUrl, {
+            action:             'sd_carelink_save',
+            nonce:              sdProfile.nonce,
+            carelink_username:  username,
+            carelink_password:  password,
+            carelink_server:    server,
+            carelink_country:   country
+        }, function(resp) {
+            clBtnLoading($btn, false);
+            if (resp.success) {
+                clMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                clMsg(resp.data.message || 'Errore nel salvataggio.', 'error');
+            }
+        }).fail(function() {
+            clBtnLoading($btn, false);
+            clMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Testa connessione
+    $(document).on('click', '#sd-cl-btn-test', function() {
+        var $btn    = $(this);
+        var server  = $('input[name="carelink_server"]:checked').val() || 'carelink.minimed.eu';
+        clBtnLoading($btn, true);
+        clMsg('Test in corso (potrebbe richiedere 10-20 secondi)…', 'info');
+        $.post(sdProfile.ajaxUrl, {
+            action:            'sd_carelink_test',
+            nonce:             sdProfile.nonce,
+            carelink_username: $('#sd-cl-username').val() || '',
+            carelink_password: $('#sd-cl-password').val() || '',
+            carelink_server:   server
+        }, function(resp) {
+            clBtnLoading($btn, false);
+            if (resp.success) {
+                clMsg(resp.data.message, 'success');
+            } else {
+                clMsg(resp.data.message || 'Test fallito.', 'error');
+            }
+        }).fail(function() {
+            clBtnLoading($btn, false);
+            clMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Sync manuale
+    $(document).on('click', '#sd-cl-btn-sync', function() {
+        var $btn = $(this);
+        clBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_carelink_sync',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            clBtnLoading($btn, false);
+            if (resp.success) {
+                clMsg(resp.data.message, 'success');
+            } else {
+                clMsg(resp.data.message || 'Sync fallito.', 'error');
+            }
+        }).fail(function() {
+            clBtnLoading($btn, false);
+            clMsg('Errore di rete.', 'error');
+        });
+    });
+
+    // Modifica credenziali
+    $(document).on('click', '#sd-cl-btn-edit', function() {
+        $('#sd-cl-form').show();
+        $('#sd-cl-password').val('');
+    });
+
+    // Annulla modifica
+    $(document).on('click', '#sd-cl-btn-cancel-edit', function() {
+        $('#sd-cl-form').hide();
+        $('#sd-cl-message').hide();
+    });
+
+    // Disconnetti
+    $(document).on('click', '#sd-cl-btn-disconnect', function() {
+        if (!confirm('Disconnettere l\'account CareLink? Le letture già salvate non vengono eliminate.')) return;
+        var $btn = $(this);
+        clBtnLoading($btn, true);
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_carelink_disconnect',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            clBtnLoading($btn, false);
+            if (resp.success) {
+                clMsg(resp.data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                clMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            clBtnLoading($btn, false);
+            clMsg('Errore di rete.', 'error');
+        });
+    });
+
 })(jQuery);

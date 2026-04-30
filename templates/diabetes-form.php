@@ -64,6 +64,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     </div>
 
     <!-- 4 Checkpoint cards -->
+    <div id="sd-cgm-import-bar" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button type="button" id="sd-cgm-import-btn" class="sd-btn-cgm-import">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;">
+                <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <?php esc_html_e( 'Importa letture da CGM', 'sd-logbook' ); ?>
+        </button>
+        <span id="sd-cgm-import-msg" style="font-size:0.85em;color:#555;display:none;"></span>
+    </div>
+
     <div class="sd-checkpoints">
 
         <?php

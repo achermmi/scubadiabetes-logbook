@@ -1,0 +1,494 @@
+/**
+ * ScubaDiabetes Logbook — Dashboard CGM Paziente + Pannello CGM Medico
+ * Stili condivisi tra i due shortcode [sd_cgm_dashboard] e [sd_cgm_medical]
+ */
+
+/* ============================================================
+   WRAPPER
+   ============================================================ */
+.sd-cgm-dash-wrap,
+.sd-cgm-medical-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 8px 24px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.sd-cgm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 0 12px;
+    border-bottom: 2px solid var(--sd-blue-deep);
+    margin-bottom: 16px;
+}
+
+.sd-cgm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sd-cgm-page-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--sd-blue-deep);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Device badge */
+.sd-cgm-device-badge {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.sd-cgm-src-nightscout { background: #0e7490; color: #fff; }
+.sd-cgm-src-dexcom     { background: #15803d; color: #fff; }
+.sd-cgm-src-libreview  { background: #d97706; color: #fff; }
+.sd-cgm-src-carelink   { background: #6d28d9; color: #fff; }
+.sd-cgm-src-tidepool   { background: #ea580c; color: #fff; }
+
+/* Last sync */
+.sd-cgm-last-sync {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 12px;
+    color: var(--sd-gray-500);
+}
+
+.sd-cgm-sync-label { font-size: 10px; }
+.sd-cgm-sync-time  { font-weight: 600; color: var(--sd-gray-700); font-size: 12px; }
+
+/* ============================================================
+   STAT CARDS (override griglia)
+   ============================================================ */
+.sd-cgm-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 14px;
+}
+
+@media (max-width: 620px) {
+    .sd-cgm-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sd-cgm-last-card { position: relative; }
+
+.sd-cgm-arrow {
+    font-size: 18px;
+    margin-left: 3px;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+.sd-cgm-unit {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--sd-gray-500);
+    margin-left: 2px;
+}
+
+.sd-cgm-stat-badge {
+    margin-top: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.sd-tir-good { color: #16a34a !important; }
+.sd-tir-warn { color: #d97706 !important; }
+
+/* ============================================================
+   CLASSI GLICEMIA — celle tabella e badge stat card
+   ============================================================ */
+.sd-gluc-very-low { background: #450a0a; color: #fca5a5; }
+.sd-gluc-low      { background: #fecaca; color: #7f1d1d; }
+.sd-gluc-normal   { background: #dcfce7; color: #14532d; }
+.sd-gluc-high     { background: #fef9c3; color: #713f12; }
+.sd-gluc-very-high{ background: #ffedd5; color: #7c2d12; }
+
+.sd-cgm-stat-badge.sd-gluc-very-low { background: #450a0a; color: #fca5a5; }
+.sd-cgm-stat-badge.sd-gluc-low      { background: #fca5a5; color: #7f1d1d; }
+.sd-cgm-stat-badge.sd-gluc-normal   { background: #86efac; color: #14532d; }
+.sd-cgm-stat-badge.sd-gluc-high     { background: #fde047; color: #713f12; }
+.sd-cgm-stat-badge.sd-gluc-very-high{ background: #fdba74; color: #7c2d12; }
+
+/* ============================================================
+   TOOLBAR (periodo + unità)
+   ============================================================ */
+.sd-cgm-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+/* Pulsanti periodo */
+.sd-cgm-period-wrap {
+    display: flex;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sd-cgm-period-btn {
+    padding: 6px 13px;
+    border: none;
+    background: var(--sd-white);
+    color: var(--sd-blue-deep);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-right: 1px solid var(--sd-gray-200);
+}
+
+.sd-cgm-period-btn:last-child  { border-right: none; }
+.sd-cgm-period-btn:hover       { background: var(--sd-gray-50); }
+.sd-cgm-period-btn.active      { background: var(--sd-blue-deep); color: #fff; }
+
+/* Intervallo personalizzato */
+.sd-cgm-custom-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sd-cgm-date-input {
+    padding: 5px 8px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+}
+
+/* Toggle unità */
+.sd-cgm-unit-toggle {
+    margin-left: auto;
+    display: flex;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sd-cgm-unit-btn {
+    padding: 5px 13px;
+    border: none;
+    background: var(--sd-white);
+    color: var(--sd-blue);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-right: 1px solid var(--sd-gray-200);
+}
+
+.sd-cgm-unit-btn:last-child { border-right: none; }
+.sd-cgm-unit-btn.active     { background: var(--sd-blue-deep); color: #fff; }
+
+/* ============================================================
+   GRAFICO
+   ============================================================ */
+.sd-cgm-chart-box {
+    position: relative;
+    background: var(--sd-white);
+    border: 2px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    height: 210px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+#sd-cgm-chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.sd-cgm-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--sd-gray-500);
+    background: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+}
+
+/* ============================================================
+   SEZIONE (tabella)
+   ============================================================ */
+.sd-cgm-section {
+    background: var(--sd-white);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    box-shadow: var(--sd-shadow);
+}
+
+.sd-cgm-section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sd-cgm-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sd-blue-deep);
+    margin: 0;
+}
+
+.sd-cgm-count-badge {
+    background: var(--sd-blue-light);
+    color: var(--sd-blue-deep);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ============================================================
+   TABELLA
+   ============================================================ */
+.sd-cgm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.sd-cgm-table th {
+    text-align: left;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sd-gray-500);
+    border-bottom: 2px solid var(--sd-gray-200);
+    padding: 5px 8px;
+    white-space: nowrap;
+}
+
+.sd-cgm-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--sd-gray-100);
+    vertical-align: middle;
+}
+
+.sd-cgm-table tr:last-child td { border-bottom: none; }
+.sd-cgm-table tbody tr:hover   { background: var(--sd-gray-50); }
+
+.sd-cgm-td-time { color: var(--sd-gray-500); white-space: nowrap; font-size: 12px; }
+.sd-cgm-td-val  { font-weight: 700; border-radius: 4px; text-align: center; white-space: nowrap; min-width: 70px; }
+.sd-cgm-td-dir  { font-size: 17px; text-align: center; line-height: 1; }
+.sd-cgm-td-name { font-size: 13px; }
+.sd-cgm-unit-small { font-size: 10px; font-weight: 400; color: inherit; opacity: 0.7; }
+
+/* Bordino colorato a sinistra sulle righe medico */
+.sd-gluc-very-low-row td:first-child { border-left: 3px solid #7f1d1d; }
+.sd-gluc-low-row      td:first-child { border-left: 3px solid #DC2626; }
+.sd-gluc-normal-row   td:first-child { border-left: 3px solid #16A34A; }
+.sd-gluc-high-row     td:first-child { border-left: 3px solid #D97706; }
+.sd-gluc-very-high-row td:first-child { border-left: 3px solid #EA580C; }
+
+/* Source badge */
+.sd-cgm-src-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--sd-gray-200);
+    color: var(--sd-gray-700);
+}
+
+/* ============================================================
+   STATI VUOTO / LOADING / ERRORE
+   ============================================================ */
+.sd-cgm-loading {
+    text-align: center;
+    padding: 24px;
+    color: var(--sd-gray-500);
+    font-size: 13px;
+}
+
+.sd-cgm-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--sd-gray-500);
+    font-style: italic;
+    font-size: 13px;
+}
+
+.sd-cgm-error {
+    color: var(--sd-red) !important;
+    font-style: normal !important;
+}
+
+/* ============================================================
+   PAGINAZIONE
+   ============================================================ */
+.sd-cgm-pagination { margin-top: 12px; }
+
+.sd-cgm-page-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.sd-cgm-page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    background: var(--sd-white);
+    color: var(--sd-blue-deep);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sd-cgm-page-btn:hover  { background: var(--sd-blue-light); }
+.sd-cgm-page-btn.active { background: var(--sd-blue-deep); color: #fff; border-color: var(--sd-blue-deep); }
+
+.sd-cgm-page-ellipsis {
+    line-height: 32px;
+    color: var(--sd-gray-500);
+    padding: 0 4px;
+}
+
+/* ============================================================
+   FILTRI MEDICO
+   ============================================================ */
+.sd-cgm-medical-filters {
+    background: var(--sd-gray-50);
+    border: 1px solid var(--sd-gray-200);
+    border-radius: var(--sd-radius-sm);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.sd-cgm-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.sd-cgm-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.sd-cgm-filter-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sd-gray-500);
+}
+
+.sd-cgm-filter-input {
+    padding: 7px 10px;
+    border: 1px solid var(--sd-gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--sd-gray-900);
+    background: var(--sd-white);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sd-cgm-filter-input:focus {
+    border-color: var(--sd-blue);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sd-blue-light);
+}
+
+.sd-cgm-filter-actions {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.sd-cgm-btn-apply {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 16px;
+    border: 1px solid var(--sd-blue);
+    border-radius: 20px;
+    background: var(--sd-blue);
+    color: var(--sd-white);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.sd-cgm-btn-apply:hover {
+    background: #1a4f9f;
+    border-color: #1a4f9f;
+}
+
+.sd-cgm-btn-reset {
+    padding: 7px 14px;
+    border: 1px solid var(--sd-gray-300);
+    border-radius: 20px;
+    background: var(--sd-white);
+    color: var(--sd-gray-500);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.sd-cgm-btn-reset:hover {
+    background: var(--sd-gray-100);
+    color: var(--sd-gray-700);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .sd-cgm-table          { font-size: 11px; }
+    .sd-cgm-table td       { padding: 5px 6px; }
+    .sd-cgm-filter-row     { flex-direction: column; }
+    .sd-cgm-filter-group   { min-width: 100%; }
+    .sd-cgm-filter-actions { flex-direction: row; }
+    .sd-cgm-toolbar        { flex-direction: column; align-items: flex-start; }
+    .sd-cgm-unit-toggle    { margin-left: 0; }
+}

@@ -20,6 +20,7 @@ class SD_Dive_Form {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_sd_save_dive', array( $this, 'save_dive' ) );
 		add_action( 'wp_ajax_sd_save_glycemia_unit', array( $this, 'save_glycemia_unit' ) );
+		add_action( 'wp_ajax_sd_cgm_prefill', array( $this, 'ajax_cgm_prefill' ) );
 	}
 
 	/**
@@ -79,6 +80,9 @@ class SD_Dive_Form {
 				$default_shared = (int) $user_shared;
 			}
 
+			// Controlla se l'utente ha un dispositivo CGM configurato
+			$cgm_device = $this->get_user_cgm_device( get_current_user_id() );
+
 			wp_localize_script(
 				'sd-logbook-form',
 				'sdLogbook',
@@ -88,6 +92,7 @@ class SD_Dive_Form {
 					'glycemiaUnit'   => $glycemia_unit,
 					'defaultShared'  => $default_shared,
 					'dashboardUrl'   => home_url( '/dashboard-immersioni/' ),
+					'cgmDevice'      => $cgm_device,
 					'strings'      => array(
 						'saving'      => __( 'Salvataggio...', 'sd-logbook' ),
 						'saved'       => __( 'Immersione salvata!', 'sd-logbook' ),
@@ -397,5 +402,180 @@ class SD_Dive_Form {
 			);
 		}
 		wp_send_json_success();
+	}
+
+	/**
+	 * Restituisce il nome del dispositivo CGM configurato dall'utente.
+	 * Controlla in ordine: Nightscout, Dexcom, LibreView, CareLink, Tidepool.
+	 *
+	 * @param int $user_id ID utente WP.
+	 * @return string Nome dispositivo (es. "Nightscout") o stringa vuota.
+	 */
+	private function get_user_cgm_device( int $user_id ): string {
+		global $wpdb;
+		$p = $wpdb->prefix . 'sd_';
+
+		// Nightscout
+		$ns = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$p}nightscout_connections WHERE user_id = %d LIMIT 1", $user_id
+		) );
+		if ( $ns ) {
+			return 'Nightscout';
+		}
+
+		// Dexcom OAuth
+		$dx = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$p}dexcom_oauth WHERE user_id = %d LIMIT 1", $user_id
+		) );
+		if ( $dx ) {
+			return 'Dexcom';
+		}
+
+		// LibreView
+		$lv = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$p}libreview_connections WHERE user_id = %d LIMIT 1", $user_id
+		) );
+		if ( $lv ) {
+			return 'LibreView';
+		}
+
+		// CareLink
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$p}carelink_connections'" ) ) {
+			$cl = $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM {$p}carelink_connections WHERE user_id = %d LIMIT 1", $user_id
+			) );
+			if ( $cl ) {
+				return 'CareLink';
+			}
+		}
+
+		// Tidepool
+		$tp = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM {$p}tidepool_connections WHERE user_id = %d LIMIT 1", $user_id
+		) );
+		if ( $tp ) {
+			return 'Tidepool';
+		}
+
+		return '';
+	}
+
+	/**
+	 * AJAX: restituisce le letture CGM ai 4 timepoint dell'immersione.
+	 *
+	 * Parametri POST:
+	 *   - dive_date  (YYYY-MM-DD) orario locale sito
+	 *   - time_in    (HH:MM)      inizio immersione, orario locale
+	 *   - time_out   (HH:MM)      fine immersione, opzionale
+	 *
+	 * Le letture in DB sono sempre UTC (gmdate).
+	 * Converte l'orario locale usando la timezone WordPress per la ricerca.
+	 */
+	public function ajax_cgm_prefill(): void {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta. Ricarica la pagina.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			wp_send_json_error( array( 'message' => __( 'Non autenticato.', 'sd-logbook' ) ) );
+		}
+
+		$dive_date = sanitize_text_field( wp_unslash( $_POST['dive_date'] ?? '' ) );
+		$time_in   = sanitize_text_field( wp_unslash( $_POST['time_in']   ?? '' ) );
+		$time_out  = sanitize_text_field( wp_unslash( $_POST['time_out']  ?? '' ) );
+
+		if ( empty( $dive_date ) || empty( $time_in ) ) {
+			wp_send_json_error( array( 'message' => __( 'Inserisci data e ora di inizio immersione prima di importare le letture.', 'sd-logbook' ) ) );
+		}
+
+		// Converte orario locale WordPress → UTC timestamp
+		$tz_string = get_option( 'timezone_string' );
+		if ( $tz_string ) {
+			$tz = new \DateTimeZone( $tz_string );
+		} else {
+			$offset = (float) get_option( 'gmt_offset', 0 );
+			$sign   = $offset >= 0 ? '+' : '-';
+			$abs    = abs( $offset );
+			$h      = (int) $abs;
+			$m      = (int) round( ( $abs - $h ) * 60 );
+			$tz     = new \DateTimeZone( sprintf( '%s%02d:%02d', $sign, $h, $m ) );
+		}
+
+		// Timestamp UTC di inizio immersione
+		$dt_in      = \DateTime::createFromFormat( 'Y-m-d H:i', $dive_date . ' ' . $time_in, $tz );
+		if ( ! $dt_in ) {
+			wp_send_json_error( array( 'message' => __( 'Data o orario non validi.', 'sd-logbook' ) ) );
+		}
+		$dive_start = $dt_in->getTimestamp();
+
+		// Timestamp UTC di fine immersione (POST)
+		if ( ! empty( $time_out ) ) {
+			$dt_out   = \DateTime::createFromFormat( 'Y-m-d H:i', $dive_date . ' ' . $time_out, $tz );
+			$dive_end = $dt_out ? $dt_out->getTimestamp() : $dive_start + 60 * 60;
+		} else {
+			$dive_end = $dive_start + 60 * 60; // approssimazione: +1h
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'sd_nightscout_readings';
+
+		/*
+		 * Timepoints cercati:
+		 *   -60 → 60 min prima del tuffo, finestra ±20 min
+		 *   -30 → 30 min prima del tuffo, finestra ±15 min
+		 *   -10 → 10 min prima del tuffo, finestra ±12 min
+		 *   post → subito dopo la fine del tuffo, finestra +0 / +40 min
+		 *          (NON cerchiamo prima perché il post è a tuffo concluso)
+		 */
+		$timepoints = array(
+			'60'   => array( 'ref' => $dive_start - 60 * 60, 'before' => 20 * 60, 'after' => 20 * 60 ),
+			'30'   => array( 'ref' => $dive_start - 30 * 60, 'before' => 15 * 60, 'after' => 15 * 60 ),
+			'10'   => array( 'ref' => $dive_start - 10 * 60, 'before' => 12 * 60, 'after' => 12 * 60 ),
+			'post' => array( 'ref' => $dive_end,             'before' =>  5 * 60, 'after' => 40 * 60 ),
+		);
+
+		$results = array();
+		foreach ( $timepoints as $key => $tp ) {
+			$from     = gmdate( 'Y-m-d H:i:s', $tp['ref'] - $tp['before'] );
+			$to       = gmdate( 'Y-m-d H:i:s', $tp['ref'] + $tp['after'] );
+			$ref_utc  = gmdate( 'Y-m-d H:i:s', $tp['ref'] );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT glucose_value, direction, reading_time, device
+					 FROM {$table}
+					 WHERE user_id = %d
+					   AND reading_time BETWEEN %s AND %s
+					 ORDER BY ABS( TIMESTAMPDIFF( SECOND, reading_time, %s ) )
+					 LIMIT 1",
+					$user_id,
+					$from,
+					$to,
+					$ref_utc
+				)
+			);
+
+			$results[ $key ] = $row
+				? array(
+					'value'     => (int) $row->glucose_value,
+					'direction' => $row->direction ?: 'NONE',
+					'time'      => $row->reading_time,
+					'device'    => $row->device,
+				)
+				: null;
+		}
+
+		$found = array_filter( $results );
+		if ( empty( $found ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Nessuna lettura CGM trovata per gli orari dell\'immersione. Verifica che il dispositivo sia sincronizzato e che l\'immersione sia avvenuta nelle ultime 24 ore.', 'sd-logbook' ),
+				)
+			);
+		}
+
+		wp_send_json_success( array( 'readings' => $results ) );
 	}
 }

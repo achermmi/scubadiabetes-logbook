@@ -1034,6 +1034,146 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     </div>
 
     <!-- ============================================================ -->
+    <!-- INTEGRAZIONE MEDTRONIC CARELINK (solo diabetici) -->
+    <!-- ============================================================ -->
+    <?php $cl = SD_CareLink::get_profile_data( $user_id ); ?>
+    <div class="sd-section sd-section-carelink">
+        <div class="sd-section-title">
+            <span class="sd-section-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </span>
+            <?php esc_html_e( 'Integrazione Medtronic CareLink', 'sd-logbook' ); ?>
+            <?php if ( $cl['connected'] ) : ?>
+                <span class="sd-ns-badge sd-ns-badge-connected"><?php esc_html_e( 'Connesso', 'sd-logbook' ); ?></span>
+            <?php else : ?>
+                <span class="sd-ns-badge sd-ns-badge-disconnected"><?php esc_html_e( 'Non connesso', 'sd-logbook' ); ?></span>
+            <?php endif; ?>
+        </div>
+
+        <p class="sd-field-help" style="margin:0 0 16px;">
+            <?php esc_html_e( 'Collega il tuo account Medtronic CareLink per importare automaticamente le letture CGM dai sensori Guardian (3, 4), Guardian Sensor 3 e SimplerA. Richiede un account CareLink Patient attivo. I dati vengono sincronizzati ogni ora.', 'sd-logbook' ); ?>
+        </p>
+
+        <?php if ( $cl['connected'] ) : ?>
+        <!-- Stato connessione -->
+        <div class="sd-ns-stats-bar" style="margin-bottom:16px;">
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Account', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $cl['username'] ); ?></span>
+            </div>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Server', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo 'carelink.minimed.eu' === $cl['server'] ? 'EU' : 'US'; ?></span>
+            </div>
+            <?php if ( $cl['last_glucose'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultima lettura', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $cl['last_glucose'] ); ?> mg/dL
+                    <?php if ( $cl['last_trend'] ) : ?><small><?php echo esc_html( $cl['last_trend'] ); ?></small><?php endif; ?>
+                </span>
+            </div>
+            <?php endif; ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Letture salvate', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( $cl['readings_count'] ); ?></span>
+            </div>
+            <?php if ( $cl['last_sync_at'] ) : ?>
+            <div class="sd-ns-stat">
+                <span class="sd-ns-stat-label"><?php esc_html_e( 'Ultimo sync', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-value"><?php echo esc_html( wp_date( 'd/m/Y H:i', strtotime( $cl['last_sync_at'] ) ) ); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pulsanti azioni -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+            <button type="button" id="sd-cl-btn-sync" class="sd-btn-save-record">
+                <?php esc_html_e( 'Sync Ora', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-cl-btn-edit" class="sd-btn-cancel-record">
+                <?php esc_html_e( 'Modifica Credenziali', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-cl-btn-disconnect" class="sd-btn-cancel-record">
+                <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
+            </button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Form credenziali -->
+        <div id="sd-cl-form" <?php echo $cl['connected'] ? 'style="display:none;"' : ''; ?>>
+            <div class="sd-form-grid">
+                <div class="sd-field">
+                    <label for="sd-cl-username"><?php esc_html_e( 'Username CareLink', 'sd-logbook' ); ?></label>
+                    <input type="text" id="sd-cl-username" name="carelink_username" autocomplete="off"
+                           value="<?php echo $cl['connected'] ? esc_attr( $cl['username'] ) : ''; ?>"
+                           placeholder="<?php esc_attr_e( 'Username o email CareLink', 'sd-logbook' ); ?>">
+                    <p class="sd-field-help"><?php esc_html_e( 'Lo stesso username con cui accedi a carelink.minimed.eu.', 'sd-logbook' ); ?></p>
+                </div>
+                <div class="sd-field">
+                    <label for="sd-cl-password"><?php esc_html_e( 'Password CareLink', 'sd-logbook' ); ?></label>
+                    <div class="sd-password-wrap">
+                        <input type="password" id="sd-cl-password" name="carelink_password" autocomplete="new-password"
+                               placeholder="<?php esc_attr_e( 'Password account CareLink', 'sd-logbook' ); ?>">
+                        <button type="button" class="sd-password-toggle" data-target="sd-cl-password" aria-label="<?php esc_attr_e( 'Mostra/Nascondi password', 'sd-logbook' ); ?>">
+                            <svg class="sd-pw-icon-show" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="sd-pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sd-form-grid" style="margin-top:12px;">
+                <div class="sd-field">
+                    <label><?php esc_html_e( 'Server CareLink', 'sd-logbook' ); ?></label>
+                    <div style="display:flex;gap:20px;align-items:center;margin-top:6px;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:normal;">
+                            <input type="radio" name="carelink_server" id="sd-cl-server-eu" value="carelink.minimed.eu"
+                                   <?php checked( 'carelink.minimed.eu', $cl['server'] ); ?>>
+                            <?php esc_html_e( 'Europa (EU)', 'sd-logbook' ); ?>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:normal;">
+                            <input type="radio" name="carelink_server" id="sd-cl-server-us" value="carelink.minimed.com"
+                                   <?php checked( 'carelink.minimed.com', $cl['server'] ); ?>>
+                            <?php esc_html_e( 'USA / Canada (US)', 'sd-logbook' ); ?>
+                        </label>
+                    </div>
+                    <p class="sd-field-help"><?php esc_html_e( 'Per utenti in Europa (inclusa Svizzera e Italia) seleziona EU. Per USA e Canada seleziona US.', 'sd-logbook' ); ?></p>
+                </div>
+                <div class="sd-field">
+                    <label for="sd-cl-country"><?php esc_html_e( 'Codice paese', 'sd-logbook' ); ?></label>
+                    <input type="text" id="sd-cl-country" name="carelink_country" maxlength="5" style="max-width:100px;"
+                           value="<?php echo esc_attr( $cl['country_code'] ); ?>"
+                           placeholder="ch">
+                    <p class="sd-field-help"><?php esc_html_e( 'Es: ch (Svizzera), it (Italia), de (Germania), us (USA).', 'sd-logbook' ); ?></p>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                <button type="button" id="sd-cl-btn-save" class="sd-btn-save-record">
+                    <?php esc_html_e( 'Salva e Connetti', 'sd-logbook' ); ?>
+                </button>
+                <button type="button" id="sd-cl-btn-test" class="sd-btn-cancel-record">
+                    <?php esc_html_e( 'Testa Connessione', 'sd-logbook' ); ?>
+                </button>
+                <?php if ( $cl['connected'] ) : ?>
+                <button type="button" id="sd-cl-btn-cancel-edit" class="sd-btn-cancel-record">
+                    <?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="sd-ns-message" id="sd-cl-message" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- INTEGRAZIONE TIDEPOOL (solo diabetici) -->
     <!-- ============================================================ -->
     <?php $tp = SD_Tidepool::get_profile_data( $user_id ); ?>

@@ -460,6 +460,35 @@
 }
 
 /* ============================================================
+   PULSANTE IMPORTA DA CGM
+   ============================================================ */
+.sd-btn-cgm-import {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: #ede9fe;
+    color: #6d28d9;
+    border: 1.5px solid #c4b5fd;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    line-height: 1.4;
+}
+
+.sd-btn-cgm-import:hover {
+    background: #ddd6fe;
+    border-color: #7c3aed;
+}
+
+.sd-btn-cgm-import:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ============================================================
    EXTRA MEASUREMENT CARDS (4 cards)
    ============================================================ */
 .sd-checkpoints-extra {

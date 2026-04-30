@@ -605,6 +605,122 @@
         }
 
         // ============================================================
+        // CGM IMPORT — "Importa letture da CGM"
+        // ============================================================
+
+        // Mappa direction Nightscout → valore trend del form
+        var nightscoutTrendMap = {
+            'TripleUp':      'salita_rapida',
+            'DoubleUp':      'salita_rapida',
+            'SingleUp':      'salita_rapida',
+            'FortyFiveUp':   'salita',
+            'Flat':          'stabile',
+            'FortyFiveDown': 'discesa',
+            'SingleDown':    'discesa',
+            'DoubleDown':    'discesa_rapida',
+            'TripleDown':    'discesa_rapida',
+            // CareLink format (già mappato ma arriva anche come stringa)
+            'salita_rapida': 'salita_rapida',
+            'salita':        'salita',
+            'stabile':       'stabile',
+            'discesa':       'discesa',
+            'discesa_rapida':'discesa_rapida'
+        };
+
+        function setTrendBtn(cp, nsDirection) {
+            var mapped = nightscoutTrendMap[nsDirection] || null;
+            var $group = $('.sd-trend-select[data-cp="' + cp + '"]');
+            $group.find('.sd-trend-btn').removeClass('active');
+            $('input[name="glic_' + cp + '_trend"]').val('');
+            if (mapped) {
+                var $btn = $group.find('.sd-trend-btn[data-value="' + mapped + '"]');
+                if ($btn.length) {
+                    $btn.addClass('active');
+                    $('input[name="glic_' + cp + '_trend"]').val(mapped);
+                }
+            }
+        }
+
+        // Mostra/nascondi il pulsante in base al dispositivo configurato
+        if (typeof sdLogbook !== 'undefined' && sdLogbook.cgmDevice) {
+            $('#sd-cgm-import-btn').attr('title', 'Importa da ' + sdLogbook.cgmDevice);
+        } else {
+            // Nasconde il pulsante se nessun dispositivo configurato
+            $('#sd-cgm-import-bar').hide();
+        }
+
+        $('#sd-cgm-import-btn').on('click', function() {
+            var $btn = $(this);
+            var $msg = $('#sd-cgm-import-msg');
+
+            // Legge data e ora dal form genitore
+            var diveDate = $('[name="dive_date"]').val();
+            var timeIn   = $('[name="time_in"]').val();
+            var timeOut  = $('[name="time_out"]').val() || '';
+
+            if (!diveDate || !timeIn) {
+                $msg.css('color', '#dc2626').text('Inserisci data e ora di inizio immersione prima di importare.').show();
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Caricamento…');
+            $msg.css('color', '#555').text('Recupero letture CGM…').show();
+
+            $.post(
+                (typeof sdLogbook !== 'undefined' ? sdLogbook.ajaxUrl : ajaxurl),
+                {
+                    action:    'sd_cgm_prefill',
+                    nonce:     (typeof sdLogbook !== 'undefined' ? sdLogbook.nonce : ''),
+                    dive_date: diveDate,
+                    time_in:   timeIn,
+                    time_out:  timeOut
+                },
+                function(resp) {
+                    $btn.prop('disabled', false).text('Importa letture da CGM');
+                    if (!resp.success) {
+                        $msg.css('color', '#dc2626').text(resp.data.message || 'Nessuna lettura trovata.').show();
+                        return;
+                    }
+
+                    var readings  = resp.data.readings;
+                    var filled    = 0;
+                    var deviceList = [];
+
+                    $.each(readings, function(cp, data) {
+                        if (!data) { return; }
+
+                        // Converti mg/dL → unità corrente
+                        var mgVal = data.value;
+                        var displayVal = isMmol() ? parseFloat((mgVal / 18).toFixed(1)) : mgVal;
+
+                        // Popola campo sensore
+                        $('input[name="glic_' + cp + '_sens"]').val(displayVal).trigger('input');
+
+                        // Imposta freccia trend
+                        if (data.direction && data.direction !== 'NONE') {
+                            setTrendBtn(cp, data.direction);
+                        }
+
+                        if (data.device && deviceList.indexOf(data.device) === -1) {
+                            deviceList.push(data.device);
+                        }
+                        filled++;
+                    });
+
+                    drawChart();
+
+                    var deviceLabel = deviceList.length ? deviceList[0].split('/')[0] : (sdLogbook.cgmDevice || 'CGM');
+                    $msg.css('color', '#16a34a').text(
+                        filled + ' lettura/e importata/e da ' + deviceLabel + '. Verifica i valori nei campi Sensore.'
+                    ).show();
+                }
+            ).fail(function() {
+                $btn.prop('disabled', false).text('Importa letture da CGM');
+                $msg.css('color', '#dc2626').text('Errore di rete. Riprova.').show();
+            });
+        });
+
+        // ============================================================
         // INIT: apply unit UI on load
         // ============================================================
         applyUnitToUI();

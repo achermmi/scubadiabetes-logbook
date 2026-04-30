@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.4.1';
+	const DB_VERSION = '3.5.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -82,6 +82,8 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dexcom-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-tidepool.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-libreview.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-carelink.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-cgm-dashboard.php';
 	}
 
 	/**
@@ -131,6 +133,7 @@ final class SD_Logbook {
 		$db->create_dexcom_oauth_tables();
 		$db->create_tidepool_tables();
 		$db->create_libreview_tables();
+		$db->create_carelink_tables();
 
 		// Crea ruoli utente personalizzati
 		$roles = new SD_Roles();
@@ -151,6 +154,7 @@ final class SD_Logbook {
 		SD_Dexcom_OAuth::schedule_cron();
 		SD_Tidepool::schedule_cron();
 		SD_LibreView::schedule_cron();
+		SD_CareLink::schedule_cron();
 
 		// Pulisci rewrite rules
 		flush_rewrite_rules();
@@ -167,6 +171,7 @@ final class SD_Logbook {
 		SD_Dexcom_OAuth::unschedule_cron();
 		SD_Tidepool::unschedule_cron();
 		SD_LibreView::unschedule_cron();
+		SD_CareLink::unschedule_cron();
 		flush_rewrite_rules();
 	}
 
@@ -184,6 +189,7 @@ final class SD_Logbook {
 			$db->create_dexcom_oauth_tables();
 			$db->create_tidepool_tables();
 			$db->create_libreview_tables();
+			$db->create_carelink_tables();
 
 			// v3.1.0: corregge valori non validi in member_type
 			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
@@ -236,6 +242,8 @@ final class SD_Logbook {
 		new SD_Dexcom_Settings();
 		new SD_Tidepool();
 		new SD_LibreView();
+		new SD_CareLink();
+		new SD_CGM_Dashboard();
 
 		// Cron rinnovi e sync Nightscout, Dexcom OAuth, Tidepool e LibreView (registra se non già programmato)
 		SD_Membership_Helper::schedule_cron();
@@ -243,6 +251,7 @@ final class SD_Logbook {
 		SD_Dexcom_OAuth::schedule_cron();
 		SD_Tidepool::schedule_cron();
 		SD_LibreView::schedule_cron();
+		SD_CareLink::schedule_cron();
 
 		// Neve PRO theme compatibility
 		add_filter( 'neve_sidebar_position', array( $this, 'neve_force_fullwidth' ) );
