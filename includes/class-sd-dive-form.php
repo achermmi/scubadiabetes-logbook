@@ -416,43 +416,58 @@ class SD_Dive_Form {
 		$p = $wpdb->prefix . 'sd_';
 
 		// Nightscout
-		$ns = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$p}nightscout_connections WHERE user_id = %d LIMIT 1", $user_id
-		) );
+		$ns = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$p}nightscout_connections WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
 		if ( $ns ) {
 			return 'Nightscout';
 		}
 
 		// Dexcom OAuth
-		$dx = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$p}dexcom_oauth WHERE user_id = %d LIMIT 1", $user_id
-		) );
+		$dx = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$p}dexcom_oauth WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
 		if ( $dx ) {
 			return 'Dexcom';
 		}
 
 		// LibreView
-		$lv = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$p}libreview_connections WHERE user_id = %d LIMIT 1", $user_id
-		) );
+		$lv = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$p}libreview_connections WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
 		if ( $lv ) {
 			return 'LibreView';
 		}
 
 		// CareLink
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$p}carelink_connections'" ) ) {
-			$cl = $wpdb->get_var( $wpdb->prepare(
-				"SELECT id FROM {$p}carelink_connections WHERE user_id = %d LIMIT 1", $user_id
-			) );
+			$cl = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$p}carelink_connections WHERE user_id = %d LIMIT 1",
+					$user_id
+				)
+			);
 			if ( $cl ) {
 				return 'CareLink';
 			}
 		}
 
 		// Tidepool
-		$tp = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM {$p}tidepool_connections WHERE user_id = %d LIMIT 1", $user_id
-		) );
+		$tp = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$p}tidepool_connections WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
 		if ( $tp ) {
 			return 'Tidepool';
 		}
@@ -482,8 +497,8 @@ class SD_Dive_Form {
 		}
 
 		$dive_date = sanitize_text_field( wp_unslash( $_POST['dive_date'] ?? '' ) );
-		$time_in   = sanitize_text_field( wp_unslash( $_POST['time_in']   ?? '' ) );
-		$time_out  = sanitize_text_field( wp_unslash( $_POST['time_out']  ?? '' ) );
+		$time_in   = sanitize_text_field( wp_unslash( $_POST['time_in'] ?? '' ) );
+		$time_out  = sanitize_text_field( wp_unslash( $_POST['time_out'] ?? '' ) );
 
 		if ( empty( $dive_date ) || empty( $time_in ) ) {
 			wp_send_json_error( array( 'message' => __( 'Inserisci data e ora di inizio immersione prima di importare le letture.', 'sd-logbook' ) ) );
@@ -529,10 +544,26 @@ class SD_Dive_Form {
 		 *          (NON cerchiamo prima perché il post è a tuffo concluso)
 		 */
 		$timepoints = array(
-			'60'   => array( 'ref' => $dive_start - 60 * 60, 'before' => 20 * 60, 'after' => 20 * 60 ),
-			'30'   => array( 'ref' => $dive_start - 30 * 60, 'before' => 15 * 60, 'after' => 15 * 60 ),
-			'10'   => array( 'ref' => $dive_start - 10 * 60, 'before' => 12 * 60, 'after' => 12 * 60 ),
-			'post' => array( 'ref' => $dive_end,             'before' =>  5 * 60, 'after' => 40 * 60 ),
+			'60'   => array(
+				'ref' => $dive_start - 60 * 60,
+				'before' => 20 * 60,
+				'after' => 20 * 60,
+			),
+			'30'   => array(
+				'ref' => $dive_start - 30 * 60,
+				'before' => 15 * 60,
+				'after' => 15 * 60,
+			),
+			'10'   => array(
+				'ref' => $dive_start - 10 * 60,
+				'before' => 12 * 60,
+				'after' => 12 * 60,
+			),
+			'post' => array(
+				'ref' => $dive_end,
+				'before' => 5 * 60,
+				'after' => 40 * 60,
+			),
 		);
 
 		$results = array();

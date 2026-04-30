@@ -24,10 +24,10 @@ class SD_CGM_Dashboard {
 
 	public function __construct() {
 		add_shortcode( 'sd_cgm_dashboard', array( $this, 'render_patient' ) );
-		add_shortcode( 'sd_cgm_medical',   array( $this, 'render_medical' ) );
-		add_action( 'wp_enqueue_scripts',            array( $this, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_sd_cgm_patient_fetch',  array( $this, 'ajax_patient_fetch' ) );
-		add_action( 'wp_ajax_sd_cgm_medical_fetch',  array( $this, 'ajax_medical_fetch' ) );
+		add_shortcode( 'sd_cgm_medical', array( $this, 'render_medical' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_sd_cgm_patient_fetch', array( $this, 'ajax_patient_fetch' ) );
+		add_action( 'wp_ajax_sd_cgm_medical_fetch', array( $this, 'ajax_medical_fetch' ) );
 	}
 
 	// ================================================================
@@ -49,8 +49,8 @@ class SD_CGM_Dashboard {
 		$css_ver  = file_exists( $css_path ) ? (string) filemtime( $css_path ) : SD_LOGBOOK_VERSION;
 
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
-		wp_enqueue_style( 'sd-dashboard',    SD_LOGBOOK_PLUGIN_URL . 'assets/css/dashboard.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-		wp_enqueue_style( 'sd-cgm',          SD_LOGBOOK_PLUGIN_URL . 'assets/css/cgm-dashboard.css', array( 'sd-logbook-form' ), $css_ver );
+		wp_enqueue_style( 'sd-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dashboard.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
+		wp_enqueue_style( 'sd-cgm', SD_LOGBOOK_PLUGIN_URL . 'assets/css/cgm-dashboard.css', array( 'sd-logbook-form' ), $css_ver );
 
 		$nonce = wp_create_nonce( 'sd_cgm_nonce' );
 
@@ -150,30 +150,40 @@ class SD_CGM_Dashboard {
 		}
 
 		$page      = max( 1, (int) ( $_POST['page'] ?? 1 ) );
-		$period    = sanitize_text_field( wp_unslash( $_POST['period']    ?? '24h' ) );
+		$period    = sanitize_text_field( wp_unslash( $_POST['period'] ?? '24h' ) );
 		$date_from = sanitize_text_field( wp_unslash( $_POST['date_from'] ?? '' ) );
-		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to']   ?? '' ) );
+		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to'] ?? '' ) );
 
 		[ $from_utc, $to_utc ] = $this->period_to_utc( $period, $date_from, $date_to );
 
 		global $wpdb;
 		$t = $wpdb->prefix . 'sd_nightscout_readings';
 
-		$total = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time BETWEEN %s AND %s",
-			$user_id, $from_utc, $to_utc
-		) );
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time BETWEEN %s AND %s",
+				$user_id,
+				$from_utc,
+				$to_utc
+			)
+		);
 
 		$offset = ( $page - 1 ) * self::PER_PAGE;
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( $wpdb->prepare(
-			"SELECT reading_time, glucose_value, direction, device
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT reading_time, glucose_value, direction, device
 			 FROM {$t}
 			 WHERE user_id = %d AND reading_time BETWEEN %s AND %s
 			 ORDER BY reading_time DESC
 			 LIMIT %d OFFSET %d",
-			$user_id, $from_utc, $to_utc, self::PER_PAGE, $offset
-		) );
+				$user_id,
+				$from_utc,
+				$to_utc,
+				self::PER_PAGE,
+				$offset
+			)
+		);
 
 		$tz        = self::get_tz();
 		$formatted = array();
@@ -191,21 +201,27 @@ class SD_CGM_Dashboard {
 		$chart_data = null;
 		if ( 1 === $page ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$all = $wpdb->get_results( $wpdb->prepare(
-				"SELECT reading_time, glucose_value FROM {$t}
+			$all = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT reading_time, glucose_value FROM {$t}
 				 WHERE user_id = %d AND reading_time BETWEEN %s AND %s
 				 ORDER BY reading_time ASC",
-				$user_id, $from_utc, $to_utc
-			) );
+					$user_id,
+					$from_utc,
+					$to_utc
+				)
+			);
 			$chart_data = $this->thin_chart( $all, 300 );
 		}
 
-		wp_send_json_success( array(
-			'rows'       => $formatted,
-			'total'      => $total,
-			'per_page'   => self::PER_PAGE,
-			'chart_data' => $chart_data,
-		) );
+		wp_send_json_success(
+			array(
+				'rows'       => $formatted,
+				'total'      => $total,
+				'per_page'   => self::PER_PAGE,
+				'chart_data' => $chart_data,
+			)
+		);
 	}
 
 	// ================================================================
@@ -221,12 +237,12 @@ class SD_CGM_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'Accesso non autorizzato.', 'sd-logbook' ) ) );
 		}
 
-		$page      = max( 1, (int) ( $_POST['page']      ?? 1 ) );
-		$search    = sanitize_text_field( wp_unslash( $_POST['search']    ?? '' ) );
+		$page      = max( 1, (int) ( $_POST['page'] ?? 1 ) );
+		$search    = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
 		$date_from = sanitize_text_field( wp_unslash( $_POST['date_from'] ?? '' ) );
-		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to']   ?? '' ) );
-		$filter    = sanitize_text_field( wp_unslash( $_POST['filter']    ?? 'all' ) );
-		$cgm_type  = sanitize_text_field( wp_unslash( $_POST['cgm_type']  ?? '' ) );
+		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to'] ?? '' ) );
+		$filter    = sanitize_text_field( wp_unslash( $_POST['filter'] ?? 'all' ) );
+		$cgm_type  = sanitize_text_field( wp_unslash( $_POST['cgm_type'] ?? '' ) );
 
 		global $wpdb;
 		$t  = $wpdb->prefix . 'sd_nightscout_readings';
@@ -313,23 +329,25 @@ class SD_CGM_Dashboard {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery
 			$users_n = $params ? (int) $wpdb->get_var( $wpdb->prepare( $sql_users, $params ) ) : (int) $wpdb->get_var( $sql_users );
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery
-			$anom_n  = $params ? (int) $wpdb->get_var( $wpdb->prepare( $anom_sql, $params ) )  : (int) $wpdb->get_var( $anom_sql );
+			$anom_n  = $params ? (int) $wpdb->get_var( $wpdb->prepare( $anom_sql, $params ) ) : (int) $wpdb->get_var( $anom_sql );
 			$pct     = $total > 0 ? (int) round( $anom_n / $total * 100 ) : 0;
 
 			$stats = array(
 				'total'    => $total,
 				'users'    => $users_n,
-				'anomalous'=> $anom_n,
+				'anomalous' => $anom_n,
 				'pct_anom' => $pct,
 			);
 		}
 
-		wp_send_json_success( array(
-			'rows'     => $formatted,
-			'total'    => $total,
-			'per_page' => self::PER_PAGE,
-			'stats'    => $stats,
-		) );
+		wp_send_json_success(
+			array(
+				'rows'     => $formatted,
+				'total'    => $total,
+				'per_page' => self::PER_PAGE,
+				'stats'    => $stats,
+			)
+		);
 	}
 
 	// ================================================================
@@ -339,10 +357,12 @@ class SD_CGM_Dashboard {
 	private function get_glycemia_unit( $user_id ) {
 		global $wpdb;
 		$db   = new SD_Database();
-		$unit = $wpdb->get_var( $wpdb->prepare(
-			"SELECT glycemia_unit FROM {$db->table('diver_profiles')} WHERE user_id = %d",
-			$user_id
-		) );
+		$unit = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT glycemia_unit FROM {$db->table('diver_profiles')} WHERE user_id = %d",
+				$user_id
+			)
+		);
 		return in_array( $unit, array( 'mg/dl', 'mmol/l' ), true ) ? $unit : 'mg/dl';
 	}
 
@@ -351,26 +371,37 @@ class SD_CGM_Dashboard {
 		$t   = $wpdb->prefix . 'sd_nightscout_readings';
 		$now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
 
-		$last = $wpdb->get_row( $wpdb->prepare(
-			"SELECT glucose_value, direction, reading_time, device FROM {$t} WHERE user_id = %d ORDER BY reading_time DESC LIMIT 1",
-			$user_id
-		) );
+		$last = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT glucose_value, direction, reading_time, device FROM {$t} WHERE user_id = %d ORDER BY reading_time DESC LIMIT 1",
+				$user_id
+			)
+		);
 
 		$from_24h = ( clone $now )->modify( '-24 hours' )->format( 'Y-m-d H:i:s' );
-		$avg_24h  = $wpdb->get_var( $wpdb->prepare(
-			"SELECT ROUND(AVG(glucose_value)) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
-			$user_id, $from_24h
-		) );
+		$avg_24h  = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT ROUND(AVG(glucose_value)) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
+				$user_id,
+				$from_24h
+			)
+		);
 
 		$from_7d    = ( clone $now )->modify( '-7 days' )->format( 'Y-m-d H:i:s' );
-		$total_7d   = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
-			$user_id, $from_7d
-		) );
-		$inrange_7d = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s AND glucose_value BETWEEN 70 AND 180",
-			$user_id, $from_7d
-		) );
+		$total_7d   = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
+				$user_id,
+				$from_7d
+			)
+		);
+		$inrange_7d = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s AND glucose_value BETWEEN 70 AND 180",
+				$user_id,
+				$from_7d
+			)
+		);
 		$tir = $total_7d > 0 ? (int) round( $inrange_7d / $total_7d * 100 ) : null;
 
 		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE user_id = %d", $user_id ) );
@@ -400,7 +431,11 @@ class SD_CGM_Dashboard {
 			}
 		}
 
-		$hours_map = array( '24h' => 24, '7d' => 168, '30d' => 720 );
+		$hours_map = array(
+			'24h' => 24,
+			'7d' => 168,
+			'30d' => 720,
+		);
 		$hours     = $hours_map[ $period ] ?? 24;
 		$from      = ( clone $now )->modify( "-{$hours} hours" )->format( 'Y-m-d H:i:s' );
 		return array( $from, $now->format( 'Y-m-d H:i:s' ) );
@@ -412,9 +447,12 @@ class SD_CGM_Dashboard {
 			return array();
 		}
 		if ( $count <= $max ) {
-			return array_map( function ( $r ) {
-				return array( (int) strtotime( $r->reading_time . ' UTC' ) * 1000, (int) $r->glucose_value );
-			}, $rows );
+			return array_map(
+				function ( $r ) {
+					return array( (int) strtotime( $r->reading_time . ' UTC' ) * 1000, (int) $r->glucose_value );
+				},
+				$rows
+			);
 		}
 		$step   = $count / $max;
 		$result = array();
@@ -437,19 +475,37 @@ class SD_CGM_Dashboard {
 	// ================================================================
 
 	public static function glucose_class( $val ) {
-		if ( $val < 54 )   return 'sd-gluc-very-low';
-		if ( $val < 70 )   return 'sd-gluc-low';
-		if ( $val <= 180 ) return 'sd-gluc-normal';
-		if ( $val <= 250 ) return 'sd-gluc-high';
+		if ( $val < 54 ) {
+			return 'sd-gluc-very-low';
+		}
+		if ( $val < 70 ) {
+			return 'sd-gluc-low';
+		}
+		if ( $val <= 180 ) {
+			return 'sd-gluc-normal';
+		}
+		if ( $val <= 250 ) {
+			return 'sd-gluc-high';
+		}
 		return 'sd-gluc-very-high';
 	}
 
 	public static function glucose_label( $val ) {
-		if ( $val === null ) return '—';
-		if ( $val < 54 )   return __( 'Ipoglicemia grave', 'sd-logbook' );
-		if ( $val < 70 )   return __( 'Ipoglicemia', 'sd-logbook' );
-		if ( $val <= 180 ) return __( 'Nella norma', 'sd-logbook' );
-		if ( $val <= 250 ) return __( 'Alta', 'sd-logbook' );
+		if ( null === $val ) {
+			return '—';
+		}
+		if ( $val < 54 ) {
+			return __( 'Ipoglicemia grave', 'sd-logbook' );
+		}
+		if ( $val < 70 ) {
+			return __( 'Ipoglicemia', 'sd-logbook' );
+		}
+		if ( $val <= 180 ) {
+			return __( 'Nella norma', 'sd-logbook' );
+		}
+		if ( $val <= 250 ) {
+			return __( 'Alta', 'sd-logbook' );
+		}
 		return __( 'Molto alta', 'sd-logbook' );
 	}
 
@@ -470,15 +526,21 @@ class SD_CGM_Dashboard {
 	}
 
 	public static function device_source( $device ) {
-		if ( ! $device ) return '';
+		if ( ! $device ) {
+			return '';
+		}
 		foreach ( array( 'CareLink', 'LibreView', 'Dexcom', 'Nightscout', 'Tidepool' ) as $src ) {
-			if ( str_starts_with( $device, $src ) ) return $src;
+			if ( str_starts_with( $device, $src ) ) {
+				return $src;
+			}
 		}
 		return $device;
 	}
 
 	public static function format_glucose( $val, $unit ) {
-		if ( $val === null ) return '—';
+		if ( null === $val ) {
+			return '—';
+		}
 		if ( 'mmol/l' === $unit ) {
 			return number_format( $val / 18, 1 );
 		}

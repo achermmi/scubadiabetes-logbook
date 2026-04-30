@@ -60,9 +60,9 @@ class SD_CareLink {
 		$this->prefix = $wpdb->prefix . 'sd_';
 
 		// AJAX autenticato
-		add_action( 'wp_ajax_sd_carelink_save',       array( $this, 'ajax_save_credentials' ) );
-		add_action( 'wp_ajax_sd_carelink_test',       array( $this, 'ajax_test_connection' ) );
-		add_action( 'wp_ajax_sd_carelink_sync',       array( $this, 'ajax_manual_sync' ) );
+		add_action( 'wp_ajax_sd_carelink_save', array( $this, 'ajax_save_credentials' ) );
+		add_action( 'wp_ajax_sd_carelink_test', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_sd_carelink_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_carelink_disconnect', array( $this, 'ajax_disconnect' ) );
 
 		// Cron sync automatico
@@ -205,12 +205,12 @@ class SD_CareLink {
 		}
 
 		// Estrae la configurazione SSO dalla risposta discovery
-		$sso_base    = $data['device']['authorization']['ssoServerUrl']     ?? '';
-		$client_id   = $data['device']['authorization']['ssoClientId']      ?? '';
-		$token_path  = $data['device']['authorization']['ssoTokenUri']      ?? '';
-		$redirect    = $data['device']['authorization']['ssoRedirectUri']   ?? '';
-		$scope       = $data['device']['authorization']['ssoScope']         ?? 'openid profile email';
-		$audience    = $data['device']['authorization']['ssoAudience']      ?? '';
+		$sso_base    = $data['device']['authorization']['ssoServerUrl'] ?? '';
+		$client_id   = $data['device']['authorization']['ssoClientId'] ?? '';
+		$token_path  = $data['device']['authorization']['ssoTokenUri'] ?? '';
+		$redirect    = $data['device']['authorization']['ssoRedirectUri'] ?? '';
+		$scope       = $data['device']['authorization']['ssoScope'] ?? 'openid profile email';
+		$audience    = $data['device']['authorization']['ssoAudience'] ?? '';
 
 		if ( empty( $sso_base ) || empty( $client_id ) ) {
 			return new WP_Error(
@@ -363,7 +363,8 @@ class SD_CareLink {
 		$hidden_fields = array();
 		preg_match_all( '/<input[^>]+type=["\']hidden["\'][^>]*>/i', $body, $inputs );
 		foreach ( $inputs[0] as $inp ) {
-			$name = $val = '';
+			$name = '';
+			$val  = '';
 			if ( preg_match( '/name=["\']([^"\']+)["\']/i', $inp, $nm ) ) {
 				$name = $nm[1];
 			}
