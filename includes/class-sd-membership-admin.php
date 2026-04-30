@@ -107,41 +107,49 @@ class SD_Membership_Admin {
 		$current_year = gmdate( 'Y' );
 
 		// Stats rapide
-		$total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE is_active = 1" );
+		$total      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')}" );
+		$active_yes = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE COALESCE(is_active, 1) = 1" );
+		$active_no  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE COALESCE(is_active, 1) = 0" );
 		$paid   = (int) $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$db->table('members')} m
-			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
-			 WHERE m.is_active = 1
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
 			   AND CASE
-			           WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+			           WHEN m.parent_member_id IS NOT NULL
 			           THEN COALESCE(pm.has_paid_fee, 0)
 			           ELSE m.has_paid_fee
 			       END = 1"
 		);
 		$income = (float) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COALESCE(SUM(amount),0) FROM {$db->table('payments')} WHERE status = 'completato' AND payment_year = %d",
-				$current_year
-			)
+			"SELECT COALESCE(SUM(m.fee_amount),0) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
+			   AND CASE
+			           WHEN m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 1"
 		);
 
 		$expected = (float) $wpdb->get_var(
 			"SELECT COALESCE(SUM(m.fee_amount),0) FROM {$db->table('members')} m
-			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
-			 WHERE m.is_active = 1
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
 			   AND CASE
-			           WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+			           WHEN m.parent_member_id IS NOT NULL
 			           THEN COALESCE(pm.has_paid_fee, 0)
 			           ELSE m.has_paid_fee
 			       END = 0"
 		);
 
 		$stats = array(
-			'total'    => $total,
-			'paid'     => $paid,
-			'unpaid'   => $total - $paid,
-			'income'   => $income,
-			'expected' => $expected,
+			'total'      => $total,
+			'paid'       => $paid,
+			'unpaid'     => $active_yes - $paid,
+			'income'     => $income,
+			'expected'   => $expected,
+			'active_yes' => $active_yes,
+			'active_no'  => $active_no,
 		);
 
 		ob_start();
@@ -195,8 +203,8 @@ class SD_Membership_Admin {
 		$registered_family_members = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT m.id, m.first_name, m.last_name, m.email, m.phone, m.date_of_birth,
-				        m.gender, m.is_scuba, m.diabetes_type, m.is_active, m.fee_amount,
-				        m.member_type, m.wp_user_id, m.member_since
+				        m.gender, m.is_scuba, m.diabetes_type, COALESCE(m.is_active, 1) AS is_active, m.fee_amount,
+				        COALESCE(m.member_type, 'attivo_famigliare') AS member_type, m.wp_user_id, m.member_since
 				 FROM {$db->table('members')} m
 				 WHERE m.parent_member_id = %d
 				 ORDER BY m.last_name, m.first_name",
@@ -254,15 +262,16 @@ class SD_Membership_Admin {
 		$year        = absint( $_POST['anno'] ?? gmdate( 'Y' ) );
 
 		// Filtri
-		$search      = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
-		$pagato      = isset( $_POST['pagato'] ) && '' !== $_POST['pagato'] ? absint( $_POST['pagato'] ) : null;
-		$is_scuba    = isset( $_POST['is_scuba'] ) && '' !== $_POST['is_scuba'] ? absint( $_POST['is_scuba'] ) : null;
-		$diabetes    = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
-		$member_type = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? '' ) );
-		$wp_role     = sanitize_text_field( wp_unslash( $_POST['wp_role'] ?? '' ) );
-		$fee_filter  = sanitize_text_field( wp_unslash( $_POST['fee_amount'] ?? '' ) );
+		$search           = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
+		$pagato           = isset( $_POST['pagato'] ) && '' !== $_POST['pagato'] ? absint( $_POST['pagato'] ) : null;
+		$is_scuba         = isset( $_POST['is_scuba'] ) && '' !== $_POST['is_scuba'] ? absint( $_POST['is_scuba'] ) : null;
+		$is_active_filter = isset( $_POST['is_active'] ) && '' !== $_POST['is_active'] ? absint( $_POST['is_active'] ) : null;
+		$diabetes         = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
+		$member_type      = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? '' ) );
+		$wp_role          = sanitize_text_field( wp_unslash( $_POST['wp_role'] ?? '' ) );
+		$fee_filter       = sanitize_text_field( wp_unslash( $_POST['fee_amount'] ?? '' ) );
 
-		$where  = array( 'm.is_active = 1' );
+		$where  = array();
 		$params = array();
 
 		if ( ! empty( $search ) ) {
@@ -271,8 +280,8 @@ class SD_Membership_Admin {
 			$params  = array_merge( $params, array( $like, $like, $like ) );
 		}
 		if ( null !== $pagato ) {
-			// Per attivo_famigliare il pagamento è ereditato dal capo famiglia (parent)
-			$where[]  = "(CASE WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d";
+			// Per famigliari (parent_member_id IS NOT NULL) il pagamento è ereditato dal capo famiglia
+			$where[]  = "(CASE WHEN m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d";
 			$params[] = $pagato;
 		}
 		if ( null !== $is_scuba ) {
@@ -284,18 +293,26 @@ class SD_Membership_Admin {
 			$params[] = $diabetes;
 		}
 		if ( ! empty( $member_type ) ) {
-			$where[]  = 'm.member_type = %s';
+			$where[]  = "(CASE
+			                 WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+			                 WHEN (SELECT COUNT(*) FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id) > 0 THEN 'attivo_capo_famiglia'
+			                 ELSE COALESCE(m.member_type, 'attivo')
+			             END) = %s";
 			$params[] = $member_type;
 		}
 		if ( ! empty( $fee_filter ) ) {
 			$where[]  = 'm.fee_amount = %f';
 			$params[] = floatval( $fee_filter );
 		}
+		if ( null !== $is_active_filter ) {
+			$where[]  = 'COALESCE(m.is_active, 1) = %d';
+			$params[] = $is_active_filter;
+		}
 
-		$where_sql = 'WHERE ' . implode( ' AND ', $where );
+		$where_sql = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
 
 		// Il JOIN con pm (parent) serve anche nel count quando si filtra per pagato (CASE famigliare)
-		$pm_join = "LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'";
+		$pm_join = "LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id";
 
 		// Count totale
 		$count_sql  = "SELECT COUNT(*) FROM {$db->table('members')} m {$pm_join} {$where_sql}";
@@ -305,11 +322,16 @@ class SD_Membership_Admin {
 		$query_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.phone,
 		                     m.date_of_birth, m.gender, m.fee_amount,
 		                     CASE
-		                         WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+		                         WHEN m.parent_member_id IS NOT NULL
 		                         THEN COALESCE(pm.has_paid_fee, 0)
 		                         ELSE m.has_paid_fee
 		                     END AS has_paid_fee,
-		                     m.member_type, m.is_scuba, m.diabetes_type, m.member_since,
+		                     CASE
+		                         WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+		                         WHEN fc.cnt > 0 THEN 'attivo_capo_famiglia'
+		                         ELSE COALESCE(m.member_type, 'attivo')
+		                     END AS member_type,
+		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
 		                     m.wp_user_id, m.taglia_maglietta,
 		                     p.amount as paid_amount, p.payment_date, p.payment_method, p.status as payment_status
@@ -317,6 +339,12 @@ class SD_Membership_Admin {
 		              LEFT JOIN {$db->table('payments')} p
 		                ON p.member_id = m.id AND p.payment_year = %d
 		              {$pm_join}
+		              LEFT JOIN (
+		                  SELECT parent_member_id, COUNT(*) AS cnt
+		                  FROM {$db->table('members')}
+		                  WHERE parent_member_id IS NOT NULL
+		                  GROUP BY parent_member_id
+		              ) fc ON fc.parent_member_id = m.id
 		              {$where_sql}
 		              ORDER BY m.last_name ASC, m.first_name ASC
 		              LIMIT %d OFFSET %d";
@@ -340,6 +368,9 @@ class SD_Membership_Admin {
 						}
 					}
 					$row->wp_role_label = implode( ', ', $role_labels );
+					// is_scuba derivato dai ruoli WP (fonte di verità)
+					$diver_roles    = array( 'sd_diver', 'sd_diver_diabetic' );
+					$row->is_scuba  = ! empty( array_intersect( $roles, $diver_roles ) ) ? 1 : 0;
 				}
 			}
 
@@ -475,6 +506,8 @@ class SD_Membership_Admin {
 		if ( isset( $_POST['sotto_tutela'] ) ) {
 			$update_data['sotto_tutela'] = absint( $_POST['sotto_tutela'] );
 		}
+		// is_scuba: se vengono inviati i ruoli WP viene derivato da essi, altrimenti dal select manuale
+		// is_scuba: letto dal select del form (il JS syncIsScuba lo mantiene già allineato ai ruoli)
 		if ( isset( $_POST['is_scuba'] ) ) {
 			$update_data['is_scuba'] = absint( $_POST['is_scuba'] );
 		}
@@ -496,6 +529,23 @@ class SD_Membership_Admin {
 			$update_data['notes'] = $notes;
 		}
 		$update_data['is_active'] = $is_active;
+
+		// === Normalizza member_type in base alla presenza di figli ===
+		// Controlla se il socio ha famigliari associati (parent_member_id → questo socio)
+		$has_family_children = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$db->table('members')} WHERE parent_member_id = %d",
+				$member_id
+			)
+		);
+
+		if ( $has_family_children > 0 ) {
+			// Il capo famiglia deve essere attivo_capo_famiglia
+			$update_data['member_type'] = 'attivo_capo_famiglia';
+		} elseif ( ! empty( $old_data->parent_member_id ) ) {
+			// Questo socio è un famigliare → sempre attivo_famigliare
+			$update_data['member_type'] = 'attivo_famigliare';
+		}
 
 		// Aggiorna tabella members
 		if ( ! empty( $update_data ) ) {
@@ -545,13 +595,19 @@ class SD_Membership_Admin {
 			$pay_data = array(
 				'status' => $has_paid_fee ? 'completato' : 'in_attesa',
 			);
-			if ( ! empty( $payment_date ) ) {
-				$pay_data['payment_date'] = $payment_date;
-			}
-			if ( ! empty( $payment_method ) ) {
-				$allowed_methods = array( 'twint', 'paypal', 'stripe', 'bonifico_iban' );
-				if ( in_array( $payment_method, $allowed_methods, true ) ) {
-					$pay_data['payment_method'] = $payment_method;
+			if ( 0 === $has_paid_fee ) {
+				// Non pagato: azzera data e metodo
+				$pay_data['payment_date']   = null;
+				$pay_data['payment_method'] = '';
+			} else {
+				if ( ! empty( $payment_date ) ) {
+					$pay_data['payment_date'] = $payment_date;
+				}
+				if ( ! empty( $payment_method ) ) {
+					$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura' );
+					if ( in_array( $payment_method, $allowed_methods, true ) ) {
+						$pay_data['payment_method'] = $payment_method;
+					}
 				}
 			}
 			if ( null !== $payment_amount ) {
@@ -578,9 +634,75 @@ class SD_Membership_Admin {
 					$pay_data['amount'] = $old_data->fee_amount ?? 50;
 				}
 				if ( empty( $pay_data['payment_method'] ) ) {
-					$pay_data['payment_method'] = 'bonifico_iban';
+					$pay_data['payment_method'] = '';
 				}
 				$wpdb->insert( $db->table( 'payments' ), $pay_data );
+			}
+
+			// === Cascata ai famigliari: se il socio ha figli, propaga pagamento e tipo ===
+			$family_children = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('members')} WHERE parent_member_id = %d",
+					$member_id
+				)
+			);
+
+			if ( ! empty( $family_children ) ) {
+				$fm_method = $pay_data['payment_method'] ?? '';
+
+				foreach ( $family_children as $fm ) {
+					// Aggiorna stato e tipo del famigliare
+					$wpdb->update(
+						$db->table( 'members' ),
+						array(
+							'has_paid_fee' => $has_paid_fee,
+							'member_type'  => 'attivo_famigliare',
+						),
+						array( 'id' => $fm->id )
+					);
+
+					// Propaga il pagamento al famigliare
+				if ( 0 === $has_paid_fee ) {
+					$fm_pay = array(
+						'status'         => 'in_attesa',
+						'payment_date'   => null,
+						'payment_method' => '',
+						'registered_by'  => get_current_user_id(),
+					);
+				} else {
+					$fm_pay = array(
+						'status'         => 'completato',
+						'payment_date'   => ! empty( $payment_date ) ? $payment_date : null,
+						'payment_method' => $fm_method,
+						'registered_by'  => get_current_user_id(),
+					);
+				}
+					$existing_fm_pay = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT id FROM {$db->table('payments')} WHERE member_id = %d AND payment_year = %d",
+							$fm->id,
+							$payment_year
+						)
+					);
+
+					if ( $existing_fm_pay ) {
+						$wpdb->update( $db->table( 'payments' ), $fm_pay, array( 'id' => $existing_fm_pay ) );
+					} else {
+						$wpdb->insert(
+							$db->table( 'payments' ),
+							array_merge(
+								$fm_pay,
+								array(
+									'member_id'      => $fm->id,
+									'amount'         => 0.00,
+									'currency'       => 'CHF',
+									'payment_year'   => $payment_year,
+									'payment_method' => $fm_method ?: 'famigliare',
+								)
+							)
+						);
+					}
+				}
 			}
 		}
 
@@ -595,12 +717,6 @@ class SD_Membership_Admin {
 				array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['wp_roles'] ) ),
 				fn( $r ) => in_array( $r, $allowed_wp, true )
 			);
-
-			// Se il ruolo include Subacqueo o Subacqueo Diabetico, forza is_scuba = 1
-			$diver_roles = array( 'sd_diver', 'sd_diver_diabetic' );
-			if ( ! empty( array_intersect( array_values( $new_roles ), $diver_roles ) ) ) {
-				$update_data['is_scuba'] = 1;
-			}
 
 			$wp_user = new WP_User( $old_data->wp_user_id );
 
@@ -619,6 +735,12 @@ class SD_Membership_Admin {
 			if ( empty( $new_roles ) && ! $wp_user->has_cap( 'administrator' ) ) {
 				$wp_user->add_role( 'subscriber' );
 			}
+
+			// Aggiorna is_scuba in base ai ruoli WP effettivi dopo il salvataggio
+			$diver_roles_check = array( 'sd_diver', 'sd_diver_diabetic' );
+			$wp_user_updated   = new WP_User( $old_data->wp_user_id ); // rilegge i ruoli aggiornati
+			$is_scuba_from_roles = ! empty( array_intersect( (array) $wp_user_updated->roles, $diver_roles_check ) ) ? 1 : 0;
+			$wpdb->update( $db->table( 'members' ), array( 'is_scuba' => $is_scuba_from_roles ), array( 'id' => $member_id ) );
 		}
 
 		// Aggiorna profilo subacqueo se i campi esistono

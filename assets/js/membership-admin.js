@@ -36,7 +36,7 @@
 		var $msg     = $('#sd-members-message');
 
 		$loading.show();
-		$tbody.html('<tr><td colspan="11" class="sd-table-empty">Caricamento...</td></tr>');
+		$tbody.html('<tr><td colspan="13" class="sd-table-empty">Caricamento...</td></tr>');
 		$msg.hide();
 
 		var filters = getFilters();
@@ -61,7 +61,7 @@
 				state.total = data.total;
 
 				if (!data.rows || data.rows.length === 0) {
-					$tbody.html('<tr><td colspan="11" class="sd-table-empty">Nessun socio trovato.</td></tr>');
+					$tbody.html('<tr><td colspan="13" class="sd-table-empty">Nessun socio trovato.</td></tr>');
 					$('#sd-pagination').hide();
 					return;
 				}
@@ -71,7 +71,7 @@
 			},
 			error: function () {
 				$loading.hide();
-				$tbody.html('<tr><td colspan="11" class="sd-table-empty">Errore di rete.</td></tr>');
+				$tbody.html('<tr><td colspan="13" class="sd-table-empty">Errore di rete.</td></tr>');
 			},
 		});
 	}
@@ -98,6 +98,10 @@
 				? '<span class="sd-paid-badge">Sì</span>'
 				: '<span class="sd-unpaid-badge">No</span>';
 
+			var activeBadge = m.is_active == 1
+				? '<span class="sd-paid-badge">Sì</span>'
+				: '<span class="sd-unpaid-badge">No</span>';
+
 			var scubaBadge    = m.is_scuba == 1 ? '✓' : '—';
 			var diabeticTypes = ['tipo_1','tipo_2','tipo_3c','lada','mody','midd','altro'];
 			var diabeticBadge = (m.diabetes_type && diabeticTypes.indexOf(m.diabetes_type) !== -1) ? '✓' : '—';
@@ -116,6 +120,7 @@
 				'<td>' + paidBadge + '</td>' +
 				'<td>' + escapeHtml(payDate) + '</td>' +
 				'<td>' + formatMemberType(m.member_type) + '</td>' +
+				'<td>' + activeBadge + '</td>' +
 				'<td>' + scubaBadge + '</td>' +
 				'<td>' + diabeticBadge + '</td>' +
 				'<td>' + escapeHtml(m.taglia_maglietta || '—') + '</td>' +
@@ -268,11 +273,18 @@
 			});
 		});
 
-		// Auto-imposta is_scuba quando si cambiano i ruoli WP
+		// Quando si cambiano i ruoli WP, aggiorna il campo Subacqueo di conseguenza
 		$form.on('change', 'input[name="wp_roles[]"]', function () {
-			var $diverCheckboxes = $form.find('input[name="wp_roles[]"][value="sd_diver"], input[name="wp_roles[]"][value="sd_diver_diabetic"]');
-			var diverChecked = $diverCheckboxes.is(':checked');
-			$form.find('select[name="is_scuba"]').val(diverChecked ? '1' : '0');
+			var $diverCb = $form.find('input[name="wp_roles[]"][value="sd_diver"], input[name="wp_roles[]"][value="sd_diver_diabetic"]');
+			$form.find('select[name="is_scuba"]').val($diverCb.is(':checked') ? '1' : '0');
+		});
+
+		// Quando si imposta Non pagato: azzera data e metodo
+		$form.on('change', 'select[name="has_paid_fee"]', function () {
+			if ($(this).val() === '0') {
+				$form.find('input[name="payment_date"]').val('');
+				$form.find('select[name="payment_method"]').val('');
+			}
 		});
 
 		// Pulsante elimina (solo admin)

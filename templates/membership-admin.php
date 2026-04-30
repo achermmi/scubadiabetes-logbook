@@ -39,6 +39,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<span class="sd-stat-value">CHF <?php echo esc_html( number_format( $stats['expected'], 2 ) ); ?></span>
 			<span class="sd-stat-label"><?php echo esc_html( sprintf( __( 'Non pagato %s', 'sd-logbook' ), $current_year ) ); ?></span>
 		</div>
+		<div class="sd-stat-card sd-stat-success">
+			<span class="sd-stat-value"><?php echo esc_html( $stats['active_yes'] ); ?></span>
+			<span class="sd-stat-label"><?php esc_html_e( 'Soci attivi', 'sd-logbook' ); ?></span>
+		</div>
+		<div class="sd-stat-card sd-stat-warning">
+			<span class="sd-stat-value"><?php echo esc_html( $stats['active_no'] ); ?></span>
+			<span class="sd-stat-label"><?php esc_html_e( 'Soci non attivi', 'sd-logbook' ); ?></span>
+		</div>
 	</div>
 
 	<!-- Barra filtri -->
@@ -114,6 +122,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<select name="is_active" id="sd-filter-active" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti (attivo)', 'sd-logbook' ); ?></option>
+						<option value="1"><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></option>
+						<option value="0"><?php esc_html_e( 'Non attivo', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
 					<select name="wp_role" id="sd-filter-role" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti i ruoli WP', 'sd-logbook' ); ?></option>
 						<option value="sd_diver_diabetic"><?php esc_html_e( 'Subacqueo Diabetico', 'sd-logbook' ); ?></option>
@@ -160,8 +176,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<th><?php esc_html_e( 'Tassa', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Data Pag.', 'sd-logbook' ); ?></th>
-					<th><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></th>
-					<th><?php esc_html_e( 'Sub', 'sd-logbook' ); ?></th>
+					<th><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></th>						<th><?php esc_html_e( 'Attivo', 'sd-logbook' ); ?></th>					<th><?php esc_html_e( 'Sub', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Diab.', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Taglia', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Ruolo WP', 'sd-logbook' ); ?></th>
@@ -170,7 +185,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</thead>
 			<tbody id="sd-members-tbody">
 				<tr>
-					<td colspan="12" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
+					<td colspan="13" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
 				</tr>
 			</tbody>
 		</table>

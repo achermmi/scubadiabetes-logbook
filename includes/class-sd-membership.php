@@ -326,7 +326,7 @@ class SD_Membership {
 			'diabetes_type'       => $is_diabetic ? ( in_array( $diabetes_type, $diabetic_types, true ) ? $diabetes_type : 'altro' ) : 'non_diabetico',
 			'member_since'        => gmdate( 'Y-m-d' ),
 			'membership_expiry'   => gmdate( 'Y-12-31' ),
-			'is_active'           => 1,
+			'is_active'           => 0,
 			'has_paid_fee'        => 0,
 			// Campi estesi
 			'sotto_tutela'        => $sotto_tutela ? 1 : 0,
@@ -531,8 +531,8 @@ class SD_Membership {
 					'diabetes_type'      => $fm_is_diabetic ? $fm_diab_type : 'non_diabetico',
 					'member_since'       => gmdate( 'Y-m-d' ),
 					'membership_expiry'  => gmdate( 'Y-12-31' ),
-					'is_active'          => 1,
-					'has_paid_fee'       => 1, // i famigliari non pagano separatamente
+				'is_active'          => 0,
+				'has_paid_fee'       => 0, // i famigliari non pagano separatamente
 					'is_scuba'           => $fm_scuba,
 					'fee_amount'         => 0.00,
 					'member_type'        => 'attivo_famigliare',
@@ -639,7 +639,7 @@ class SD_Membership {
 				'member_id'      => $member_id,
 				'amount'         => $fee_amount,
 				'currency'       => 'CHF',
-				'payment_method' => 'bonifico_iban',
+			'payment_method' => '',
 				'payment_year'   => intval( gmdate( 'Y' ) ),
 				'status'         => 'in_attesa',
 				'registered_by'  => get_current_user_id(),

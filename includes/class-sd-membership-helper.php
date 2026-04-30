@@ -435,7 +435,14 @@ class SD_Membership_Helper {
 
 		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT m.*, u.user_login, u.user_registered,
+				"SELECT m.*,
+				        CASE
+				            WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+				            WHEN (SELECT COUNT(*) FROM {$db->table('members')} fc WHERE fc.parent_member_id = m.id) > 0 THEN 'attivo_capo_famiglia'
+				            ELSE COALESCE(m.member_type, 'attivo')
+				        END AS member_type,
+				        COALESCE(m.is_active, 1) AS is_active,
+				        u.user_login, u.user_registered,
 				        dp.is_diabetic, dp.diabetes_type as dp_diabetes_type,
 				        dp.weight, dp.height, dp.blood_type, dp.allergies,
 				        dp.medications, dp.diabetology_center, dp.default_shared_for_research

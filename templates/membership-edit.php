@@ -215,7 +215,22 @@ function sd_val( $obj, $key, $default = '' ) {
 						</select>
 					</div>
 				</div>
-			</div>
+				<div class="sd-field-row">
+					<div class="sd-field-group sd-field-half">
+						<label class="sd-label"><?php esc_html_e( 'Tipo diabete', 'sd-logbook' ); ?></label>
+						<select name="diabetes_type" class="sd-select">
+							<option value="non_diabetico" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_diabetico' ); ?>><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
+							<option value="tipo_1" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_1' ); ?>><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
+							<option value="tipo_2" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_2' ); ?>><?php esc_html_e( 'Tipo 2', 'sd-logbook' ); ?></option>
+							<option value="tipo_3c" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_3c' ); ?>><?php esc_html_e( 'Tipo 3c (pancreasectomia, pancreatite)', 'sd-logbook' ); ?></option>
+							<option value="lada" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'lada' ); ?>>LADA</option>
+							<option value="mody" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'mody' ); ?>>MODY</option>
+							<option value="midd" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'midd' ); ?>>MIDD</option>
+							<option value="altro" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'altro' ); ?>><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+							<option value="non_specificato" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_specificato' ); ?>><?php esc_html_e( 'Non specificato (legacy)', 'sd-logbook' ); ?></option>
+						</select>
+					</div>
+				</div>			</div>
 
 			<!-- Ruolo WP -->
 			<div class="sd-form-section">
@@ -346,10 +361,14 @@ function sd_val( $obj, $key, $default = '' ) {
 					<div class="sd-field-group sd-field-quarter">
 						<label class="sd-label"><?php esc_html_e( 'Metodo', 'sd-logbook' ); ?></label>
 						<select name="payment_method" class="sd-select">
+							<option value="" <?php selected( $current_pay ? $current_pay->payment_method : '', '' ); ?>><?php esc_html_e( '-- Seleziona --', 'sd-logbook' ); ?></option>
 							<option value="bonifico_iban" <?php selected( $current_pay ? $current_pay->payment_method : '', 'bonifico_iban' ); ?>><?php esc_html_e( 'Bonifico IBAN', 'sd-logbook' ); ?></option>
 							<option value="twint" <?php selected( $current_pay ? $current_pay->payment_method : '', 'twint' ); ?>>TWINT</option>
 							<option value="paypal" <?php selected( $current_pay ? $current_pay->payment_method : '', 'paypal' ); ?>>PayPal</option>
-							<option value="stripe" <?php selected( $current_pay ? $current_pay->payment_method : '', 'stripe' ); ?>>Stripe</option>
+							<option value="carta_credito" <?php selected( $current_pay ? $current_pay->payment_method : '', 'carta_credito' ); ?>><?php esc_html_e( 'Carta di credito / debito', 'sd-logbook' ); ?></option>
+							<option value="apple_pay" <?php selected( $current_pay ? $current_pay->payment_method : '', 'apple_pay' ); ?>>Apple Pay</option>
+							<option value="google_pay" <?php selected( $current_pay ? $current_pay->payment_method : '', 'google_pay' ); ?>>Google Pay</option>
+							<option value="fattura" <?php selected( $current_pay ? $current_pay->payment_method : '', 'fattura' ); ?>><?php esc_html_e( 'Fattura', 'sd-logbook' ); ?></option>
 						</select>
 					</div>
 					<div class="sd-field-group sd-field-quarter">
@@ -414,17 +433,22 @@ function sd_val( $obj, $key, $default = '' ) {
 					</div>
 					<div class="sd-field-group sd-field-quarter">
 						<label class="sd-label"><?php esc_html_e( 'Tipo diabete', 'sd-logbook' ); ?></label>
-						<select name="diabetes_type" class="sd-select">
-							<option value="non_diabetico" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_diabetico' ); ?>><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
-							<option value="tipo_1" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_1' ); ?>><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
-							<option value="tipo_2" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_2' ); ?>><?php esc_html_e( 'Tipo 2', 'sd-logbook' ); ?></option>
-							<option value="tipo_3c" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'tipo_3c' ); ?>><?php esc_html_e( 'Tipo 3c (pancreasectomia, pancreatite)', 'sd-logbook' ); ?></option>
-							<option value="lada" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'lada' ); ?>>LADA</option>
-							<option value="mody" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'mody' ); ?>>MODY</option>
-							<option value="midd" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'midd' ); ?>>MIDD</option>
-							<option value="altro" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'altro' ); ?>><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
-							<option value="non_specificato" <?php selected( sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type' ) ), 'non_specificato' ); ?>><?php esc_html_e( 'Non specificato (legacy)', 'sd-logbook' ); ?></option>
-						</select>
+						<?php
+						$dt_labels = array(
+							'non_diabetico'  => __( 'Non diabetico', 'sd-logbook' ),
+							'tipo_1'         => __( 'Tipo 1', 'sd-logbook' ),
+							'tipo_2'         => __( 'Tipo 2', 'sd-logbook' ),
+							'tipo_3c'        => __( 'Tipo 3c', 'sd-logbook' ),
+							'lada'           => 'LADA',
+							'mody'           => 'MODY',
+							'midd'           => 'MIDD',
+							'altro'          => __( 'Altro', 'sd-logbook' ),
+							'non_specificato' => __( 'Non specificato', 'sd-logbook' ),
+						);
+						$dt_val = sd_val( $member, 'dp_diabetes_type', sd_val( $member, 'diabetes_type', 'non_diabetico' ) );
+						echo '<p class="sd-readonly-value">' . esc_html( $dt_labels[ $dt_val ] ?? $dt_val ) . '</p>';
+						echo '<small class="sd-hint">' . esc_html__( 'Modificabile dalla scheda Anagrafica', 'sd-logbook' ) . '</small>';
+						?>
 					</div>
 				</div>
 
@@ -603,7 +627,7 @@ function sd_val( $obj, $key, $default = '' ) {
 									<td><?php echo esc_html( $rfm->date_of_birth ? date_i18n( 'd/m/Y', strtotime( $rfm->date_of_birth ) ) : '—' ); ?></td>
 									<td><?php echo esc_html( $rfm->diabetes_type ?? '—' ); ?></td>
 									<td>
-										<?php if ( (int) $rfm->is_active ) : ?>
+										<?php if ( (int) $rfm->is_active !== 0 ) : ?>
 											<span class="sd-badge sd-badge-success" style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:0.8rem;"><?php esc_html_e( 'Sì', 'sd-logbook' ); ?></span>
 										<?php else : ?>
 											<span class="sd-badge sd-badge-danger" style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:12px;font-size:0.8rem;"><?php esc_html_e( 'No', 'sd-logbook' ); ?></span>
