@@ -281,7 +281,7 @@ class SD_Membership_Admin {
 		}
 		if ( null !== $pagato ) {
 			// Per famigliari (parent_member_id IS NOT NULL) il pagamento è ereditato dal capo famiglia
-			$where[]  = "(CASE WHEN m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d";
+			$where[]  = '(CASE WHEN m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d';
 			$params[] = $pagato;
 		}
 		if ( null !== $is_scuba ) {
@@ -662,21 +662,21 @@ class SD_Membership_Admin {
 					);
 
 					// Propaga il pagamento al famigliare
-				if ( 0 === $has_paid_fee ) {
-					$fm_pay = array(
-						'status'         => 'in_attesa',
-						'payment_date'   => null,
-						'payment_method' => '',
-						'registered_by'  => get_current_user_id(),
-					);
-				} else {
-					$fm_pay = array(
-						'status'         => 'completato',
-						'payment_date'   => ! empty( $payment_date ) ? $payment_date : null,
-						'payment_method' => $fm_method,
-						'registered_by'  => get_current_user_id(),
-					);
-				}
+					if ( 0 === $has_paid_fee ) {
+						$fm_pay = array(
+							'status'         => 'in_attesa',
+							'payment_date'   => null,
+							'payment_method' => '',
+							'registered_by'  => get_current_user_id(),
+						);
+					} else {
+						$fm_pay = array(
+							'status'         => 'completato',
+							'payment_date'   => ! empty( $payment_date ) ? $payment_date : null,
+							'payment_method' => $fm_method,
+							'registered_by'  => get_current_user_id(),
+						);
+					}
 					$existing_fm_pay = $wpdb->get_var(
 						$wpdb->prepare(
 							"SELECT id FROM {$db->table('payments')} WHERE member_id = %d AND payment_year = %d",
