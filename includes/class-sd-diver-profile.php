@@ -24,7 +24,7 @@ class SD_Diver_Profile {
 		add_shortcode( 'sd_diver_profile', array( $this, 'render_profile' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
-		// AJAX handlers
+		// AJAX handlers per gestione profilo subacqueo
 		add_action( 'wp_ajax_sd_save_certification', array( $this, 'save_certification' ) );
 		add_action( 'wp_ajax_sd_delete_certification', array( $this, 'delete_certification' ) );
 		add_action( 'wp_ajax_sd_save_medical_clearance', array( $this, 'save_medical_clearance' ) );

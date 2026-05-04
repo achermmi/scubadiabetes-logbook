@@ -71,7 +71,7 @@
         }, 150);
     };
 
-    // Chiudi mappa
+    // Chiudi mappa con pulsante o cliccando fuori
     $(document).on('click', '#sd-map-close', function() {
         $('#sd-map-overlay').fadeOut(200);
     });
