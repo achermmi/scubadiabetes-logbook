@@ -214,8 +214,8 @@ class SD_Dive_Form {
 		if ( empty( $data['dive_date'] ) ) {
 			wp_send_json_error( array( 'message' => __( 'La data è obbligatoria.', 'sd-logbook' ) ) );
 		}
-		if ( empty( $data['site_name'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Il sito di immersione è obbligatorio.', 'sd-logbook' ) ) );
+		if ( empty( $data['site_location'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Il luogo di immersione è obbligatorio.', 'sd-logbook' ) ) );
 		}
 
 		// Inserisci o aggiorna nel database

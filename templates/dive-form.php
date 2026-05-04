@@ -98,12 +98,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
 
             <div class="sd-field-row">
                 <div class="sd-field sd-field-half">
-                    <label for="sd-site-location"><?php esc_html_e( 'Luogo di immersione', 'sd-logbook' ); ?></label>
-                    <input type="text" id="sd-site-location" name="site_location" placeholder="<?php esc_attr_e( 'es: Catania, Sicilia', 'sd-logbook' ); ?>">
+                    <label for="sd-site-location"><?php esc_html_e( 'Luogo di immersione', 'sd-logbook' ); ?> <span class="sd-required">*</span></label>
+                    <input type="text" id="sd-site-location" name="site_location" required placeholder="<?php esc_attr_e( 'es: Catania, Sicilia', 'sd-logbook' ); ?>">
                 </div>
                 <div class="sd-field sd-field-half">
-                    <label for="sd-site-name"><?php esc_html_e( 'Sito di immersione', 'sd-logbook' ); ?> <span class="sd-required">*</span></label>
-                    <input type="text" id="sd-site-name" name="site_name" required placeholder="<?php esc_attr_e( 'es: Canalone Acitrezza', 'sd-logbook' ); ?>">
+                    <label for="sd-site-name"><?php esc_html_e( 'Sito di immersione', 'sd-logbook' ); ?></label>
+                    <input type="text" id="sd-site-name" name="site_name" placeholder="<?php esc_attr_e( 'es: Canalone Acitrezza', 'sd-logbook' ); ?>">
                 </div>
             </div>
             <div class="sd-field-row">
