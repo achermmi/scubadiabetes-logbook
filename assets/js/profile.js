@@ -1397,7 +1397,7 @@
             $btn.prop('disabled', false);
             if (resp.success) {
                 lvMsg(resp.data.message, 'success');
-                $btn.closest('.sd-admin-tools').hide();
+                $('#sd-lv-fix-ts-box').hide();
             } else {
                 lvMsg(resp.data.message || 'Errore.', 'error');
                 $btn.text('↻ Correggi timestamp (−2h)');
