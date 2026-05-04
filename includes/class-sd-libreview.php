@@ -722,7 +722,7 @@ class SD_LibreView {
 
 		$existing = wp_get_scheduled_event( self::CRON_HOOK );
 		// Riprogramma se non esiste o se l'intervallo è cambiato (es. era 'hourly')
-		if ( ! $existing || $existing->schedule !== self::CRON_INTERVAL ) {
+		if ( ! $existing || self::CRON_INTERVAL !== $existing->schedule ) {
 			if ( $existing ) {
 				wp_unschedule_event( $existing->timestamp, self::CRON_HOOK );
 			}
