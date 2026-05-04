@@ -741,7 +741,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <span class="sd-ns-stat-lbl"><?php esc_html_e( 'Ultima lettura', 'sd-logbook' ); ?></span>
             </div>
             <div class="sd-ns-stat">
-                <span class="sd-ns-stat-val"><?php echo esc_html( human_time_diff( strtotime( $lr->reading_time ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'fa', 'sd-logbook' ); ?></span>
+                <span class="sd-ns-stat-val"><?php echo esc_html( human_time_diff( strtotime( $lr->reading_time . ' UTC' ), time() ) ); ?> <?php esc_html_e( 'fa', 'sd-logbook' ); ?></span>
                 <span class="sd-ns-stat-lbl"><?php echo esc_html( $lr->device ?: 'CGM' ); ?></span>
             </div>
         </div>
