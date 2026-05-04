@@ -25,6 +25,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_list', array( $this, 'get_members_list' ) );
 		add_action( 'wp_ajax_sd_member_get', array( $this, 'get_member' ) );
 		add_action( 'wp_ajax_sd_member_update', array( $this, 'update_member' ) );
+		add_action( 'wp_ajax_sd_members_delete', array( $this, 'delete_members' ) );
 		add_action( 'wp_ajax_sd_members_export', array( $this, 'export_members' ) );
 
 		// WP Cron per reminder rinnovo
@@ -704,6 +705,25 @@ class SD_Membership_Admin {
 					}
 				}
 			}
+
+			// Allinea il flusso staff al servizio unico di pagamento
+			if ( 1 === (int) $has_paid_fee && class_exists( 'SD_Payment_Orchestrator' ) ) {
+				$payment_method_for_service = ! empty( $pay_data['payment_method'] ) ? $pay_data['payment_method'] : 'bonifico_iban';
+				$payment_amount_for_service = isset( $pay_data['amount'] ) ? (float) $pay_data['amount'] : (float) ( $old_data->fee_amount ?? 0 );
+
+				$service = new SD_Payment_Orchestrator();
+				$service->accept_payment(
+					(int) $member_id,
+					array(
+						'provider'            => 'staff',
+						'provider_payment_id' => 'staff-' . (int) $member_id . '-' . gmdate( 'YmdHis' ),
+						'payment_method'      => $payment_method_for_service,
+						'amount'              => $payment_amount_for_service,
+						'payment_date'        => ! empty( $pay_data['payment_date'] ) ? $pay_data['payment_date'] : current_time( 'mysql' ),
+						'notes'               => __( 'Pagamento aggiornato da pannello staff.', 'sd-logbook' ),
+					)
+				);
+			}
 		}
 
 		// Aggiorna ruoli WP se richiesti:
@@ -795,6 +815,178 @@ class SD_Membership_Admin {
 		SD_Membership_Helper::log_audit( $member_id, 'update', 'sd_members', $member_id, (array) $old_data, $new_data );
 
 		wp_send_json_success( array( 'message' => __( 'Dati aggiornati con successo.', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX: elimina uno o piu soci (con cascata su tabelle plugin e utente WP).
+	 *
+	 * @return void
+	 */
+	public function delete_members() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() || ! current_user_can( 'administrator' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Solo gli amministratori possono eliminare iscrizioni.', 'sd-logbook' ) ) );
+		}
+
+		$member_ids = isset( $_POST['member_ids'] ) ? (array) wp_unslash( $_POST['member_ids'] ) : array();
+		$member_ids = array_values( array_filter( array_map( 'absint', $member_ids ) ) );
+		if ( empty( $member_ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'Seleziona almeno una iscrizione da eliminare.', 'sd-logbook' ) ) );
+		}
+
+		$member_ids = $this->expand_member_ids_with_children( $member_ids );
+
+		$deleted = 0;
+		$errors  = array();
+		foreach ( $member_ids as $member_id ) {
+			$result = $this->delete_single_member_cascade( (int) $member_id );
+			if ( is_wp_error( $result ) ) {
+				$errors[] = $result->get_error_message();
+				continue;
+			}
+			if ( true === $result ) {
+				$deleted++;
+			}
+		}
+
+		if ( $deleted <= 0 ) {
+			wp_send_json_error(
+				array(
+					'message' => ! empty( $errors ) ? implode( ' ', array_unique( $errors ) ) : __( 'Nessuna iscrizione eliminata.', 'sd-logbook' ),
+				)
+			);
+		}
+
+		$message = sprintf(
+			/* translators: %d number of deleted memberships */
+			__( 'Eliminazione completata. Iscrizioni rimosse: %d.', 'sd-logbook' ),
+			$deleted
+		);
+		if ( ! empty( $errors ) ) {
+			$message .= ' ' . implode( ' ', array_unique( $errors ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'deleted' => $deleted,
+			)
+		);
+	}
+
+	/**
+	 * Espande la selezione includendo eventuali famigliari figli.
+	 *
+	 * @param array $member_ids IDs selezionati.
+	 * @return array
+	 */
+	private function expand_member_ids_with_children( $member_ids ) {
+		global $wpdb;
+		$db = new SD_Database();
+
+		$queue = array_values( array_unique( array_map( 'absint', (array) $member_ids ) ) );
+		$seen  = array();
+
+		while ( ! empty( $queue ) ) {
+			$current = absint( array_shift( $queue ) );
+			if ( $current <= 0 || isset( $seen[ $current ] ) ) {
+				continue;
+			}
+			$seen[ $current ] = true;
+
+			$children = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('members')} WHERE parent_member_id = %d",
+					$current
+				)
+			);
+
+			foreach ( (array) $children as $child_id ) {
+				$child_id = absint( $child_id );
+				if ( $child_id > 0 && ! isset( $seen[ $child_id ] ) ) {
+					$queue[] = $child_id;
+				}
+			}
+		}
+
+		return array_map( 'absint', array_keys( $seen ) );
+	}
+
+	/**
+	 * Elimina un singolo socio e tutti i dati collegati.
+	 *
+	 * @param int $member_id ID socio.
+	 * @return bool|WP_Error
+	 */
+	private function delete_single_member_cascade( $member_id ) {
+		global $wpdb;
+		$db = new SD_Database();
+
+		$member_id = absint( $member_id );
+		if ( $member_id <= 0 ) {
+			return new WP_Error( 'sd_invalid_member_id', __( 'ID socio non valido.', 'sd-logbook' ) );
+		}
+
+		$member = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, wp_user_id FROM {$db->table('members')} WHERE id = %d",
+				$member_id
+			)
+		);
+		if ( ! $member ) {
+			return true;
+		}
+
+		$wp_user_id = absint( $member->wp_user_id );
+		$dive_ids   = array();
+
+		if ( $wp_user_id > 0 ) {
+			$dive_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('dives')} WHERE user_id = %d",
+					$wp_user_id
+				)
+			);
+		}
+
+		if ( ! empty( $dive_ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $dive_ids ), '%d' ) );
+			$dive_params  = array_map( 'absint', $dive_ids );
+
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$db->table('dive_diabetes')} WHERE dive_id IN ({$placeholders})", $dive_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$db->table('nutrition_log')} WHERE dive_id IN ({$placeholders})", $dive_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$db->table('dive_edits')} WHERE dive_id IN ({$placeholders})", $dive_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+			$medical_sql    = "DELETE FROM {$db->table('medical_supervision')} WHERE dive_id IN ({$placeholders})";
+			$wpdb->query( $wpdb->prepare( $medical_sql, $dive_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		if ( $wp_user_id > 0 ) {
+			$wpdb->delete( $db->table( 'diver_profiles' ), array( 'user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'dive_sessions' ), array( 'user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'dive_diabetes' ), array( 'user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'nutrition_log' ), array( 'user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'dive_edits' ), array( 'user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'medical_supervision' ), array( 'diver_user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'medical_supervision' ), array( 'supervisor_user_id' => $wp_user_id ) );
+			$wpdb->delete( $db->table( 'dives' ), array( 'user_id' => $wp_user_id ) );
+		}
+
+		$wpdb->delete( $db->table( 'payments' ), array( 'member_id' => $member_id ) );
+		$wpdb->delete( $db->table( 'family_members' ), array( 'member_id' => $member_id ) );
+		$wpdb->delete( $db->table( 'audit_log' ), array( 'member_id' => $member_id ) );
+		$wpdb->delete( $db->table( 'members' ), array( 'id' => $member_id ) );
+
+		if ( $wp_user_id > 0 ) {
+			$user = get_user_by( 'id', $wp_user_id );
+			if ( $user ) {
+				require_once ABSPATH . 'wp-admin/includes/user.php';
+				wp_delete_user( $wp_user_id );
+			}
+		}
+
+		return true;
 	}
 
 	/**

@@ -125,4 +125,18 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- Messaggi -->
     <div class="sd-form-messages sd-edit-messages" id="sd-edit-messages" style="display:none;"></div>
 
+    <!-- ============================================================ -->
+    <!-- STRUMENTI AMMINISTRATORE (visibile solo agli admin via JS)  -->
+    <!-- ============================================================ -->
+    <div class="sd-admin-tools" id="sd-admin-tools" style="display:none;margin-top:24px;padding:16px;background:#fff8e1;border:1px solid #f59e0b;border-radius:8px;">
+        <strong style="display:block;margin-bottom:8px;">🛠 Strumenti amministratore</strong>
+        <p style="margin:0 0 10px;font-size:0.88em;color:#555;">
+            Ricalcola le decisioni di tutte le immersioni già salvate applicando le nuove soglie percentuali del Protocollo DS (Δ consecutivo &gt;15%, Δ totale -60→-10 &gt;20%).
+        </p>
+        <button type="button" id="sd-btn-recalc-decisions" class="sd-btn-secondary">
+            ↻ Ricalcola decisioni storico
+        </button>
+        <span id="sd-recalc-result" style="margin-left:12px;font-size:0.9em;"></span>
+    </div>
+
 </div>

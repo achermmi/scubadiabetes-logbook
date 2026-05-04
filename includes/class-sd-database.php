@@ -481,6 +481,7 @@ class SD_Database {
 		$table_members = $this->table( 'members' );
 		$sql_members   = "CREATE TABLE {$table_members} (
 			id int(11) NOT NULL AUTO_INCREMENT,
+			member_number varchar(30) DEFAULT NULL,
 			wp_user_id int(11) DEFAULT NULL,
 			first_name varchar(100) NOT NULL,
 			last_name varchar(100) NOT NULL,
@@ -532,6 +533,7 @@ class SD_Database {
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
+			UNIQUE KEY member_number (member_number),
 			UNIQUE KEY email (email),
 			KEY idx_email (email),
 			KEY idx_wp_user (wp_user_id)
@@ -552,12 +554,25 @@ class SD_Database {
 			payment_year int(11) NOT NULL,
 			status varchar(30) DEFAULT 'in_attesa',
 			transaction_id varchar(255) DEFAULT NULL,
+			provider varchar(50) DEFAULT NULL,
+			provider_payment_id varchar(255) DEFAULT NULL,
+			provider_session_id varchar(255) DEFAULT NULL,
+			provider_status varchar(50) DEFAULT NULL,
+			confirmation_token varchar(255) DEFAULT NULL,
+			confirmation_expires_at datetime DEFAULT NULL,
+			receipt_pdf_path varchar(500) DEFAULT NULL,
+			membership_card_pdf_path varchar(500) DEFAULT NULL,
+			completed_at datetime DEFAULT NULL,
+			payload_json longtext DEFAULT NULL,
+			is_activation_email_sent tinyint(1) DEFAULT 0,
 			notes text DEFAULT NULL,
 			registered_by int(11) DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY idx_member (member_id),
-			KEY idx_year (payment_year)
+			KEY idx_year (payment_year),
+			KEY idx_confirmation_token (confirmation_token),
+			KEY idx_provider_payment (provider,provider_payment_id)
 		) {$charset_collate};";
 		dbDelta( $sql_payments );
 
@@ -742,6 +757,73 @@ class SD_Database {
 		);
 		if ( empty( $col ) ) {
 			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD COLUMN taglia_maglietta varchar(15) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		// =====================================================================
+		// MIGRAZIONI v3.6.0: Numero socio dedicato + metadati pagamenti
+		// =====================================================================
+
+		$col = $wpdb->get_results(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM ' . $table_members . ' LIKE %s', // phpcs:ignore
+				'member_number'
+			)
+		);
+		if ( empty( $col ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD COLUMN member_number varchar(30) DEFAULT NULL' ); // phpcs:ignore
+		}
+
+		$idx = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			"SHOW INDEX FROM {$table_members} WHERE Key_name = 'member_number'"
+		);
+		if ( empty( $idx ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_members . ' ADD UNIQUE KEY member_number (member_number)' ); // phpcs:ignore
+		}
+
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			"UPDATE {$table_members}
+			 SET member_number = CONCAT('SD-', YEAR(COALESCE(member_since, CURDATE())), '-', LPAD(id, 6, '0'))
+			 WHERE member_number IS NULL OR member_number = ''"
+		);
+
+		$payment_columns = array(
+			'provider'                 => 'varchar(50) DEFAULT NULL',
+			'provider_payment_id'      => 'varchar(255) DEFAULT NULL',
+			'provider_session_id'      => 'varchar(255) DEFAULT NULL',
+			'provider_status'          => 'varchar(50) DEFAULT NULL',
+			'confirmation_token'       => 'varchar(255) DEFAULT NULL',
+			'confirmation_expires_at'  => 'datetime DEFAULT NULL',
+			'receipt_pdf_path'         => 'varchar(500) DEFAULT NULL',
+			'membership_card_pdf_path' => 'varchar(500) DEFAULT NULL',
+			'completed_at'             => 'datetime DEFAULT NULL',
+			'payload_json'             => 'longtext DEFAULT NULL',
+			'is_activation_email_sent' => 'tinyint(1) DEFAULT 0',
+		);
+
+		foreach ( $payment_columns as $column_name => $column_def ) {
+			$col = $wpdb->get_results(
+				$wpdb->prepare(
+					'SHOW COLUMNS FROM ' . $table_payments . ' LIKE %s', // phpcs:ignore
+					$column_name
+				)
+			);
+			if ( empty( $col ) ) {
+				$wpdb->query( 'ALTER TABLE ' . $table_payments . ' ADD COLUMN ' . $column_name . ' ' . $column_def ); // phpcs:ignore
+			}
+		}
+
+		$idx = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			"SHOW INDEX FROM {$table_payments} WHERE Key_name = 'idx_confirmation_token'"
+		);
+		if ( empty( $idx ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_payments . ' ADD KEY idx_confirmation_token (confirmation_token)' ); // phpcs:ignore
+		}
+
+		$idx = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			"SHOW INDEX FROM {$table_payments} WHERE Key_name = 'idx_provider_payment'"
+		);
+		if ( empty( $idx ) ) {
+			$wpdb->query( 'ALTER TABLE ' . $table_payments . ' ADD KEY idx_provider_payment (provider, provider_payment_id)' ); // phpcs:ignore
 		}
 	}
 

@@ -55,10 +55,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="sd-filter-row">
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-search"><?php esc_html_e( 'Ricerca', 'sd-logbook' ); ?></label>
 					<input type="text" id="sd-filter-search" name="search" class="sd-input sd-input-sm" placeholder="<?php esc_attr_e( 'Nome, Cognome, Email...', 'sd-logbook' ); ?>">
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-pagato"><?php esc_html_e( 'Stato pagamento', 'sd-logbook' ); ?></label>
 					<select name="pagato" id="sd-filter-pagato" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti (pagato)', 'sd-logbook' ); ?></option>
 						<option value="1"><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
@@ -67,6 +69,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-anno"><?php esc_html_e( 'Anno', 'sd-logbook' ); ?></label>
 					<select name="anno" id="sd-filter-anno" class="sd-select sd-select-sm">
 						<?php for ( $y = intval( $current_year ); $y >= intval( $current_year ) - 5; $y-- ) : ?>
 							<option value="<?php echo esc_attr( $y ); ?>" <?php selected( $current_year, $y ); ?>>
@@ -77,6 +80,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-tassa"><?php esc_html_e( 'Tassa', 'sd-logbook' ); ?></label>
 					<select name="fee_amount" id="sd-filter-tassa" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutte le tasse', 'sd-logbook' ); ?></option>
 						<option value="30">CHF 30</option>
@@ -86,6 +90,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-scuba"><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></label>
 					<select name="is_scuba" id="sd-filter-scuba" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti (sub)', 'sd-logbook' ); ?></option>
 						<option value="1"><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></option>
@@ -94,6 +99,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-diabetes"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
 					<select name="diabetes_type" id="sd-filter-diabetes" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti (diabete)', 'sd-logbook' ); ?></option>
 						<option value="tipo_1"><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
@@ -108,6 +114,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-type"><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></label>
 					<select name="member_type" id="sd-filter-type" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti i tipi', 'sd-logbook' ); ?></option>
 						<option value="attivo"><?php esc_html_e( 'Attivo', 'sd-logbook' ); ?></option>
@@ -122,6 +129,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-active"><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></label>
 					<select name="is_active" id="sd-filter-active" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti (attivo)', 'sd-logbook' ); ?></option>
 						<option value="1"><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></option>
@@ -130,6 +138,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-filter-role"><?php esc_html_e( 'Ruolo WordPress', 'sd-logbook' ); ?></label>
 					<select name="wp_role" id="sd-filter-role" class="sd-select sd-select-sm">
 						<option value=""><?php esc_html_e( 'Tutti i ruoli WP', 'sd-logbook' ); ?></option>
 						<option value="sd_diver_diabetic"><?php esc_html_e( 'Subacqueo Diabetico', 'sd-logbook' ); ?></option>
@@ -146,6 +155,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</button>
 					<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
 						<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" id="sd-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
 					</button>
 					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-csv" data-format="csv">
 						↓ CSV
@@ -170,6 +182,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<table class="sd-members-table" id="sd-members-table">
 			<thead>
 				<tr>
+					<th><input type="checkbox" id="sd-select-all-members" aria-label="<?php esc_attr_e( 'Seleziona tutti i soci', 'sd-logbook' ); ?>"></th>
 					<th><?php esc_html_e( 'Cognome, Nome', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
 					<th><?php esc_html_e( 'Data Nascita', 'sd-logbook' ); ?></th>
@@ -185,7 +198,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</thead>
 			<tbody id="sd-members-tbody">
 				<tr>
-					<td colspan="13" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
+					<td colspan="14" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
 				</tr>
 			</tbody>
 		</table>

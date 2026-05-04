@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.5.0';
+	const DB_VERSION = '3.6.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -64,6 +64,14 @@ final class SD_Logbook {
 	private function load_dependencies() {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-database.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-roles.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-adapter.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-paypal.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-fattura.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-twint.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-documents.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-orchestrator.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-flow.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-form.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dashboard.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-diver-profile.php';
@@ -225,6 +233,8 @@ final class SD_Logbook {
 	 * Inizializza i componenti frontend
 	 */
 	public function init_components() {
+		new SD_Payment_Flow();
+		new SD_Payment_Settings();
 		new SD_Dive_Form();
 		new SD_Dashboard();
 		new SD_Diver_Profile();

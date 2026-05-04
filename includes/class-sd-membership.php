@@ -652,6 +652,14 @@ class SD_Membership {
 		// === 12. Invio email ===
 		SD_Membership_Helper::send_registration_emails( $member_id, $password, $registered_family );
 
+		$checkout_url = '';
+		if ( class_exists( 'SD_Payment_Orchestrator' ) ) {
+			$checkout = ( new SD_Payment_Orchestrator() )->prepare_checkout( (int) $member_id );
+			if ( ! is_wp_error( $checkout ) && ! empty( $checkout['checkout_url'] ) ) {
+				$checkout_url = (string) $checkout['checkout_url'];
+			}
+		}
+
 		wp_send_json_success(
 			array(
 				'message'   => sprintf(
@@ -659,7 +667,8 @@ class SD_Membership {
 					__( 'Iscrizione completata con successo! Benvenuto/a <strong>%s</strong>. Controlla la tua email per le credenziali di accesso e le istruzioni di pagamento.', 'sd-logbook' ),
 					esc_html( $first_name . ' ' . $last_name )
 				),
-				'member_id' => $member_id,
+				'member_id'     => $member_id,
+				'checkout_url'  => $checkout_url,
 			)
 		);
 	}

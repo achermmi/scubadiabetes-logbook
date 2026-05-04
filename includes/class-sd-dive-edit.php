@@ -21,6 +21,7 @@ class SD_Dive_Edit {
 		add_action( 'wp_ajax_sd_get_dive_for_edit', array( $this, 'get_dive_for_edit' ) );
 		add_action( 'wp_ajax_sd_update_dive', array( $this, 'update_dive' ) );
 		add_action( 'wp_ajax_sd_get_dive_history', array( $this, 'get_dive_history' ) );
+		add_action( 'wp_ajax_sd_recalculate_all_decisions', array( $this, 'recalculate_all_decisions' ) );
 	}
 
 	public function enqueue_assets() {
@@ -55,6 +56,8 @@ class SD_Dive_Edit {
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
 				'nonce'        => wp_create_nonce( 'sd_dive_edit_nonce' ),
 				'glycemiaUnit' => $glycemia_unit,
+				'recalcNonce'  => wp_create_nonce( 'sd_recalc_decisions_nonce' ),
+				'isAdmin'      => current_user_can( 'manage_options' ),
 			)
 		);
 	}
@@ -493,5 +496,111 @@ class SD_Dive_Edit {
 
 		// Confronto stringa
 		return (string) $old === (string) $new;
+	}
+
+	// ================================================================
+	// AJAX: Ricalcola le decisioni di TUTTE le immersioni salvate
+	// applicando le nuove soglie percentuali del Protocollo DS.
+	// Accessibile solo agli amministratori.
+	// ================================================================
+	public function recalculate_all_decisions() {
+		check_ajax_referer( 'sd_recalc_decisions_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Non autorizzato', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db    = new SD_Database();
+		$table = $db->table( 'dive_diabetes' );
+
+		$rows = $wpdb->get_results(
+			"SELECT id, glic_60_cap, glic_60_sens, glic_30_cap, glic_30_sens, glic_10_cap, glic_10_sens
+			 FROM {$table}",
+			ARRAY_A
+		);
+
+		$updated = 0;
+
+		foreach ( $rows as $row ) {
+			// Usa capillare come valore primario, fallback al sensore
+			$g60 = ! empty( $row['glic_60_cap'] ) ? (int) $row['glic_60_cap']
+				: ( ! empty( $row['glic_60_sens'] ) ? (int) $row['glic_60_sens'] : null );
+			$g30 = ! empty( $row['glic_30_cap'] ) ? (int) $row['glic_30_cap']
+				: ( ! empty( $row['glic_30_sens'] ) ? (int) $row['glic_30_sens'] : null );
+			$g10 = ! empty( $row['glic_10_cap'] ) ? (int) $row['glic_10_cap']
+				: ( ! empty( $row['glic_10_sens'] ) ? (int) $row['glic_10_sens'] : null );
+
+			if ( ! $g10 ) {
+				continue; // dati insufficienti — salta
+			}
+
+			// Trend: fuori protocollo se delta tra misurazioni consecutive > 15%
+			// oppure se delta totale -60→-10 > 20%.
+			$trend = 'stabile';
+			if ( $g60 && $g30 ) {
+				$diff = $g30 - $g60;
+				$pct  = abs( $diff ) / $g60 * 100;
+				if ( $diff > 0 && $pct > 15 ) $trend = 'salita';
+				elseif ( $diff < 0 && $pct > 15 ) $trend = 'discesa';
+			}
+			if ( $g30 && $g10 ) {
+				$diff = $g10 - $g30;
+				$pct  = abs( $diff ) / $g30 * 100;
+				if ( $diff > 0 && $pct > 15 ) $trend = 'salita';
+				elseif ( $diff < 0 && $pct > 15 ) $trend = 'discesa';
+			}
+			if ( $g60 && $g10 ) {
+				$diff = $g10 - $g60;
+				$pct  = abs( $diff ) / $g60 * 100;
+				if ( $diff > 0 && $pct > 20 ) $trend = 'salita';
+				elseif ( $diff < 0 && $pct > 20 ) $trend = 'discesa';
+			}
+
+			// Decisione
+			if ( $g10 < 120 ) {
+				$decision = 'annullata';
+				$reason   = 'Glicemia <120 mg/dL: immersione NON consentita';
+			} elseif ( 'discesa' === $trend ) {
+				$decision = 'sospesa';
+				$reason   = 'Glicemia in discesa: immersione sospesa';
+			} elseif ( $g10 > 300 && 'salita' === $trend ) {
+				$decision = 'sospesa';
+				$reason   = 'Glicemia >300 in salita: rinvio immersione';
+			} elseif ( $g10 >= 250 && $g10 <= 300 && 'salita' !== $trend ) {
+				$decision = 'autorizzata';
+				$reason   = 'Glicemia 250-300 stabile, no chetonemia: OK';
+			} elseif ( 'salita' === $trend && $g10 >= 120 ) {
+				$decision = 'autorizzata';
+				$reason   = 'Glicemia ≥120 in salita: OK';
+			} elseif ( 'stabile' === $trend && $g10 >= 150 ) {
+				$decision = 'autorizzata';
+				$reason   = 'Glicemia ≥150 stabile: OK';
+			} elseif ( 'stabile' === $trend && $g10 >= 120 && $g10 < 150 ) {
+				$decision = 'autorizzata';
+				$reason   = 'Glicemia 120-150 stabile: attenzione, considerare snack';
+			} else {
+				$decision = 'autorizzata';
+				$reason   = 'Valori nei range consentiti';
+			}
+
+			$wpdb->update(
+				$table,
+				array(
+					'dive_decision'        => $decision,
+					'dive_decision_reason' => $reason,
+				),
+				array( 'id' => (int) $row['id'] )
+			);
+			++$updated;
+		}
+
+		wp_send_json_success(
+			array(
+				'updated' => $updated,
+				/* translators: %d: number of updated dives */
+				'message' => sprintf( __( '%d immersioni aggiornate con le nuove regole.', 'sd-logbook' ), $updated ),
+			)
+		);
 	}
 }

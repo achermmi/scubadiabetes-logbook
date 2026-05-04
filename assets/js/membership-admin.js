@@ -20,12 +20,14 @@
 			bindFilters();
 			bindExport();
 			bindPagination();
+			bindBulkDelete();
 		}
 
 		// Pagina modifica socio
 		if ($('#sd-edit-page').length) {
 			bindTabs();
 			bindEditForm();
+			bindEditBulkDelete();
 		}
 	});
 
@@ -36,7 +38,7 @@
 		var $msg     = $('#sd-members-message');
 
 		$loading.show();
-		$tbody.html('<tr><td colspan="13" class="sd-table-empty">Caricamento...</td></tr>');
+		$tbody.html('<tr><td colspan="14" class="sd-table-empty">Caricamento...</td></tr>');
 		$msg.hide();
 
 		var filters = getFilters();
@@ -61,7 +63,7 @@
 				state.total = data.total;
 
 				if (!data.rows || data.rows.length === 0) {
-					$tbody.html('<tr><td colspan="13" class="sd-table-empty">Nessun socio trovato.</td></tr>');
+					$tbody.html('<tr><td colspan="14" class="sd-table-empty">Nessun socio trovato.</td></tr>');
 					$('#sd-pagination').hide();
 					return;
 				}
@@ -113,6 +115,7 @@
 			})();
 
 			html += '<tr data-member-id="' + escapeAttr(m.id) + '">' +
+				'<td><input type="checkbox" class="sd-member-select" value="' + escapeAttr(m.id) + '" aria-label="Seleziona iscrizione"></td>' +
 				'<td><strong>' + escapeHtml(m.last_name) + '</strong>, ' + escapeHtml(m.first_name) + '</td>' +
 				'<td>' + escapeHtml(m.email) + '</td>' +
 				'<td>' + formatDate(m.date_of_birth) + '</td>' +
@@ -132,14 +135,45 @@
 		});
 
 		$tbody.html(html);
+		$('#sd-select-all-members').prop('checked', false);
 
 		// Click riga → apre pagina modifica
 		$('#sd-members-table tbody tr').on('click', function (e) {
-			if ($(e.target).is('a, button')) return;
+			if ($(e.target).is('a, button, input, label')) return;
 			var id = $(this).data('member-id');
 			if (id) {
 				window.location.href = sdMembAdmin.editUrl + '?member_id=' + id;
 			}
+		});
+	}
+
+	function bindBulkDelete() {
+		$('#sd-select-all-members').on('change', function () {
+			var checked = $(this).is(':checked');
+			$('#sd-members-tbody .sd-member-select').prop('checked', checked);
+		});
+
+		$('#sd-members-tbody').on('change', '.sd-member-select', function () {
+			var total = $('#sd-members-tbody .sd-member-select').length;
+			var selected = $('#sd-members-tbody .sd-member-select:checked').length;
+			$('#sd-select-all-members').prop('checked', total > 0 && total === selected);
+		});
+
+		$('#sd-delete-selected').on('click', function () {
+			var ids = getSelectedIds('#sd-members-tbody .sd-member-select:checked');
+			if (!ids.length) {
+				showPageMessage('Seleziona almeno una iscrizione da eliminare.', 'warning');
+				return;
+			}
+
+			var ok = window.confirm('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?');
+			if (!ok) {
+				return;
+			}
+
+			deleteMembers(ids, function () {
+				loadMembers();
+			});
 		});
 	}
 
@@ -287,13 +321,114 @@
 			}
 		});
 
-		// Pulsante elimina (solo admin)
+		// Pulsante elimina singolo (solo admin)
 		$('#sd-edit-delete').on('click', function () {
-			if (!confirm('Sei sicuro di voler eliminare questo socio? L\'operazione non può essere annullata.')) {
+			var memberId = parseInt($(this).data('member-id'), 10) || 0;
+			if (!memberId) {
+				showEditMessage('ID socio non valido.', 'error');
 				return;
 			}
-			alert('Funzione eliminazione: contatta l\'amministratore per eliminare un socio.');
+
+			if (!confirm('ATTENZIONE: stai per eliminare in modo irreversibile questa iscrizione, inclusi utente WordPress e dati collegati. Vuoi continuare?')) {
+				return;
+			}
+
+			deleteMembers([memberId], function () {
+				window.history.back();
+			}, '#sd-edit-message');
 		});
+	}
+
+	function bindEditBulkDelete() {
+		$('#sd-edit-select-all-members').on('change', function () {
+			var checked = $(this).is(':checked');
+			$('#sd-tab-famigliari .sd-edit-member-select').prop('checked', checked);
+		});
+
+		$('#sd-tab-famigliari').on('change', '.sd-edit-member-select', function () {
+			var total = $('#sd-tab-famigliari .sd-edit-member-select').length;
+			var selected = $('#sd-tab-famigliari .sd-edit-member-select:checked').length;
+			$('#sd-edit-select-all-members').prop('checked', total > 0 && total === selected);
+		});
+
+		$('#sd-edit-delete-selected').on('click', function () {
+			var ids = getSelectedIds('#sd-tab-famigliari .sd-edit-member-select:checked');
+			if (!ids.length) {
+				showEditMessage('Seleziona almeno una iscrizione da eliminare.', 'warning');
+				return;
+			}
+
+			var ok = window.confirm('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?');
+			if (!ok) {
+				return;
+			}
+
+			deleteMembers(ids, function () {
+				window.location.reload();
+			}, '#sd-edit-message');
+		});
+	}
+
+	function getSelectedIds(selector) {
+		var ids = [];
+		$(selector).each(function () {
+			var id = parseInt($(this).val(), 10);
+			if (id > 0) {
+				ids.push(id);
+			}
+		});
+		return ids;
+	}
+
+	function deleteMembers(ids, onDone, messageSelector) {
+		var $msg = messageSelector ? $(messageSelector) : $('#sd-members-message');
+
+		$.ajax({
+			url: sdMembAdmin.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'sd_members_delete',
+				nonce: sdMembAdmin.nonce,
+				member_ids: ids,
+			},
+			success: function (resp) {
+				if (!resp.success) {
+					var msg = (resp.data && resp.data.message) ? resp.data.message : 'Errore durante l\'eliminazione.';
+					showMessage($msg, msg, 'error');
+					return;
+				}
+
+				var okMsg = (resp.data && resp.data.message) ? resp.data.message : 'Iscrizioni eliminate con successo.';
+				showMessage($msg, okMsg, 'success');
+				if (typeof onDone === 'function') {
+					onDone(resp.data || {});
+				}
+			},
+			error: function () {
+				showMessage($msg, 'Errore di rete durante l\'eliminazione.', 'error');
+			},
+		});
+	}
+
+	function showPageMessage(text, type) {
+		showMessage($('#sd-members-message'), text, type || 'warning');
+	}
+
+	function showEditMessage(text, type) {
+		showMessage($('#sd-edit-message'), text, type || 'warning');
+	}
+
+	function showMessage($el, text, type) {
+		var css = 'sd-notice sd-notice-info';
+		if (type === 'success') {
+			css = 'sd-notice sd-notice-success';
+		} else if (type === 'error') {
+			css = 'sd-notice sd-notice-error';
+		} else if (type === 'warning') {
+			css = 'sd-notice sd-notice-warning';
+		}
+		$el.attr('class', css).text(text).show();
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
 	// ===== HELPER =====

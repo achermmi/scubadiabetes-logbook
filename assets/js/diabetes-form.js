@@ -548,17 +548,27 @@
             var v120 = fromMgDl(120), v150 = fromMgDl(150);
             var v250 = fromMgDl(250), v300 = fromMgDl(300);
 
-            // Trend
+            // Trend: fuori protocollo se delta tra misurazioni consecutive > 15%
+            // oppure se delta totale tra -60 e -10 > 20%.
+            // Al di sotto di queste soglie il paziente è considerato stabile (in protocollo).
             var trend = 'stabile';
-            if (g30 && g10) {
-                var diff = g10 - g30;
-                var pct = Math.abs(diff) / g30 * 100;
-                if (diff > 0 && pct > 15) trend = 'salita';
-                else if (diff < 0 && pct > 15) trend = 'discesa';
+            if (g60 && g30) {
+                var diff6030 = g30 - g60;
+                var pct6030  = Math.abs(diff6030) / g60 * 100;
+                if (diff6030 > 0 && pct6030 > 15) trend = 'salita';
+                else if (diff6030 < 0 && pct6030 > 15) trend = 'discesa';
             }
-            if (g60 && g30 && g10) {
-                if ((g30 - g60) < 0 && (g10 - g30) < 0) trend = 'discesa';
-                else if ((g30 - g60) > 0 && (g10 - g30) > 0) trend = 'salita';
+            if (g30 && g10) {
+                var diff3010 = g10 - g30;
+                var pct3010  = Math.abs(diff3010) / g30 * 100;
+                if (diff3010 > 0 && pct3010 > 15) trend = 'salita';
+                else if (diff3010 < 0 && pct3010 > 15) trend = 'discesa';
+            }
+            if (g60 && g10) {
+                var diff6010 = g10 - g60;
+                var pct6010  = Math.abs(diff6010) / g60 * 100;
+                if (diff6010 > 0 && pct6010 > 20) trend = 'salita';
+                else if (diff6010 < 0 && pct6010 > 20) trend = 'discesa';
             }
 
             if (g10 < 120) {

@@ -10,6 +10,13 @@
     var FACTOR = 18;
     var isMmol = (typeof sdDiveEdit !== 'undefined' && sdDiveEdit.glycemiaUnit === 'mmol/l');
 
+    // Converte dal valore inserito dall'utente (display unit) a mg/dL
+    function toMgDl(val) {
+        var n = parseFloat(val);
+        if (isNaN(n) || n <= 0) return null;
+        return isMmol ? Math.round(n * FACTOR) : Math.round(n);
+    }
+
     function displayGlic(mgdlVal) {
         if (!mgdlVal) return '';
         if (isMmol) return (parseFloat(mgdlVal) / FACTOR).toFixed(1);
@@ -361,6 +368,8 @@
         $('#sd-edit-panel-title').text('Modifica immersione #' + (dive.dive_number || dive.id));
         // Snapshot per rilevare modifiche non salvate
         _formSnapshot = $('#sd-edit-form').serialize();
+        // Ricalcola subito la decisione con le glicemie caricate
+        if (diabetes) evaluateDecision();
     }
 
     // ============================================================
@@ -434,6 +443,83 @@
         var p = t.split(':');
         return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
     }
+
+    // ============================================================
+    // VALUTAZIONE AUTOMATICA DECISIONE IMMERSIONE (Protocollo DS)
+    // Soglie: delta consecutivo > 15% oppure delta totale 60→10 > 20%
+    // ============================================================
+    function evaluateDecision() {
+        var $form = $('#sd-edit-form');
+        if (!$form.length) return;
+
+        var g60 = toMgDl($form.find('input[name="glic_60_cap"]').val())
+               || toMgDl($form.find('input[name="glic_60_sens"]').val());
+        var g30 = toMgDl($form.find('input[name="glic_30_cap"]').val())
+               || toMgDl($form.find('input[name="glic_30_sens"]').val());
+        var g10 = toMgDl($form.find('input[name="glic_10_cap"]').val())
+               || toMgDl($form.find('input[name="glic_10_sens"]').val());
+
+        if (!g10) return; // nessun dato sufficiente — lascia invariato
+
+        // Trend: fuori protocollo se delta tra misurazioni consecutive > 15%
+        // oppure se delta totale tra -60 e -10 > 20%.
+        var trend = 'stabile';
+        if (g60 && g30) {
+            var d6030 = g30 - g60;
+            var p6030 = Math.abs(d6030) / g60 * 100;
+            if (d6030 > 0 && p6030 > 15) trend = 'salita';
+            else if (d6030 < 0 && p6030 > 15) trend = 'discesa';
+        }
+        if (g30 && g10) {
+            var d3010 = g10 - g30;
+            var p3010 = Math.abs(d3010) / g30 * 100;
+            if (d3010 > 0 && p3010 > 15) trend = 'salita';
+            else if (d3010 < 0 && p3010 > 15) trend = 'discesa';
+        }
+        if (g60 && g10) {
+            var d6010 = g10 - g60;
+            var p6010 = Math.abs(d6010) / g60 * 100;
+            if (d6010 > 0 && p6010 > 20) trend = 'salita';
+            else if (d6010 < 0 && p6010 > 20) trend = 'discesa';
+        }
+
+        var decision = '', reason = '';
+        if (g10 < 120) {
+            decision = 'annullata';
+            reason = 'Glicemia <120 mg/dL: immersione NON consentita';
+        } else if (trend === 'discesa') {
+            decision = 'sospesa';
+            reason = 'Glicemia in discesa: immersione sospesa';
+        } else if (g10 > 300 && trend === 'salita') {
+            decision = 'sospesa';
+            reason = 'Glicemia >300 in salita: rinvio immersione';
+        } else if (g10 >= 250 && g10 <= 300 && trend !== 'salita') {
+            decision = 'autorizzata';
+            reason = 'Glicemia 250-300 stabile, no chetonemia: OK';
+        } else if (trend === 'salita' && g10 >= 120) {
+            decision = 'autorizzata';
+            reason = 'Glicemia ≥120 in salita: OK';
+        } else if (trend === 'stabile' && g10 >= 150) {
+            decision = 'autorizzata';
+            reason = 'Glicemia ≥150 stabile: OK';
+        } else if (trend === 'stabile' && g10 >= 120 && g10 < 150) {
+            decision = 'autorizzata';
+            reason = 'Glicemia 120-150 stabile: attenzione, considerare snack';
+        } else {
+            decision = 'autorizzata';
+            reason = 'Valori nei range consentiti';
+        }
+
+        $form.find('select[name="dive_decision"]').val(decision);
+        $form.find('input[name="dive_decision_reason"]').val(reason);
+    }
+
+    // Ricalcola la decisione ad ogni modifica delle glicemie nel form di modifica
+    var _evalTimer = null;
+    $(document).on('input change', '#sd-edit-form input[name$="_cap"], #sd-edit-form input[name$="_sens"]', function() {
+        clearTimeout(_evalTimer);
+        _evalTimer = setTimeout(evaluateDecision, 600);
+    });
 
     // ============================================================
     // SAVE EDIT
@@ -534,6 +620,35 @@
             if ($card.length) {
                 $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
             }
+        });
+    });
+
+    // ============================================================
+    // RICALCOLO STORICO DECISIONI (solo admin)
+    // ============================================================
+    if (typeof sdDiveEdit !== 'undefined' && sdDiveEdit.isAdmin) {
+        $('#sd-admin-tools').show();
+    }
+
+    $(document).on('click', '#sd-btn-recalc-decisions', function() {
+        var $btn    = $(this);
+        var $result = $('#sd-recalc-result');
+        $btn.prop('disabled', true).text('Ricalcolo in corso...');
+        $result.text('');
+
+        $.post(sdDiveEdit.ajaxUrl, {
+            action: 'sd_recalculate_all_decisions',
+            nonce:  sdDiveEdit.recalcNonce
+        }, function(resp) {
+            $btn.prop('disabled', false).text('↻ Ricalcola decisioni storico');
+            if (resp.success) {
+                $result.css('color', '#166534').text('✔ ' + resp.data.message);
+            } else {
+                $result.css('color', '#991b1b').text('✖ Errore: ' + (resp.data && resp.data.message ? resp.data.message : 'sconosciuto'));
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('↻ Ricalcola decisioni storico');
+            $result.css('color', '#991b1b').text('✖ Errore di rete');
         });
     });
 

@@ -601,6 +601,11 @@ function sd_val( $obj, $key, $default = '' ) {
 		<div class="sd-tab-content" id="sd-tab-famigliari">
 			<div class="sd-form-section">
 				<h3 class="sd-section-title"><?php esc_html_e( 'Famigliari registrati', 'sd-logbook' ); ?></h3>
+				<div style="margin-bottom:12px;">
+					<button type="button" id="sd-edit-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm">
+						<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
+					</button>
+				</div>
 
 				<?php if ( ! empty( $registered_family_members ) ) : ?>
 					<?php
@@ -611,6 +616,7 @@ function sd_val( $obj, $key, $default = '' ) {
 					<table class="sd-members-table">
 						<thead>
 							<tr>
+								<th><input type="checkbox" id="sd-edit-select-all-members" aria-label="<?php esc_attr_e( 'Seleziona tutti i famigliari', 'sd-logbook' ); ?>"></th>
 								<th><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Data Nascita', 'sd-logbook' ); ?></th>
@@ -622,6 +628,7 @@ function sd_val( $obj, $key, $default = '' ) {
 						<tbody>
 							<?php foreach ( $registered_family_members as $rfm ) : ?>
 								<tr>
+									<td><input type="checkbox" class="sd-edit-member-select" value="<?php echo esc_attr( $rfm->id ); ?>" aria-label="<?php esc_attr_e( 'Seleziona iscrizione', 'sd-logbook' ); ?>"></td>
 									<td><?php echo esc_html( $rfm->first_name . ' ' . $rfm->last_name ); ?></td>
 									<td><?php echo esc_html( $rfm->email ?? '—' ); ?></td>
 									<td><?php echo esc_html( $rfm->date_of_birth ? date_i18n( 'd/m/Y', strtotime( $rfm->date_of_birth ) ) : '—' ); ?></td>
@@ -720,7 +727,7 @@ function sd_val( $obj, $key, $default = '' ) {
 			</button>
 			<?php if ( $is_admin ) : ?>
 				<button type="button" id="sd-edit-delete" class="sd-btn sd-btn-danger" data-member-id="<?php echo esc_attr( $member->id ); ?>">
-					<?php esc_html_e( 'Elimina socio', 'sd-logbook' ); ?>
+					<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
 				</button>
 			<?php endif; ?>
 		</div>

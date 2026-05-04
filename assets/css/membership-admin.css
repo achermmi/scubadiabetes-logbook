@@ -54,31 +54,94 @@
 }
 
 .sd-filter-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.6rem;
-	align-items: flex-end;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 0.65rem 0.75rem;
+	align-items: end;
 }
 
 .sd-filter-group {
-	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
 }
 
 .sd-filter-group input,
 .sd-filter-group select {
-	min-width: 160px;
+	min-width: 0;
+	width: 100%;
+}
+
+.sd-filter-label {
+	font-size: 0.78rem;
+	line-height: 1.2;
+	font-weight: 600;
+	color: #4b5563;
+	padding-left: 0.1rem;
 }
 
 .sd-filter-actions {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 0.4rem;
-	margin-left: auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.55rem;
+	grid-column: 1 / -1;
+	align-self: end;
+	align-items: center;
+	padding-top: 0.35rem;
 }
 
 .sd-action-btn {
-	width: 100%;
+	width: auto;
+	min-width: 148px;
+	min-height: 44px;
+	padding: 0.72rem 1rem;
 	justify-content: center;
+	align-items: center;
+	font-weight: 700;
+	border-radius: 10px;
+	box-sizing: border-box;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.sd-action-btn:hover {
+	transform: translateY(-1px);
+}
+
+#sd-btn-search {
+	box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+#sd-delete-selected {
+	box-shadow: 0 8px 18px rgba(220, 38, 38, 0.16);
+}
+
+#sd-btn-reset,
+#sd-export-csv,
+#sd-export-xlsx {
+	background: #ffffff;
+	border: 1px solid #d6dce5;
+	color: #374151;
+}
+
+#sd-btn-reset:hover,
+#sd-export-csv:hover,
+#sd-export-xlsx:hover {
+	border-color: #b8c2cf;
+	box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 860px) {
+	.sd-filter-actions {
+		justify-content: stretch;
+		flex-direction: column;
+		padding-top: 0;
+	}
+
+	.sd-action-btn {
+		width: 100%;
+	}
 }
 
 /* ===== TABELLA SOCI ===== */

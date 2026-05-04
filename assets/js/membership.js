@@ -454,6 +454,10 @@
 				data:   formData,
 				success: function (resp) {
 					if (resp.success) {
+						if (resp.data && resp.data.checkout_url) {
+							window.location.href = resp.data.checkout_url;
+							return;
+						}
 						showMessage('success', resp.data.message);
 						$form.hide();
 						window.scrollTo({ top: 0, behavior: 'smooth' });
