@@ -110,7 +110,10 @@
         html += field('dive_date', 'Data *', 'date', dive.dive_date, '', 'half');
         html += field('dive_number', 'N° Immersione', 'number', dive.dive_number, '', 'half', '1', '1');
         html += '</div>';
-        html += field('site_name', 'Sito di immersione *', 'text', dive.site_name);
+        html += '<div class="sd-field-row">';
+        html += field('site_location', 'Luogo di immersione', 'text', dive.site_location, 'es: Catania, Sicilia', 'half');
+        html += field('site_name', 'Sito di immersione *', 'text', dive.site_name, '', 'half');
+        html += '</div>';
         var hasCoords = dive.site_latitude && dive.site_longitude;
         html += '<div class="sd-field-row">';
         html += field('site_latitude', 'Latitudine', 'number', dive.site_latitude, 'es: 37.5667', 'half', '0.0000001');
@@ -187,7 +190,7 @@
         // ══════════════════════════════════════════════════════════
         html += sectionTitle('Ingresso in acqua');
         html += '<div class="sd-field-row">';
-        html += selectField('entry_type', 'Tipo ingresso', dive.entry_type, {'':'—',riva:'Riva',barca:'Barca',drift:'Drift',guidata:'Guidata',resort:'Resort',liveaboard:'Liveaboard',grotta:'Grotta',ghiaccio:'Ghiaccio',piattaforma:'Piattaforma'}, 'half');
+        html += selectField('entry_type', 'Tipo ingresso', dive.entry_type, {'':'—',riva:'Riva',barca:'Barca',gommone:'Gommone',drift:'Drift',guidata:'Guidata',resort:'Resort',liveaboard:'Liveaboard',grotta:'Grotta',ghiaccio:'Ghiaccio',piattaforma:'Piattaforma'}, 'half');
         html += '</div>';
 
         // ══════════════════════════════════════════════════════════
@@ -729,7 +732,7 @@
     // ============================================================
     function humanizeField(name) {
         var map = {
-            dive_date: 'Data', site_name: 'Sito', dive_number: 'N° immersione',
+            dive_date: 'Data', site_name: 'Sito', site_location: 'Luogo', dive_number: 'N° immersione',
             site_latitude: 'Latitudine', site_longitude: 'Longitudine',
             time_in: 'Ora ingresso', time_out: 'Ora uscita',
             max_depth: 'Prof. max', avg_depth: 'Prof. media', dive_time: 'Tempo',

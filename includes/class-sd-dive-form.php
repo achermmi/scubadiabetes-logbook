@@ -165,6 +165,7 @@ class SD_Dive_Form {
 			'dive_number'       => absint( $_POST['dive_number'] ?? 0 ) ?: null,
 			'dive_date'         => sanitize_text_field( $_POST['dive_date'] ?? '' ),
 			'site_name'         => sanitize_text_field( $_POST['site_name'] ?? '' ),
+			'site_location'     => sanitize_text_field( $_POST['site_location'] ?? '' ) ?: null,
 			'site_latitude'     => ! empty( $_POST['site_latitude'] ) ? floatval( $_POST['site_latitude'] ) : null,
 			'site_longitude'    => ! empty( $_POST['site_longitude'] ) ? floatval( $_POST['site_longitude'] ) : null,
 			'time_in'           => sanitize_text_field( $_POST['time_in'] ?? '' ) ?: null,

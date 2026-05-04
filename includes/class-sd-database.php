@@ -107,6 +107,7 @@ class SD_Database {
 			dive_number int unsigned DEFAULT NULL,
 			dive_date date NOT NULL,
 			site_name varchar(200) NOT NULL,
+			site_location varchar(200) DEFAULT NULL,
 			site_latitude decimal(10,7) DEFAULT NULL,
 			site_longitude decimal(10,7) DEFAULT NULL,
 			time_in time DEFAULT NULL,
@@ -189,6 +190,7 @@ class SD_Database {
 			'guide_name'           => 'varchar(100) DEFAULT NULL',
 			'site_latitude'        => 'decimal(10,7) DEFAULT NULL',
 			'site_longitude'       => 'decimal(10,7) DEFAULT NULL',
+			'site_location'        => 'varchar(200) DEFAULT NULL',
 		);
 		foreach ( $new_dive_cols as $col_name => $col_def ) {
 			$exists = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery

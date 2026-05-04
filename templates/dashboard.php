@@ -117,7 +117,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                     <div class="sd-dive-date"><?php echo esc_html( date_i18n( 'd/m/Y', strtotime( $dive->dive_date ) ) ); ?></div>
                 </div>
                 <div class="sd-dive-card-center">
-                    <div class="sd-dive-site"><?php echo esc_html( $dive->site_name ); ?></div>
+                    <?php if ( ! empty( $dive->site_location ) ) : ?>
+                        <div class="sd-dive-site"><?php echo esc_html( $dive->site_location ); ?></div>
+                        <div class="sd-dive-subsite" style="font-size:12px;color:#64748B;margin-top:1px;font-style:italic;"><?php echo esc_html( $dive->site_name ); ?></div>
+                    <?php else : ?>
+                        <div class="sd-dive-site"><?php echo esc_html( $dive->site_name ); ?></div>
+                    <?php endif; ?>
                     <div class="sd-dive-meta">
                         <?php if ( $dive->max_depth ) : ?>
                             <span class="sd-meta-item">

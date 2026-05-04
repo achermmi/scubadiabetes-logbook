@@ -136,12 +136,14 @@
         // RENDER DETAIL — tutti i campi + pulsante mappa su lat/lng
         // ============================================================
         function renderDetail(dive, diabetes) {
-            $('#sd-modal-title').text('Immersione #' + (dive.dive_number || dive.id) + ' — ' + esc(dive.site_name));
+            var siteTitle = (dive.site_location ? (dive.site_location + ' — ') : '') + (dive.site_name || '');
+            $('#sd-modal-title').text('Immersione #' + (dive.dive_number || dive.id) + ' — ' + siteTitle);
 
             var hasCoords = dive.site_latitude && dive.site_longitude;
 
             var html = '<div class="sd-detail-grid">';
             html += detailItem('Data', formatDate(dive.dive_date));
+            if (dive.site_location) html += detailItem('Luogo', dive.site_location);
             html += detailItem('Sito', dive.site_name);
             html += detailItem('Ora ingresso', dive.time_in || '—');
             html += detailItem('Ora uscita', dive.time_out || '—');
@@ -476,7 +478,7 @@
     // Traduce chiavi interne in etichette italiane leggibili
     var _labels = {
         // entry_type (valori estesi da Platform Shearwater)
-        riva:'Riva', barca:'Barca', drift:'Drift', guidata:'Guidata', resort:'Resort', liveaboard:'Liveaboard', grotta:'Grotta', ghiaccio:'Ghiaccio', piattaforma:'Piattaforma',
+        riva:'Riva', barca:'Barca', gommone:'Gommone', drift:'Drift', guidata:'Guidata', resort:'Resort', liveaboard:'Liveaboard', grotta:'Grotta', ghiaccio:'Ghiaccio', piattaforma:'Piattaforma',
         // thermal_comfort
         molto_freddo:'Molto freddo', freddo:'Freddo', confortevole:'Confortevole', caldo:'Caldo', molto_caldo:'Molto caldo',
         // workload

@@ -52,7 +52,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <div class="sd-edit-date"><?php echo esc_html( date_i18n( 'd/m/Y', strtotime( $dive->dive_date ) ) ); ?></div>
             </div>
             <div class="sd-edit-card-center">
-                <div class="sd-edit-site"><?php echo esc_html( $dive->site_name ); ?></div>
+                <?php if ( ! empty( $dive->site_location ) ) : ?>
+                    <div class="sd-edit-site"><?php echo esc_html( $dive->site_location ); ?></div>
+                    <div class="sd-edit-location" style="font-size:12px;color:#64748B;margin-top:2px;font-style:italic;"><?php echo esc_html( $dive->site_name ); ?></div>
+                <?php else : ?>
+                    <div class="sd-edit-site"><?php echo esc_html( $dive->site_name ); ?></div>
+                <?php endif; ?>
                 <div class="sd-edit-meta">
                     <?php if ( $dive->max_depth ) : ?>
                         <span><?php echo esc_html( $dive->max_depth ); ?>m</span>

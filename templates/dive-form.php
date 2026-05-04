@@ -96,9 +96,15 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 </div>
             </div>
 
-            <div class="sd-field">
-                <label for="sd-site-name"><?php esc_html_e( 'Sito di immersione', 'sd-logbook' ); ?> <span class="sd-required">*</span></label>
-                <input type="text" id="sd-site-name" name="site_name" required placeholder="<?php esc_attr_e( 'es: Canalone Acitrezza', 'sd-logbook' ); ?>">
+            <div class="sd-field-row">
+                <div class="sd-field sd-field-half">
+                    <label for="sd-site-location"><?php esc_html_e( 'Luogo di immersione', 'sd-logbook' ); ?></label>
+                    <input type="text" id="sd-site-location" name="site_location" placeholder="<?php esc_attr_e( 'es: Catania, Sicilia', 'sd-logbook' ); ?>">
+                </div>
+                <div class="sd-field sd-field-half">
+                    <label for="sd-site-name"><?php esc_html_e( 'Sito di immersione', 'sd-logbook' ); ?> <span class="sd-required">*</span></label>
+                    <input type="text" id="sd-site-name" name="site_name" required placeholder="<?php esc_attr_e( 'es: Canalone Acitrezza', 'sd-logbook' ); ?>">
+                </div>
             </div>
             <div class="sd-field-row">
                 <div class="sd-field sd-field-half">
@@ -305,6 +311,14 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <button type="button" class="sd-icon-btn" data-value="drift">
                     <svg viewBox="0 0 40 40" width="36" height="36"><path d="M5 20c5-3 10 3 15 0s10 3 15 0" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                     <span><?php esc_html_e( 'Drift', 'sd-logbook' ); ?></span>
+                </button>
+                <button type="button" class="sd-icon-btn" data-value="gommone">
+                    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor">
+                        <path d="M5 22 Q5 15 12 14 H28 Q35 15 35 22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M5 22 Q12 31 20 31 Q28 31 35 22" stroke-width="1.5"/>
+                        <path d="M34 22 L37 23 L37 27 M35 27 L39 27" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e( 'Gommone', 'sd-logbook' ); ?></span>
                 </button>
             </div>
             <input type="hidden" name="entry_type" value="">

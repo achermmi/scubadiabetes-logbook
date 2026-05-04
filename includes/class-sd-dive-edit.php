@@ -80,7 +80,7 @@ class SD_Dive_Edit {
 		$db    = new SD_Database();
 		$dives = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT d.id, d.dive_number, d.dive_date, d.site_name, d.max_depth, d.dive_time,
+				"SELECT d.id, d.dive_number, d.dive_date, d.site_name, d.site_location, d.max_depth, d.dive_time,
 					(SELECT COUNT(*) FROM {$db->table('dive_diabetes')} dd WHERE dd.dive_id = d.id) AS has_diabetes,
 					(SELECT COUNT(*) FROM {$db->table('dive_edits')} de WHERE de.dive_id = d.id) AS edit_count
 			 FROM {$db->table('dives')} d
@@ -172,6 +172,7 @@ class SD_Dive_Edit {
 			'dive_number',
 			'dive_date',
 			'site_name',
+			'site_location',
 			'site_latitude',
 			'site_longitude',
 			'time_in',
