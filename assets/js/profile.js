@@ -1408,6 +1408,27 @@
         });
     });
 
+    // Svuota dati LibreView (admin)
+    $(document).on('click', '#sd-lv-btn-delete-readings', function() {
+        if (!confirm('ATTENZIONE: Eliminare TUTTE le letture LibreView dal database?\n\nQuesta operazione è irreversibile. Dopo dovrai cliccare "Sync Ora" per reimportare le ultime 24h di dati.')) return;
+        var $btn = $(this).prop('disabled', true).text('Eliminazione in corso…');
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_libreview_delete_readings',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            $btn.prop('disabled', false).text('🗑 Svuota dati LibreView e riparti');
+            if (resp.success) {
+                showMsg(resp.data.message, 'success');
+                $('#sd-lv-fix-ts-box').hide();
+            } else {
+                showMsg(resp.data.message || 'Errore.', 'error');
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('🗑 Svuota dati LibreView e riparti');
+            showMsg('Errore di rete.', 'error');
+        });
+    });
+
     // Modifica credenziali
     $(document).on('click', '#sd-lv-btn-edit', function() {
         $('#sd-lv-form').show();

@@ -1383,9 +1383,14 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <p style="margin:6px 0 10px;font-size:12px;color:#92400e;">
             <?php esc_html_e( 'Le letture salvate prima dell\'aggiornamento del 04/05/2026 hanno un orario sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile solo una volta).', 'sd-logbook' ); ?>
         </p>
-        <button type="button" id="sd-lv-btn-fix-timestamps" style="background:#d97706;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
-            &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" id="sd-lv-btn-fix-timestamps" style="background:#d97706;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
+                &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
+            </button>
+            <button type="button" id="sd-lv-btn-delete-readings" style="background:#dc2626;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
+                &#x1F5D1; <?php esc_html_e( 'Svuota dati LibreView e riparti', 'sd-logbook' ); ?>
+            </button>
+        </div>
     </div>
 
     <!-- Messaggi globali -->

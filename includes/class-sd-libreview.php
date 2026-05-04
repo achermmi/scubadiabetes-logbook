@@ -86,6 +86,7 @@ class SD_LibreView {
 		add_action( 'wp_ajax_sd_libreview_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_libreview_disconnect', array( $this, 'ajax_disconnect' ) );
 		add_action( 'wp_ajax_sd_libreview_fix_timestamps', array( $this, 'ajax_fix_libreview_timestamps' ) );
+		add_action( 'wp_ajax_sd_libreview_delete_readings', array( $this, 'ajax_delete_libreview_readings' ) );
 
 		// Cron sync automatico
 		add_action( self::CRON_HOOK, array( $this, 'cron_sync_all' ) );
@@ -501,7 +502,7 @@ class SD_LibreView {
 		$inserted = 0;
 
 		foreach ( $readings as $r ) {
-			if ( ( empty( $r['FactoryTimestamp'] ) && empty( $r['Timestamp'] ) ) || ! isset( $r['Value'] ) ) {
+			if ( empty( $r['Timestamp'] ) || ! isset( $r['Value'] ) ) {
 				continue;
 			}
 
@@ -511,11 +512,8 @@ class SD_LibreView {
 				continue;
 			}
 
-			// Preferisce FactoryTimestamp (UTC diretto), altrimenti usa Timestamp locale
-			$ts = $this->parse_factory_timestamp( $r['FactoryTimestamp'] ?? null );
-			if ( ! $ts ) {
-				$ts = $this->parse_timestamp( $r['Timestamp'] ?? '' );
-			}
+			// Usa Timestamp (orario locale) con il fuso orario WordPress per ottenere UTC corretto
+			$ts = $this->parse_timestamp( $r['Timestamp'] );
 			if ( ! $ts ) {
 				continue;
 			}
@@ -1047,6 +1045,46 @@ class SD_LibreView {
 					(int) $updated,
 					(int) round( $offset / 3600 ),
 					(int) ( false !== $deleted ? $deleted : 0 )
+				),
+			)
+		);
+	}
+
+	/**
+	 * AJAX (admin): elimina tutte le letture LibreView dal DB e azzera l'opzione di fix.
+	 * Permette di ripartire da zero con timestamp corretti.
+	 */
+	public function ajax_delete_libreview_readings(): void {
+		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$table   = $this->table( 'nightscout_readings' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table} WHERE device LIKE %s",
+				'LibreView%'
+			)
+		);
+
+		if ( false === $deleted ) {
+			wp_send_json_error( array( 'message' => __( 'Errore DB durante l\'eliminazione.', 'sd-logbook' ) ) );
+		}
+
+		// Azzera il flag di fix così il pulsante fix non riappare
+		delete_option( 'sd_libreview_ts_fix_applied' );
+		// Imposta un flag "pulito" così la prossima sync parte da zero senza il pulsante fix
+		update_option( 'sd_libreview_ts_fix_applied', 'v2:' . gmdate( 'Y-m-d H:i:s' ) );
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %d = numero letture eliminate */
+					_n( '%d lettura LibreView eliminata. Esegui "Sync Ora" per reimportare i dati.', '%d letture LibreView eliminate. Esegui "Sync Ora" per reimportare i dati.', (int) $deleted, 'sd-logbook' ),
+					(int) $deleted
 				),
 			)
 		);
