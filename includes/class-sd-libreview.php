@@ -56,6 +56,9 @@ class SD_LibreView {
 	/** @var string Hook cron per sync automatico */
 	const CRON_HOOK = 'sd_libreview_sync_cron';
 
+	/** @var string Identificatore intervallo cron personalizzato (ogni 5 minuti) */
+	const CRON_INTERVAL = 'sd_every_5min';
+
 	/** @var int Ore di storico da recuperare per ogni sync */
 	const SYNC_HOURS = 24;
 
@@ -69,6 +72,9 @@ class SD_LibreView {
 	public function __construct() {
 		global $wpdb;
 		$this->prefix = $wpdb->prefix . 'sd_';
+
+		// Intervallo cron personalizzato
+		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_intervals' ) );
 
 		// AJAX autenticato
 		add_action( 'wp_ajax_sd_libreview_save', array( $this, 'ajax_save_credentials' ) );
@@ -205,20 +211,22 @@ class SD_LibreView {
 	}
 
 	/**
-	 * Converte il timestamp stringa LibreView (es. "4/29/2026 10:00:00 AM") in epoch UTC.
+	 * Converte il timestamp stringa LibreView (es. "4/29/2026 9:47:00 AM") in epoch UTC.
 	 *
-	 * LibreView restituisce timestamp nel fuso orario UTC senza indicazione esplicita.
+	 * LibreView restituisce i timestamp nel fuso orario locale del sensore/utente,
+	 * non in UTC. Si usa il fuso configurato nel sito WordPress.
 	 *
 	 * @param string $ts Timestamp LibreView.
 	 * @return int|false Unix timestamp oppure false.
 	 */
 	private function parse_timestamp( string $ts ) {
-		// Formato atteso: M/D/YYYY H:i:s AM/PM
-		$dt = \DateTime::createFromFormat( 'n/j/Y g:i:s A', $ts, new \DateTimeZone( 'UTC' ) );
+		// Formato atteso: M/D/YYYY H:i:s AM/PM  (orario locale, non UTC)
+		$timezone = wp_timezone();
+		$dt       = \DateTime::createFromFormat( 'n/j/Y g:i:s A', $ts, $timezone );
 		if ( $dt ) {
 			return $dt->getTimestamp();
 		}
-		// Fallback
+		// Fallback: strtotime usa il timezone PHP del server
 		return strtotime( $ts );
 	}
 
@@ -689,11 +697,36 @@ class SD_LibreView {
 	}
 
 	/**
-	 * Programma il cron LibreView (se non già attivo).
+	 * Registra l'intervallo cron personalizzato (ogni minuto).
+	 *
+	 * @param array $schedules Schedules WordPress esistenti.
+	 * @return array
+	 */
+	public static function add_cron_intervals( array $schedules ): array {
+		if ( ! isset( $schedules[ self::CRON_INTERVAL ] ) ) {
+			$schedules[ self::CRON_INTERVAL ] = array(
+				'interval' => 300,
+				'display'  => __( 'Ogni 5 minuti', 'sd-logbook' ),
+			);
+		}
+		return $schedules;
+	}
+
+	/**
+	 * Programma il cron LibreView ogni minuto.
+	 * Se era già programmato con un intervallo diverso, lo riprogramma.
 	 */
 	public static function schedule_cron(): void {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), 'hourly', self::CRON_HOOK );
+		// Assicura che l'intervallo sia registrato anche durante l'attivazione
+		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_intervals' ) );
+
+		$existing = wp_get_scheduled_event( self::CRON_HOOK );
+		// Riprogramma se non esiste o se l'intervallo è cambiato (es. era 'hourly')
+		if ( ! $existing || $existing->schedule !== self::CRON_INTERVAL ) {
+			if ( $existing ) {
+				wp_unschedule_event( $existing->timestamp, self::CRON_HOOK );
+			}
+			wp_schedule_event( time(), self::CRON_INTERVAL, self::CRON_HOOK );
 		}
 	}
 

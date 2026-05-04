@@ -520,16 +520,25 @@
         var v120 = displayGlic(120), v150 = displayGlic(150);
         var v250 = displayGlic(250), v300 = displayGlic(300);
 
+        // Trend: fuori protocollo solo se delta consecutivo > 15% oppure delta totale 60→10 > 20%.
         var trend = 'stabile';
-        if (g30 && g10) {
-            var diff = g10 - g30;
-            var pct  = Math.abs(diff) / g30 * 100;
-            if (diff > 0 && pct > 15)      trend = 'salita';
-            else if (diff < 0 && pct > 15) trend = 'discesa';
+        if (g60 && g30) {
+            var d6030 = g30 - g60;
+            var p6030 = Math.abs(d6030) / g60 * 100;
+            if (d6030 > 0 && p6030 > 15)      trend = 'salita';
+            else if (d6030 < 0 && p6030 > 15) trend = 'discesa';
         }
-        if (g60 && g30 && g10) {
-            if ((g30 - g60) < 0 && (g10 - g30) < 0) trend = 'discesa';
-            else if ((g30 - g60) > 0 && (g10 - g30) > 0) trend = 'salita';
+        if (g30 && g10) {
+            var d3010 = g10 - g30;
+            var p3010 = Math.abs(d3010) / g30 * 100;
+            if (d3010 > 0 && p3010 > 15)      trend = 'salita';
+            else if (d3010 < 0 && p3010 > 15) trend = 'discesa';
+        }
+        if (g60 && g10) {
+            var d6010 = g10 - g60;
+            var p6010 = Math.abs(d6010) / g60 * 100;
+            if (d6010 > 0 && p6010 > 20)      trend = 'salita';
+            else if (d6010 < 0 && p6010 > 20) trend = 'discesa';
         }
 
         if (g10 < 120)                            return 'Glicemia <' + v120 + ' ' + uL + ': immersione NON consentita';
