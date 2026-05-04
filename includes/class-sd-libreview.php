@@ -59,8 +59,12 @@ class SD_LibreView {
 	/** @var string Identificatore intervallo cron personalizzato (ogni 5 minuti) */
 	const CRON_INTERVAL = 'sd_every_5min';
 
-	/** @var int Ore di storico da recuperare per ogni sync */
-	const SYNC_HOURS = 24;
+	/**
+	 * Finestra storica restituita dall'endpoint /graph di LibreLinkUp (Abbott).
+	 * L'API Abbott restituisce autonomamente ~24h di graphData — non è un parametro
+	 * che si può modificare lato client. Il cron accumula la storia nel DB locale.
+	 */
+	const API_GRAPH_WINDOW_HOURS = 24;
 
 	/** @var string Prefisso tabelle DB */
 	private string $prefix;
@@ -659,6 +663,7 @@ class SD_LibreView {
 		}
 
 		$total_inserted = 0;
+		$latest_ts      = 0; // timestamp UTC più recente ricevuto dall'API
 
 		foreach ( $connections as $patient ) {
 			$patient_id = $patient['patientId'] ?? '';
@@ -683,6 +688,17 @@ class SD_LibreView {
 				$readings[] = $current;
 			}
 
+			// Traccia il timestamp più recente ricevuto dall'API
+			foreach ( $readings as $r ) {
+				$rts = $this->parse_factory_timestamp( $r['FactoryTimestamp'] ?? null );
+				if ( ! $rts ) {
+					$rts = $this->parse_timestamp( $r['Timestamp'] ?? '' );
+				}
+				if ( $rts && $rts > $latest_ts ) {
+					$latest_ts = $rts;
+				}
+			}
+
 			if ( ! empty( $readings ) ) {
 				$total_inserted += $this->save_readings( $user_id, $readings, $device_name );
 			}
@@ -698,13 +714,22 @@ class SD_LibreView {
 			array( '%d' )
 		);
 
+		// Formatta l'ultima lettura API in ora locale per il messaggio diagnostico
+		$latest_local = '';
+		if ( $latest_ts ) {
+			$tz           = wp_timezone();
+			$dt           = new \DateTime( '@' . $latest_ts );
+			$dt->setTimezone( $tz );
+			$latest_local = $dt->format( 'd/m/Y H:i' );
+		}
+
 		return array(
 			'ok'       => true,
 			'inserted' => $total_inserted,
 			'message'  => sprintf(
 				_n( '%d lettura sincronizzata da LibreView.', '%d letture sincronizzate da LibreView.', $total_inserted, 'sd-logbook' ),
 				$total_inserted
-			),
+			) . ( $latest_local ? ' ' . sprintf( __( '(Ultima API: %s)', 'sd-logbook' ), $latest_local ) : '' ),
 		);
 	}
 
