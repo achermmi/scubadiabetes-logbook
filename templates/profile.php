@@ -990,16 +990,7 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
 
         <?php endif; ?>
 
-        <!-- Box correzione timestamp: sempre nel DOM, mostrato solo via JS per evitare problemi di cache -->
-        <div id="sd-lv-fix-ts-box" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:#fefce8;border:1px solid #fde047;">
-            <strong style="font-size:13px;color:#78350f;">&#x1F6E0; <?php esc_html_e( 'Correzione timestamp LibreView (una-tantum)', 'sd-logbook' ); ?></strong>
-            <p style="margin:6px 0 10px;font-size:12px;color:#92400e;">
-                <?php esc_html_e( 'Le letture salvate prima dell\'aggiornamento del 04/05/2026 hanno un orario sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile solo una volta).', 'sd-logbook' ); ?>
-            </p>
-            <button type="button" id="sd-lv-btn-fix-timestamps" style="background:#d97706;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
-                &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
-            </button>
-        </div>
+
 
         <!-- Form credenziali -->
         <div id="sd-lv-form" <?php echo $lv['connected'] ? 'style="display:none;"' : ''; ?>>
@@ -1385,6 +1376,17 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
         <div class="sd-ns-message" id="sd-ns-message" style="display:none;"></div>
     </div>
     <?php endif; ?>
+
+    <!-- Box correzione timestamp LibreView: sempre nel DOM, visibilità via JS (bypassa cache) -->
+    <div id="sd-lv-fix-ts-box" style="display:none;margin:16px 0;padding:10px 14px;border-radius:8px;background:#fefce8;border:1px solid #fde047;">
+        <strong style="font-size:13px;color:#78350f;">&#x1F6E0; <?php esc_html_e( 'Correzione timestamp LibreView (una-tantum)', 'sd-logbook' ); ?></strong>
+        <p style="margin:6px 0 10px;font-size:12px;color:#92400e;">
+            <?php esc_html_e( 'Le letture salvate prima dell\'aggiornamento del 04/05/2026 hanno un orario sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile solo una volta).', 'sd-logbook' ); ?>
+        </p>
+        <button type="button" id="sd-lv-btn-fix-timestamps" style="background:#d97706;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
+            &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
+        </button>
+    </div>
 
     <!-- Messaggi globali -->
     <div class="sd-form-messages sd-profile-messages" id="sd-profile-messages" style="display:none;"></div>
