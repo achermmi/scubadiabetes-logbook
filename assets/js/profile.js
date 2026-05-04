@@ -1382,8 +1382,13 @@
     });
 
     // Mostra il box correzione timestamp solo se admin e fix non ancora applicato
-    if (typeof sdProfile !== 'undefined' && sdProfile.isAdmin && sdProfile.lvTsFixNeeded) {
+    if (typeof sdProfile !== 'undefined' && sdProfile.isAdmin) {
+        // Il pulsante "Svuota" è sempre visibile per gli admin
         $('#sd-lv-fix-ts-box').show();
+        // Il pulsante "Correggi timestamp" solo se la fix è ancora necessaria
+        if (!sdProfile.lvTsFixNeeded) {
+            $('#sd-lv-btn-fix-timestamps').hide();
+        }
     }
 
     // Fix timestamp (admin one-time)
