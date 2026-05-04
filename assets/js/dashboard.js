@@ -301,11 +301,16 @@
 
                 if (diabetes.dive_decision) {
                     var decColors  = { autorizzata: '#16A34A', sospesa: '#D97706', annullata: '#DC2626' };
-                    var decReason  = generateDecisionReason(diabetes);
-                    var decColor   = decColors[diabetes.dive_decision] || '#64748B';
+                    // Ricalcola decisione e motivo dai valori glicemici salvati.
+                    // In questo modo le immersioni salvate con il vecchio codice mostrano
+                    // la decisione corretta secondo il protocollo attuale.
+                    var computed   = computeDecisionFull(diabetes);
+                    var dispDec    = computed.decision || diabetes.dive_decision;
+                    var dispReason = computed.reason   || diabetes.dive_decision_reason || '';
+                    var decColor   = decColors[dispDec] || '#64748B';
                     html += '<div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:' + decColor + '15;border:1px solid ' + decColor + '40;">';
-                    html += '<strong style="color:' + decColor + ';">' + diabetes.dive_decision.toUpperCase() + '</strong>';
-                    if (decReason) html += ' — <span style="font-size:12px;">' + esc(decReason) + '</span>';
+                    html += '<strong style="color:' + decColor + ';">' + dispDec.toUpperCase() + '</strong>';
+                    if (dispReason) html += ' — <span style="font-size:12px;">' + esc(dispReason) + '</span>';
                     html += '</div>';
                 }
             }
@@ -507,20 +512,22 @@
     }
 
     // ============================================================
-    // DECISION REASON — ricalcola in unità utente da valori mg/dL
+    // DECISION — ricalcola decisione e motivo dai valori glicemici (mg/dL)
+    // Usato nel modal per correggere immersioni salvate con vecchio codice.
     // ============================================================
-    function generateDecisionReason(dd) {
-        var g60 = parseInt(dd.glic_60_cap)   || 0;
-        var g30 = parseInt(dd.glic_30_cap)   || 0;
-        var g10 = parseInt(dd.glic_10_cap)   || 0;
+    function computeDecisionFull(dd) {
+        var g60 = parseInt(dd.glic_60_cap) || 0;
+        var g30 = parseInt(dd.glic_30_cap) || 0;
+        var g10 = parseInt(dd.glic_10_cap) || 0;
 
-        if (!g10) return dd.dive_decision_reason || '';
+        // Senza g10 non possiamo calcolare: restituisce vuoto (verrà usato il valore salvato)
+        if (!g10) return { decision: '', reason: dd.dive_decision_reason || '' };
 
         var uL   = glicUnitLabel();
         var v120 = displayGlic(120), v150 = displayGlic(150);
         var v250 = displayGlic(250), v300 = displayGlic(300);
 
-        // Trend: fuori protocollo solo se delta consecutivo > 15% oppure delta totale 60→10 > 20%.
+        // Trend: fuori protocollo solo se delta consecutivo > 15% o delta totale 60→10 > 20%.
         var trend = 'stabile';
         if (g60 && g30) {
             var d6030 = g30 - g60;
@@ -541,14 +548,14 @@
             else if (d6010 < 0 && p6010 > 20) trend = 'discesa';
         }
 
-        if (g10 < 120)                            return 'Glicemia <' + v120 + ' ' + uL + ': immersione NON consentita';
-        if (trend === 'discesa')                  return 'Glicemia in discesa: immersione sospesa';
-        if (g10 > 300 && trend === 'salita')      return 'Glicemia >' + v300 + ' in salita: rinvio immersione';
-        if (g10 >= 250 && g10 <= 300 && trend !== 'salita') return 'Glicemia ' + v250 + '-' + v300 + ' stabile, no chetonemia: OK';
-        if (trend === 'salita' && g10 >= 120)     return 'Glicemia \u2265' + v120 + ' in salita: OK';
-        if (trend === 'stabile' && g10 >= 150)    return 'Glicemia \u2265' + v150 + ' stabile: OK';
-        if (trend === 'stabile' && g10 >= 120 && g10 < 150) return 'Glicemia ' + v120 + '-' + v150 + ' ' + uL + ' stabile: attenzione';
-        return 'Valori nei range consentiti';
+        if (g10 < 120)                                       return { decision: 'annullata',   reason: 'Glicemia <' + v120 + ' ' + uL + ': immersione NON consentita' };
+        if (trend === 'discesa')                              return { decision: 'sospesa',     reason: 'Glicemia in discesa: immersione sospesa' };
+        if (g10 > 300 && trend === 'salita')                 return { decision: 'sospesa',     reason: 'Glicemia >' + v300 + ' in salita: rinvio immersione' };
+        if (g10 >= 250 && g10 <= 300 && trend !== 'salita')  return { decision: 'autorizzata', reason: 'Glicemia ' + v250 + '-' + v300 + ' stabile, no chetonemia: OK' };
+        if (trend === 'salita' && g10 >= 120)                return { decision: 'autorizzata', reason: 'Glicemia \u2265' + v120 + ' in salita: OK' };
+        if (trend === 'stabile' && g10 >= 150)               return { decision: 'autorizzata', reason: 'Glicemia \u2265' + v150 + ' stabile: OK' };
+        if (trend === 'stabile' && g10 >= 120 && g10 < 150) return { decision: 'autorizzata', reason: 'Glicemia ' + v120 + '-' + v150 + ' ' + uL + ' stabile: attenzione' };
+        return { decision: 'autorizzata', reason: 'Valori nei range consentiti' };
     }
 
 })(jQuery);
