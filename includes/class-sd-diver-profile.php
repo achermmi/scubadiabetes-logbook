@@ -48,7 +48,10 @@ class SD_Diver_Profile {
 				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
 				'nonce'         => wp_create_nonce( 'sd_profile_nonce' ),
 				'isAdmin'       => current_user_can( 'manage_options' ),
-				'lvTsFixNeeded' => ! get_option( 'sd_libreview_ts_fix_applied' ),
+				'lvTsFixNeeded' => ( function () {
+					$v = get_option( 'sd_libreview_ts_fix_applied' );
+					return ! $v || ! str_starts_with( (string) $v, 'v2:' );
+				} )(),
 			)
 		);
 	}

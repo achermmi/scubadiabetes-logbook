@@ -231,6 +231,30 @@ class SD_LibreView {
 		return strtotime( $ts );
 	}
 
+	/**
+	 * Converte un FactoryTimestamp LibreView (UTC) in Unix timestamp.
+	 * Non richiede conversione di fuso orario.
+	 *
+	 * @param string|null $ts FactoryTimestamp UTC (M/D/YYYY H:i:s AM/PM oppure ISO 8601).
+	 * @return int|false Unix timestamp oppure false.
+	 */
+	private function parse_factory_timestamp( ?string $ts ) {
+		if ( ! $ts ) {
+			return false;
+		}
+		// Formato M/D/YYYY H:MM:SS AM/PM (UTC)
+		$dt = \DateTime::createFromFormat( 'n/j/Y g:i:s A', $ts, new \DateTimeZone( 'UTC' ) );
+		if ( $dt ) {
+			return $dt->getTimestamp();
+		}
+		// Fallback ISO 8601 UTC (versioni API più recenti: "2026-05-04T09:48:00Z")
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2}T/', $ts ) ) {
+			$dt2 = new \DateTime( $ts, new \DateTimeZone( 'UTC' ) );
+			return $dt2->getTimestamp();
+		}
+		return false;
+	}
+
 	// =========================================================================
 	// Comunicazione con le API LibreLinkUp
 	// =========================================================================
@@ -473,7 +497,7 @@ class SD_LibreView {
 		$inserted = 0;
 
 		foreach ( $readings as $r ) {
-			if ( empty( $r['Timestamp'] ) || ! isset( $r['Value'] ) ) {
+			if ( ( empty( $r['FactoryTimestamp'] ) && empty( $r['Timestamp'] ) ) || ! isset( $r['Value'] ) ) {
 				continue;
 			}
 
@@ -483,7 +507,11 @@ class SD_LibreView {
 				continue;
 			}
 
-			$ts           = $this->parse_timestamp( $r['Timestamp'] );
+			// Preferisce FactoryTimestamp (UTC diretto), altrimenti usa Timestamp locale
+			$ts = $this->parse_factory_timestamp( $r['FactoryTimestamp'] ?? null );
+			if ( ! $ts ) {
+				$ts = $this->parse_timestamp( $r['Timestamp'] ?? '' );
+			}
 			if ( ! $ts ) {
 				continue;
 			}
@@ -926,10 +954,13 @@ class SD_LibreView {
 			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
 		}
 
-		// Sicurezza: impedisce doppia applicazione
-		if ( get_option( 'sd_libreview_ts_fix_applied' ) ) {
+		// Sicurezza: impedisce doppia applicazione.
+		// La versione '2' include anche la fase DELETE delle righe duplicate.
+		// Se l'opzione è già impostata con versione '2' o superiore, nessuna azione.
+		$fix_version = get_option( 'sd_libreview_ts_fix_applied' );
+		if ( $fix_version && str_starts_with( (string) $fix_version, 'v2:' ) ) {
 			wp_send_json_success(
-				array( 'message' => __( 'Correzione già applicata in precedenza. Nessuna ulteriore modifica.', 'sd-logbook' ) )
+				array( 'message' => __( 'Correzione già applicata in precedenza (completa). Nessuna ulteriore modifica.', 'sd-logbook' ) )
 			);
 		}
 
@@ -950,6 +981,7 @@ class SD_LibreView {
 		// Sottrae l'offset (in secondi) per convertire da "locale-come-UTC" a vero UTC.
 		// Esempio CEST (UTC+2, offset = 7200):
 		//   "09:47" (sbagliato) − 7200s → "07:47" (corretto UTC)
+		// Fase 1: sposta le righe che non creano conflitti
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$updated = $wpdb->query(
 			$wpdb->prepare(
@@ -963,15 +995,33 @@ class SD_LibreView {
 			wp_send_json_error( array( 'message' => __( 'Errore DB durante la correzione.', 'sd-logbook' ) ) );
 		}
 
-		update_option( 'sd_libreview_ts_fix_applied', gmdate( 'Y-m-d H:i:s' ) );
+		// Fase 2: elimina le righe duplicate rimaste (quelle che non hanno potuto essere spostate
+		// perché esisteva già una riga corretta per lo stesso (user_id, reading_time - offset)).
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE a FROM {$table} a
+				INNER JOIN {$table} b
+					ON b.user_id = a.user_id
+					AND b.reading_time = DATE_SUB(a.reading_time, INTERVAL %d SECOND)
+					AND b.device LIKE %s
+				WHERE a.device LIKE %s",
+				$offset,
+				'LibreView%',
+				'LibreView%'
+			)
+		);
+
+		update_option( 'sd_libreview_ts_fix_applied', 'v2:' . gmdate( 'Y-m-d H:i:s' ) );
 
 		wp_send_json_success(
 			array(
 				'message' => sprintf(
-					/* translators: 1: n. letture corrette, 2: offset in ore */
-					__( '%1$d letture LibreView corrette (−%2$d ore). Ricarica la pagina per verificare.', 'sd-logbook' ),
+					/* translators: 1: n. letture corrette, 2: offset in ore, 3: n. duplicate rimosse */
+					__( '%1$d letture LibreView corrette (−%2$d ore), %3$d duplicate rimosse. Ricarica la pagina per verificare.', 'sd-logbook' ),
 					(int) $updated,
-					(int) round( $offset / 3600 )
+					(int) round( $offset / 3600 ),
+					(int) ( false !== $deleted ? $deleted : 0 )
 				),
 			)
 		);
