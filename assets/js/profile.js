@@ -1381,6 +1381,11 @@
         });
     });
 
+    // Mostra il box correzione timestamp solo se admin e fix non ancora applicato
+    if (typeof sdProfile !== 'undefined' && sdProfile.isAdmin && sdProfile.lvTsFixNeeded) {
+        $('#sd-lv-fix-ts-box').show();
+    }
+
     // Fix timestamp (admin one-time)
     $(document).on('click', '#sd-lv-btn-fix-timestamps', function() {
         if (!confirm('Correggere i timestamp di tutte le letture LibreView già salvate? Questa operazione è irreversibile e può essere eseguita una sola volta.')) return;

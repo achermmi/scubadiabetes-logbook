@@ -988,8 +988,10 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
             </button>
         </div>
 
-        <?php if ( current_user_can( 'manage_options' ) && ! get_option( 'sd_libreview_ts_fix_applied' ) ) : ?>
-        <div class="sd-admin-tools" style="margin-top:10px;padding:10px 14px;border-radius:8px;background:#fefce8;border:1px solid #fde047;">
+        <?php endif; ?>
+
+        <!-- Box correzione timestamp: sempre nel DOM, mostrato solo via JS per evitare problemi di cache -->
+        <div id="sd-lv-fix-ts-box" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:#fefce8;border:1px solid #fde047;">
             <strong style="font-size:13px;color:#78350f;">&#x1F6E0; <?php esc_html_e( 'Correzione timestamp LibreView (una-tantum)', 'sd-logbook' ); ?></strong>
             <p style="margin:6px 0 10px;font-size:12px;color:#92400e;">
                 <?php esc_html_e( 'Le letture salvate prima dell\'aggiornamento del 04/05/2026 hanno un orario sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile solo una volta).', 'sd-logbook' ); ?>
@@ -998,8 +1000,6 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
             </button>
         </div>
-        <?php endif; ?>
-        <?php endif; ?>
 
         <!-- Form credenziali -->
         <div id="sd-lv-form" <?php echo $lv['connected'] ? 'style="display:none;"' : ''; ?>>
