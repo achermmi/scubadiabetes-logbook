@@ -81,6 +81,7 @@ class SD_LibreView {
 		add_action( 'wp_ajax_sd_libreview_test', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_sd_libreview_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_sd_libreview_disconnect', array( $this, 'ajax_disconnect' ) );
+		add_action( 'wp_ajax_sd_libreview_fix_timestamps', array( $this, 'ajax_fix_libreview_timestamps' ) );
 
 		// Cron sync automatico
 		add_action( self::CRON_HOOK, array( $this, 'cron_sync_all' ) );
@@ -909,6 +910,71 @@ class SD_LibreView {
 		} else {
 			wp_send_json_error( array( 'message' => $result['message'] ) );
 		}
+	}
+
+	/**
+	 * AJAX (admin): corregge i timestamp LibreView già salvati nel DB.
+	 *
+	 * Le letture salvate prima della patch 2026-05-04 erano memorizzate con
+	 * l'orario locale interpretato come UTC, risultando sfasate di +2h (CEST).
+	 * Questo metodo sottrae l'offset del fuso WordPress da tutti i record
+	 * LibreView per allinearli al vero UTC. Può essere applicato una sola volta.
+	 */
+	public function ajax_fix_libreview_timestamps(): void {
+		check_ajax_referer( 'sd_profile_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		// Sicurezza: impedisce doppia applicazione
+		if ( get_option( 'sd_libreview_ts_fix_applied' ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Correzione già applicata in precedenza. Nessuna modifica effettuata.', 'sd-logbook' ) )
+			);
+		}
+
+		$tz     = wp_timezone();
+		$offset = $tz->getOffset( new \DateTime( 'now', new \DateTimeZone( 'UTC' ) ) );
+
+		if ( 0 === $offset ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Il fuso orario WordPress è impostato su UTC. Prima imposta il fuso corretto in Impostazioni → Generali (es. Europe/Rome).', 'sd-logbook' ),
+				)
+			);
+		}
+
+		global $wpdb;
+		$table = $this->table( 'nightscout_readings' );
+
+		// Sottrae l'offset (in secondi) per convertire da "locale-come-UTC" a vero UTC.
+		// Esempio CEST (UTC+2, offset = 7200):
+		//   "09:47" (sbagliato) − 7200s → "07:47" (corretto UTC)
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET reading_time = DATE_SUB(reading_time, INTERVAL %d SECOND) WHERE device LIKE %s",
+				$offset,
+				'LibreView%'
+			)
+		);
+
+		if ( false === $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Errore DB durante la correzione.', 'sd-logbook' ) ) );
+		}
+
+		update_option( 'sd_libreview_ts_fix_applied', gmdate( 'Y-m-d H:i:s' ) );
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: 1: n. letture corrette, 2: offset in ore */
+					__( '%1$d letture LibreView corrette (−%2$d ore). Ricarica la pagina per verificare.', 'sd-logbook' ),
+					(int) $updated,
+					(int) round( $offset / 3600 )
+				),
+			)
+		);
 	}
 
 	/**

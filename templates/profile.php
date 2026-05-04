@@ -987,6 +987,18 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <?php esc_html_e( 'Disconnetti', 'sd-logbook' ); ?>
             </button>
         </div>
+
+        <?php if ( current_user_can( 'manage_options' ) && ! get_option( 'sd_libreview_ts_fix_applied' ) ) : ?>
+        <div class="sd-admin-tools" style="margin-top:10px;padding:10px 14px;border-radius:8px;background:#fefce8;border:1px solid #fde047;">
+            <strong style="font-size:13px;color:#78350f;">&#x1F6E0; <?php esc_html_e( 'Correzione timestamp LibreView (una-tantum)', 'sd-logbook' ); ?></strong>
+            <p style="margin:6px 0 10px;font-size:12px;color:#92400e;">
+                <?php esc_html_e( 'Le letture salvate prima dell\'aggiornamento del 04/05/2026 hanno un orario sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile solo una volta).', 'sd-logbook' ); ?>
+            </p>
+            <button type="button" id="sd-lv-btn-fix-timestamps" style="background:#d97706;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">
+                &#x21BB; <?php esc_html_e( 'Correggi timestamp (−2h)', 'sd-logbook' ); ?>
+            </button>
+        </div>
+        <?php endif; ?>
         <?php endif; ?>
 
         <!-- Form credenziali -->

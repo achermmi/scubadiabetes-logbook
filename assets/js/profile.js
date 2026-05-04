@@ -1381,6 +1381,28 @@
         });
     });
 
+    // Fix timestamp (admin one-time)
+    $(document).on('click', '#sd-lv-btn-fix-timestamps', function() {
+        if (!confirm('Correggere i timestamp di tutte le letture LibreView già salvate? Questa operazione è irreversibile e può essere eseguita una sola volta.')) return;
+        var $btn = $(this).prop('disabled', true).text('Correzione in corso…');
+        $.post(sdProfile.ajaxUrl, {
+            action: 'sd_libreview_fix_timestamps',
+            nonce:  sdProfile.nonce
+        }, function(resp) {
+            $btn.prop('disabled', false);
+            if (resp.success) {
+                lvMsg(resp.data.message, 'success');
+                $btn.closest('.sd-admin-tools').hide();
+            } else {
+                lvMsg(resp.data.message || 'Errore.', 'error');
+                $btn.text('↻ Correggi timestamp (−2h)');
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('↻ Correggi timestamp (−2h)');
+            lvMsg('Errore di rete.', 'error');
+        });
+    });
+
     // Modifica credenziali
     $(document).on('click', '#sd-lv-btn-edit', function() {
         $('#sd-lv-form').show();
