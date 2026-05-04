@@ -1396,15 +1396,15 @@
         }, function(resp) {
             $btn.prop('disabled', false);
             if (resp.success) {
-                lvMsg(resp.data.message, 'success');
+                showMsg(resp.data.message, 'success');
                 $('#sd-lv-fix-ts-box').hide();
             } else {
-                lvMsg(resp.data.message || 'Errore.', 'error');
+                showMsg(resp.data.message || 'Errore.', 'error');
                 $btn.text('↻ Correggi timestamp (−2h)');
             }
         }).fail(function() {
             $btn.prop('disabled', false).text('↻ Correggi timestamp (−2h)');
-            lvMsg('Errore di rete.', 'error');
+            showMsg('Errore di rete.', 'error');
         });
     });
 

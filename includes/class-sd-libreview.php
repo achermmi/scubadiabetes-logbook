@@ -928,8 +928,8 @@ class SD_LibreView {
 
 		// Sicurezza: impedisce doppia applicazione
 		if ( get_option( 'sd_libreview_ts_fix_applied' ) ) {
-			wp_send_json_error(
-				array( 'message' => __( 'Correzione già applicata in precedenza. Nessuna modifica effettuata.', 'sd-logbook' ) )
+			wp_send_json_success(
+				array( 'message' => __( 'Correzione già applicata in precedenza. Nessuna ulteriore modifica.', 'sd-logbook' ) )
 			);
 		}
 
