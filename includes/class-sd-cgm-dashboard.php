@@ -369,7 +369,12 @@ class SD_CGM_Dashboard {
 	private function compute_stats( $user_id ) {
 		global $wpdb;
 		$t   = $wpdb->prefix . 'sd_nightscout_readings';
+		$tz  = self::get_tz();
 		$now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
+
+		// Offset del fuso per includere letture salvate con orario locale al posto di UTC
+		$tz_offset_sec = $tz->getOffset( $now );
+		$now_extended  = ( clone $now )->modify( "+{$tz_offset_sec} seconds" )->format( 'Y-m-d H:i:s' );
 
 		$last = $wpdb->get_row(
 			$wpdb->prepare(
@@ -381,25 +386,28 @@ class SD_CGM_Dashboard {
 		$from_24h = ( clone $now )->modify( '-24 hours' )->format( 'Y-m-d H:i:s' );
 		$avg_24h  = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT ROUND(AVG(glucose_value)) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
+				"SELECT ROUND(AVG(glucose_value)) FROM {$t} WHERE user_id = %d AND reading_time BETWEEN %s AND %s",
 				$user_id,
-				$from_24h
+				$from_24h,
+				$now_extended
 			)
 		);
 
 		$from_7d    = ( clone $now )->modify( '-7 days' )->format( 'Y-m-d H:i:s' );
 		$total_7d   = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s",
+				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time BETWEEN %s AND %s",
 				$user_id,
-				$from_7d
+				$from_7d,
+				$now_extended
 			)
 		);
 		$inrange_7d = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time >= %s AND glucose_value BETWEEN 70 AND 180",
+				"SELECT COUNT(*) FROM {$t} WHERE user_id = %d AND reading_time BETWEEN %s AND %s AND glucose_value BETWEEN 70 AND 180",
 				$user_id,
-				$from_7d
+				$from_7d,
+				$now_extended
 			)
 		);
 		$tir = $total_7d > 0 ? (int) round( $inrange_7d / $total_7d * 100 ) : null;
@@ -421,6 +429,12 @@ class SD_CGM_Dashboard {
 		$tz  = self::get_tz();
 		$now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
 
+		// Limite superiore esteso all'offset del fuso orario per includere letture
+		// salvate (erroneamente) con orario locale al posto di UTC.
+		// Dopo la correzione dei timestamp è comunque innocuo (non esistono letture future).
+		$tz_offset_sec = $tz->getOffset( $now );
+		$to            = ( clone $now )->modify( "+{$tz_offset_sec} seconds" )->format( 'Y-m-d H:i:s' );
+
 		if ( 'custom' === $period && $date_from && $date_to ) {
 			$dt_from = \DateTime::createFromFormat( 'Y-m-d', $date_from, $tz );
 			$dt_to   = \DateTime::createFromFormat( 'Y-m-d', $date_to, $tz );
@@ -436,9 +450,9 @@ class SD_CGM_Dashboard {
 			'7d' => 168,
 			'30d' => 720,
 		);
-		$hours     = $hours_map[ $period ] ?? 24;
-		$from      = ( clone $now )->modify( "-{$hours} hours" )->format( 'Y-m-d H:i:s' );
-		return array( $from, $now->format( 'Y-m-d H:i:s' ) );
+		$hours = $hours_map[ $period ] ?? 24;
+		$from  = ( clone $now )->modify( "-{$hours} hours" )->format( 'Y-m-d H:i:s' );
+		return array( $from, $to );
 	}
 
 	private function thin_chart( $rows, $max ) {
