@@ -296,13 +296,13 @@ class SD_Payment_Documents {
 		$objects = array();
 		$offsets = array();
 
-		$add_obj = static function( $content ) use ( &$objects ) {
+		$add_obj = static function ( $content ) use ( &$objects ) {
 			$objects[] = $content;
 			return count( $objects );
 		};
 
-		$font_obj      = $add_obj( "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>" );
-		$font_bold_obj = $add_obj( "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>" );
+		$font_obj      = $add_obj( '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>' );
+		$font_bold_obj = $add_obj( '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>' );
 		$pages_id = $add_obj( '<< /Type /Pages /Kids [] /Count 0 >>' );
 
 		$page_ids = array();
@@ -321,7 +321,7 @@ class SD_Payment_Documents {
 				}
 
 				$img_meta = @getimagesize( $img_path );
-				if ( ! is_array( $img_meta ) || empty( $img_meta[0] ) || empty( $img_meta[1] ) || (int) $img_meta[2] !== IMAGETYPE_JPEG ) {
+				if ( ! is_array( $img_meta ) || empty( $img_meta[0] ) || empty( $img_meta[1] ) || IMAGETYPE_JPEG !== (int) $img_meta[2] ) {
 					continue;
 				}
 
@@ -354,7 +354,7 @@ class SD_Payment_Documents {
 				$stream .= $draw_images;
 			}
 
-			$content_obj = $add_obj( "<< /Length " . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream" );
+			$content_obj = $add_obj( '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream" );
 			$resources   = "<< /Font << /F1 {$font_obj} 0 R /F2 {$font_bold_obj} 0 R >>";
 			if ( ! empty( $xobject_entries ) ) {
 				$resources .= ' /XObject << ' . implode( ' ', $xobject_entries ) . ' >>';
@@ -446,7 +446,7 @@ class SD_Payment_Documents {
 	 */
 	private function escape_pdf_text( $text ) {
 		$text = remove_accents( (string) $text );
-		return str_replace( array( "\\", '(', ')' ), array( "\\\\", '\\(', '\\)' ), $text );
+		return str_replace( array( '\\', '(', ')' ), array( '\\\\', '\(', '\)' ), $text );
 	}
 
 	/**

@@ -44,34 +44,230 @@ class SD_Payment_Settings {
 	 * @return void
 	 */
 	public function register_settings() {
-		register_setting( self::OPTION_GROUP, 'sd_payment_paypal_mode', array( 'sanitize_callback' => array( $this, 'sanitize_paypal_mode' ), 'default' => 'sandbox' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_paypal_client_id', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_paypal_secret', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_checkout_page_url', array( 'sanitize_callback' => 'esc_url_raw', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_confirmation_page_url', array( 'sanitize_callback' => 'esc_url_raw', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_login_url', array( 'sanitize_callback' => 'esc_url_raw', 'default' => home_url( '/login/' ) ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_enable_paypal', array( 'sanitize_callback' => 'absint', 'default' => 1 ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_enable_invoice', array( 'sanitize_callback' => 'absint', 'default' => 1 ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_enable_twint_stub', array( 'sanitize_callback' => 'absint', 'default' => 1 ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_association_title', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Associazione ScubaDiabetes' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_brand_primary', array( 'sanitize_callback' => array( $this, 'sanitize_hex_color_value' ), 'default' => '#0055A5' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_brand_secondary', array( 'sanitize_callback' => array( $this, 'sanitize_hex_color_value' ), 'default' => '#00A3D8' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_receipt_footer_note', array( 'sanitize_callback' => 'sanitize_textarea_field', 'default' => 'Documento gestionale emesso dall\'associazione. Validita fiscale subordinata alla normativa applicabile e a verifica professionale in CH/IT.' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_name', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Associazione ScubaDiabetes' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_address', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_postal_code', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_city', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_email', array( 'sanitize_callback' => 'sanitize_email', 'default' => get_bloginfo( 'admin_email' ) ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_association_phone', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_name', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_address', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_postal_code', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_city', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_iban', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_swift', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_bank_bic', array( 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_qr_payload', array( 'sanitize_callback' => 'sanitize_textarea_field', 'default' => '' ) );
-		register_setting( self::OPTION_GROUP, 'sd_payment_invoice_qr_image_url', array( 'sanitize_callback' => 'esc_url_raw', 'default' => '' ) );
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_paypal_mode',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_paypal_mode' ),
+				'default'           => 'sandbox',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_paypal_client_id',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_paypal_secret',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_checkout_page_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_confirmation_page_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_login_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => home_url( '/login/' ),
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_enable_paypal',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 1,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_enable_invoice',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 1,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_enable_twint_stub',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 1,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_association_title',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => 'Associazione ScubaDiabetes',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_brand_primary',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_hex_color_value' ),
+				'default'           => '#0055A5',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_brand_secondary',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_hex_color_value' ),
+				'default'           => '#00A3D8',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_receipt_footer_note',
+			array(
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => 'Documento gestionale emesso dall\'associazione. Validita fiscale subordinata alla normativa applicabile e a verifica professionale in CH/IT.',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_name',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => 'Associazione ScubaDiabetes',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_address',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_postal_code',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_city',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_email',
+			array(
+				'sanitize_callback' => 'sanitize_email',
+				'default'           => get_bloginfo( 'admin_email' ),
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_association_phone',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_name',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_address',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_postal_code',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_city',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_iban',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_swift',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_bank_bic',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_qr_payload',
+			array(
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_invoice_qr_image_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => '',
+			)
+		);
 	}
 
 	/**

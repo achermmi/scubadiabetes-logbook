@@ -541,20 +541,29 @@ class SD_Dive_Edit {
 			if ( $g60 && $g30 ) {
 				$diff = $g30 - $g60;
 				$pct  = abs( $diff ) / $g60 * 100;
-				if ( $diff > 0 && $pct > 15 ) $trend = 'salita';
-				elseif ( $diff < 0 && $pct > 15 ) $trend = 'discesa';
+				if ( $diff > 0 && $pct > 15 ) {
+					$trend = 'salita';
+				} elseif ( $diff < 0 && $pct > 15 ) {
+					$trend = 'discesa';
+				}
 			}
 			if ( $g30 && $g10 ) {
 				$diff = $g10 - $g30;
 				$pct  = abs( $diff ) / $g30 * 100;
-				if ( $diff > 0 && $pct > 15 ) $trend = 'salita';
-				elseif ( $diff < 0 && $pct > 15 ) $trend = 'discesa';
+				if ( $diff > 0 && $pct > 15 ) {
+					$trend = 'salita';
+				} elseif ( $diff < 0 && $pct > 15 ) {
+					$trend = 'discesa';
+				}
 			}
 			if ( $g60 && $g10 ) {
 				$diff = $g10 - $g60;
 				$pct  = abs( $diff ) / $g60 * 100;
-				if ( $diff > 0 && $pct > 20 ) $trend = 'salita';
-				elseif ( $diff < 0 && $pct > 20 ) $trend = 'discesa';
+				if ( $diff > 0 && $pct > 20 ) {
+					$trend = 'salita';
+				} elseif ( $diff < 0 && $pct > 20 ) {
+					$trend = 'discesa';
+				}
 			}
 
 			// Decisione

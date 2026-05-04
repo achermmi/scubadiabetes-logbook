@@ -444,7 +444,7 @@ class SD_Payment_Orchestrator {
 				$member_id
 			)
 		);
-		if ( ! $payment || (int) $payment->is_activation_email_sent === 1 ) {
+		if ( ! $payment || 1 === (int) $payment->is_activation_email_sent ) {
 			return;
 		}
 
@@ -470,7 +470,7 @@ class SD_Payment_Orchestrator {
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		if ( (int) $member->sotto_tutela === 1 && ! empty( $member->guardian_email ) ) {
+		if ( 1 === (int) $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
 			$headers[] = 'Cc: ' . $member->email;
 			$to = $member->guardian_email;
 		} else {
@@ -520,7 +520,7 @@ class SD_Payment_Orchestrator {
 				$member_id
 			)
 		);
-		if ( ! $payment || (int) $payment->is_activation_email_sent === 1 ) {
+		if ( ! $payment || 1 === (int) $payment->is_activation_email_sent ) {
 			return;
 		}
 
@@ -553,7 +553,7 @@ class SD_Payment_Orchestrator {
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		if ( (int) $member->sotto_tutela === 1 && ! empty( $member->guardian_email ) ) {
+		if ( 1 === (int) $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
 			$headers[] = 'Cc: ' . $member->email;
 			$to = $member->guardian_email;
 		} else {

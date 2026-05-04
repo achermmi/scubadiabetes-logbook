@@ -56,7 +56,15 @@ class SD_Payment_Flow {
 
 		if ( 'invoice_confirm' === $action ) {
 			if ( ! $invoice_enabled ) {
-				wp_safe_redirect( add_query_arg( array( 'sdpt' => rawurlencode( $token ), 'notice' => 'invoice_disabled' ), $this->orchestrator->get_checkout_page_url() ) );
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'invoice_disabled',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
 				exit;
 			}
 			$result = $this->orchestrator->request_invoice_payment(
@@ -80,7 +88,15 @@ class SD_Payment_Flow {
 
 		if ( 'start_paypal' === $action ) {
 			if ( ! $paypal_enabled ) {
-				wp_safe_redirect( add_query_arg( array( 'sdpt' => rawurlencode( $token ), 'notice' => 'paypal_disabled' ), $this->orchestrator->get_checkout_page_url() ) );
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'paypal_disabled',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
 				exit;
 			}
 			$return_url = add_query_arg(
