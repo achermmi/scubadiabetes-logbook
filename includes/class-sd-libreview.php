@@ -953,7 +953,7 @@ class SD_LibreView {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET reading_time = DATE_SUB(reading_time, INTERVAL %d SECOND) WHERE device LIKE %s",
+				"UPDATE IGNORE {$table} SET reading_time = DATE_SUB(reading_time, INTERVAL %d SECOND) WHERE device LIKE %s",
 				$offset,
 				'LibreView%'
 			)
