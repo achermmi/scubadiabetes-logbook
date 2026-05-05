@@ -408,8 +408,8 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: 5px;
-    align-items: stretch;
+    gap: 6px;
+    align-items: center;
     flex-shrink: 0;
 }
 
@@ -417,75 +417,88 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 0 11px;
+    gap: 5px;
+    padding: 0 13px;
     height: 34px;
-    border-radius: var(--sd-radius-sm);
-    font-size: 11px;
-    font-weight: 700;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
     border: 1.5px solid transparent;
     white-space: nowrap;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.1px;
     box-sizing: border-box;
+    line-height: 1;
+}
+.sd-btn-card-action:focus-visible {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
 }
 
 /* Dettagli — blu */
 .sd-btn-detail.sd-btn-card-action {
-    border-color: var(--sd-blue);
-    background: var(--sd-white);
-    color: var(--sd-blue);
+    border-color: #1E5FA8;
+    background: #EFF6FF;
+    color: #1E5FA8;
 }
 .sd-btn-detail.sd-btn-card-action:hover {
-    background: var(--sd-blue);
-    color: var(--sd-white);
+    background: #1E5FA8;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(30,95,168,0.25);
 }
 
-/* Modifica — verde teal */
+/* Modifica — teal */
 .sd-btn-card-edit {
-    border-color: var(--sd-teal);
-    background: var(--sd-white);
-    color: var(--sd-teal);
+    border-color: #0F766E;
+    background: #F0FDFA;
+    color: #0F766E;
 }
 .sd-btn-card-edit:hover {
-    background: var(--sd-teal);
-    color: var(--sd-white);
+    background: #0F766E;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(15,118,110,0.25);
 }
 
-/* Storico — arancio */
+/* Storico — ambra */
 .sd-btn-card-history {
-    border: 1.5px solid #D97706 !important;
-    background: #FFFFFF !important;
-    color: #D97706 !important;
+    border: 1.5px solid #B45309 !important;
+    background: #FFFBEB !important;
+    color: #B45309 !important;
 }
 .sd-btn-card-history:hover {
-    background: #D97706 !important;
-    color: #FFFFFF !important;
+    background: #B45309 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(180,83,9,0.25) !important;
 }
 
-/* Globo — attivo */
+/* Mappa — azzurro */
 .sd-btn-card-map--active {
-    border: 1.5px solid #0EA5E9;
+    border: 1.5px solid #0284C7;
     background: #E0F2FE;
     color: #0284C7;
     cursor: pointer;
+    width: 34px;
+    padding: 0;
 }
 .sd-btn-card-map--active:hover {
-    background: #0EA5E9;
-    color: var(--sd-white);
+    background: #0284C7;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(2,132,199,0.25);
 }
 
-/* Globo — disabilitato */
+/* Mappa — disabilitata */
 .sd-btn-card-map--disabled,
 .sd-btn-card-map:disabled {
-    border: 1.5px solid var(--sd-gray-200);
-    background: var(--sd-gray-100);
-    color: var(--sd-gray-300);
+    border: 1.5px solid #E2E8F0;
+    background: #F8FAFC;
+    color: #CBD5E1;
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.55;
     pointer-events: none;
+    width: 34px;
+    padding: 0;
 }
 
 /* ============================================================
@@ -632,9 +645,16 @@
     }
 
     .sd-btn-card-action {
-        padding: 0 8px;
+        padding: 0 9px;
         height: 30px;
-        font-size: 10px;
+        font-size: 11px;
+    }
+
+    .sd-btn-card-delete,
+    .sd-btn-card-map--active,
+    .sd-btn-card-map--disabled,
+    .sd-btn-card-map:disabled {
+        width: 30px;
     }
 
     .sd-modal {
@@ -646,17 +666,18 @@
    BOTTONE ELIMINA SU CARD
    ============================================================ */
 .sd-btn-card-delete {
-    border: 1.5px solid #EF4444 !important;
+    border: 1.5px solid #DC2626 !important;
     background: #FEF2F2 !important;
-    color: #EF4444 !important;
+    color: #DC2626 !important;
     width: 34px;
     padding: 0;
     flex-shrink: 0;
 }
 .sd-btn-card-delete:hover {
-    background: #EF4444 !important;
+    background: #DC2626 !important;
     color: #fff !important;
-    border-color: #EF4444 !important;
+    border-color: #DC2626 !important;
+    box-shadow: 0 2px 6px rgba(220,38,38,0.25) !important;
 }
 
 /* ============================================================
