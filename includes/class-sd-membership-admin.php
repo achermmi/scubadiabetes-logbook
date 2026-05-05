@@ -867,15 +867,17 @@ class SD_Membership_Admin {
 			       END = 0"
 		);
 
-		wp_send_json_success( array(
-			'total'      => $total,
-			'paid'       => $paid,
-			'unpaid'     => $active_yes - $paid,
-			'income'     => number_format( $income, 2 ),
-			'expected'   => number_format( $expected, 2 ),
-			'active_yes' => $active_yes,
-			'active_no'  => $active_no,
-		) );
+		wp_send_json_success(
+			array(
+				'total'      => $total,
+				'paid'       => $paid,
+				'unpaid'     => $active_yes - $paid,
+				'income'     => number_format( $income, 2 ),
+				'expected'   => number_format( $expected, 2 ),
+				'active_yes' => $active_yes,
+				'active_no'  => $active_no,
+			)
+		);
 	}
 
 	/**
