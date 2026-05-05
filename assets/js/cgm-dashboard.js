@@ -147,15 +147,35 @@
         if (!canvas || !ctx) { return; }
 
         var dpr  = window.devicePixelRatio || 1;
-        var rect = canvas.getBoundingClientRect();
-        if (rect.width === 0) { return; }
 
-        canvas.width  = rect.width  * dpr;
-        canvas.height = rect.height * dpr;
+        /* Calcola la larghezza del contenitore (scrollabile) */
+        var $box      = $(canvas).parent();
+        var containerW = $box[0].clientWidth || $box.width() || 800;
+        if (containerW === 0) { return; }
+
+        /* Larghezza canvas in base alla densità dei punti */
+        var n = (data && data.length > 1) ? data.length : 0;
+        var displayW;
+        if (n <= 300) {
+            displayW = containerW;                           /* 24h: nessuno scroll */
+        } else if (n <= 3000) {
+            displayW = Math.max(containerW, n * 3);          /* 7d: ~3px per punto */
+        } else {
+            displayW = Math.max(containerW, 4000);           /* 30d+: max 4000px */
+        }
+
+        /* Imposta larghezza CSS prima di leggere l'altezza */
+        canvas.style.width = displayW + 'px';
+
+        var rect = canvas.getBoundingClientRect();
+        var displayH = rect.height || 210;
+
+        canvas.width  = displayW  * dpr;
+        canvas.height = displayH  * dpr;
         ctx.scale(dpr, dpr);
 
-        var W  = rect.width;
-        var H  = rect.height;
+        var W  = displayW;
+        var H  = displayH;
         var F  = isMmol() ? FACTOR : 1;
         var pad = { top: 14, right: 18, bottom: 26, left: isMmol() ? 42 : 36 };
         var cW = W - pad.left - pad.right;
