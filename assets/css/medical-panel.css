@@ -169,16 +169,24 @@
 }
 
 .sd-panel-back {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
+    gap: 5px;
+    padding: 0 12px 0 8px;
+    height: 32px;
+    border: 1.5px solid rgba(255,255,255,0.35);
     background: rgba(255,255,255,0.15);
-    border-radius: 50%;
+    border-radius: 20px;
     color: var(--sd-white);
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+}
+.sd-panel-back:hover {
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.6);
 }
 
 .sd-panel-body {
