@@ -250,7 +250,7 @@ class SD_Payment_Documents {
 		$ops .= $this->text( 40, $height - 416, 10, 'Indirizzo banca: ' . trim( $bank_addr . ' - ' . $bank_postal . ' ' . $bank_city, ' -' ) );
 		$ops .= $this->text( 40, $height - 434, 10, 'IBAN: ' . $bank_iban, true );
 		$ops .= $this->text( 40, $height - 452, 10, 'SWIFT: ' . $bank_swift . ' | BIC: ' . $bank_bic );
-		$ops .= $this->text( 40, $height - 470, 10, 'Causale suggerita: Quota sociale ' . ( ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ) ) . ' - ' . (string) $member->member_number );
+		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Quota sociale ' . ( ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ) ) . ' - ' . (string) $member->member_number );
 
 		$ops .= $this->text( 40, $height - 500, 10, 'QR pagamento', true );
 		if ( '' !== trim( $qr_payload ) ) {
@@ -275,7 +275,7 @@ class SD_Payment_Documents {
 			$ops .= $this->text( 40, $height - 560, 8.5, 'Immagine QR non disponibile o formato non supportato nel server.' );
 		}
 
-		$ops .= $this->text( 40, 56, 8, 'Stato fattura: IN ATTESA DI PAGAMENTO. Attivazione socio al ricevimento accredito.', false, array( 0.36, 0.40, 0.46 ) );
+		$ops .= $this->text( 40, 56, 8, 'Stato fattura: IN ATTESA DI PAGAMENTO. Attivazione del socio al ricevimento accredito.', false, array( 0.36, 0.40, 0.46 ) );
 
 		return array(
 			'width'    => $width,

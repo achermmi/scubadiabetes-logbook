@@ -32,6 +32,23 @@
 	});
 
 	// ===== CARICAMENTO LISTA =====
+	function loadStats() {
+		$.post(sdMembAdmin.ajaxUrl, {
+			action: 'sd_members_stats',
+			nonce:  sdMembAdmin.nonce,
+		}, function (resp) {
+			if (!resp.success) { return; }
+			var s = resp.data;
+			$('#sd-stat-total').text(s.total);
+			$('#sd-stat-paid').text(s.paid);
+			$('#sd-stat-unpaid').text(s.unpaid);
+			$('#sd-stat-income').text('CHF ' + s.income);
+			$('#sd-stat-expected').text('CHF ' + s.expected);
+			$('#sd-stat-active-yes').text(s.active_yes);
+			$('#sd-stat-active-no').text(s.active_no);
+		});
+	}
+
 	function loadMembers() {
 		var $tbody   = $('#sd-members-tbody');
 		var $loading = $('#sd-members-loading');
@@ -173,6 +190,7 @@
 
 			deleteMembers(ids, function () {
 				loadMembers();
+				loadStats();
 			});
 		});
 	}

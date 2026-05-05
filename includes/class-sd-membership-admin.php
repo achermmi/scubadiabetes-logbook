@@ -27,6 +27,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_member_update', array( $this, 'update_member' ) );
 		add_action( 'wp_ajax_sd_members_delete', array( $this, 'delete_members' ) );
 		add_action( 'wp_ajax_sd_members_export', array( $this, 'export_members' ) );
+		add_action( 'wp_ajax_sd_members_stats', array( $this, 'get_stats' ) );
 
 		// WP Cron per reminder rinnovo
 		add_action( 'sd_membership_renewal_check', array( $this, 'send_renewal_reminders' ) );
@@ -822,8 +823,68 @@ class SD_Membership_Admin {
 	 *
 	 * @return void
 	 */
-	public function delete_members() {
+	public function get_stats() {
 		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => 'Accesso negato.' ) );
+		}
+
+		global $wpdb;
+		$db           = new SD_Database();
+		$current_year = gmdate( 'Y' );
+
+		$total      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')}" );
+		$active_yes = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE COALESCE(is_active, 1) = 1" );
+		$active_no  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE COALESCE(is_active, 1) = 0" );
+		$paid       = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
+			   AND CASE
+			           WHEN m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 1"
+		);
+		$income     = (float) $wpdb->get_var(
+			"SELECT COALESCE(SUM(m.fee_amount),0) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
+			   AND CASE
+			           WHEN m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 1"
+		);
+		$expected   = (float) $wpdb->get_var(
+			"SELECT COALESCE(SUM(m.fee_amount),0) FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active, 1) = 1
+			   AND CASE
+			           WHEN m.parent_member_id IS NOT NULL
+			           THEN COALESCE(pm.has_paid_fee, 0)
+			           ELSE m.has_paid_fee
+			       END = 0"
+		);
+
+		wp_send_json_success( array(
+			'total'      => $total,
+			'paid'       => $paid,
+			'unpaid'     => $active_yes - $paid,
+			'income'     => number_format( $income, 2 ),
+			'expected'   => number_format( $expected, 2 ),
+			'active_yes' => $active_yes,
+			'active_no'  => $active_no,
+		) );
+	}
+
+	/**
+	 * Elimina una o più iscrizioni con dati collegati.
+	 *
+	 * @return void
+	 */
+	public function delete_members() {
 
 		if ( ! $this->check_access() || ! current_user_can( 'administrator' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Solo gli amministratori possono eliminare iscrizioni.', 'sd-logbook' ) ) );
