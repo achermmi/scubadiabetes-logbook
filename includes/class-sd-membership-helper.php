@@ -312,7 +312,7 @@ class SD_Membership_Helper {
 		$html  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
 		$html .= '<h2 style="color:#0055a5;">' . __( 'Nuova iscrizione ricevuta', 'sd-logbook' ) . '</h2>';
 		$html .= '<table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;max-width:600px;">';
-		$html .= '<tr><th align="left" style="background:#f5f5f5;">' . __( 'Field', 'sd-logbook' ) . '</th><th align="left" style="background:#f5f5f5;">' . __( 'Valore', 'sd-logbook' ) . '</th></tr>';
+		$html .= '<tr><th align="left" style="background:#f5f5f5;">' . __( 'Campo', 'sd-logbook' ) . '</th><th align="left" style="background:#f5f5f5;">' . __( 'Valore', 'sd-logbook' ) . '</th></tr>';
 
 		$fields = array(
 			__( 'Nome completo', 'sd-logbook' )  => $name,
