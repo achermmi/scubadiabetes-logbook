@@ -149,19 +149,23 @@
         var dpr  = window.devicePixelRatio || 1;
 
         /* Calcola la larghezza del contenitore (scrollabile) */
-        var $box      = $(canvas).parent();
+        var $box       = $(canvas).parent();
         var containerW = $box[0].clientWidth || $box.width() || 800;
         if (containerW === 0) { return; }
 
-        /* Larghezza canvas in base alla densità dei punti */
-        var n = (data && data.length > 1) ? data.length : 0;
+        /* Larghezza canvas in base al periodo selezionato */
         var displayW;
-        if (n <= 300) {
-            displayW = containerW;                           /* 24h: nessuno scroll */
-        } else if (n <= 3000) {
-            displayW = Math.max(containerW, n * 3);          /* 7d: ~3px per punto */
+        var period = state.period;
+        if (period === '7d') {
+            displayW = Math.max(containerW, containerW * 4);
+        } else if (period === '30d') {
+            displayW = Math.max(containerW, containerW * 14);
+        } else if (period === 'custom' && state.dateFrom && state.dateTo) {
+            var msDay = 86400000;
+            var days  = Math.round((new Date(state.dateTo) - new Date(state.dateFrom)) / msDay) + 1;
+            displayW  = Math.max(containerW, containerW * Math.max(1, days / 2));
         } else {
-            displayW = Math.max(containerW, 4000);           /* 30d+: max 4000px */
+            displayW = containerW; /* 24h: nessuno scroll */
         }
 
         /* Imposta larghezza CSS prima di leggere l'altezza */
@@ -282,11 +286,18 @@
             });
         }
 
-        /* Etichette X: orari */
-        var step = Math.max(1, Math.floor(data.length / 7));
+        /* Etichette X: orari o date+ora per periodi multi-giorno */
+        var isMultiDay = (state.period !== '24h');
+        var step = Math.max(1, Math.floor(data.length / 10));
         for (var i = 0; i < data.length; i += step) {
             var d   = new Date(data[i][0]);
-            var lbl = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+            var lbl;
+            if (isMultiDay) {
+                lbl = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2)
+                    + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+            } else {
+                lbl = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+            }
             ctx.fillStyle = '#64748B';
             ctx.font      = '9px -apple-system,sans-serif';
             ctx.textAlign = 'center';
