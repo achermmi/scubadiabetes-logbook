@@ -96,11 +96,8 @@ $role_badges_html = SD_Roles::render_badges_html( get_current_user_id() );
 <div class="sd-panel-overlay" id="sd-panel-overlay" style="display:none;">
     <div class="sd-panel">
         <div class="sd-panel-header">
-            <button type="button" class="sd-panel-back" id="sd-panel-back">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                <span><?php esc_html_e( 'Chiudi', 'sd-logbook' ); ?></span>
-            </button>
             <h3 id="sd-panel-title"><?php esc_html_e( 'Dettaglio subacqueo', 'sd-logbook' ); ?></h3>
+            <button type="button" class="sd-panel-back" id="sd-panel-back">&times;</button>
         </div>
         <div class="sd-panel-body" id="sd-panel-body">
             <div class="sd-loading"><?php esc_html_e( 'Caricamento...', 'sd-logbook' ); ?></div>

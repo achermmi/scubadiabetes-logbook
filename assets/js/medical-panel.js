@@ -326,7 +326,12 @@
     // ============================================================
     // CLOSE PANEL
     // ============================================================
-    $('#sd-panel-back, #sd-panel-overlay').on('click', function(e) {
+    $('#sd-panel-back').on('click', function() {
+        $('#sd-panel-overlay').fadeOut(200);
+        currentDiverId = null;
+    });
+
+    $('#sd-panel-overlay').on('click', function(e) {
         if (e.target === this) {
             $('#sd-panel-overlay').fadeOut(200);
             currentDiverId = null;
