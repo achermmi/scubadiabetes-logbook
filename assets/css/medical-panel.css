@@ -136,7 +136,7 @@
 
 .sd-panel {
     position: fixed;
-    top: 0;
+    top: 70px;
     right: 0;
     bottom: 0;
     width: 100%;
@@ -169,14 +169,16 @@
 }
 
 .sd-panel-back {
-    background: none;
-    border: none;
-    color: #FFF;
-    font-size: 24px;
+    background: none !important;
+    border: none !important;
+    color: #FFF !important;
+    font-size: 28px;
     cursor: pointer;
     line-height: 1;
     opacity: 0.8;
     padding: 0;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 .sd-panel-back:hover {
     opacity: 1;
