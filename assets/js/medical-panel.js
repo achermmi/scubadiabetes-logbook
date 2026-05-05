@@ -916,13 +916,16 @@
                     html += '</div>';
                 });
 
-                // Decision badge
+                // Decision badge — ricalcolato dai valori glicemici (stessa logica della dashboard)
                 if (dive.dive_decision) {
                     var decColors = { autorizzata: '#16A34A', sospesa: '#D97706', annullata: '#DC2626' };
-                    var decisionColor = decColors[dive.dive_decision] || '#64748B';
+                    var computed      = computeDecisionFull(dive);
+                    var dispDec       = computed.decision || dive.dive_decision;
+                    var dispReason    = computed.reason   || dive.dive_decision_reason || '';
+                    var decisionColor = decColors[dispDec] || '#64748B';
                     html += '<div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:' + decisionColor + '15;border:1px solid ' + decisionColor + '40;">';
-                    html += '<strong style="color:' + decisionColor + ';">' + dive.dive_decision.toUpperCase() + '</strong>';
-                    if (dive.dive_decision_reason) html += ' — <span style="font-size:12px;">' + esc(dive.dive_decision_reason) + '</span>';
+                    html += '<strong style="color:' + decisionColor + ';">' + dispDec.toUpperCase() + '</strong>';
+                    if (dispReason) html += ' — <span style="font-size:12px;">' + esc(dispReason) + '</span>';
                     html += '</div>';
                 }
             } else {
@@ -1094,6 +1097,46 @@
         var d = document.createElement('div');
         d.appendChild(document.createTextNode(str));
         return d.innerHTML;
+    }
+
+    // ============================================================
+    // DECISION — ricalcola decisione e motivo dai valori glicemici
+    // Identica a computeDecisionFull in dashboard.js
+    // ============================================================
+    function computeDecisionFull(dd) {
+        var g60 = parseInt(dd.glic_60_cap) || 0;
+        var g30 = parseInt(dd.glic_30_cap) || 0;
+        var g10 = parseInt(dd.glic_10_cap) || 0;
+        if (!g10) return { decision: '', reason: dd.dive_decision_reason || '' };
+
+        var trend = 'stabile';
+        if (g60 && g30) {
+            var d6030 = g30 - g60;
+            var p6030 = Math.abs(d6030) / g60 * 100;
+            if (d6030 > 0 && p6030 > 15)      trend = 'salita';
+            else if (d6030 < 0 && p6030 > 15) trend = 'discesa';
+        }
+        if (g30 && g10) {
+            var d3010 = g10 - g30;
+            var p3010 = Math.abs(d3010) / g30 * 100;
+            if (d3010 > 0 && p3010 > 15)      trend = 'salita';
+            else if (d3010 < 0 && p3010 > 15) trend = 'discesa';
+        }
+        if (g60 && g10) {
+            var d6010 = g10 - g60;
+            var p6010 = Math.abs(d6010) / g60 * 100;
+            if (d6010 > 0 && p6010 > 20)      trend = 'salita';
+            else if (d6010 < 0 && p6010 > 20) trend = 'discesa';
+        }
+
+        if (g10 < 120)                                       return { decision: 'annullata',   reason: 'Glicemia <120 mg/dL: immersione NON consentita' };
+        if (trend === 'discesa')                              return { decision: 'sospesa',     reason: 'Glicemia in discesa: immersione sospesa' };
+        if (g10 > 300 && trend === 'salita')                 return { decision: 'sospesa',     reason: 'Glicemia >300 in salita: rinvio immersione' };
+        if (g10 >= 250 && g10 <= 300 && trend !== 'salita')  return { decision: 'autorizzata', reason: 'Glicemia 250-300 stabile, no chetonemia: OK' };
+        if (trend === 'salita' && g10 >= 120)                return { decision: 'autorizzata', reason: 'Glicemia ≥120 in salita: OK' };
+        if (trend === 'stabile' && g10 >= 150)               return { decision: 'autorizzata', reason: 'Glicemia ≥150 stabile: OK' };
+        if (trend === 'stabile' && g10 >= 120 && g10 < 150) return { decision: 'autorizzata', reason: 'Glicemia 120-150 mg/dL stabile: attenzione' };
+        return { decision: 'autorizzata', reason: 'Valori nei range consentiti' };
     }
 
     // ============================================================
