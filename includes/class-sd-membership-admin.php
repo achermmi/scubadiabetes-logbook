@@ -831,8 +831,7 @@ class SD_Membership_Admin {
 		}
 
 		global $wpdb;
-		$db           = new SD_Database();
-		$current_year = gmdate( 'Y' );
+		$db = new SD_Database();
 
 		$total      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')}" );
 		$active_yes = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$db->table('members')} WHERE COALESCE(is_active, 1) = 1" );
@@ -885,7 +884,6 @@ class SD_Membership_Admin {
 	 * @return void
 	 */
 	public function delete_members() {
-
 		if ( ! $this->check_access() || ! current_user_can( 'administrator' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Solo gli amministratori possono eliminare iscrizioni.', 'sd-logbook' ) ) );
 		}
