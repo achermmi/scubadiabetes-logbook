@@ -3,7 +3,7 @@
 
 	<?php if ( (int) $ctx->has_paid_fee === 1 ) : ?>
 		<div class="sd-notice sd-notice-success"><?php esc_html_e( 'Pagamento approvato e iscrizione attivata.', 'sd-logbook' ); ?></div>
-	<?php elseif ( 'fattura' === (string) $ctx->payment_method ) : ?>
+	<?php elseif ( 'fattura' === (string) $ctx->provider ) : ?>
 		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Fattura generata. Stato in attesa di accredito; il socio verrà attivato dopo verifica pagamento.', 'sd-logbook' ); ?></div>
 	<?php else : ?>
 		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Pagamento in elaborazione.', 'sd-logbook' ); ?></div>
@@ -20,7 +20,7 @@
 
 	<div style="display:flex;flex-wrap:wrap;gap:10px;">
 		<?php if ( ! empty( $receipt_url ) ) : ?>
-			<a class="button" href="<?php echo esc_url( $receipt_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( 'fattura' === (string) $ctx->payment_method ? __( 'Scarica Fattura PDF', 'sd-logbook' ) : __( 'Scarica Ricevuta PDF', 'sd-logbook' ) ); ?></a>
+			<a class="button" href="<?php echo esc_url( $receipt_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( 'fattura' === (string) $ctx->provider ? __( 'Scarica Fattura PDF', 'sd-logbook' ) : __( 'Scarica Ricevuta PDF', 'sd-logbook' ) ); ?></a>
 		<?php endif; ?>
 		<?php if ( ! empty( $card_url ) ) : ?>
 			<a class="button" href="<?php echo esc_url( $card_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Scarica Tessera PDF', 'sd-logbook' ); ?></a>

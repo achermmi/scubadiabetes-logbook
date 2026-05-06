@@ -305,7 +305,7 @@ class SD_Payment_Orchestrator {
 			$db->table( 'payments' ),
 			array(
 				'amount'                 => $amount,
-				'payment_method'         => 'fattura',
+				'payment_method'         => 'bonifico_iban',
 				'payment_year'           => ! empty( $payment->payment_year ) ? (int) $payment->payment_year : (int) gmdate( 'Y' ),
 				'status'                 => 'in_attesa',
 				'provider'               => 'fattura',
@@ -419,7 +419,7 @@ class SD_Payment_Orchestrator {
 	}
 
 	/**
-	 * Invia email post-pagamento.
+	 * Invia email post-pagamento con dati completi, credenziali e ricevuta.
 	 *
 	 * @param int   $member_id ID socio.
 	 * @param array $docs Path documenti.
@@ -448,25 +448,71 @@ class SD_Payment_Orchestrator {
 			return;
 		}
 
+		$year = ! empty( $payment->payment_year ) ? (int) $payment->payment_year : (int) gmdate( 'Y' );
+
 		$subject = sprintf(
 			/* translators: 1: site name, 2: year */
-			__( '[%1$s] Pagamento confermato - Iscrizione %2$s', 'sd-logbook' ),
+			__( '[%1$s] Pagamento confermato — Iscrizione %2$d attivata', 'sd-logbook' ),
 			get_bloginfo( 'name' ),
-			gmdate( 'Y' )
+			$year
 		);
 
-		$login_url = trim( (string) get_option( 'sd_payment_login_url', home_url( '/login/' ) ) );
-		$reset_url = wp_lostpassword_url();
+		// Recupera default_shared da diver_profiles per rigenerare la password iniziale.
+		$default_shared = 1;
+		if ( ! empty( $member->wp_user_id ) ) {
+			$profile = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT default_shared_for_research FROM {$db->table('diver_profiles')} WHERE user_id = %d",
+					(int) $member->wp_user_id
+				)
+			);
+			if ( $profile ) {
+				$default_shared = (int) $profile->default_shared_for_research;
+			}
+		}
 
-		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$body .= '<h2 style="color:#0055a5;">' . esc_html__( 'Pagamento confermato', 'sd-logbook' ) . '</h2>';
-		$body .= '<p>' . sprintf( esc_html__( 'Grazie %s, benvenuto/a nell\'associazione per l\'anno in corso.', 'sd-logbook' ), esc_html( trim( $member->first_name . ' ' . $member->last_name ) ) ) . '</p>';
+		$is_diabetic = 'non_diabetico' !== (string) $member->diabetes_type;
+		$plain_pass  = SD_Membership_Helper::generate_password(
+			(string) $member->last_name,
+			(string) $member->date_of_birth,
+			(string) $member->first_name,
+			(string) $member->address_postal,
+			$is_diabetic,
+			$default_shared
+		);
+
+		$login_url   = trim( (string) get_option( 'sd_payment_login_url', home_url( '/login/' ) ) );
+		$member_name = esc_html( trim( (string) $member->first_name . ' ' . (string) $member->last_name ) );
+
+		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento confermato — Iscrizione attivata!', 'sd-logbook' ) . '</h2>';
+		$body .= '<p>' . sprintf(
+			esc_html__( 'Caro/a %s, il tuo pagamento è stato ricevuto e la tua iscrizione per l\'anno %d è ora attiva.', 'sd-logbook' ),
+			$member_name,
+			$year
+		) . '</p>';
+
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Credenziali di accesso al portale', 'sd-logbook' ) . '</h3>';
+		$body .= '<table style="border-collapse:collapse">';
+		$body .= '<tr><th style="background:#f0f4f8;padding:6px 12px;text-align:left;border:1px solid #d0d7de">';
+		$body .= esc_html__( 'Username', 'sd-logbook' ) . '</th>';
+		$body .= '<td style="padding:6px 12px;border:1px solid #d0d7de">' . esc_html( (string) $member->email ) . '</td></tr>';
+		$body .= '<tr><th style="background:#f0f4f8;padding:6px 12px;text-align:left;border:1px solid #d0d7de">';
+		$body .= esc_html__( 'Password', 'sd-logbook' ) . '</th>';
+		$body .= '<td style="padding:6px 12px;border:1px solid #d0d7de;font-family:monospace">' . esc_html( $plain_pass ) . '</td></tr>';
+		$body .= '</table>';
+		$body .= '<p><a href="' . esc_url( $login_url ) . '" style="background:#0055a5;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;display:inline-block;margin-top:8px">';
+		$body .= esc_html__( 'Accedi al portale', 'sd-logbook' ) . '</a></p>';
+		$body .= '<p style="font-size:12px;color:#666">' . esc_html__( 'Ti consigliamo di cambiare la password al primo accesso.', 'sd-logbook' ) . '</p>';
+
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Riepilogo dati iscrizione', 'sd-logbook' ) . '</h3>';
+		$body .= $this->build_member_data_html( $member, $payment );
+
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Documenti allegati', 'sd-logbook' ) . '</h3>';
 		$body .= '<ul>';
-		$body .= '<li><strong>' . esc_html__( 'Username:', 'sd-logbook' ) . '</strong> ' . esc_html( $member->email ) . '</li>';
-		$body .= '<li><strong>' . esc_html__( 'Login:', 'sd-logbook' ) . '</strong> <a href="' . esc_url( $login_url ) . '">' . esc_html( $login_url ) . '</a></li>';
-		$body .= '<li><strong>' . esc_html__( 'Imposta/Reimposta password:', 'sd-logbook' ) . '</strong> <a href="' . esc_url( $reset_url ) . '">' . esc_html( $reset_url ) . '</a></li>';
+		$body .= '<li>' . esc_html__( 'Ricevuta di pagamento — valida per la detrazione fiscale in Svizzera (CH) e in Italia (IT)', 'sd-logbook' ) . '</li>';
+		$body .= '<li>' . esc_html__( 'Tessera associativa', 'sd-logbook' ) . '</li>';
 		$body .= '</ul>';
-		$body .= '<p>' . esc_html__( 'In allegato trovi ricevuta e tessera associativa.', 'sd-logbook' ) . '</p>';
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
@@ -495,9 +541,9 @@ class SD_Payment_Orchestrator {
 	}
 
 	/**
-	 * Invia email di richiesta pagamento con fattura allegata.
+	 * Invia email di conferma iscrizione con fattura allegata (percorso bonifico).
 	 *
-	 * @param int    $member_id ID socio.
+	 * @param int    $member_id        ID socio.
 	 * @param string $invoice_pdf_path Path fattura PDF.
 	 * @return void
 	 */
@@ -524,32 +570,52 @@ class SD_Payment_Orchestrator {
 			return;
 		}
 
-		$year = ! empty( $payment->payment_year ) ? (int) $payment->payment_year : (int) gmdate( 'Y' );
+		$year    = ! empty( $payment->payment_year ) ? (int) $payment->payment_year : (int) gmdate( 'Y' );
 		$subject = sprintf(
 			/* translators: 1: site name, 2: year */
-			__( '[%1$s] Fattura tassa sociale %2$d', 'sd-logbook' ),
+			__( '[%1$s] Conferma iscrizione e fattura tassa sociale %2$d', 'sd-logbook' ),
 			get_bloginfo( 'name' ),
 			$year
 		);
 
-		$association_name = (string) get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', get_bloginfo( 'name' ) ) );
-		$bank_iban        = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
-		$bank_swift       = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
-		$bank_bic         = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
-		$qr_payload       = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
+		$association_name = (string) get_option(
+			'sd_payment_invoice_association_name',
+			get_option( 'sd_payment_association_title', get_bloginfo( 'name' ) )
+		);
+		$bank_iban  = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
+		$bank_swift = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
+		$bank_bic   = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
+		$qr_payload = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
 
-		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;">';
-		$body .= '<h2 style="color:#0055a5;">' . esc_html__( 'Fattura tassa sociale', 'sd-logbook' ) . '</h2>';
-		$body .= '<p>' . sprintf( esc_html__( 'Ciao %s, in allegato trovi la fattura per completare il pagamento della quota associativa.', 'sd-logbook' ), esc_html( trim( $member->first_name . ' ' . $member->last_name ) ) ) . '</p>';
+		$member_name = esc_html( trim( (string) $member->first_name . ' ' . (string) $member->last_name ) );
+
+		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Conferma ricezione iscrizione', 'sd-logbook' ) . '</h2>';
+		$body .= '<p>' . sprintf(
+			esc_html__( 'Caro/a %s, abbiamo ricevuto la tua domanda di iscrizione per l\'anno %d.', 'sd-logbook' ),
+			$member_name,
+			$year
+		) . '</p>';
+		$body .= '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:12px 16px;margin:16px 0">';
+		$body .= '<strong>' . esc_html__( 'Il tuo account verrà attivato alla ricezione del pagamento sul conto associativo.', 'sd-logbook' ) . '</strong>';
+		$body .= '</div>';
+
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Riepilogo dati iscrizione ricevuta', 'sd-logbook' ) . '</h3>';
+		$body .= $this->build_member_data_html( $member, $payment );
+
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Come effettuare il pagamento (Bonifico IBAN)', 'sd-logbook' ) . '</h3>';
+		$body .= '<p>' . esc_html__( 'In allegato trovi la fattura PDF. Effettua un bonifico bancario con i seguenti dati:', 'sd-logbook' ) . '</p>';
 		$body .= '<ul>';
 		$body .= '<li><strong>' . esc_html__( 'Associazione:', 'sd-logbook' ) . '</strong> ' . esc_html( $association_name ) . '</li>';
 		$body .= '<li><strong>' . esc_html__( 'IBAN:', 'sd-logbook' ) . '</strong> ' . esc_html( $bank_iban ) . '</li>';
-		$body .= '<li><strong>' . esc_html__( 'SWIFT/BIC:', 'sd-logbook' ) . '</strong> ' . esc_html( trim( $bank_swift . ' ' . $bank_bic ) ) . '</li>';
-		$body .= '</ul>';
-		if ( '' !== trim( $qr_payload ) ) {
-			$body .= '<p><strong>' . esc_html__( 'Payload QR pagamento:', 'sd-logbook' ) . '</strong><br>' . nl2br( esc_html( $qr_payload ) ) . '</p>';
+		if ( '' !== trim( $bank_swift . $bank_bic ) ) {
+			$body .= '<li><strong>' . esc_html__( 'SWIFT/BIC:', 'sd-logbook' ) . '</strong> ' . esc_html( trim( $bank_swift . ' ' . $bank_bic ) ) . '</li>';
 		}
-		$body .= '<p>' . esc_html__( 'Lo stato rimane in attesa fino alla verifica dell accredito. La tessera verrà emessa dopo la conferma pagamento.', 'sd-logbook' ) . '</p>';
+		if ( '' !== trim( $qr_payload ) ) {
+			$body .= '<li><strong>' . esc_html__( 'QR pagamento:', 'sd-logbook' ) . '</strong><br>' . nl2br( esc_html( $qr_payload ) ) . '</li>';
+		}
+		$body .= '</ul>';
+		$body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'La tessera associativa verrà emessa dopo la conferma del pagamento.', 'sd-logbook' ) . '</p>';
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
@@ -566,6 +632,81 @@ class SD_Payment_Orchestrator {
 		}
 
 		wp_mail( $to, $subject, $body, $headers, $attachments );
+
+		$wpdb->update(
+			$db->table( 'payments' ),
+			array( 'is_activation_email_sent' => 1 ),
+			array( 'id' => (int) $payment->id )
+		);
+	}
+
+	/**
+	 * Genera tabella HTML con tutti i dati del socio per uso nelle email.
+	 *
+	 * @param object      $member  Dati socio.
+	 * @param object|null $payment Dati pagamento.
+	 * @return string HTML.
+	 */
+	private function build_member_data_html( $member, $payment = null ) {
+		$th    = 'style="background:#f0f4f8;padding:6px 10px;text-align:left;white-space:nowrap;border:1px solid #d0d7de"';
+		$td    = 'style="padding:6px 10px;border:1px solid #d0d7de"';
+		$table = 'style="border-collapse:collapse;width:100%;font-size:13px"';
+
+		$rows = array(
+			array( 'Numero socio', (string) $member->member_number ),
+			array( 'Nome', (string) $member->first_name ),
+			array( 'Cognome', (string) $member->last_name ),
+			array( 'Email (username)', (string) $member->email ),
+			array( 'Telefono', (string) $member->phone ),
+			array( 'Data di nascita', (string) $member->date_of_birth ),
+			array( 'Luogo di nascita', (string) $member->birth_place ),
+			array( 'Nazione di nascita', (string) $member->birth_country ),
+			array( 'Genere', (string) $member->gender ),
+			array( 'Diabete', (string) $member->diabetes_type ),
+		);
+
+		if ( ! empty( $member->diabetology_center ) ) {
+			$rows[] = array( 'Centro diabetologico', (string) $member->diabetology_center );
+		}
+
+		$rows[] = array( 'Indirizzo', (string) $member->address_street );
+		$rows[] = array( 'CAP', (string) $member->address_postal );
+		$rows[] = array( 'Città', (string) $member->address_city );
+		$rows[] = array( 'Cantone', (string) $member->address_canton );
+		$rows[] = array( 'Nazione', (string) $member->address_country );
+		$rows[] = array( 'Cod. fiscale/AVS', (string) $member->fiscal_code );
+		$rows[] = array( 'Taglia maglietta', (string) $member->taglia_maglietta );
+		$rows[] = array( 'Tipo socio', (string) $member->member_type );
+		$rows[] = array( 'Tassa annuale', 'CHF ' . number_format( (float) $member->fee_amount, 2, '.', '' ) );
+
+		if ( 1 === (int) $member->sotto_tutela ) {
+			$rows[] = array(
+				'Tutore/Genitore',
+				trim( (string) $member->guardian_first_name . ' ' . (string) $member->guardian_last_name )
+				. ' (' . (string) $member->guardian_role . ')',
+			);
+			$rows[] = array( 'Email tutore', (string) $member->guardian_email );
+			$rows[] = array( 'Tel. tutore', (string) $member->guardian_phone );
+		}
+
+		if ( null !== $payment ) {
+			$rows[] = array(
+				'Anno associativo',
+				! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ),
+			);
+		}
+
+		$html = '<table ' . $table . '>';
+		foreach ( $rows as $row ) {
+			if ( '' === trim( (string) $row[1] ) ) {
+				continue;
+			}
+			$html .= '<tr><th ' . $th . '>' . esc_html( $row[0] ) . '</th>';
+			$html .= '<td ' . $td . '>' . esc_html( (string) $row[1] ) . '</td></tr>';
+		}
+		$html .= '</table>';
+
+		return $html;
 	}
 
 	/**
