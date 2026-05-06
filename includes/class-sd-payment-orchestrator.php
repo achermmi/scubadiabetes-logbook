@@ -674,7 +674,7 @@ class SD_Payment_Orchestrator {
 		$td    = 'style="padding:6px 10px;border:1px solid #d0d7de"';
 		$table = 'style="border-collapse:collapse;width:100%;font-size:13px"';
 
-		$dob_formatted   = $member->date_of_birth ? date( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
+		$dob_formatted   = $member->date_of_birth ? gmdate( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
 		$diabetes_labels = array(
 			'non_diabetico' => 'Non diabetico',
 			'tipo_1'        => 'Tipo 1',

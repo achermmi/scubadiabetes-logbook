@@ -314,7 +314,7 @@ class SD_Membership_Helper {
 		$html .= '<table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;max-width:600px;">';
 		$html .= '<tr><th align="left" style="background:#f5f5f5;">' . __( 'Campo', 'sd-logbook' ) . '</th><th align="left" style="background:#f5f5f5;">' . __( 'Valore', 'sd-logbook' ) . '</th></tr>';
 
-		$dob_formatted   = $member->date_of_birth ? date( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
+		$dob_formatted   = $member->date_of_birth ? gmdate( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
 		$diabetes_labels = array(
 			'non_diabetico' => 'Non diabetico',
 			'tipo_1'        => 'Tipo 1',
