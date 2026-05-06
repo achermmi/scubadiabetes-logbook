@@ -220,23 +220,25 @@ class SD_Payment_Documents {
 		$member_name = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
 		$invoice_no  = sprintf( 'INV-%s-%06d-%04d', ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ), (int) $member->id, (int) $payment->id );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
-		$due_date    = gmdate( 'Y-m-d', strtotime( '+15 days' ) );
+
+		// Logo associazione
+		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url );
 
 		$ops  = '';
 		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
-		$ops .= $this->text( 28, $height - 42, 17, $association_name, true, array( 1, 1, 1 ) );
-		$ops .= $this->text( 28, $height - 66, 11, 'Fattura tassa sociale', false, array( 1, 1, 1 ) );
+		$ops .= $this->text( 120, $height - 42, 17, $association_name, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( 120, $height - 66, 11, 'Fattura tassa sociale', false, array( 1, 1, 1 ) );
 
 		$ops .= $this->text( 28, $height - 124, 10, 'Numero fattura: ' . $invoice_no, true );
-		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'Y-m-d H:i' ), false );
+		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y' ), false );
 
 		$ops .= $this->rect_stroke( 28, $height - 246, 539, 88, array( 0.82, 0.84, 0.88 ) );
 		$ops .= $this->text( 40, $height - 176, 11, 'Intestatario fattura', true );
 		$ops .= $this->text( 40, $height - 196, 10, 'Socio: ' . $member_name );
 		$ops .= $this->text( 40, $height - 214, 10, 'Numero socio: ' . (string) $member->member_number );
 		$ops .= $this->text( 320, $height - 196, 10, 'Importo dovuto: ' . $amount, true );
-		$ops .= $this->text( 320, $height - 214, 10, 'Scadenza pagamento: ' . $due_date );
 
 		$ops .= $this->text( 28, $height - 272, 11, 'Dati associazione', true );
 		$ops .= $this->text( 28, $height - 292, 9.5, $association_name );
@@ -262,6 +264,15 @@ class SD_Payment_Documents {
 		}
 
 		$images = array();
+		if ( ! empty( $logo_image['path'] ) ) {
+			$images[] = array(
+				'path' => (string) $logo_image['path'],
+				'x'    => 28,
+				'y'    => $height - 84,
+				'w'    => 80,
+				'h'    => 80,
+			);
+		}
 		if ( ! empty( $qr_image['path'] ) ) {
 			$ops      .= $this->rect_stroke( 430, $height - 544, 120, 120, array( 0.82, 0.84, 0.88 ) );
 			$images[] = array(

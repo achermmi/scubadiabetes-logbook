@@ -610,6 +610,7 @@ class SD_Payment_Orchestrator {
 		$member_name = esc_html( trim( (string) $member->first_name . ' ' . (string) $member->last_name ) );
 
 		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$body .= '<div style="margin-bottom:16px"><img src="https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png" alt="ScubaDiabetes" style="height:80px;width:auto"></div>';
 		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Conferma ricezione iscrizione', 'sd-logbook' ) . '</h2>';
 		$body .= '<p>' . sprintf(
 			esc_html__( 'Caro/a %1$s, abbiamo ricevuto la tua domanda di iscrizione per l\'anno %2$d.', 'sd-logbook' ),
