@@ -18,18 +18,16 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          tools: composer
 
       - name: Install PHPCS and WordPress Coding Standards
         run: |
-          wget -q -O phpcs.phar https://github.com/squizlabs/PHP_CodeSniffer/releases/download/3.11.3/phpcs.phar
-          wget -q -O wpcs.tar.gz https://github.com/WordPress/WordPress-Coding-Standards/archive/refs/tags/3.0.1.tar.gz
-          wget -q -O phpcsutils.tar.gz https://github.com/PHPCSStandards/PHPCSUtils/archive/refs/tags/1.0.9.tar.gz
-          wget -q -O phpcsextra.tar.gz https://github.com/PHPCSStandards/PHPCSExtra/archive/refs/tags/1.2.0.tar.gz
-          mkdir -p ci-standards/wpcs ci-standards/phpcsutils ci-standards/phpcsextra
-          tar -xzf wpcs.tar.gz     -C ci-standards/wpcs      --strip-components=1
-          tar -xzf phpcsutils.tar.gz -C ci-standards/phpcsutils --strip-components=1
-          tar -xzf phpcsextra.tar.gz -C ci-standards/phpcsextra --strip-components=1
-          php phpcs.phar --config-set installed_paths ci-standards/wpcs,ci-standards/phpcsutils,ci-standards/phpcsextra
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require \
+            squizlabs/php_codesniffer:"3.11.3" \
+            wp-coding-standards/wpcs:"3.0.1" \
+            dealerdirect/phpcodesniffer-composer-installer:"^0.7" \
+            --no-interaction --no-progress
 
       - name: Run PHPCS
-        run: php phpcs.phar -n
+        run: ~/.composer/vendor/bin/phpcs -n
