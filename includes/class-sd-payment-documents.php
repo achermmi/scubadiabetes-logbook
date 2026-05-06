@@ -225,11 +225,27 @@ class SD_Payment_Documents {
 		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
 		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url );
 
+		// Calcola dimensioni logo mantenendo le proporzioni originali
+		$logo_h    = 76;
+		$logo_w    = 76;
+		$logo_x    = 28;
+		$logo_y    = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+		$text_x    = 120;
+		if ( ! empty( $logo_image['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_image['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_h = 76;
+				$logo_w = (int) round( $logo_h * (int) $logo_meta[0] / (int) $logo_meta[1] );
+				$logo_y = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+				$text_x = $logo_x + $logo_w + 12;
+			}
+		}
+
 		$ops  = '';
 		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
-		$ops .= $this->text( 120, $height - 42, 17, $association_name, true, array( 1, 1, 1 ) );
-		$ops .= $this->text( 120, $height - 66, 11, 'Fattura tassa sociale', false, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 42, 17, $association_name, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 66, 11, 'Fattura tassa sociale', false, array( 1, 1, 1 ) );
 
 		$ops .= $this->text( 28, $height - 124, 10, 'Numero fattura: ' . $invoice_no, true );
 		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y' ), false );
@@ -267,10 +283,10 @@ class SD_Payment_Documents {
 		if ( ! empty( $logo_image['path'] ) ) {
 			$images[] = array(
 				'path' => (string) $logo_image['path'],
-				'x'    => 28,
-				'y'    => $height - 84,
-				'w'    => 80,
-				'h'    => 80,
+				'x'    => $logo_x,
+				'y'    => $logo_y,
+				'w'    => $logo_w,
+				'h'    => $logo_h,
 			);
 		}
 		if ( ! empty( $qr_image['path'] ) ) {
