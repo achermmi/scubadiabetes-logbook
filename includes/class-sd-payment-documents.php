@@ -373,21 +373,22 @@ class SD_Payment_Documents {
 		$catalog_id = $add_obj( "<< /Type /Catalog /Pages {$pages_id} 0 R >>" );
 
 		$pdf = "%PDF-1.4\n";
-		for ( $i = 0; $i < count( $objects ); $i++ ) {
+		$obj_count = count( $objects );
+		for ( $i = 0; $i < $obj_count; $i++ ) {
 			$offsets[ $i + 1 ] = strlen( $pdf );
 			$pdf              .= ( $i + 1 ) . " 0 obj\n" . $objects[ $i ] . "\nendobj\n";
 		}
 
 		$xref_offset = strlen( $pdf );
 		$pdf        .= "xref\n";
-		$pdf        .= '0 ' . ( count( $objects ) + 1 ) . "\n";
+		$pdf        .= '0 ' . ( $obj_count + 1 ) . "\n";
 		$pdf        .= "0000000000 65535 f \n";
-		for ( $i = 1; $i <= count( $objects ); $i++ ) {
+		for ( $i = 1; $i <= $obj_count; $i++ ) {
 			$pdf .= sprintf( "%010d 00000 n \n", $offsets[ $i ] );
 		}
 
 		$pdf .= "trailer\n";
-		$pdf .= '<< /Size ' . ( count( $objects ) + 1 ) . ' /Root ' . $catalog_id . " 0 R >>\n";
+		$pdf .= '<< /Size ' . ( $obj_count + 1 ) . ' /Root ' . $catalog_id . " 0 R >>\n";
 		$pdf .= "startxref\n" . $xref_offset . "\n%%EOF";
 
 		file_put_contents( $file_path, $pdf );
