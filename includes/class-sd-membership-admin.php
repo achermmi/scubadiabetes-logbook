@@ -1383,21 +1383,22 @@ class SD_Membership_Admin {
 			array( 'id' => (int) $payment->id )
 		);
 
-		// Rigenera PDF se il file originale non esiste più sul disco
-		$pdf_path = ! empty( $payment->receipt_pdf_path ) ? (string) $payment->receipt_pdf_path : '';
-		if ( '' === $pdf_path || ! file_exists( $pdf_path ) ) {
-			$full_member = SD_Membership_Helper::get_member_full( $member_id );
-			if ( $full_member ) {
-				$regen = ( new SD_Payment_Documents() )->generate_invoice_document( $full_member, $payment );
-				if ( ! is_wp_error( $regen ) ) {
-					$pdf_path = $regen;
-					$wpdb->update(
-						$db->table( 'payments' ),
-						array( 'receipt_pdf_path' => $pdf_path ),
-						array( 'id' => (int) $payment->id )
-					);
-				}
+		// Rigenera sempre il PDF per garantire il formato aggiornato
+		$pdf_path    = '';
+		$full_member = SD_Membership_Helper::get_member_full( $member_id );
+		if ( $full_member ) {
+			$regen = ( new SD_Payment_Documents() )->generate_invoice_document( $full_member, $payment );
+			if ( ! is_wp_error( $regen ) ) {
+				$pdf_path = $regen;
+				$wpdb->update(
+					$db->table( 'payments' ),
+					array( 'receipt_pdf_path' => $pdf_path ),
+					array( 'id' => (int) $payment->id )
+				);
 			}
+		}
+		if ( '' === $pdf_path ) {
+			$pdf_path = ! empty( $payment->receipt_pdf_path ) ? (string) $payment->receipt_pdf_path : '';
 		}
 
 		$sent = ( new SD_Payment_Orchestrator() )->resend_invoice_email_public( $member_id, $pdf_path );
