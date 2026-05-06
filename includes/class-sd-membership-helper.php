@@ -314,14 +314,27 @@ class SD_Membership_Helper {
 		$html .= '<table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;max-width:600px;">';
 		$html .= '<tr><th align="left" style="background:#f5f5f5;">' . __( 'Campo', 'sd-logbook' ) . '</th><th align="left" style="background:#f5f5f5;">' . __( 'Valore', 'sd-logbook' ) . '</th></tr>';
 
+		$dob_formatted   = $member->date_of_birth ? date( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
+		$diabetes_labels = array(
+			'non_diabetico' => 'Non diabetico',
+			'tipo_1'        => 'Tipo 1',
+			'tipo_2'        => 'Tipo 2',
+			'tipo_3c'       => 'Tipo 3c (pancreasectomia, pancreatite)',
+			'lada'          => 'LADA',
+			'mody'          => 'MODY',
+			'midd'          => 'MIDD',
+			'altro'         => 'Altro',
+		);
+		$diabetes_label  = $diabetes_labels[ (string) $member->diabetes_type ] ?? (string) $member->diabetes_type;
+
 		$fields = array(
 			__( 'Nome completo', 'sd-logbook' )  => $name,
 			__( 'Email', 'sd-logbook' )           => $member->email,
 			__( 'Telefono', 'sd-logbook' )        => $member->phone,
-			__( 'Data di nascita', 'sd-logbook' ) => $member->date_of_birth,
+			__( 'Data di nascita', 'sd-logbook' ) => $dob_formatted,
 			__( 'Genere', 'sd-logbook' )          => $member->gender,
 			__( 'Subacqueo', 'sd-logbook' )       => $member->is_scuba ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' ),
-			__( 'Diabete', 'sd-logbook' )         => $member->diabetes_type,
+			__( 'Diabete', 'sd-logbook' )         => $diabetes_label,
 			__( 'Tassa', 'sd-logbook' )           => 'CHF ' . number_format( $member->fee_amount, 2 ),
 			__( 'Tipo socio', 'sd-logbook' )      => $member->member_type,
 			__( 'Taglia Maglietta', 'sd-logbook' ) => ! empty( $member->taglia_maglietta ) ? $member->taglia_maglietta : '—',

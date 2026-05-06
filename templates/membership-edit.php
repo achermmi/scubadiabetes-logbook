@@ -729,8 +729,10 @@ function sd_val( $obj, $key, $default = '' ) {
 				<button type="button" id="sd-edit-delete" class="sd-btn sd-btn-danger" data-member-id="<?php echo esc_attr( $member->id ); ?>">
 					<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
 				</button>
-				<button type="button" id="sd-resend-invoice-email" class="sd-btn sd-btn-secondary" data-member-id="<?php echo esc_attr( $member->id ); ?>">
-					<?php esc_html_e( 'Reinvia email fattura', 'sd-logbook' ); ?>
+			<?php endif; ?>
+			<?php if ( isset( $current_pay ) && 'bonifico_iban' === (string) $current_pay->payment_method && 0 === (int) sd_val( $member, 'has_paid_fee', 0 ) ) : ?>
+				<button type="button" id="sd-resend-invoice-email" class="sd-btn sd-btn-danger" data-member-id="<?php echo esc_attr( $member->id ); ?>">
+					<?php esc_html_e( 'Invia Fattura', 'sd-logbook' ); ?>
 				</button>
 			<?php endif; ?>
 		</div>

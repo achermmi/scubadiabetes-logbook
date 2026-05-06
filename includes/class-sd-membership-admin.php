@@ -1352,7 +1352,7 @@ class SD_Membership_Admin {
 		if ( ! $this->check_access() ) {
 			wp_send_json_error( array( 'message' => __( 'Permesso negato.', 'sd-logbook' ) ), 403 );
 		}
-		check_ajax_referer( 'sd_admin_nonce', 'nonce' );
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
 
 		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
 		if ( $member_id <= 0 ) {
@@ -1368,8 +1368,13 @@ class SD_Membership_Admin {
 			)
 		);
 
-		if ( ! $payment || 'fattura' !== (string) $payment->provider ) {
-			wp_send_json_error( array( 'message' => __( 'Nessun pagamento fattura trovato per questo socio.', 'sd-logbook' ) ) );
+		if ( ! $payment || 'bonifico_iban' !== (string) $payment->payment_method ) {
+			wp_send_json_error( array( 'message' => __( 'Nessun pagamento Bonifico IBAN trovato per questo socio.', 'sd-logbook' ) ) );
+		}
+
+		$member = SD_Membership_Helper::get_member_full( $member_id );
+		if ( $member && 1 === (int) $member->has_paid_fee ) {
+			wp_send_json_error( array( 'message' => __( 'Il socio ha già effettuato il pagamento.', 'sd-logbook' ) ) );
 		}
 
 		$wpdb->update(
@@ -1381,6 +1386,6 @@ class SD_Membership_Admin {
 		$pdf_path = ! empty( $payment->receipt_pdf_path ) ? (string) $payment->receipt_pdf_path : '';
 		( new SD_Payment_Orchestrator() )->resend_invoice_email_public( $member_id, $pdf_path );
 
-		wp_send_json_success( array( 'message' => __( 'Email fattura reinviata.', 'sd-logbook' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Email fattura inviata con successo.', 'sd-logbook' ) ) );
 	}
 }

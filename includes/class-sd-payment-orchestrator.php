@@ -616,7 +616,7 @@ class SD_Payment_Orchestrator {
 			$year
 		) . '</p>';
 		$body .= '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:12px 16px;margin:16px 0">';
-		$body .= '<strong>' . esc_html__( 'Il tuo account verrà attivato alla ricezione del pagamento sul conto associativo.', 'sd-logbook' ) . '</strong>';
+		$body .= '<strong>' . esc_html__( 'Il tuo account verrà attivato alla ricezione del pagamento della tassa sociale.', 'sd-logbook' ) . '</strong>';
 		$body .= '</div>';
 
 		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Riepilogo dati iscrizione ricevuta', 'sd-logbook' ) . '</h3>';
@@ -674,17 +674,30 @@ class SD_Payment_Orchestrator {
 		$td    = 'style="padding:6px 10px;border:1px solid #d0d7de"';
 		$table = 'style="border-collapse:collapse;width:100%;font-size:13px"';
 
+		$dob_formatted   = $member->date_of_birth ? date( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '';
+		$diabetes_labels = array(
+			'non_diabetico' => 'Non diabetico',
+			'tipo_1'        => 'Tipo 1',
+			'tipo_2'        => 'Tipo 2',
+			'tipo_3c'       => 'Tipo 3c (pancreasectomia, pancreatite)',
+			'lada'          => 'LADA',
+			'mody'          => 'MODY',
+			'midd'          => 'MIDD',
+			'altro'         => 'Altro',
+		);
+		$diabetes_label  = $diabetes_labels[ (string) $member->diabetes_type ] ?? (string) $member->diabetes_type;
+
 		$rows = array(
 			array( 'Numero socio', (string) $member->member_number ),
 			array( 'Nome', (string) $member->first_name ),
 			array( 'Cognome', (string) $member->last_name ),
 			array( 'Email (username)', (string) $member->email ),
 			array( 'Telefono', (string) $member->phone ),
-			array( 'Data di nascita', (string) $member->date_of_birth ),
+			array( 'Data di nascita', $dob_formatted ),
 			array( 'Luogo di nascita', (string) $member->birth_place ),
 			array( 'Nazione di nascita', (string) $member->birth_country ),
 			array( 'Genere', (string) $member->gender ),
-			array( 'Diabete', (string) $member->diabetes_type ),
+			array( 'Diabete', $diabetes_label ),
 		);
 
 		if ( ! empty( $member->diabetology_center ) ) {

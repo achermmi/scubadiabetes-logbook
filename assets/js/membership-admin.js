@@ -366,15 +366,15 @@
 				nonce: sdMembersAdmin.nonce,
 				member_id: memberId
 			}, function (res) {
-				$btn.prop('disabled', false).text('Reinvia email fattura');
+				$btn.prop('disabled', false).text('Invia Fattura');
 				if (res.success) {
 					showEditMessage(res.data.message, 'success');
 				} else {
-					showEditMessage(res.data.message || 'Errore durante il reinvio.', 'error');
+					showEditMessage(res.data.message || 'Errore durante l\'invio.', 'error');
 				}
 			}).fail(function () {
-				$btn.prop('disabled', false).text('Reinvia email fattura');
-				showEditMessage('Errore di rete durante il reinvio.', 'error');
+				$btn.prop('disabled', false).text('Invia Fattura');
+				showEditMessage('Errore di rete durante l\'invio.', 'error');
 			});
 		});
 	}
