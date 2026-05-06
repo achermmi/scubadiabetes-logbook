@@ -4,5 +4,15 @@
     "psr-4": {
       "ScubaDiabetes\\Logbook\\": "src/"
     }
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "3.11.3",
+    "wp-coding-standards/wpcs": "3.0.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   }
 }
