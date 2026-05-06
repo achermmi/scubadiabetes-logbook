@@ -1383,9 +1383,29 @@ class SD_Membership_Admin {
 			array( 'id' => (int) $payment->id )
 		);
 
+		// Rigenera PDF se il file originale non esiste più sul disco
 		$pdf_path = ! empty( $payment->receipt_pdf_path ) ? (string) $payment->receipt_pdf_path : '';
-		( new SD_Payment_Orchestrator() )->resend_invoice_email_public( $member_id, $pdf_path );
+		if ( '' === $pdf_path || ! file_exists( $pdf_path ) ) {
+			$full_member = SD_Membership_Helper::get_member_full( $member_id );
+			if ( $full_member ) {
+				$regen = ( new SD_Payment_Documents() )->generate_invoice_document( $full_member, $payment );
+				if ( ! is_wp_error( $regen ) ) {
+					$pdf_path = $regen;
+					$wpdb->update(
+						$db->table( 'payments' ),
+						array( 'receipt_pdf_path' => $pdf_path ),
+						array( 'id' => (int) $payment->id )
+					);
+				}
+			}
+		}
 
-		wp_send_json_success( array( 'message' => __( 'Email fattura inviata con successo.', 'sd-logbook' ) ) );
+		$sent = ( new SD_Payment_Orchestrator() )->resend_invoice_email_public( $member_id, $pdf_path );
+
+		if ( $sent ) {
+			wp_send_json_success( array( 'message' => __( 'Email fattura inviata con successo.', 'sd-logbook' ) ) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Invio email non riuscito. Controlla la configurazione SMTP del sito.', 'sd-logbook' ) ) );
+		}
 	}
 }

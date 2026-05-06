@@ -548,7 +548,7 @@ class SD_Payment_Orchestrator {
 	 * @return void
 	 */
 	public function resend_invoice_email_public( $member_id, $invoice_pdf_path ) {
-		$this->send_invoice_email( $member_id, $invoice_pdf_path );
+		return $this->send_invoice_email( $member_id, $invoice_pdf_path, true );
 	}
 
 	/**
@@ -556,12 +556,13 @@ class SD_Payment_Orchestrator {
 	 *
 	 * @param int    $member_id        ID socio.
 	 * @param string $invoice_pdf_path Path fattura PDF.
-	 * @return void
+	 * @param bool   $force            Se true bypassa il controllo is_activation_email_sent.
+	 * @return bool True se wp_mail ha avuto successo.
 	 */
-	private function send_invoice_email( $member_id, $invoice_pdf_path ) {
+	private function send_invoice_email( $member_id, $invoice_pdf_path, $force = false ) {
 		global $wpdb;
 		$db     = new SD_Database();
-		error_log( 'SD send_invoice_email: chiamata per member_id=' . $member_id . ' pdf=' . $invoice_pdf_path );
+		error_log( 'SD send_invoice_email: chiamata per member_id=' . $member_id . ' pdf=' . $invoice_pdf_path . ' force=' . ( $force ? '1' : '0' ) );
 
 		$member = $wpdb->get_row(
 			$wpdb->prepare(
@@ -571,7 +572,7 @@ class SD_Payment_Orchestrator {
 		);
 		if ( ! $member ) {
 			error_log( 'SD send_invoice_email: member non trovato per id=' . $member_id );
-			return;
+			return false;
 		}
 
 		$payment = $wpdb->get_row(
@@ -582,11 +583,11 @@ class SD_Payment_Orchestrator {
 		);
 		if ( ! $payment ) {
 			error_log( 'SD send_invoice_email: payment non trovato per member_id=' . $member_id );
-			return;
+			return false;
 		}
-		if ( 1 === (int) $payment->is_activation_email_sent ) {
+		if ( ! $force && 1 === (int) $payment->is_activation_email_sent ) {
 			error_log( 'SD send_invoice_email: is_activation_email_sent=1, email già inviata per member_id=' . $member_id );
-			return;
+			return false;
 		}
 
 		$year    = ! empty( $payment->payment_year ) ? (int) $payment->payment_year : (int) gmdate( 'Y' );
@@ -651,15 +652,16 @@ class SD_Payment_Orchestrator {
 		}
 
 		$mail_sent = wp_mail( $to, $subject, $body, $headers, $attachments );
-		if ( ! $mail_sent ) {
+		if ( $mail_sent ) {
+			$wpdb->update(
+				$db->table( 'payments' ),
+				array( 'is_activation_email_sent' => 1 ),
+				array( 'id' => (int) $payment->id )
+			);
+		} else {
 			error_log( 'SD send_invoice_email: wp_mail fallito per member_id=' . $member_id . ' to=' . $to );
 		}
-
-		$wpdb->update(
-			$db->table( 'payments' ),
-			array( 'is_activation_email_sent' => 1 ),
-			array( 'id' => (int) $payment->id )
-		);
+		return $mail_sent;
 	}
 
 	/**

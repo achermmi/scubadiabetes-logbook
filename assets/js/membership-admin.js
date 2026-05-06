@@ -361,20 +361,31 @@
 			if (!memberId) { return; }
 			var $btn = $(this);
 			$btn.prop('disabled', true).text('Invio in corso...');
-			$.post(sdMembersAdmin.ajaxUrl, {
-				action: 'sd_resend_invoice_email',
-				nonce: sdMembersAdmin.nonce,
-				member_id: memberId
-			}, function (res) {
-				$btn.prop('disabled', false).text('Invia Fattura');
-				if (res.success) {
-					showEditMessage(res.data.message, 'success');
-				} else {
-					showEditMessage(res.data.message || 'Errore durante l\'invio.', 'error');
+			$.ajax({
+				url: sdMembersAdmin.ajaxUrl,
+				type: 'POST',
+				timeout: 30000,
+				data: {
+					action: 'sd_resend_invoice_email',
+					nonce: sdMembersAdmin.nonce,
+					member_id: memberId
+				},
+				success: function (res) {
+					$btn.prop('disabled', false).text('Invia Fattura');
+					if (res.success) {
+						showEditMessage(res.data.message, 'success');
+					} else {
+						showEditMessage(res.data.message || 'Errore durante l\'invio.', 'error');
+					}
+				},
+				error: function (xhr, status) {
+					$btn.prop('disabled', false).text('Invia Fattura');
+					if (status === 'timeout') {
+						showEditMessage('Timeout: il server ha impiegato troppo tempo. Riprova.', 'error');
+					} else {
+						showEditMessage('Errore di rete durante l\'invio.', 'error');
+					}
 				}
-			}).fail(function () {
-				$btn.prop('disabled', false).text('Invia Fattura');
-				showEditMessage('Errore di rete durante l\'invio.', 'error');
 			});
 		});
 	}
