@@ -120,21 +120,20 @@ class SD_Membership_Helper {
 		$year      = gmdate( 'Y' );
 		$headers   = array( 'Content-Type: text/html; charset=UTF-8' );
 
-		// === Email al socio intestatario ===
-		$to      = $member->email;
+		// === Email al socio intestatario (tutore come To se sotto tutela o minorenne) ===
+		$reg_headers    = $headers;
+		$needs_guardian = ( 1 === (int) $member->sotto_tutela )
+			|| ( ! empty( $member->date_of_birth ) && self::is_minor( (string) $member->date_of_birth ) );
+		if ( $needs_guardian && ! empty( $member->guardian_email ) && is_email( (string) $member->guardian_email ) ) {
+			$to            = (string) $member->guardian_email;
+			$reg_headers[] = 'Cc: ' . (string) $member->email;
+		} else {
+			$to = (string) $member->email;
+		}
 		/* translators: 1: site name, 2: year */
 		$subject = sprintf( __( '[%1$s] Conferma iscrizione %2$s', 'sd-logbook' ), $site_name, $year );
 		$body    = self::get_welcome_email_body( $member, $plain_password, $site_name, $site_url, $registered_family );
-		wp_mail( $to, $subject, $body, $headers );
-
-		// === Email al genitore/tutore (se minorenne) ===
-		if ( $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
-			$guardian_to      = $member->guardian_email;
-			/* translators: 1: site name, 2: first name, 3: last name, 4: year */
-			$guardian_subject = sprintf( __( '[%1$s] Iscrizione di %2$s %3$s - Anno %4$s', 'sd-logbook' ), $site_name, $member->first_name, $member->last_name, $year );
-			$guardian_body    = self::get_guardian_email_body( $member, $site_name );
-			wp_mail( $guardian_to, $guardian_subject, $guardian_body, $headers );
-		}
+		wp_mail( $to, $subject, $body, $reg_headers );
 
 		// === Email a ogni famigliare registrato ===
 		foreach ( (array) $registered_family as $fm ) {

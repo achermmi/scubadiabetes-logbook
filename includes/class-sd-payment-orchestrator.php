@@ -519,11 +519,11 @@ class SD_Payment_Orchestrator {
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		if ( 1 === (int) $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
-			$headers[] = 'Cc: ' . $member->email;
-			$to = $member->guardian_email;
+		if ( $this->needs_guardian_as_to( $member ) ) {
+			$to        = (string) $member->guardian_email;
+			$headers[] = 'Cc: ' . (string) $member->email;
 		} else {
-			$to = $member->email;
+			$to = (string) $member->email;
 		}
 
 		$attachments = array();
@@ -643,11 +643,11 @@ class SD_Payment_Orchestrator {
 		$body .= '</body></html>';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		if ( 1 === (int) $member->sotto_tutela && ! empty( $member->guardian_email ) ) {
-			$headers[] = 'Cc: ' . $member->email;
-			$to = $member->guardian_email;
+		if ( $this->needs_guardian_as_to( $member ) ) {
+			$to        = (string) $member->guardian_email;
+			$headers[] = 'Cc: ' . (string) $member->email;
 		} else {
-			$to = $member->email;
+			$to = (string) $member->email;
 		}
 
 		$attachments = array();
@@ -666,6 +666,33 @@ class SD_Payment_Orchestrator {
 			error_log( 'SD send_invoice_email: wp_mail fallito per member_id=' . $member_id . ' to=' . $to );
 		}
 		return $mail_sent;
+	}
+
+	/**
+	 * Restituisce true se il tutore deve ricevere l'email come destinatario principale (To).
+	 * Condizione: sotto_tutela = 1 OPPURE il socio è minorenne (< 18 anni), e il tutore ha un'email valida.
+	 *
+	 * @param object $member Dati socio.
+	 * @return bool
+	 */
+	private function needs_guardian_as_to( $member ) {
+		if ( empty( $member->guardian_email ) || ! is_email( (string) $member->guardian_email ) ) {
+			return false;
+		}
+		if ( 1 === (int) $member->sotto_tutela ) {
+			return true;
+		}
+		if ( ! empty( $member->date_of_birth ) ) {
+			$age = (int) gmdate( 'Y' ) - (int) gmdate( 'Y', strtotime( (string) $member->date_of_birth ) );
+			// Correzione se il compleanno di quest'anno non è ancora passato
+			if ( gmdate( 'md' ) < gmdate( 'md', strtotime( (string) $member->date_of_birth ) ) ) {
+				--$age;
+			}
+			if ( $age < 18 ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
