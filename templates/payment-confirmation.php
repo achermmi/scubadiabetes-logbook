@@ -4,7 +4,7 @@
 	<?php if ( (int) $ctx->has_paid_fee === 1 ) : ?>
 		<div class="sd-notice sd-notice-success"><?php esc_html_e( 'Pagamento approvato e iscrizione attivata.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'fattura' === (string) $ctx->provider ) : ?>
-		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Fattura generata. Stato in attesa di accredito; il socio e il rispettivo account verrà attivato dopo verifica pagamento.', 'sd-logbook' ); ?></div>
+		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Fattura inviata. Stato in attesa di accredito; il socio e il rispettivo account verrà attivato dopo verifica pagamento.', 'sd-logbook' ); ?></div>
 	<?php else : ?>
 		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Pagamento in elaborazione.', 'sd-logbook' ); ?></div>
 	<?php endif; ?>
