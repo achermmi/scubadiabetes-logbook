@@ -603,9 +603,8 @@ class SD_Membership_Admin {
 				$pay_data['payment_date']   = null;
 				$pay_data['payment_method'] = '';
 			} else {
-				if ( ! empty( $payment_date ) ) {
-					$pay_data['payment_date'] = $payment_date;
-				}
+				// Se non è stata specificata una data, usa oggi
+				$pay_data['payment_date'] = ! empty( $payment_date ) ? $payment_date : gmdate( 'Y-m-d' );
 				if ( ! empty( $payment_method ) ) {
 					$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura' );
 					if ( in_array( $payment_method, $allowed_methods, true ) ) {
@@ -712,6 +711,21 @@ class SD_Membership_Admin {
 			if ( 1 === (int) $has_paid_fee && class_exists( 'SD_Payment_Orchestrator' ) ) {
 				$payment_method_for_service = ! empty( $pay_data['payment_method'] ) ? $pay_data['payment_method'] : 'bonifico_iban';
 				$payment_amount_for_service = isset( $pay_data['amount'] ) ? (float) $pay_data['amount'] : (float) ( $old_data->fee_amount ?? 0 );
+
+				// Resetta il flag email cosicché accept_payment possa inviare la ricevuta
+				$existing_pay_for_reset = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM {$db->table('payments')} WHERE member_id = %d ORDER BY id DESC LIMIT 1",
+						$member_id
+					)
+				);
+				if ( $existing_pay_for_reset ) {
+					$wpdb->update(
+						$db->table( 'payments' ),
+						array( 'is_activation_email_sent' => 0 ),
+						array( 'id' => (int) $existing_pay_for_reset )
+					);
+				}
 
 				$service = new SD_Payment_Orchestrator();
 				$service->accept_payment(

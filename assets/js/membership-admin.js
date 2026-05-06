@@ -331,11 +331,22 @@
 			$form.find('select[name="is_scuba"]').val($diverCb.is(':checked') ? '1' : '0');
 		});
 
-		// Quando si imposta Non pagato: azzera data e metodo
+		// Comportamento automatico cambio stato pagamento
 		$form.on('change', 'select[name="has_paid_fee"]', function () {
 			if ($(this).val() === '0') {
 				$form.find('input[name="payment_date"]').val('');
 				$form.find('select[name="payment_method"]').val('');
+				$form.find('select[name="is_active"]').val('0');
+			} else if ($(this).val() === '1') {
+				var $dateField = $form.find('input[name="payment_date"]');
+				if (!$dateField.val()) {
+					var today = new Date();
+					var yyyy = today.getFullYear();
+					var mm = String(today.getMonth() + 1).padStart(2, '0');
+					var dd = String(today.getDate()).padStart(2, '0');
+					$dateField.val(yyyy + '-' + mm + '-' + dd);
+				}
+				$form.find('select[name="is_active"]').val('1');
 			}
 		});
 
