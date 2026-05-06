@@ -4,7 +4,7 @@
 		<?php
 		echo wp_kses_post(
 			sprintf(
-				/* translators: 1: member name, 2: year, 3: amount */
+				/* translators: 1: Nome membro, 2: anno, 3: importo */
 				__( 'Ciao %1$s,<br>completa ora il pagamento della tassa sociale %2$s di CHF %3$s.', 'sd-logbook' ),
 				trim( $ctx->first_name . ' ' . $ctx->last_name ),
 				(int) $ctx->payment_year,
@@ -33,7 +33,7 @@
 
 		<?php if ( $invoice_enabled ) : ?>
 			<a class="button" href="<?php echo esc_url( add_query_arg( array( 'sd_payment_action' => 'invoice_confirm', 'sdpt' => $token ), $checkout_action_base ) ); ?>">
-				<?php esc_html_e( 'Genera Fattura', 'sd-logbook' ); ?>
+				<?php esc_html_e( 'Invia Fattura', 'sd-logbook' ); ?>
 			</a>
 		<?php endif; ?>
 

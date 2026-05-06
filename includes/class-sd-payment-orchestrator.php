@@ -652,7 +652,7 @@ class SD_Payment_Orchestrator {
 	}
 
 	/**
-	 * Genera tabella HTML con tutti i dati del socio per uso nelle email.
+	 * Genera tabella HTML con tutti i dati del socio per uso nelle e-mail.
 	 *
 	 * @param object      $member  Dati socio.
 	 * @param object|null $payment Dati pagamento.
