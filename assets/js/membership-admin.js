@@ -362,12 +362,12 @@
 			var $btn = $(this);
 			$btn.prop('disabled', true).text('Invio in corso...');
 			$.ajax({
-				url: sdMembersAdmin.ajaxUrl,
+				url: sdMembAdmin.ajaxUrl,
 				type: 'POST',
 				timeout: 30000,
 				data: {
 					action: 'sd_resend_invoice_email',
-					nonce: sdMembersAdmin.nonce,
+					nonce: sdMembAdmin.nonce,
 					member_id: memberId
 				},
 				success: function (res) {
