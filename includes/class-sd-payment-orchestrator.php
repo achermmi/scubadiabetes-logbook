@@ -631,7 +631,10 @@ class SD_Payment_Orchestrator {
 			$attachments[] = $invoice_pdf_path;
 		}
 
-		wp_mail( $to, $subject, $body, $headers, $attachments );
+		$mail_sent = wp_mail( $to, $subject, $body, $headers, $attachments );
+		if ( ! $mail_sent ) {
+			error_log( 'SD send_invoice_email: wp_mail fallito per member_id=' . $member_id . ' to=' . $to );
+		}
 
 		$wpdb->update(
 			$db->table( 'payments' ),
