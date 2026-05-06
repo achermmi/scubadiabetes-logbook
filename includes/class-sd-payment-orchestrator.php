@@ -541,6 +541,17 @@ class SD_Payment_Orchestrator {
 	}
 
 	/**
+	 * Wrapper pubblico per reinvio email fattura da admin.
+	 *
+	 * @param int    $member_id        ID socio.
+	 * @param string $invoice_pdf_path Path fattura PDF.
+	 * @return void
+	 */
+	public function resend_invoice_email_public( $member_id, $invoice_pdf_path ) {
+		$this->send_invoice_email( $member_id, $invoice_pdf_path );
+	}
+
+	/**
 	 * Invia email di conferma iscrizione con fattura allegata (percorso bonifico).
 	 *
 	 * @param int    $member_id        ID socio.

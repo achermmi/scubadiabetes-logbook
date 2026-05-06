@@ -355,6 +355,28 @@
 				window.history.back();
 			}, '#sd-edit-message');
 		});
+
+		$('#sd-resend-invoice-email').on('click', function () {
+			var memberId = parseInt($(this).data('member-id'), 10) || 0;
+			if (!memberId) { return; }
+			var $btn = $(this);
+			$btn.prop('disabled', true).text('Invio in corso...');
+			$.post(sdMembersAdmin.ajaxUrl, {
+				action: 'sd_resend_invoice_email',
+				nonce: sdMembersAdmin.nonce,
+				member_id: memberId
+			}, function (res) {
+				$btn.prop('disabled', false).text('Reinvia email fattura');
+				if (res.success) {
+					showEditMessage(res.data.message, 'success');
+				} else {
+					showEditMessage(res.data.message || 'Errore durante il reinvio.', 'error');
+				}
+			}).fail(function () {
+				$btn.prop('disabled', false).text('Reinvia email fattura');
+				showEditMessage('Errore di rete durante il reinvio.', 'error');
+			});
+		});
 	}
 
 	function bindEditBulkDelete() {

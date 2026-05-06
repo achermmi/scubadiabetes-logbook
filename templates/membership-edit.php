@@ -729,6 +729,9 @@ function sd_val( $obj, $key, $default = '' ) {
 				<button type="button" id="sd-edit-delete" class="sd-btn sd-btn-danger" data-member-id="<?php echo esc_attr( $member->id ); ?>">
 					<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
 				</button>
+				<button type="button" id="sd-resend-invoice-email" class="sd-btn sd-btn-secondary" data-member-id="<?php echo esc_attr( $member->id ); ?>">
+					<?php esc_html_e( 'Reinvia email fattura', 'sd-logbook' ); ?>
+				</button>
 			<?php endif; ?>
 		</div>
 

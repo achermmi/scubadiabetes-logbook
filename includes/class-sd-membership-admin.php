@@ -28,6 +28,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_delete', array( $this, 'delete_members' ) );
 		add_action( 'wp_ajax_sd_members_export', array( $this, 'export_members' ) );
 		add_action( 'wp_ajax_sd_members_stats', array( $this, 'get_stats' ) );
+		add_action( 'wp_ajax_sd_resend_invoice_email', array( $this, 'resend_invoice_email' ) );
 
 		// WP Cron per reminder rinnovo
 		add_action( 'sd_membership_renewal_check', array( $this, 'send_renewal_reminders' ) );
@@ -1342,5 +1343,44 @@ class SD_Membership_Admin {
 
 			SD_Membership_Helper::log_audit( $member->id, 'renewal_reminder', 'sd_members', $member->id, null, array( 'expiry' => $member->membership_expiry ) );
 		}
+	}
+
+	/**
+	 * AJAX: reinvia email fattura al socio.
+	 */
+	public function resend_invoice_email() {
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Permesso negato.', 'sd-logbook' ) ), 403 );
+		}
+		check_ajax_referer( 'sd_admin_nonce', 'nonce' );
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		if ( $member_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Socio non valido.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db      = new SD_Database();
+		$payment = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$db->table('payments')} WHERE member_id = %d ORDER BY id DESC LIMIT 1",
+				$member_id
+			)
+		);
+
+		if ( ! $payment || 'fattura' !== (string) $payment->provider ) {
+			wp_send_json_error( array( 'message' => __( 'Nessun pagamento fattura trovato per questo socio.', 'sd-logbook' ) ) );
+		}
+
+		$wpdb->update(
+			$db->table( 'payments' ),
+			array( 'is_activation_email_sent' => 0 ),
+			array( 'id' => (int) $payment->id )
+		);
+
+		$pdf_path = ! empty( $payment->receipt_pdf_path ) ? (string) $payment->receipt_pdf_path : '';
+		( new SD_Payment_Orchestrator() )->resend_invoice_email_public( $member_id, $pdf_path );
+
+		wp_send_json_success( array( 'message' => __( 'Email fattura reinviata.', 'sd-logbook' ) ) );
 	}
 }
