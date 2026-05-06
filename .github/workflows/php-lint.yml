@@ -29,4 +29,8 @@ jobs:
           ./vendor/bin/phpcs -i
 
       - name: Run PHPCS
-        run: ./vendor/bin/phpcs -n || true
+        run: |
+          echo "## PHPCS Output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ./vendor/bin/phpcs -n 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
