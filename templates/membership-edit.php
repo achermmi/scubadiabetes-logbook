@@ -672,16 +672,35 @@ function sd_val( $obj, $key, $default = '' ) {
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $payments as $pay ) : ?>
+							<?php
+							$status_labels = array(
+								'in_attesa'   => __( 'Pagamento in attesa', 'sd-logbook' ),
+								'completato'  => __( 'Completato', 'sd-logbook' ),
+								'annullato'   => __( 'Annullato', 'sd-logbook' ),
+								'rimborsato'  => __( 'Rimborsato', 'sd-logbook' ),
+							);
+							$method_labels = array(
+								'bonifico_iban' => __( 'Bonifico IBAN', 'sd-logbook' ),
+								'twint'         => 'TWINT',
+								'paypal'        => 'PayPal',
+								'carta_credito' => __( 'Carta di credito / debito', 'sd-logbook' ),
+								'apple_pay'     => 'Apple Pay',
+								'google_pay'    => 'Google Pay',
+								'fattura'       => __( 'Fattura', 'sd-logbook' ),
+							);
+							foreach ( $payments as $pay ) :
+								$status_label = isset( $status_labels[ $pay->status ] ) ? $status_labels[ $pay->status ] : esc_html( $pay->status );
+								$method_label = isset( $method_labels[ $pay->payment_method ] ) ? $method_labels[ $pay->payment_method ] : esc_html( $pay->payment_method ?? '—' );
+							?>
 								<tr>
 									<td><?php echo esc_html( $pay->payment_year ); ?></td>
 									<td>CHF <?php echo esc_html( number_format( (float) $pay->amount, 2 ) ); ?></td>
 									<td>
 										<span class="sd-status-badge sd-status-<?php echo esc_attr( $pay->status ); ?>">
-											<?php echo esc_html( $pay->status ); ?>
+											<?php echo esc_html( $status_label ); ?>
 										</span>
 									</td>
-									<td><?php echo esc_html( $pay->payment_method ?? '—' ); ?></td>
+									<td><?php echo esc_html( $method_label ); ?></td>
 									<td><?php echo esc_html( $pay->payment_date ? substr( $pay->payment_date, 0, 10 ) : '—' ); ?></td>
 								</tr>
 							<?php endforeach; ?>
