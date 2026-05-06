@@ -550,6 +550,8 @@ class SD_Payment_Orchestrator {
 	private function send_invoice_email( $member_id, $invoice_pdf_path ) {
 		global $wpdb;
 		$db     = new SD_Database();
+		error_log( 'SD send_invoice_email: chiamata per member_id=' . $member_id . ' pdf=' . $invoice_pdf_path );
+
 		$member = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$db->table('members')} WHERE id = %d",
@@ -557,6 +559,7 @@ class SD_Payment_Orchestrator {
 			)
 		);
 		if ( ! $member ) {
+			error_log( 'SD send_invoice_email: member non trovato per id=' . $member_id );
 			return;
 		}
 
@@ -566,7 +569,12 @@ class SD_Payment_Orchestrator {
 				$member_id
 			)
 		);
-		if ( ! $payment || 1 === (int) $payment->is_activation_email_sent ) {
+		if ( ! $payment ) {
+			error_log( 'SD send_invoice_email: payment non trovato per member_id=' . $member_id );
+			return;
+		}
+		if ( 1 === (int) $payment->is_activation_email_sent ) {
+			error_log( 'SD send_invoice_email: is_activation_email_sent=1, email già inviata per member_id=' . $member_id );
 			return;
 		}
 
