@@ -221,9 +221,14 @@ class SD_Payment_Documents {
 		$invoice_no  = sprintf( 'INV-%s-%06d-%04d', ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ), (int) $member->id, (int) $payment->id );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
 
-		// Logo associazione
+		// Logo associazione (sfondo = colore primario header per preservare angoli arrotondati)
 		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
-		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url );
+		$logo_bg    = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
 
 		// Calcola dimensioni logo mantenendo le proporzioni originali
 		$logo_h    = 76;
@@ -531,7 +536,7 @@ class SD_Payment_Documents {
 	 * @param string $qr_image_url URL configurato nelle impostazioni.
 	 * @return array{path:string}
 	 */
-	private function resolve_qr_image_for_pdf( $qr_image_url ) {
+	private function resolve_qr_image_for_pdf( $qr_image_url, $bg_rgb = array( 255, 255, 255 ) ) {
 		$url = trim( (string) $qr_image_url );
 		if ( '' === $url ) {
 			return array();
@@ -552,7 +557,7 @@ class SD_Payment_Documents {
 		}
 
 		if ( IMAGETYPE_PNG === (int) $meta[2] ) {
-			$jpg = $this->convert_png_to_jpeg( $path );
+			$jpg = $this->convert_png_to_jpeg( $path, $bg_rgb );
 			if ( '' !== $jpg && file_exists( $jpg ) ) {
 				return array( 'path' => $jpg );
 			}
@@ -586,7 +591,7 @@ class SD_Payment_Documents {
 	 * @param string $png_path Percorso PNG.
 	 * @return string
 	 */
-	private function convert_png_to_jpeg( $png_path ) {
+	private function convert_png_to_jpeg( $png_path, $bg_rgb = array( 255, 255, 255 ) ) {
 		if ( ! function_exists( 'imagecreatefrompng' ) || ! function_exists( 'imagejpeg' ) || ! function_exists( 'imagecreatetruecolor' ) ) {
 			return '';
 		}
@@ -603,9 +608,13 @@ class SD_Payment_Documents {
 			return '';
 		}
 
+		$bg_r = isset( $bg_rgb[0] ) ? max( 0, min( 255, (int) $bg_rgb[0] ) ) : 255;
+		$bg_g = isset( $bg_rgb[1] ) ? max( 0, min( 255, (int) $bg_rgb[1] ) ) : 255;
+		$bg_b = isset( $bg_rgb[2] ) ? max( 0, min( 255, (int) $bg_rgb[2] ) ) : 255;
+
 		$dst = imagecreatetruecolor( $w, $h );
-		$white = imagecolorallocate( $dst, 255, 255, 255 );
-		imagefill( $dst, 0, 0, $white );
+		$bg  = imagecolorallocate( $dst, $bg_r, $bg_g, $bg_b );
+		imagefill( $dst, 0, 0, $bg );
 		imagecopy( $dst, $src, 0, 0, 0, 0, $w, $h );
 
 		$cache_dir = trailingslashit( dirname( $png_path ) ) . 'pdf-cache/';
@@ -615,8 +624,9 @@ class SD_Payment_Documents {
 			return '';
 		}
 
-		$jpg_path = $cache_dir . 'qr-' . md5( $png_path . '|' . (string) @filemtime( $png_path ) ) . '.jpg';
-		$ok = @imagejpeg( $dst, $jpg_path, 92 );
+		$cache_key = md5( $png_path . '|' . (string) @filemtime( $png_path ) . '|' . $bg_r . ',' . $bg_g . ',' . $bg_b );
+		$jpg_path  = $cache_dir . 'qr-' . $cache_key . '.jpg';
+		$ok        = @imagejpeg( $dst, $jpg_path, 92 );
 
 		imagedestroy( $src );
 		imagedestroy( $dst );
