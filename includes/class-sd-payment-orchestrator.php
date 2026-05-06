@@ -487,7 +487,7 @@ class SD_Payment_Orchestrator {
 		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
 		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento confermato — Iscrizione attivata!', 'sd-logbook' ) . '</h2>';
 		$body .= '<p>' . sprintf(
-			esc_html__( 'Caro/a %s, il tuo pagamento è stato ricevuto e la tua iscrizione per l\'anno %d è ora attiva.', 'sd-logbook' ),
+			esc_html__( 'Caro/a %1$s, il tuo pagamento è stato ricevuto e la tua iscrizione per l\'anno %2$d è ora attiva.', 'sd-logbook' ),
 			$member_name,
 			$year
 		) . '</p>';
@@ -592,7 +592,7 @@ class SD_Payment_Orchestrator {
 		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
 		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Conferma ricezione iscrizione', 'sd-logbook' ) . '</h2>';
 		$body .= '<p>' . sprintf(
-			esc_html__( 'Caro/a %s, abbiamo ricevuto la tua domanda di iscrizione per l\'anno %d.', 'sd-logbook' ),
+			esc_html__( 'Caro/a %1$s, abbiamo ricevuto la tua domanda di iscrizione per l\'anno %2$d.', 'sd-logbook' ),
 			$member_name,
 			$year
 		) . '</p>';
