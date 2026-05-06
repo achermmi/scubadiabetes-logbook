@@ -425,7 +425,7 @@ class SD_Payment_Orchestrator {
 	 * @param array $docs Path documenti.
 	 * @return void
 	 */
-	private function send_post_payment_emails( $member_id, $docs ) {
+	public function send_post_payment_emails( $member_id, $docs, $force = false ) {
 		global $wpdb;
 		$db     = new SD_Database();
 		$member = $wpdb->get_row(
@@ -444,7 +444,10 @@ class SD_Payment_Orchestrator {
 				$member_id
 			)
 		);
-		if ( ! $payment || 1 === (int) $payment->is_activation_email_sent ) {
+		if ( ! $payment ) {
+			return;
+		}
+		if ( ! $force && 1 === (int) $payment->is_activation_email_sent ) {
 			return;
 		}
 

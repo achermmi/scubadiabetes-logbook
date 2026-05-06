@@ -707,25 +707,10 @@ class SD_Membership_Admin {
 				}
 			}
 
-			// Allinea il flusso staff al servizio unico di pagamento
+			// Allinea il flusso staff al servizio unico di pagamento e invia email di conferma
 			if ( 1 === (int) $has_paid_fee && class_exists( 'SD_Payment_Orchestrator' ) ) {
 				$payment_method_for_service = ! empty( $pay_data['payment_method'] ) ? $pay_data['payment_method'] : 'bonifico_iban';
 				$payment_amount_for_service = isset( $pay_data['amount'] ) ? (float) $pay_data['amount'] : (float) ( $old_data->fee_amount ?? 0 );
-
-				// Resetta il flag email cosicché accept_payment possa inviare la ricevuta
-				$existing_pay_for_reset = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT id FROM {$db->table('payments')} WHERE member_id = %d ORDER BY id DESC LIMIT 1",
-						$member_id
-					)
-				);
-				if ( $existing_pay_for_reset ) {
-					$wpdb->update(
-						$db->table( 'payments' ),
-						array( 'is_activation_email_sent' => 0 ),
-						array( 'id' => (int) $existing_pay_for_reset )
-					);
-				}
 
 				$service = new SD_Payment_Orchestrator();
 				$service->accept_payment(
@@ -739,6 +724,30 @@ class SD_Membership_Admin {
 						'notes'               => __( 'Pagamento aggiornato da pannello staff.', 'sd-logbook' ),
 					)
 				);
+
+				// Genera documenti freschi e invia email di conferma forzata (bypassa il flag is_activation_email_sent)
+				$fresh_member  = SD_Membership_Helper::get_member_full( $member_id );
+				$fresh_payment = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT * FROM {$db->table('payments')} WHERE member_id = %d ORDER BY id DESC LIMIT 1",
+						$member_id
+					)
+				);
+				if ( $fresh_member && $fresh_payment ) {
+					$docs = ( new SD_Payment_Documents() )->generate_documents( $fresh_member, $fresh_payment );
+					if ( ! is_wp_error( $docs ) ) {
+						$wpdb->update(
+							$db->table( 'payments' ),
+							array(
+								'receipt_pdf_path'         => $docs['receipt'],
+								'membership_card_pdf_path' => $docs['card'],
+								'is_activation_email_sent' => 0,
+							),
+							array( 'id' => (int) $fresh_payment->id )
+						);
+					}
+					$service->send_post_payment_emails( $member_id, is_wp_error( $docs ) ? array() : (array) $docs, true );
+				}
 			}
 		}
 
