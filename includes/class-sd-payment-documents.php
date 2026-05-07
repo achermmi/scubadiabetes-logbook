@@ -88,20 +88,43 @@ class SD_Payment_Documents {
 		$footer_note   = (string) get_option( 'sd_payment_receipt_footer_note', 'Documento gestionale emesso dall\'associazione. Validita fiscale subordinata alla normativa applicabile e a verifica professionale in CH/IT.' );
 
 		$member_name = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
-		$expiry      = ! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '-';
-		$payment_dt  = ! empty( $payment->payment_date ) ? mysql2date( 'Y-m-d H:i', $payment->payment_date, false ) : gmdate( 'Y-m-d H:i' );
+		$expiry      = ! empty( $member->membership_expiry ) ? date_i18n( 'd.m.Y', strtotime( (string) $member->membership_expiry ) ) : '-';
+		$payment_dt  = ! empty( $payment->payment_date ) ? mysql2date( 'd.m.Y H:i', $payment->payment_date, false ) : gmdate( 'd.m.Y H:i' );
 		$tx          = ! empty( $payment->provider_payment_id ) ? (string) $payment->provider_payment_id : (string) $payment->transaction_id;
-		$method      = ! empty( $payment->payment_method ) ? (string) $payment->payment_method : 'n/d';
+		$method      = $this->payment_method_label( ! empty( $payment->payment_method ) ? (string) $payment->payment_method : '' );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
+
+		// Logo header (stessa logica della fattura)
+		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_bg    = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
+		$logo_h     = 76;
+		$logo_w     = 76;
+		$logo_x     = 28;
+		$logo_y     = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+		$text_x     = 120;
+		if ( ! empty( $logo_image['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_image['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_h = 76;
+				$logo_w = (int) round( $logo_h * (int) $logo_meta[0] / (int) $logo_meta[1] );
+				$logo_y = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+				$text_x = $logo_x + $logo_w + 12;
+			}
+		}
 
 		$ops  = '';
 		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
-		$ops .= $this->text( 28, $height - 42, 17, $assoc_title, true, array( 1, 1, 1 ) );
-		$ops .= $this->text( 28, $height - 66, 11, 'Ricevuta pagamento tassa sociale', false, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 42, 17, $assoc_title, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 66, 11, 'Ricevuta pagamento tassa sociale', false, array( 1, 1, 1 ) );
 
 		$ops .= $this->text( 28, $height - 124, 10, 'Numero ricevuta: ' . $this->receipt_number( $member, $payment ), true );
-		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'Y-m-d H:i' ), false );
+		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y H:i' ), false );
 
 		$ops .= $this->rect_stroke( 28, $height - 312, 539, 170, array( 0.82, 0.84, 0.88 ) );
 		$ops .= $this->text( 40, $height - 164, 11, 'Dati socio e pagamento', true );
@@ -129,10 +152,22 @@ class SD_Payment_Documents {
 
 		$ops .= $this->text( 40, 38, 8, $assoc_title . ' - ' . home_url( '/' ), false, array( 0.36, 0.40, 0.46 ) );
 
+		$images = array();
+		if ( ! empty( $logo_image['path'] ) ) {
+			$images[] = array(
+				'path' => (string) $logo_image['path'],
+				'x'    => $logo_x,
+				'y'    => $logo_y,
+				'w'    => $logo_w,
+				'h'    => $logo_h,
+			);
+		}
+
 		return array(
 			'width'    => $width,
 			'height'   => $height,
 			'commands' => $ops,
+			'images'   => $images,
 		);
 	}
 
@@ -146,38 +181,86 @@ class SD_Payment_Documents {
 	private function build_card_pages( $member, $payment ) {
 		$width       = 242.65;
 		$height      = 153.02;
+		$r           = 9.0; // raggio angoli carta di credito (≈ 3.18 mm)
 		$year        = ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' );
-		$expiry      = ! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '-';
+		$expiry      = ! empty( $member->membership_expiry ) ? date_i18n( 'd.m.Y', strtotime( (string) $member->membership_expiry ) ) : '-';
+		$dob         = ! empty( $member->date_of_birth ) ? date_i18n( 'd.m.Y', strtotime( (string) $member->date_of_birth ) ) : '-';
 		$assoc_title = (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
 		$primary     = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
 		$secondary   = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
 
-		$front_a_ops  = '';
+		// Percorso clip intera tessera (angoli arrotondati)
+		$card_clip = $this->rounded_rect_clip_path( 0, 0, $width, $height, $r );
+
+		// Logo fronte A (bg = colore primario per preservare radius 60 del logo)
+		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_bg_a  = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg_a );
+		$logo_h_a   = 110;
+		$logo_w_a   = 110;
+		if ( ! empty( $logo_image['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_image['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_w_a = (int) round( $logo_h_a * (int) $logo_meta[0] / (int) $logo_meta[1] );
+			}
+		}
+		$logo_x_a = (int) round( $width - $logo_w_a - 10 );
+		$logo_y_a = (int) round( ( $height - $logo_h_a ) / 2 );
+
+		// ===== FRONTE A =====
+		// Sfondo primario con angoli arrotondati (via clip)
+		$front_a_ops  = "q\n" . $card_clip . "W n\n";
 		$front_a_ops .= $this->rect_fill( 0, 0, $width, $height, $primary );
-		$front_a_ops .= $this->rect_fill( 10, 18, $width - 20, 28, $secondary );
-		$front_a_ops .= $this->text( 14, 114, 11, strtoupper( $assoc_title ), true, array( 1, 1, 1 ) );
-		$front_a_ops .= $this->text( 14, 94, 9, 'Tessera associativa', false, array( 1, 1, 1 ) );
-		$front_a_ops .= $this->text( 14, 76, 9, 'Anno ' . $year, true, array( 1, 1, 1 ) );
-		$front_a_ops .= $this->text( 18, 31, 8.5, 'SCUBADIABETES', true, array( 1, 1, 1 ) );
+		// Striscia accent secondaria nella metà inferiore
+		$front_a_ops .= $this->rect_fill( 0, 14, $width, 7, $secondary );
+		// Testo area sinistra
+		$front_a_ops .= $this->text( 14, $height - 22, 9.5, strtoupper( $assoc_title ), true, array( 1, 1, 1 ) );
+		$front_a_ops .= $this->text( 14, $height - 38, 7.5, 'Tessera associativa', false, array( 0.80, 0.91, 1.0 ) );
+		$front_a_ops .= $this->text( 14, $height - 56, 9, 'Anno ' . $year, true, array( 1, 1, 1 ) );
+		$front_a_ops .= "Q\n";
+		// Bordo tessera arrotondato (fuori dal clip per resa pulita)
+		$front_a_ops .= $this->rounded_rect_stroke( 0, 0, $width, $height, $r, array( 0.0, 0.33, 0.65 ), 1.2 );
 
-		$front_b_ops  = '';
-		$front_b_ops .= $this->rect_fill( 0, 0, $width, $height, array( 0.97, 0.98, 1 ) );
-		$front_b_ops .= $this->rect_stroke( 6, 6, $width - 12, $height - 12, $primary );
-		$front_b_ops .= $this->rect_fill( 6, $height - 28, $width - 12, 22, $primary );
-		$front_b_ops .= $this->text( 12, $height - 20, 9, 'Tessera socio - Fronte B', true, array( 1, 1, 1 ) );
+		// ===== FRONTE B =====
+		// Sfondo chiaro con angoli arrotondati
+		$front_b_ops  = $this->rounded_rect_fill( 0, 0, $width, $height, $r, array( 0.97, 0.98, 1.0 ) );
+		// Header primario in alto (clippato alla tessera per arrotondare angoli superiori)
+		$front_b_ops .= "q\n" . $card_clip . "W n\n";
+		$front_b_ops .= $this->rect_fill( 0, $height - 28, $width, 28, $primary );
+		$front_b_ops .= "Q\n";
+		// Testo header
+		$front_b_ops .= $this->text( 14, $height - 18, 8.5, 'Tessera socio', true, array( 1, 1, 1 ) );
+		// Dati socio
+		$front_b_ops .= $this->text( 14, 106, 8.5, 'Nome: ' . (string) $member->first_name );
+		$front_b_ops .= $this->text( 14, 92, 8.5, 'Cognome: ' . (string) $member->last_name );
+		$front_b_ops .= $this->text( 14, 78, 8.5, 'Data di nascita: ' . $dob );
+		$front_b_ops .= $this->text( 14, 64, 8.5, 'Numero socio: ' . (string) $member->member_number );
+		$front_b_ops .= $this->text( 14, 50, 8.5, 'Tipo socio: ' . (string) $member->member_type );
+		$front_b_ops .= $this->text( 14, 36, 8.5, 'Scadenza: ' . $expiry );
+		// Bordo tessera arrotondato
+		$front_b_ops .= $this->rounded_rect_stroke( 0, 0, $width, $height, $r, $primary, 1.2 );
 
-		$front_b_ops .= $this->text( 12, 112, 8.5, 'Nome: ' . (string) $member->first_name );
-		$front_b_ops .= $this->text( 12, 98, 8.5, 'Cognome: ' . (string) $member->last_name );
-		$front_b_ops .= $this->text( 12, 84, 8.5, 'Data di nascita: ' . (string) $member->date_of_birth );
-		$front_b_ops .= $this->text( 12, 70, 8.5, 'Numero socio: ' . (string) $member->member_number );
-		$front_b_ops .= $this->text( 12, 56, 8.5, 'Tipo socio: ' . (string) $member->member_type );
-		$front_b_ops .= $this->text( 12, 42, 8.5, 'Scadenza: ' . $expiry );
+		$front_a_images = array();
+		if ( ! empty( $logo_image['path'] ) ) {
+			$front_a_images[] = array(
+				'path' => (string) $logo_image['path'],
+				'x'    => $logo_x_a,
+				'y'    => $logo_y_a,
+				'w'    => $logo_w_a,
+				'h'    => $logo_h_a,
+			);
+		}
 
 		return array(
 			array(
 				'width'    => $width,
 				'height'   => $height,
 				'commands' => $front_a_ops,
+				'images'   => $front_a_images,
 			),
 			array(
 				'width'    => $width,
@@ -458,6 +541,85 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Percorso PDF rettangolo con angoli arrotondati (senza fill/stroke, per clip o riuso).
+	 *
+	 * @param float $x x.
+	 * @param float $y y.
+	 * @param float $w width.
+	 * @param float $h height.
+	 * @param float $r corner radius.
+	 * @return string
+	 */
+	private function rounded_rect_clip_path( $x, $y, $w, $h, $r ) {
+		$k  = 0.5523; // costante approssimazione Bezier quarto cerchio
+		$kr = $k * $r;
+		return sprintf(
+			"%.2f %.2f m\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\nh\n",
+			// moveto: inizio lato inferiore
+			$x + $r,           $y,
+			// lineto: fine lato inferiore
+			$x + $w - $r,      $y,
+			// curveto: angolo basso-destra
+			$x + $w - $r + $kr, $y,
+			$x + $w,           $y + $r - $kr,
+			$x + $w,           $y + $r,
+			// lineto: fine lato destro
+			$x + $w,           $y + $h - $r,
+			// curveto: angolo alto-destra
+			$x + $w,           $y + $h - $r + $kr,
+			$x + $w - $r + $kr, $y + $h,
+			$x + $w - $r,      $y + $h,
+			// lineto: fine lato superiore
+			$x + $r,           $y + $h,
+			// curveto: angolo alto-sinistra
+			$x + $r - $kr,     $y + $h,
+			$x,                $y + $h - $r + $kr,
+			$x,                $y + $h - $r,
+			// lineto: fine lato sinistro
+			$x,                $y + $r,
+			// curveto: angolo basso-sinistra
+			$x,                $y + $r - $kr,
+			$x + $r - $kr,     $y,
+			$x + $r,           $y
+		);
+	}
+
+	/**
+	 * Rettangolo riempito con angoli arrotondati.
+	 *
+	 * @param float $x x.
+	 * @param float $y y.
+	 * @param float $w width.
+	 * @param float $h height.
+	 * @param float $r radius.
+	 * @param array $rgb colore fill.
+	 * @return string
+	 */
+	private function rounded_rect_fill( $x, $y, $w, $h, $r, $rgb ) {
+		return sprintf( "%.3f %.3f %.3f rg\n", $rgb[0], $rgb[1], $rgb[2] )
+			. $this->rounded_rect_clip_path( $x, $y, $w, $h, $r )
+			. "f\n";
+	}
+
+	/**
+	 * Rettangolo bordo con angoli arrotondati.
+	 *
+	 * @param float $x x.
+	 * @param float $y y.
+	 * @param float $w width.
+	 * @param float $h height.
+	 * @param float $r radius.
+	 * @param array $rgb colore bordo.
+	 * @param float $line_width spessore linea.
+	 * @return string
+	 */
+	private function rounded_rect_stroke( $x, $y, $w, $h, $r, $rgb, $line_width = 0.8 ) {
+		return sprintf( "%.3f %.3f %.3f RG\n%.2f w\n", $rgb[0], $rgb[1], $rgb[2], $line_width )
+			. $this->rounded_rect_clip_path( $x, $y, $w, $h, $r )
+			. "S\n";
+	}
+
+	/**
 	 * Rettangolo bordo.
 	 *
 	 * @param float $x x.
@@ -507,6 +669,27 @@ class SD_Payment_Documents {
 	 * @param int    $max_chars max caratteri.
 	 * @return array
 	 */
+	/**
+	 * Restituisce l'etichetta leggibile del metodo di pagamento.
+	 *
+	 * @param string $slug Slug del metodo.
+	 * @return string
+	 */
+	private function payment_method_label( $slug ) {
+		$labels = array(
+			'bonifico_iban' => 'Bonifico IBAN',
+			'paypal'        => 'PayPal',
+			'twint'         => 'TWINT',
+			'carta_credito' => 'Carta di credito / debito',
+			'apple_pay'     => 'Apple Pay',
+			'google_pay'    => 'Google Pay',
+			'fattura'       => 'Fattura',
+			'famigliare'    => 'Famigliare',
+			'staff'         => 'Staff',
+		);
+		return $labels[ $slug ] ?? ( '' !== $slug ? $slug : 'n/d' );
+	}
+
 	private function wrap_text_lines( $text, $max_chars = 90 ) {
 		$clean = trim( preg_replace( '/\s+/', ' ', (string) $text ) );
 		if ( '' === $clean ) {

@@ -428,7 +428,6 @@ class SD_Payment_Orchestrator {
 	public function send_post_payment_emails( $member_id, $docs, $force = false ) {
 		global $wpdb;
 		$db     = new SD_Database();
-		error_log( 'SD send_post_payment_emails: start member_id=' . $member_id . ' force=' . ( $force ? '1' : '0' ) );
 		$member = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$db->table('members')} WHERE id = %d",
@@ -436,7 +435,6 @@ class SD_Payment_Orchestrator {
 			)
 		);
 		if ( ! $member ) {
-			error_log( 'SD send_post_payment_emails: member not found id=' . $member_id );
 			return;
 		}
 
@@ -447,11 +445,9 @@ class SD_Payment_Orchestrator {
 			)
 		);
 		if ( ! $payment ) {
-			error_log( 'SD send_post_payment_emails: payment not found for member_id=' . $member_id );
 			return;
 		}
 		if ( ! $force && 1 === (int) $payment->is_activation_email_sent ) {
-			error_log( 'SD send_post_payment_emails: skipped (already sent) member_id=' . $member_id );
 			return;
 		}
 
@@ -538,9 +534,7 @@ class SD_Payment_Orchestrator {
 			$attachments[] = $docs['card'];
 		}
 
-		error_log( 'SD send_post_payment_emails: calling wp_mail to=' . $to . ' subject=' . $subject . ' attachments=' . count( $attachments ) );
-		$mail_result = wp_mail( $to, $subject, $body, $headers, $attachments );
-		error_log( 'SD send_post_payment_emails: wp_mail result=' . ( $mail_result ? '1' : '0' ) . ' member_id=' . $member_id );
+		wp_mail( $to, $subject, $body, $headers, $attachments );
 
 		$wpdb->update(
 			$db->table( 'payments' ),
