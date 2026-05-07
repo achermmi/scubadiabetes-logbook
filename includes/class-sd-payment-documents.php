@@ -89,7 +89,7 @@ class SD_Payment_Documents {
 
 		$member_name = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
 		$expiry      = ! empty( $member->membership_expiry ) ? date_i18n( 'd.m.Y', strtotime( (string) $member->membership_expiry ) ) : '-';
-		$payment_dt  = ! empty( $payment->payment_date ) ? mysql2date( 'd.m.Y H:i', $payment->payment_date, false ) : gmdate( 'd.m.Y H:i' );
+		$payment_dt  = ! empty( $payment->payment_date ) ? mysql2date( 'd.m.Y', $payment->payment_date, false ) : gmdate( 'd.m.Y' );
 		$tx          = ! empty( $payment->provider_payment_id ) ? (string) $payment->provider_payment_id : (string) $payment->transaction_id;
 		$method      = $this->payment_method_label( ! empty( $payment->payment_method ) ? (string) $payment->payment_method : '' );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
