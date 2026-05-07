@@ -599,17 +599,19 @@ class SD_Membership_Admin {
 				'status' => $has_paid_fee ? 'completato' : 'in_attesa',
 			);
 			if ( 0 === $has_paid_fee ) {
-				// Non pagato: azzera data e metodo
-				$pay_data['payment_date']   = null;
-				$pay_data['payment_method'] = '';
+				// Non pagato: azzera solo la data
+				$pay_data['payment_date'] = null;
 			} else {
 				// Se non è stata specificata una data, usa oggi
 				$pay_data['payment_date'] = ! empty( $payment_date ) ? $payment_date : gmdate( 'Y-m-d' );
-				if ( ! empty( $payment_method ) ) {
-					$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura' );
-					if ( in_array( $payment_method, $allowed_methods, true ) ) {
-						$pay_data['payment_method'] = $payment_method;
-					}
+			}
+			// Salva il metodo di pagamento indipendentemente dallo stato
+			$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura' );
+			if ( isset( $_POST['payment_method'] ) ) {
+				if ( ! empty( $payment_method ) && in_array( $payment_method, $allowed_methods, true ) ) {
+					$pay_data['payment_method'] = $payment_method;
+				} elseif ( empty( $payment_method ) ) {
+					$pay_data['payment_method'] = '';
 				}
 			}
 			if ( null !== $payment_amount ) {

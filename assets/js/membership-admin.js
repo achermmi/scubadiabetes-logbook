@@ -335,7 +335,6 @@
 		$form.on('change', 'select[name="has_paid_fee"]', function () {
 			if ($(this).val() === '0') {
 				$form.find('input[name="payment_date"]').val('');
-				$form.find('select[name="payment_method"]').val('');
 				$form.find('select[name="is_active"]').val('0');
 			} else if ($(this).val() === '1') {
 				var $dateField = $form.find('input[name="payment_date"]');
