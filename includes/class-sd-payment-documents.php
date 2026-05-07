@@ -143,6 +143,18 @@ class SD_Payment_Documents {
 			'staff'         => 'Staff',
 		);
 
+		$type_labels = array(
+			'attivo'               => 'Attivo',
+			'attivo_capo_famiglia' => 'Attivo Capo Famiglia',
+			'attivo_famigliare'    => 'Attivo Famigliare',
+			'passivo'              => 'Passivo',
+			'accompagnatore'       => 'Accompagnatore',
+			'sostenitore'          => 'Sostenitore',
+			'onorario'             => 'Onorario',
+			'fondatore'            => 'Fondatore',
+			'staff'                => 'Staff',
+		);
+
 		$total_rows = count( $rows );
 		$total_pages = max( 1, (int) ceil( $total_rows / $rows_per_pg ) );
 		$pages = array();
@@ -199,13 +211,14 @@ class SD_Payment_Documents {
 				$metodo  = $method_labels[ $r['payment_method'] ?? '' ] ?? (string) ( $r['payment_method'] ?? '-' );
 				$tassa   = ! empty( $r['fee_amount'] ) ? number_format( (float) $r['fee_amount'], 2 ) : '-';
 				$name    = trim( (string) $r['last_name'] . ', ' . (string) $r['first_name'] );
+				$tipo    = $type_labels[ $r['member_type'] ?? '' ] ?? (string) ( $r['member_type'] ?? '-' );
 
 				$cells = array(
 					(string) ( $ri + 1 ),
 					$name,
 					(string) ( $r['email'] ?? '' ),
 					$nascita,
-					(string) ( $r['member_type'] ?? '' ),
+					$tipo,
 					$tassa,
 					$pagato,
 					$metodo,
