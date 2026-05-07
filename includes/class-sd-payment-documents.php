@@ -200,15 +200,24 @@ class SD_Payment_Documents {
 			(int) round( $primary[2] * 255 ),
 		);
 		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg_a );
-		$logo_h_a   = 110;
-		$logo_w_a   = 110;
+		// Logo: colonna destra (x ≥ 130 pt) – mai sovrapposto al testo di sinistra.
+		$logo_col_x = 130.0;
+		$logo_col_w = $width - 10.0 - $logo_col_x; // ≈ 102 pt
+		$logo_h_a   = 88.0;
+		$logo_w_a   = 88.0;
 		if ( ! empty( $logo_image['path'] ) ) {
 			$logo_meta = @getimagesize( (string) $logo_image['path'] );
 			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
-				$logo_w_a = (int) round( $logo_h_a * (int) $logo_meta[0] / (int) $logo_meta[1] );
+				$ratio    = (float) $logo_meta[0] / (float) $logo_meta[1];
+				$logo_h_a = 88.0;
+				$logo_w_a = 88.0 * $ratio;
+				if ( $logo_w_a > $logo_col_w ) {
+					$logo_w_a = $logo_col_w;
+					$logo_h_a = $logo_w_a / $ratio;
+				}
 			}
 		}
-		$logo_x_a = (int) round( $width - $logo_w_a - 10 );
+		$logo_x_a = (int) round( $logo_col_x + ( $logo_col_w - $logo_w_a ) / 2 );
 		$logo_y_a = (int) round( ( $height - $logo_h_a ) / 2 );
 
 		// ===== FRONTE A =====
@@ -218,9 +227,15 @@ class SD_Payment_Documents {
 		// Striscia accent secondaria nella metà inferiore
 		$front_a_ops .= $this->rect_fill( 0, 14, $width, 7, $secondary );
 		// Testo area sinistra
-		$front_a_ops .= $this->text( 14, $height - 22, 9.5, strtoupper( $assoc_title ), true, array( 1, 1, 1 ) );
-		$front_a_ops .= $this->text( 14, $height - 38, 7.5, 'Tessera associativa', false, array( 0.80, 0.91, 1.0 ) );
-		$front_a_ops .= $this->text( 14, $height - 56, 9, 'Anno ' . $year, true, array( 1, 1, 1 ) );
+		// Titolo associazione con wrap (colonna sinistra ≤ x 130 pt).
+		$title_lines = $this->wrap_text_lines( strtoupper( $assoc_title ), 18 );
+		$ty          = (float) ( $height - 20 );
+		foreach ( $title_lines as $tl ) {
+			$front_a_ops .= $this->text( 14, $ty, 8.5, $tl, true, array( 1, 1, 1 ) );
+			$ty          -= 13;
+		}
+		$front_a_ops .= $this->text( 14, $ty - 2, 7.5, 'Tessera associativa', false, array( 0.80, 0.91, 1.0 ) );
+		$front_a_ops .= $this->text( 14, $ty - 16, 9, 'Anno ' . $year, true, array( 1, 1, 1 ) );
 		$front_a_ops .= "Q\n";
 		// Bordo tessera arrotondato (fuori dal clip per resa pulita)
 		$front_a_ops .= $this->rounded_rect_stroke( 0, 0, $width, $height, $r, array( 0.0, 0.33, 0.65 ), 1.2 );
