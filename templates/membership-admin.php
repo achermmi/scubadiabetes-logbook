@@ -165,6 +165,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-xlsx" data-format="xlsx">
 						↓ Excel
 					</button>
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-pdf">
+						↓ PDF
+					</button>
 				</div>
 			</div>
 

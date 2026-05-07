@@ -73,6 +73,179 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Genera PDF elenco soci in formato A4 orizzontale.
+	 *
+	 * @param array $rows Righe dati soci (ARRAY_A da wpdb).
+	 * @param int   $year Anno associativo.
+	 * @return string Contenuto binario del PDF.
+	 */
+	public function build_members_list_pdf( array $rows, int $year ): string {
+		$pw          = 841.89;
+		$ph          = 595.28;
+		$margin_l    = 28.0;
+		$header_h    = 65.0;
+		$accent_h    = 8.0;
+		$tbl_hdr_h   = 18.0;
+		$row_h       = 14.0;
+		$footer_y    = 12.0;
+		$tbl_top_y   = $ph - $header_h - $accent_h;
+		$tbl_hdr_y   = $tbl_top_y - $tbl_hdr_h;
+		$rows_per_pg = max( 1, (int) floor( ( $tbl_hdr_y - $footer_y - 4.0 ) / $row_h ) );
+
+		$assoc_title = (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
+		$primary     = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
+		$secondary   = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
+
+		// Logo.
+		$logo_url = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_bg  = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_img = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
+		$logo_h   = 50.0;
+		$logo_w   = 50.0;
+		if ( ! empty( $logo_img['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_img['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_w = 50.0 * (float) $logo_meta[0] / (float) $logo_meta[1];
+			}
+		}
+
+		// Colonne tabella: [ label, larghezza pt, max_chars ].
+		$columns = array(
+			array( '#',            22,  4 ),
+			array( 'Cognome, Nome', 120, 28 ),
+			array( 'Email',        150, 35 ),
+			array( 'Nascita',       58, 10 ),
+			array( 'Tipo Socio',    95, 22 ),
+			array( 'CHF',           42,  8 ),
+			array( 'Pagato',        36,  3 ),
+			array( 'Metodo',        85, 20 ),
+			array( 'Data Pag.',     58, 10 ),
+			array( 'Scadenza',      60, 10 ),
+		);
+		$table_w = 0.0;
+		foreach ( $columns as $col ) {
+			$table_w += (float) $col[1];
+		}
+
+		$method_labels = array(
+			'bonifico_iban' => 'Bonifico IBAN',
+			'twint'         => 'TWINT',
+			'paypal'        => 'PayPal',
+			'carta_credito' => 'Carta credito',
+			'apple_pay'     => 'Apple Pay',
+			'google_pay'    => 'Google Pay',
+			'fattura'       => 'Fattura',
+			'famigliare'    => 'Famigliare',
+			'staff'         => 'Staff',
+		);
+
+		$total_rows  = count( $rows );
+		$total_pages = max( 1, (int) ceil( $total_rows / $rows_per_pg ) );
+		$pages       = array();
+
+		for ( $pg = 0; $pg < $total_pages; $pg++ ) {
+			$ops    = '';
+			$images = array();
+
+			// Barra header primaria.
+			$ops .= $this->rect_fill( 0, $ph - $header_h, $pw, $header_h, $primary );
+			$ops .= $this->rect_fill( 0, $tbl_top_y, $pw, $accent_h, $secondary );
+
+			// Testo intestazione (colonna sinistra).
+			$ops .= $this->text( $margin_l, $ph - 26, 14, strtoupper( $assoc_title ), true, array( 1, 1, 1 ) );
+			$ops .= $this->text( $margin_l, $ph - 44, 10, 'Elenco soci - Anno ' . (string) $year, false, array( 0.80, 0.91, 1.0 ) );
+			$ops .= $this->text( $margin_l, $ph - 59, 8, 'Pagina ' . ( $pg + 1 ) . ' di ' . $total_pages . '  |  ' . gmdate( 'd.m.Y H:i' ), false, array( 0.70, 0.85, 1.0 ) );
+
+			// Logo (destra, centrato verticalmente nella barra).
+			if ( ! empty( $logo_img['path'] ) ) {
+				$lx = (int) round( $pw - $logo_w - 14.0 );
+				$ly = (int) round( $ph - $header_h + ( $header_h - $logo_h ) / 2 );
+				$images[] = array(
+					'path' => (string) $logo_img['path'],
+					'x'    => $lx,
+					'y'    => $ly,
+					'w'    => (int) round( $logo_w ),
+					'h'    => (int) round( $logo_h ),
+				);
+			}
+
+			// Riga intestazione colonne.
+			$ops .= $this->rect_fill( $margin_l, $tbl_hdr_y, $table_w, $tbl_hdr_h, $primary );
+			$cx   = $margin_l + 3.0;
+			foreach ( $columns as $col ) {
+				$ops .= $this->text( $cx, $tbl_hdr_y + 5, 7.5, $col[0], true, array( 1, 1, 1 ) );
+				$cx  += (float) $col[1];
+			}
+
+			// Righe dati.
+			$alt       = array( array( 0.95, 0.97, 1.0 ), array( 1, 1, 1 ) );
+			$start_idx = $pg * $rows_per_pg;
+			$end_idx   = min( $start_idx + $rows_per_pg, $total_rows );
+
+			for ( $ri = $start_idx; $ri < $end_idx; $ri++ ) {
+				$r      = $rows[ $ri ];
+				$row_y  = $tbl_hdr_y - (float) ( ( $ri - $start_idx + 1 ) * $row_h );
+				$row_bg = $alt[ ( $ri - $start_idx ) % 2 ];
+				$ops   .= $this->rect_fill( $margin_l, $row_y, $table_w, $row_h, $row_bg );
+
+				$nascita = ! empty( $r['date_of_birth'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['date_of_birth'] ) ) : '—';
+				$scad    = ! empty( $r['membership_expiry'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['membership_expiry'] ) ) : '—';
+				$datapag = ! empty( $r['payment_date'] ) ? date_i18n( 'd.m.Y', strtotime( substr( (string) $r['payment_date'], 0, 10 ) ) ) : '—';
+				$pagato  = ( ! empty( $r['has_paid_fee'] ) && (int) $r['has_paid_fee'] ) ? 'Si' : 'No';
+				$metodo  = $method_labels[ $r['payment_method'] ?? '' ] ?? (string) ( $r['payment_method'] ?? '-' );
+				$tassa   = ! empty( $r['fee_amount'] ) ? number_format( (float) $r['fee_amount'], 2 ) : '-';
+				$name    = trim( (string) $r['last_name'] . ', ' . (string) $r['first_name'] );
+
+				$cells = array(
+					(string) ( $ri + 1 ),
+					$name,
+					(string) ( $r['email'] ?? '' ),
+					$nascita,
+					(string) ( $r['member_type'] ?? '' ),
+					$tassa,
+					$pagato,
+					$metodo,
+					$datapag,
+					$scad,
+				);
+
+				$cx = $margin_l + 3.0;
+				foreach ( $columns as $ci => $col ) {
+					$val = isset( $cells[ $ci ] ) ? (string) $cells[ $ci ] : '';
+					$max = (int) $col[2];
+					if ( strlen( $val ) > $max ) {
+						$val = substr( $val, 0, $max - 1 ) . '.';
+					}
+					$ops .= $this->text( $cx, $row_y + 3.5, 7.0, $val );
+					$cx  += (float) $col[1];
+				}
+			}
+
+			// Footer.
+			$ops .= $this->text( $margin_l, $footer_y, 7.5, $assoc_title . ' - ' . gmdate( 'd.m.Y H:i' ), false, array( 0.5, 0.5, 0.5 ) );
+
+			$pages[] = array(
+				'width'    => $pw,
+				'height'   => $ph,
+				'commands' => $ops,
+				'images'   => $images,
+			);
+		}
+
+		$tmp = wp_tempnam( 'sd-members-list' );
+		$this->write_styled_pdf( $tmp, $pages );
+		$content = (string) file_get_contents( $tmp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( file_exists( $tmp ) ) {
+			unlink( $tmp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		}
+		return $content;
+	}
+
+	/**
 	 * Crea pagina ricevuta con layout curato.
 	 *
 	 * @param object $member Dati socio.

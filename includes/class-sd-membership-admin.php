@@ -27,6 +27,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_member_update', array( $this, 'update_member' ) );
 		add_action( 'wp_ajax_sd_members_delete', array( $this, 'delete_members' ) );
 		add_action( 'wp_ajax_sd_members_export', array( $this, 'export_members' ) );
+		add_action( 'wp_ajax_sd_members_export_pdf', array( $this, 'export_members_pdf' ) );
 		add_action( 'wp_ajax_sd_members_stats', array( $this, 'get_stats' ) );
 		add_action( 'wp_ajax_sd_resend_invoice_email', array( $this, 'resend_invoice_email' ) );
 
@@ -1312,6 +1313,54 @@ class SD_Membership_Admin {
 		}
 
 		fclose( $output );
+		exit;
+	}
+
+	/**
+	 * AJAX: esporta elenco soci in PDF A4 orizzontale
+	 */
+	public function export_members_pdf() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_die( esc_html__( 'Accesso negato.', 'sd-logbook' ) );
+		}
+
+		global $wpdb;
+		$db   = new SD_Database();
+		$year = absint( $_POST['anno'] ?? gmdate( 'Y' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT m.first_name, m.last_name, m.email,
+				        m.date_of_birth, m.member_type, m.fee_amount,
+				        m.membership_expiry,
+				        CASE WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
+				             THEN COALESCE(pm_exp.has_paid_fee, 0)
+				             ELSE m.has_paid_fee
+				        END AS has_paid_fee,
+				        p.payment_date, p.payment_method
+				 FROM {$db->table('members')} m
+				 LEFT JOIN {$db->table('payments')} p
+				   ON p.member_id = m.id AND p.payment_year = %d
+				 LEFT JOIN {$db->table('members')} pm_exp
+				   ON pm_exp.id = m.parent_member_id AND m.member_type = 'attivo_famigliare'
+				 WHERE m.is_active = 1
+				 ORDER BY m.last_name, m.first_name",
+				$year
+			),
+			ARRAY_A
+		);
+
+		$docs    = new SD_Payment_Documents();
+		$pdf     = $docs->build_members_list_pdf( (array) $rows, $year );
+		$fname   = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' ) . '.pdf';
+
+		header( 'Content-Type: application/pdf' );
+		header( 'Content-Disposition: attachment; filename="' . $fname . '"' );
+		header( 'Content-Length: ' . strlen( $pdf ) );
+		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+		echo $pdf; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
 	}
 
