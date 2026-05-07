@@ -80,16 +80,16 @@ class SD_Payment_Documents {
 	 * @return string Contenuto binario del PDF.
 	 */
 	public function build_members_list_pdf( array $rows, int $year ): string {
-		$pw          = 841.89;
-		$ph          = 595.28;
-		$margin_l    = 28.0;
-		$header_h    = 65.0;
-		$accent_h    = 8.0;
-		$tbl_hdr_h   = 18.0;
-		$row_h       = 14.0;
-		$footer_y    = 12.0;
-		$tbl_top_y   = $ph - $header_h - $accent_h;
-		$tbl_hdr_y   = $tbl_top_y - $tbl_hdr_h;
+		$pw = 841.89;
+		$ph = 595.28;
+		$margin_l = 28.0;
+		$header_h = 65.0;
+		$accent_h = 8.0;
+		$tbl_hdr_h = 18.0;
+		$row_h = 14.0;
+		$footer_y = 12.0;
+		$tbl_top_y = $ph - $header_h - $accent_h;
+		$tbl_hdr_y = $tbl_top_y - $tbl_hdr_h;
 		$rows_per_pg = max( 1, (int) floor( ( $tbl_hdr_y - $footer_y - 4.0 ) / $row_h ) );
 
 		$assoc_title = (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
@@ -104,8 +104,8 @@ class SD_Payment_Documents {
 			(int) round( $primary[2] * 255 ),
 		);
 		$logo_img = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
-		$logo_h   = 50.0;
-		$logo_w   = 50.0;
+		$logo_h = 50.0;
+		$logo_w = 50.0;
 		if ( ! empty( $logo_img['path'] ) ) {
 			$logo_meta = @getimagesize( (string) $logo_img['path'] );
 			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
@@ -115,16 +115,16 @@ class SD_Payment_Documents {
 
 		// Colonne tabella: [ label, larghezza pt, max_chars ].
 		$columns = array(
-			array( '#',            22,  4 ),
+			array( '#', 22, 4 ),
 			array( 'Cognome, Nome', 120, 28 ),
-			array( 'Email',        150, 35 ),
-			array( 'Nascita',       58, 10 ),
-			array( 'Tipo Socio',    95, 22 ),
-			array( 'CHF',           42,  8 ),
-			array( 'Pagato',        36,  3 ),
-			array( 'Metodo',        85, 20 ),
-			array( 'Data Pag.',     58, 10 ),
-			array( 'Scadenza',      60, 10 ),
+			array( 'Email', 150, 35 ),
+			array( 'Nascita', 58, 10 ),
+			array( 'Tipo Socio', 95, 22 ),
+			array( 'CHF', 42, 8 ),
+			array( 'Pagato', 36, 3 ),
+			array( 'Metodo', 85, 20 ),
+			array( 'Data Pag.', 58, 10 ),
+			array( 'Scadenza', 60, 10 ),
 		);
 		$table_w = 0.0;
 		foreach ( $columns as $col ) {
@@ -143,12 +143,12 @@ class SD_Payment_Documents {
 			'staff'         => 'Staff',
 		);
 
-		$total_rows  = count( $rows );
+		$total_rows = count( $rows );
 		$total_pages = max( 1, (int) ceil( $total_rows / $rows_per_pg ) );
-		$pages       = array();
+		$pages = array();
 
 		for ( $pg = 0; $pg < $total_pages; $pg++ ) {
-			$ops    = '';
+			$ops = '';
 			$images = array();
 
 			// Barra header primaria.
@@ -162,8 +162,8 @@ class SD_Payment_Documents {
 
 			// Logo (destra, centrato verticalmente nella barra).
 			if ( ! empty( $logo_img['path'] ) ) {
-				$lx = (int) round( $pw - $logo_w - 14.0 );
-				$ly = (int) round( $ph - $header_h + ( $header_h - $logo_h ) / 2 );
+				$lx       = (int) round( $pw - $logo_w - 14.0 );
+				$ly       = (int) round( $ph - $header_h + ( $header_h - $logo_h ) / 2 );
 				$images[] = array(
 					'path' => (string) $logo_img['path'],
 					'x'    => $lx,
@@ -182,15 +182,15 @@ class SD_Payment_Documents {
 			}
 
 			// Righe dati.
-			$alt       = array( array( 0.95, 0.97, 1.0 ), array( 1, 1, 1 ) );
+			$alt = array( array( 0.95, 0.97, 1.0 ), array( 1, 1, 1 ) );
 			$start_idx = $pg * $rows_per_pg;
-			$end_idx   = min( $start_idx + $rows_per_pg, $total_rows );
+			$end_idx = min( $start_idx + $rows_per_pg, $total_rows );
 
 			for ( $ri = $start_idx; $ri < $end_idx; $ri++ ) {
-				$r      = $rows[ $ri ];
-				$row_y  = $tbl_hdr_y - (float) ( ( $ri - $start_idx + 1 ) * $row_h );
+				$r = $rows[ $ri ];
+				$row_y = $tbl_hdr_y - (float) ( ( $ri - $start_idx + 1 ) * $row_h );
 				$row_bg = $alt[ ( $ri - $start_idx ) % 2 ];
-				$ops   .= $this->rect_fill( $margin_l, $row_y, $table_w, $row_h, $row_bg );
+				$ops .= $this->rect_fill( $margin_l, $row_y, $table_w, $row_h, $row_bg );
 
 				$nascita = ! empty( $r['date_of_birth'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['date_of_birth'] ) ) : '—';
 				$scad    = ! empty( $r['membership_expiry'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['membership_expiry'] ) ) : '—';

@@ -1352,9 +1352,9 @@ class SD_Membership_Admin {
 			ARRAY_A
 		);
 
-		$docs    = new SD_Payment_Documents();
-		$pdf     = $docs->build_members_list_pdf( (array) $rows, $year );
-		$fname   = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' ) . '.pdf';
+		$docs  = new SD_Payment_Documents();
+		$pdf   = $docs->build_members_list_pdf( (array) $rows, $year );
+		$fname = 'soci-scubadiabetes-' . $year . '-' . gmdate( 'Ymd' ) . '.pdf';
 
 		header( 'Content-Type: application/pdf' );
 		header( 'Content-Disposition: attachment; filename="' . $fname . '"' );
