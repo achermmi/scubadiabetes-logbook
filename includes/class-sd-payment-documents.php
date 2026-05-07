@@ -551,37 +551,20 @@ class SD_Payment_Documents {
 	 * @return string
 	 */
 	private function rounded_rect_clip_path( $x, $y, $w, $h, $r ) {
-		$k  = 0.5523; // costante approssimazione Bezier quarto cerchio
+		$k  = 0.5523;
 		$kr = $k * $r;
-		return sprintf(
-			"%.2f %.2f m\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\n%.2f %.2f l\n%.2f %.2f %.2f %.2f %.2f %.2f c\nh\n",
-			// moveto: inizio lato inferiore
-			$x + $r,           $y,
-			// lineto: fine lato inferiore
-			$x + $w - $r,      $y,
-			// curveto: angolo basso-destra
-			$x + $w - $r + $kr, $y,
-			$x + $w,           $y + $r - $kr,
-			$x + $w,           $y + $r,
-			// lineto: fine lato destro
-			$x + $w,           $y + $h - $r,
-			// curveto: angolo alto-destra
-			$x + $w,           $y + $h - $r + $kr,
-			$x + $w - $r + $kr, $y + $h,
-			$x + $w - $r,      $y + $h,
-			// lineto: fine lato superiore
-			$x + $r,           $y + $h,
-			// curveto: angolo alto-sinistra
-			$x + $r - $kr,     $y + $h,
-			$x,                $y + $h - $r + $kr,
-			$x,                $y + $h - $r,
-			// lineto: fine lato sinistro
-			$x,                $y + $r,
-			// curveto: angolo basso-sinistra
-			$x,                $y + $r - $kr,
-			$x + $r - $kr,     $y,
-			$x + $r,           $y
-		);
+		// path: moveto bottom-left-corner, then clockwise bezier arcs at each corner.
+		$path  = sprintf( "%.2f %.2f m\n", $x + $r, $y );
+		$path .= sprintf( "%.2f %.2f l\n", $x + $w - $r, $y );
+		$path .= sprintf( "%.2f %.2f %.2f %.2f %.2f %.2f c\n", $x + $w - $r + $kr, $y, $x + $w, $y + $r - $kr, $x + $w, $y + $r );
+		$path .= sprintf( "%.2f %.2f l\n", $x + $w, $y + $h - $r );
+		$path .= sprintf( "%.2f %.2f %.2f %.2f %.2f %.2f c\n", $x + $w, $y + $h - $r + $kr, $x + $w - $r + $kr, $y + $h, $x + $w - $r, $y + $h );
+		$path .= sprintf( "%.2f %.2f l\n", $x + $r, $y + $h );
+		$path .= sprintf( "%.2f %.2f %.2f %.2f %.2f %.2f c\n", $x + $r - $kr, $y + $h, $x, $y + $h - $r + $kr, $x, $y + $h - $r );
+		$path .= sprintf( "%.2f %.2f l\n", $x, $y + $r );
+		$path .= sprintf( "%.2f %.2f %.2f %.2f %.2f %.2f c\n", $x, $y + $r - $kr, $x + $r - $kr, $y, $x + $r, $y );
+		$path .= "h\n";
+		return $path;
 	}
 
 	/**
@@ -669,6 +652,15 @@ class SD_Payment_Documents {
 	 * @param int    $max_chars max caratteri.
 	 * @return array
 	 */
+	private function wrap_text_lines( $text, $max_chars = 90 ) {
+		$clean = trim( preg_replace( '/\s+/', ' ', (string) $text ) );
+		if ( '' === $clean ) {
+			return array();
+		}
+		$wrapped = wordwrap( $clean, (int) $max_chars, "\n", true );
+		return explode( "\n", $wrapped );
+	}
+
 	/**
 	 * Restituisce l'etichetta leggibile del metodo di pagamento.
 	 *
@@ -688,15 +680,6 @@ class SD_Payment_Documents {
 			'staff'         => 'Staff',
 		);
 		return $labels[ $slug ] ?? ( '' !== $slug ? $slug : 'n/d' );
-	}
-
-	private function wrap_text_lines( $text, $max_chars = 90 ) {
-		$clean = trim( preg_replace( '/\s+/', ' ', (string) $text ) );
-		if ( '' === $clean ) {
-			return array();
-		}
-		$wrapped = wordwrap( $clean, (int) $max_chars, "\n", true );
-		return explode( "\n", $wrapped );
 	}
 
 	/**
