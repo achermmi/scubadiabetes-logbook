@@ -632,3 +632,83 @@ body.page .container.single-page-container {
         padding: 20px;
     }
 }
+
+/* ============================================================
+   TOUCH / MOBILE GLOBAL (base comune a tutte le pagine)
+   Garantisce che pulsanti, card e controlli interattivi
+   siano tappabili correttamente su smartphone e tablet.
+   ============================================================ */
+
+/* Eliminazione del delay 300ms e highlight nativo su tutti i
+   pulsanti, card e controlli interattivi del plugin */
+button,
+[role="button"],
+.sd-btn,
+.sd-btn-save,
+.sd-btn-close-form,
+.sd-btn-detail,
+.sd-btn-export,
+.sd-btn-export-research,
+.sd-btn-delete-dive,
+.sd-btn-edit-dive,
+.sd-btn-history-dive,
+.sd-btn-save-edit,
+.sd-btn-cancel-edit,
+.sd-btn-search,
+.sd-btn-reset,
+.sd-modal-close,
+.sd-btn-close-modal,
+.sd-icon-btn,
+.sd-btn-sm,
+.sd-stat-card,
+.sd-dive-card,
+.sd-edit-card,
+.sd-fee-card,
+.sd-year-chip,
+.sd-remove-row,
+.sd-tag button,
+summary,
+.sd-tab-btn,
+.sd-pagination button,
+select,
+input[type="checkbox"],
+input[type="radio"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Stato :active visibile per feedback immediato al tocco */
+button:active,
+[role="button"]:active,
+.sd-btn:active,
+.sd-icon-btn:active,
+.sd-stat-card:active,
+.sd-dive-card:active {
+    opacity: 0.82;
+}
+
+/* Dimensione minima target di tocco su mobile (WCAG 2.5.5) */
+@media (max-width: 1024px) {
+    button,
+    [role="button"],
+    .sd-btn,
+    .sd-btn-save,
+    .sd-btn-close-form,
+    .sd-btn-detail,
+    .sd-btn-export,
+    .sd-modal-close,
+    .sd-icon-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .sd-stat-card {
+        min-height: 64px;
+    }
+
+    summary {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+}
