@@ -701,7 +701,7 @@ function sd_val( $obj, $key, $default = '' ) {
 										</span>
 									</td>
 									<td><?php echo esc_html( $method_label ); ?></td>
-									<td><?php echo esc_html( $pay->payment_date ? substr( $pay->payment_date, 0, 10 ) : '—' ); ?></td>
+									<td><?php echo esc_html( $pay->payment_date ? date_i18n( 'd.m.Y', strtotime( substr( $pay->payment_date, 0, 10 ) ) ) : '—' ); ?></td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
