@@ -108,6 +108,18 @@ final class SD_Logbook {
 
 		// Blocca il login degli account disabilitati (is_active = 0)
 		add_filter( 'authenticate', array( $this, 'block_disabled_accounts' ), 30, 1 );
+
+		// Log errori wp_mail per diagnostica
+		add_action( 'wp_mail_failed', array( $this, 'log_mail_failed' ) );
+	}
+
+	/**
+	 * Logga errori di invio email per diagnostica.
+	 *
+	 * @param WP_Error $error Errore wp_mail.
+	 */
+	public function log_mail_failed( $error ) {
+		error_log( 'SD wp_mail_failed: ' . $error->get_error_message() . ' | data: ' . wp_json_encode( $error->get_error_data() ) );
 	}
 
 	/**
