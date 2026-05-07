@@ -18,6 +18,7 @@
 		if ($('#sd-management-page').length) {
 			loadMembers();
 			bindFilters();
+			bindStatCards();
 			bindExport();
 			bindPagination();
 			bindBulkDelete();
@@ -238,6 +239,31 @@
 
 		$('#sd-btn-reset').on('click', function () {
 			$('#sd-member-filters')[0].reset();
+			$('.sd-stat-card').removeClass('sd-stat-active');
+			state.paged = 1;
+			loadMembers();
+		});
+	}
+
+	// ===== STAT CARD FILTER =====
+	function bindStatCards() {
+		$('.sd-stat-clickable').on('click', function () {
+			var $card   = $(this);
+			var field   = $card.data('filter-field');
+			var value   = $card.data('filter-value');
+			var isReset = $card.data('filter-reset');
+			var anno    = $('#sd-filter-anno').val();
+
+			$('#sd-member-filters')[0].reset();
+			$('#sd-filter-anno').val(anno);
+
+			if (!isReset && field !== undefined) {
+				$('#sd-member-filters').find('[name="' + field + '"]').val(String(value));
+			}
+
+			$('.sd-stat-card').removeClass('sd-stat-active');
+			$card.addClass('sd-stat-active');
+
 			state.paged = 1;
 			loadMembers();
 		});

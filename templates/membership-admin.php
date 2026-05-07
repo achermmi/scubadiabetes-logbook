@@ -19,31 +19,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<!-- Statistiche rapide -->
 	<div class="sd-stats-bar">
-		<div class="sd-stat-card">
+		<div class="sd-stat-card sd-stat-clickable" data-filter-reset="1" title="<?php esc_attr_e( 'Mostra tutti i soci', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-total"><?php echo esc_html( $stats['total'] ); ?></span>
 			<span class="sd-stat-label"><?php esc_html_e( 'Soci totali', 'sd-logbook' ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-success">
+		<div class="sd-stat-card sd-stat-success sd-stat-clickable" data-filter-field="pagato" data-filter-value="1" title="<?php esc_attr_e( 'Filtra: hanno pagato', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-paid"><?php echo esc_html( $stats['paid'] ); ?></span>
 			<span class="sd-stat-label"><?php esc_html_e( 'Hanno pagato', 'sd-logbook' ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-warning">
+		<div class="sd-stat-card sd-stat-warning sd-stat-clickable" data-filter-field="pagato" data-filter-value="0" title="<?php esc_attr_e( 'Filtra: in attesa pagamento', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-unpaid"><?php echo esc_html( $stats['unpaid'] ); ?></span>
 			<span class="sd-stat-label"><?php esc_html_e( 'In attesa pagamento', 'sd-logbook' ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-info">
+		<div class="sd-stat-card sd-stat-info sd-stat-clickable" data-filter-field="pagato" data-filter-value="1" title="<?php esc_attr_e( 'Filtra: soci che hanno pagato', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-income">CHF <?php echo esc_html( number_format( $stats['income'], 2 ) ); ?></span>
 			<span class="sd-stat-label"><?php echo esc_html( sprintf( __( 'Incassato %s', 'sd-logbook' ), $current_year ) ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-danger">
+		<div class="sd-stat-card sd-stat-danger sd-stat-clickable" data-filter-field="pagato" data-filter-value="0" title="<?php esc_attr_e( 'Filtra: soci non pagato', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-expected">CHF <?php echo esc_html( number_format( $stats['expected'], 2 ) ); ?></span>
 			<span class="sd-stat-label"><?php echo esc_html( sprintf( __( 'Non pagato %s', 'sd-logbook' ), $current_year ) ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-success">
+		<div class="sd-stat-card sd-stat-success sd-stat-clickable" data-filter-field="is_active" data-filter-value="1" title="<?php esc_attr_e( 'Filtra: soci attivi', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-active-yes"><?php echo esc_html( $stats['active_yes'] ); ?></span>
 			<span class="sd-stat-label"><?php esc_html_e( 'Soci attivi', 'sd-logbook' ); ?></span>
 		</div>
-		<div class="sd-stat-card sd-stat-warning">
+		<div class="sd-stat-card sd-stat-warning sd-stat-clickable" data-filter-field="is_active" data-filter-value="0" title="<?php esc_attr_e( 'Filtra: soci non attivi', 'sd-logbook' ); ?>">
 			<span class="sd-stat-value" id="sd-stat-active-no"><?php echo esc_html( $stats['active_no'] ); ?></span>
 			<span class="sd-stat-label"><?php esc_html_e( 'Soci non attivi', 'sd-logbook' ); ?></span>
 		</div>

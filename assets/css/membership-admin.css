@@ -38,6 +38,24 @@
 .sd-stat-info .sd-stat-value    { color: #2563eb; }
 .sd-stat-danger .sd-stat-value  { color: #dc2626; }
 
+/* Card cliccabili */
+.sd-stat-clickable {
+	cursor: pointer;
+	transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+	user-select: none;
+}
+
+.sd-stat-clickable:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+	border-color: #a0aec0;
+}
+
+.sd-stat-clickable.sd-stat-active {
+	border-color: #0055a5;
+	box-shadow: 0 0 0 3px rgba(0, 85, 165, 0.25);
+}
+
 /* ===== FILTER BAR ===== */
 .sd-filter-bar {
 	background: #f9fafb;
