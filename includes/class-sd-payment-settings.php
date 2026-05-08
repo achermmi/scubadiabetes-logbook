@@ -533,7 +533,7 @@ class SD_Payment_Settings {
 			$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 			$err  = curl_error( $ch );
 			curl_close( $ch );
-			// phpcs:enable WordPress.WP.AlternativeFunctions
+			// phpcs:enable WordPress.WP.AlternativeFunctions.
 			return array(
 				'code'   => $err ? 0 : $code,
 				'body'   => $err ? $err : (string) $body,
