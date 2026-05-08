@@ -14,20 +14,43 @@
 		?>
 	</p>
 
+	<style>
+		.sd-payment-methods { display: grid; gap: 12px; max-width: 520px; }
+		.sd-payment-methods .button {
+			border-radius: 6px !important;
+			text-align: center;
+			display: block;
+			box-sizing: border-box;
+			width: 100%;
+		}
+		.sd-checkout-notice {
+			max-width: 520px;
+			box-sizing: border-box;
+			padding: 8px 12px;
+			border-radius: 6px;
+			margin-bottom: 12px;
+			display: inline-block;
+			width: auto;
+			max-width: 520px;
+		}
+		.sd-checkout-notice.sd-notice-error  { background: #fde8e8; border: 1px solid #f5c2c2; color: #8b1a1a; }
+		.sd-checkout-notice.sd-notice-info   { background: #e8f0fd; border: 1px solid #c2d4f5; color: #1a3a8b; }
+	</style>
+
 	<?php if ( 'paypal_cancelled' === $notice ) : ?>
-		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Pagamento PayPal annullato. Puoi riprovare o usare Fattura.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-info"><?php esc_html_e( 'Pagamento PayPal annullato. Puoi riprovare o usare Fattura.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'paypal_disabled' === $notice ) : ?>
-		<div class="sd-notice sd-notice-error"><?php esc_html_e( 'Metodo PayPal non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'Metodo PayPal non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'invoice_disabled' === $notice ) : ?>
-		<div class="sd-notice sd-notice-error"><?php esc_html_e( 'Metodo Fattura non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'Metodo Fattura non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
 	<?php elseif ( in_array( $notice, array( 'paypal_error', 'paypal_missing_order', 'paypal_capture_failed' ), true ) ) : ?>
-		<div class="sd-notice sd-notice-error"><?php esc_html_e( 'PayPal non disponibile al momento. Usa Fattura o riprova.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'PayPal non disponibile al momento. Usa Fattura o riprova.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'twint_disabled' === $notice ) : ?>
-		<div class="sd-notice sd-notice-error"><?php esc_html_e( 'TWINT non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'TWINT non attivo nelle impostazioni.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'twint_error' === $notice ) : ?>
-		<div class="sd-notice sd-notice-error"><?php esc_html_e( 'TWINT non disponibile al momento. Usa Fattura o riprova.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'TWINT non disponibile al momento. Usa Fattura o riprova.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'twint_cancelled' === $notice ) : ?>
-		<div class="sd-notice sd-notice-info"><?php esc_html_e( 'Pagamento TWINT annullato. Puoi riprovare o usare un altro metodo.', 'sd-logbook' ); ?></div>
+		<div class="sd-checkout-notice sd-notice-info"><?php esc_html_e( 'Pagamento TWINT annullato. Puoi riprovare o usare un altro metodo.', 'sd-logbook' ); ?></div>
 	<?php endif; ?>
 
 	<?php
@@ -58,7 +81,7 @@
 				<?php esc_html_e( 'In attesa di conferma pagamento...', 'sd-logbook' ); ?>
 			</div>
 			<p style="margin-top:16px;">
-				<a href="<?php echo esc_url( add_query_arg( array( 'sd_payment_action' => 'twint_cancel', 'sdpt' => $token ), $checkout_action_base ) ); ?>" class="button" style="background:#c00;color:#fff;border-color:#a00;">
+				<a href="<?php echo esc_url( add_query_arg( array( 'sd_payment_action' => 'twint_cancel', 'sdpt' => $token ), $checkout_action_base ) ); ?>" class="button" style="background:#c00;color:#fff;border-color:#a00;border-radius:6px;">
 					<?php esc_html_e( 'Annulla pagamento TWINT', 'sd-logbook' ); ?>
 				</a>
 			</p>
@@ -66,17 +89,21 @@
 		<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 		<?php
 		wp_nonce_field( 'sd_twint_poll', 'sd_twint_nonce' );
-		wp_localize_script( 'sd-twint-checkout', 'sdTwintData', array(
-			'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-			'nonce'      => wp_create_nonce( 'sd_twint_poll' ),
-			'token'      => $token,
-			'orderUuid'  => $twint_order_uuid,
-		) );
+		wp_localize_script(
+			'sd-twint-checkout',
+			'sdTwintData',
+			array(
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( 'sd_twint_poll' ),
+				'token'     => $token,
+				'orderUuid' => $twint_order_uuid,
+			)
+		);
 		wp_enqueue_script( 'sd-twint-checkout' );
 		?>
 	<?php else : ?>
 
-	<div class="sd-payment-methods" style="display:grid;gap:12px;max-width:520px;">
+	<div class="sd-payment-methods">
 		<?php if ( $paypal_enabled ) : ?>
 			<a class="button button-primary" href="<?php echo esc_url( add_query_arg( array( 'sd_payment_action' => 'start_paypal', 'sdpt' => $token ), $checkout_action_base ) ); ?>">
 				<?php esc_html_e( 'Paga con PayPal', 'sd-logbook' ); ?>
