@@ -451,23 +451,12 @@ class SD_Payment_Settings {
 		$kparam  = '?key=' . rawurlencode( $api_key );
 		$kparam2 = '&key=' . rawurlencode( $api_key );
 
-		// Candidati senza shop_id nel path (tutti i /{shop}/... restituiscono 405).
-		// Per ogni path proviamo sia header (cURL) sia query-param (bypass proxy CDN).
+		// Step 1: prova a ottenere le tariffe direttamente con l'event_id del Manager.
 		$candidates = array(
-			// Tariff con query param (aggira strip header da CDN).
 			'/event/{id}/tariffs?key'    => $base . '/event/' . $event_id . '/tariffs' . $kparam,
-			// Header only.
 			'/event/{id}/tariffs'        => $base . '/event/' . $event_id . '/tariffs',
-			// Categorie con query param.
 			'/event/{id}/categories?key' => $base . '/event/' . $event_id . '/categories' . $kparam,
-			// Tutti gli eventi dello shop (lista).
-			'/events?key'                => $base . '/events' . $kparam,
-			// Dettaglio evento con query param.
-			'/event/{id}?key'            => $base . '/event/' . $event_id . $kparam,
-			// Tariffe globali con event_id + key.
 			'/tariffs?event_id&key'      => $base . '/tariffs?event_id=' . $event_id . $kparam2,
-			// Fallback: lista tariffe senza event_id filter.
-			'/tariffs?key'               => $base . '/tariffs' . $kparam,
 		);
 
 		$attempts = array();
@@ -484,11 +473,107 @@ class SD_Payment_Settings {
 			if ( $code >= 200 && $code < 300 ) {
 				$data       = json_decode( $body, true );
 				$categories = $this->extract_ik_categories( $data );
-				wp_send_json_success(
+				if ( ! empty( $categories ) ) {
+					wp_send_json_success(
+						array(
+							'categories' => $categories,
+							'endpoint'   => $label . ' ' . $url,
+							'raw'        => $body,
+						)
+					);
+				}
+			}
+		}
+
+		// Step 2: l'ID nel Manager (392024) è diverso dall'ID API (es. 6).
+		// Recupera la lista eventi per trovare l'ID API corretto, poi cerca le tariffe.
+		$events_result           = $this->fetch_ik_url( $base . '/events' . $kparam, $api_key );
+		$attempts['/events?key'] = array(
+			'code'   => $events_result['code'],
+			'method' => $events_result['method'] ?? '?',
+			'body'   => substr( $events_result['body'], 0, 600 ),
+		);
+
+		if ( $events_result['code'] >= 200 && $events_result['code'] < 300 ) {
+			$events_data = json_decode( $events_result['body'], true );
+			// Estrai lista eventi (può stare in 'data', 'events', o direttamente array root).
+			$events_list = null;
+			if ( is_array( $events_data ) ) {
+				foreach ( array( 'data', 'events', 'items' ) as $ekey ) {
+					if ( isset( $events_data[ $ekey ] ) && is_array( $events_data[ $ekey ] ) ) {
+						$events_list = $events_data[ $ekey ];
+						break;
+					}
+				}
+				if ( null === $events_list && isset( $events_data[0] ) ) {
+					$events_list = $events_data;
+				}
+			}
+
+			if ( is_array( $events_list ) ) {
+				foreach ( $events_list as $evt ) {
+					$api_event_id = (int) ( $evt['id'] ?? 0 );
+					if ( $api_event_id <= 0 ) {
+						continue;
+					}
+
+					// Prova a ottenere le tariffe di questo evento tramite ID API.
+					$tariff_url                = $base . '/event/' . $api_event_id . '/tariffs' . $kparam;
+					$tariff_result             = $this->fetch_ik_url( $tariff_url, $api_key );
+					$tariff_label              = '/event/' . $api_event_id . '/tariffs?key (API id)';
+					$attempts[ $tariff_label ] = array(
+						'code'   => $tariff_result['code'],
+						'method' => $tariff_result['method'] ?? '?',
+						'body'   => substr( $tariff_result['body'], 0, 600 ),
+					);
+
+					if ( $tariff_result['code'] >= 200 && $tariff_result['code'] < 300 ) {
+						$data       = json_decode( $tariff_result['body'], true );
+						$categories = $this->extract_ik_categories( $data );
+						if ( ! empty( $categories ) ) {
+							wp_send_json_success(
+								array(
+									'categories'   => $categories,
+									'endpoint'     => $tariff_label . ' ' . $tariff_url,
+									'raw'          => $tariff_result['body'],
+									'api_event_id' => $api_event_id,
+								)
+							);
+						}
+					}
+
+					// Prova anche /event/{api_id}/categories.
+					$cat_url                = $base . '/event/' . $api_event_id . '/categories' . $kparam;
+					$cat_result             = $this->fetch_ik_url( $cat_url, $api_key );
+					$cat_label              = '/event/' . $api_event_id . '/categories?key (API id)';
+					$attempts[ $cat_label ] = array(
+						'code'   => $cat_result['code'],
+						'method' => $cat_result['method'] ?? '?',
+						'body'   => substr( $cat_result['body'], 0, 600 ),
+					);
+
+					if ( $cat_result['code'] >= 200 && $cat_result['code'] < 300 ) {
+						$data       = json_decode( $cat_result['body'], true );
+						$categories = $this->extract_ik_categories( $data );
+						if ( ! empty( $categories ) ) {
+							wp_send_json_success(
+								array(
+									'categories'   => $categories,
+									'endpoint'     => $cat_label . ' ' . $cat_url,
+									'raw'          => $cat_result['body'],
+									'api_event_id' => $api_event_id,
+								)
+							);
+						}
+					}
+				}
+
+				// Nessuna tariffa trovata: restituisci almeno la lista eventi come debug.
+				wp_send_json_error(
 					array(
-						'categories' => $categories,
-						'endpoint'   => $label . ' ' . $url,
-						'raw'        => $body,
+						'message'    => 'Lista eventi recuperata ma nessuna tariffa trovata. Vedi debug.',
+						'events_raw' => substr( $events_result['body'], 0, 2000 ),
+						'attempts'   => $attempts,
 					)
 				);
 			}
