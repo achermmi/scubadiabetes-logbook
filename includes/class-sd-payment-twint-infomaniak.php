@@ -81,17 +81,34 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			);
 		}
 
-		$event_id = (int) get_option( 'sd_payment_twint_ik_event_id', 0 );
-		$url      = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/checkout';
+		$event_id   = (int) get_option( 'sd_payment_twint_ik_event_id', 0 );
+		$customer   = is_array( $args['customer'] ?? null ) ? $args['customer'] : array();
+		$email      = sanitize_email( (string) ( $customer['email'] ?? '' ) );
+		$first_name = sanitize_text_field( (string) ( $customer['first_name'] ?? '' ) );
+		$last_name  = sanitize_text_field( (string) ( $customer['last_name'] ?? '' ) );
+		$url        = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/checkout';
+
+		$query_args = array();
 
 		// Hint informativo: usato solo lato debug/log, non crea automaticamente la resa.
 		if ( $event_id > 0 ) {
-			$url = add_query_arg(
-				array(
-					'event_id' => $event_id,
-				),
-				$url
-			);
+			$query_args['event_id'] = $event_id;
+		}
+
+		// Prefill esplicito cliente: evita che il checkout usi solo la sessione account Infomaniak.
+		if ( '' !== $email && is_email( $email ) ) {
+			$query_args['email']          = $email;
+			$query_args['customer_email'] = $email;
+		}
+		if ( '' !== $first_name ) {
+			$query_args['first_name'] = $first_name;
+		}
+		if ( '' !== $last_name ) {
+			$query_args['last_name'] = $last_name;
+		}
+
+		if ( ! empty( $query_args ) ) {
+			$url = add_query_arg( $query_args, $url );
 		}
 
 		return array(
