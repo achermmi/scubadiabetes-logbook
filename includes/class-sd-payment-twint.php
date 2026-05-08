@@ -130,10 +130,12 @@ class SD_Payment_Twint extends SD_Payment_Adapter {
 			$payload['confirmationUrl'] = esc_url_raw( (string) $args['return_url'] );
 		}
 
-		$request_args = $this->request_args( array(
-			'method' => 'POST',
-			'body'   => wp_json_encode( $payload ),
-		) );
+		$request_args = $this->request_args(
+			array(
+				'method' => 'POST',
+				'body'   => wp_json_encode( $payload ),
+			)
+		);
 
 		if ( is_wp_error( $request_args ) ) {
 			return $request_args;

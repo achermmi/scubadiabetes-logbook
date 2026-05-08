@@ -49,8 +49,8 @@ class SD_Payment_Flow {
 	 * @return void
 	 */
 	public function handle_actions() {
-		$action = isset( $_GET['sd_payment_action'] ) ? sanitize_text_field( wp_unslash( $_GET['sd_payment_action'] ) ) : '';
-		$token  = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
+		$action          = isset( $_GET['sd_payment_action'] ) ? sanitize_text_field( wp_unslash( $_GET['sd_payment_action'] ) ) : '';
+		$token           = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
 		$paypal_enabled  = (int) get_option( 'sd_payment_enable_paypal', 1 ) === 1;
 		$invoice_enabled = (int) get_option( 'sd_payment_enable_invoice', 1 ) === 1;
 		$twint_enabled   = (int) get_option( 'sd_payment_enable_twint_stub', 0 ) === 1;
@@ -120,8 +120,8 @@ class SD_Payment_Flow {
 
 			$cancel_url = add_query_arg(
 				array(
-					'sdpt'    => rawurlencode( $token ),
-					'notice'  => 'paypal_cancelled',
+					'sdpt'   => rawurlencode( $token ),
+					'notice' => 'paypal_cancelled',
 				),
 				$this->orchestrator->get_checkout_page_url()
 			);
@@ -343,10 +343,12 @@ class SD_Payment_Flow {
 				$redirect = $accept['redirect_to'];
 			}
 
-			wp_send_json_success( array(
-				'status'       => 'SUCCESS',
-				'redirect_url' => esc_url_raw( $redirect ),
-			) );
+			wp_send_json_success(
+				array(
+					'status'       => 'SUCCESS',
+					'redirect_url' => esc_url_raw( $redirect ),
+				)
+			);
 			return;
 		}
 
@@ -368,7 +370,7 @@ class SD_Payment_Flow {
 	public function register_assets() {
 		wp_register_script(
 			'sd-twint-checkout',
-			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/js/twint-checkout.js',
+			plugin_dir_url( __DIR__ ) . 'assets/js/twint-checkout.js',
 			array(),
 			SD_LOGBOOK_VERSION,
 			true
