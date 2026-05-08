@@ -447,22 +447,28 @@ class SD_Payment_Settings {
 			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
 		}
 
-		$base = 'https://etickets.infomaniak.com/api/shop';
+		$base    = 'https://etickets.infomaniak.com/api/shop';
+		$kparam  = '?key=' . rawurlencode( $api_key );
+		$kparam2 = '&key=' . rawurlencode( $api_key );
 
-		// Candidati: prima con shop_id nel path (se fornito), poi senza.
-		$candidates = array();
-		if ( $shop_id > 0 ) {
-			$candidates['/{shop}/event/{id}/tariffs'] = $base . '/' . $shop_id . '/event/' . $event_id . '/tariffs';
-			$candidates['/{shop}/event/{id}/rates']   = $base . '/' . $shop_id . '/event/' . $event_id . '/rates';
-			$candidates['/{shop}/event/{id}/tickets'] = $base . '/' . $shop_id . '/event/' . $event_id . '/tickets';
-			$candidates['/{shop}/event/{id}']         = $base . '/' . $shop_id . '/event/' . $event_id;
-			$candidates['/{shop}/tariffs?event_id']   = $base . '/' . $shop_id . '/tariffs?event_id=' . $event_id;
-		}
-		$candidates['/event/{id}/tariffs'] = $base . '/event/' . $event_id . '/tariffs';
-		$candidates['/event/{id}/rates']   = $base . '/event/' . $event_id . '/rates';
-		$candidates['/event/{id}/tickets'] = $base . '/event/' . $event_id . '/tickets';
-		$candidates['/event/{id}']         = $base . '/event/' . $event_id;
-		$candidates['/tariffs?event_id']   = $base . '/tariffs?event_id=' . $event_id;
+		// Candidati senza shop_id nel path (tutti i /{shop}/... restituiscono 405).
+		// Per ogni path proviamo sia header (cURL) sia query-param (bypass proxy CDN).
+		$candidates = array(
+			// Tariff con query param (aggira strip header da CDN).
+			'/event/{id}/tariffs?key'    => $base . '/event/' . $event_id . '/tariffs' . $kparam,
+			// Header only.
+			'/event/{id}/tariffs'        => $base . '/event/' . $event_id . '/tariffs',
+			// Categorie con query param.
+			'/event/{id}/categories?key' => $base . '/event/' . $event_id . '/categories' . $kparam,
+			// Tutti gli eventi dello shop (lista).
+			'/events?key'                => $base . '/events' . $kparam,
+			// Dettaglio evento con query param.
+			'/event/{id}?key'            => $base . '/event/' . $event_id . $kparam,
+			// Tariffe globali con event_id + key.
+			'/tariffs?event_id&key'      => $base . '/tariffs?event_id=' . $event_id . $kparam2,
+			// Fallback: lista tariffe senza event_id filter.
+			'/tariffs?key'               => $base . '/tariffs' . $kparam,
+		);
 
 		$attempts = array();
 		foreach ( $candidates as $label => $url ) {
@@ -470,8 +476,9 @@ class SD_Payment_Settings {
 			$code               = $result['code'];
 			$body               = $result['body'];
 			$attempts[ $label ] = array(
-				'code' => $code,
-				'body' => substr( $body, 0, 600 ),
+				'code'   => $code,
+				'method' => $result['method'] ?? '?',
+				'body'   => substr( $body, 0, 600 ),
 			);
 
 			if ( $code >= 200 && $code < 300 ) {
@@ -518,8 +525,8 @@ class SD_Payment_Settings {
 						'Accept-Language: it_IT',
 					),
 					CURLOPT_SSL_VERIFYPEER => true,
-					CURLOPT_FOLLOWLOCATION => true,
-					CURLOPT_MAXREDIRS      => 5,
+					// Non seguire redirect: evita che un redirect strippa gli header.
+					CURLOPT_FOLLOWLOCATION => false,
 				)
 			);
 			$body = curl_exec( $ch );
@@ -528,12 +535,13 @@ class SD_Payment_Settings {
 			curl_close( $ch );
 			// phpcs:enable WordPress.WP.AlternativeFunctions
 			return array(
-				'code' => $err ? 0 : $code,
-				'body' => $err ? $err : $body,
+				'code'   => $err ? 0 : $code,
+				'body'   => $err ? $err : (string) $body,
+				'method' => 'curl',
 			);
 		}
 
-		// Fallback WP HTTP API.
+		// Fallback WP HTTP API (nota: WP può strippare header 'key' su GET).
 		$resp = wp_remote_get(
 			$url,
 			array(
@@ -548,13 +556,15 @@ class SD_Payment_Settings {
 		);
 		if ( is_wp_error( $resp ) ) {
 			return array(
-				'code' => 0,
-				'body' => $resp->get_error_message(),
+				'code'   => 0,
+				'body'   => $resp->get_error_message(),
+				'method' => 'wp_fallback',
 			);
 		}
 		return array(
-			'code' => (int) wp_remote_retrieve_response_code( $resp ),
-			'body' => wp_remote_retrieve_body( $resp ),
+			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
+			'body'   => wp_remote_retrieve_body( $resp ),
+			'method' => 'wp_fallback',
 		);
 	}
 
