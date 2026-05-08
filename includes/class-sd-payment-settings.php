@@ -21,6 +21,7 @@ class SD_Payment_Settings {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_post_sd_payment_create_pages', array( $this, 'handle_create_pages' ) );
+		add_action( 'wp_ajax_sd_load_ik_categories', array( $this, 'ajax_load_ik_categories' ) );
 	}
 
 	/**
@@ -130,6 +131,14 @@ class SD_Payment_Settings {
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_event_id',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 0,
 			)
 		);
 		foreach ( array( 30, 50, 75 ) as $_tier ) {
@@ -408,6 +417,83 @@ class SD_Payment_Settings {
 	}
 
 	/**
+	 * AJAX: carica categorie Infomaniak per un dato event_id.
+	 *
+	 * @return void
+	 */
+	public function ajax_load_ik_categories() {
+		check_ajax_referer( 'sd_ik_categories', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Permesso negato.' ), 403 );
+		}
+
+		$event_id = absint( $_POST['event_id'] ?? 0 );
+		if ( $event_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Event ID non valido.' ) );
+		}
+
+		$api_key = trim( (string) get_option( 'sd_payment_twint_ik_key', '' ) );
+		if ( '' === $api_key ) {
+			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
+		}
+
+		$response = wp_remote_get(
+			'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'key'             => $api_key,
+					'currency'        => '1',
+					'Accept-Language' => 'it_IT',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( array( 'message' => $response->get_error_message() ) );
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( $code < 200 || $code >= 300 ) {
+			$msg = is_array( $data ) && ! empty( $data['error'] ) ? (string) $data['error'] : $body;
+			wp_send_json_error( array( 'message' => 'HTTP ' . $code . ': ' . $msg ) );
+		}
+
+		// Normalizza: accetta sia array piatto sia array con chiave 'data' o 'categories'.
+		$categories = array();
+		if ( is_array( $data ) ) {
+			$list = $data['data'] ?? ( $data['categories'] ?? $data );
+			if ( is_array( $list ) ) {
+				foreach ( $list as $cat ) {
+					if ( ! is_array( $cat ) ) {
+						continue;
+					}
+					$id    = $cat['id'] ?? $cat['category_id'] ?? null;
+					$name  = $cat['name'] ?? $cat['title'] ?? ( is_string( $cat['name'] ?? null ) ? $cat['name'] : '' );
+					$price = $cat['price'] ?? $cat['amount'] ?? null;
+					if ( null !== $id ) {
+						$categories[] = array(
+							'id'    => (int) $id,
+							'name'  => is_array( $name ) ? ( $name['it'] ?? $name['fr'] ?? reset( $name ) ) : (string) $name,
+							'price' => $price,
+						);
+					}
+				}
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'categories' => $categories,
+				'raw'        => $body,
+			)
+		);
+	}
+
+	/**
 	 * Gestisce creazione guidata pagine checkout/conferma.
 	 *
 	 * @return void
@@ -594,6 +680,15 @@ class SD_Payment_Settings {
 							</td>
 						</tr>
 						<tr>
+							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID', 'sd-logbook' ); ?></label></th>
+							<td>
+								<input type="number" class="regular-text" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:180px">
+								<button type="button" id="sd-ik-load-cats" class="button" style="margin-left:8px;"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
+								<p class="description"><?php esc_html_e( 'L&apos;ID si trova nell&apos;URL di Infomaniak Manager: .../events/<strong>392024</strong>/view', 'sd-logbook' ); ?></p>
+								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
+							</td>
+						</tr>
+						<tr>
 							<th scope="row"><?php esc_html_e( 'Infomaniak Category ID per importo', 'sd-logbook' ); ?></th>
 							<td>
 								<?php foreach ( array( 30, 50, 75 ) as $tier ) : ?>
@@ -607,6 +702,55 @@ class SD_Payment_Settings {
 								<p class="description"><?php esc_html_e( 'Per ogni importo, inserisci l&apos;ID della categoria biglietto corrispondente nel tuo evento Infomaniak (Manager &rarr; etickets &rarr; evento &rarr; Categorie).', 'sd-logbook' ); ?></p>
 							</td>
 						</tr>
+						<script>
+						(function(){
+							document.getElementById('sd-ik-load-cats').addEventListener('click', function(){
+								var btn = this;
+								var eventId = document.getElementById('sd_payment_twint_ik_event_id').value;
+								var result  = document.getElementById('sd-ik-cats-result');
+								if ( !eventId || parseInt(eventId) <= 0 ) {
+									result.style.display='block';
+									result.innerHTML='<span style="color:red">Inserisci prima l\'Event ID.</span>';
+									return;
+								}
+								btn.disabled = true;
+								btn.textContent = 'Caricamento...';
+								result.style.display='none';
+								var fd = new FormData();
+								fd.append('action',   'sd_load_ik_categories');
+								fd.append('nonce',    '<?php echo esc_js( wp_create_nonce( 'sd_ik_categories' ) ); ?>');
+								fd.append('event_id', eventId);
+								fetch('<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>', {method:'POST', body:fd})
+									.then(function(r){ return r.json(); })
+									.then(function(data){
+										btn.disabled   = false;
+										btn.textContent = 'Carica categorie';
+										result.style.display = 'block';
+										if ( !data.success ) {
+											result.innerHTML = '<span style="color:red">Errore: ' + (data.data && data.data.message ? data.data.message : JSON.stringify(data)) + '</span>';
+											return;
+										}
+										var cats = data.data.categories;
+										if ( !cats || cats.length === 0 ) {
+											result.innerHTML = '<em>Nessuna categoria trovata. Risposta raw:</em><pre style="background:#f5f5f5;padding:8px;max-height:200px;overflow:auto">' + data.data.raw + '</pre>';
+											return;
+										}
+										var html = '<table style="border-collapse:collapse"><thead><tr><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">ID</th><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">Nome</th><th style="padding:4px 0;border-bottom:1px solid #ccc">Prezzo</th></tr></thead><tbody>';
+										cats.forEach(function(c){
+											html += '<tr><td style="padding:3px 12px 3px 0"><code>' + c.id + '</code></td><td style="padding:3px 12px 3px 0">' + c.name + '</td><td style="padding:3px 0">' + (c.price !== null && c.price !== undefined ? 'CHF ' + c.price : '') + '</td></tr>';
+										});
+										html += '</tbody></table>';
+										result.innerHTML = html;
+									})
+									.catch(function(e){
+										btn.disabled = false;
+										btn.textContent = 'Carica categorie';
+										result.style.display = 'block';
+										result.innerHTML = '<span style="color:red">Errore rete: ' + e.message + '</span>';
+									});
+							});
+						})();
+						</script>
 						<tr>
 							<th scope="row" style="padding-top:12px;"><em><?php esc_html_e( '&#8212; Impostazioni provider Diretto &#8212;', 'sd-logbook' ); ?></em></th>
 							<td></td>
