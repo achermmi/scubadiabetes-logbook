@@ -437,38 +437,50 @@ class SD_Payment_Settings {
 			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
 		}
 
-		$headers = array(
+		$headers     = array(
 			'key'             => $api_key,
 			'currency'        => '1',
 			'Accept-Language' => 'it_IT',
 		);
+		$key_encoded = rawurlencode( $api_key );
 
 		// Proviamo più endpoint candidati in sequenza.
+		// La chiave è passata sia come header sia come query-param perché WP può
+		// droppare gli header custom quando segue un redirect HTTP.
 		$candidates = array(
-			'GET  /event/{id}'            => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id,
-			),
-			'GET  /event/{id}/tariffs'    => array(
+			'GET /event/{id}/tariffs (header)'        => array(
 				'method' => 'GET',
 				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs',
 			),
-			'GET  /tariffs?event_id={id}' => array(
+			'GET /event/{id}/tariffs (key qparam)'    => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs?key=' . $key_encoded,
+			),
+			'GET /event/{id}/categories (header)'     => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories',
+			),
+			'GET /event/{id}/categories (key qparam)' => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories?key=' . $key_encoded,
+			),
+			'GET /event/{id} (header)'                => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id,
+			),
+			'GET /tariffs?event_id (header)'          => array(
 				'method' => 'GET',
 				'url'    => 'https://etickets.infomaniak.com/api/shop/tariffs?event_id=' . $event_id,
-			),
-			'GET  /categories'            => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/categories',
 			),
 		);
 
 		$attempts = array();
 		foreach ( $candidates as $label => $cfg ) {
 			$args               = array(
-				'method'  => $cfg['method'],
-				'timeout' => 10,
-				'headers' => $headers,
+				'method'      => $cfg['method'],
+				'timeout'     => 10,
+				'redirection' => 0, // non seguire redirect: evita lo strip degli header.
+				'headers'     => $headers,
 			);
 			$resp               = wp_remote_request( $cfg['url'], $args );
 			$code               = is_wp_error( $resp ) ? 0 : (int) wp_remote_retrieve_response_code( $resp );
