@@ -26,14 +26,27 @@ class SD_Payment_Flow {
 	private $paypal;
 
 	/**
-	 * @var SD_Payment_Twint
+	 * @var SD_Payment_Adapter
 	 */
 	private $twint;
+
+	/**
+	 * Istanzia l'adapter TWINT corretto in base all'impostazione sd_payment_twint_provider.
+	 *
+	 * @return SD_Payment_Adapter
+	 */
+	private function make_twint_adapter() {
+		$provider = get_option( 'sd_payment_twint_provider', 'direct' );
+		if ( 'infomaniak' === $provider ) {
+			return new SD_Payment_Twint_Infomaniak();
+		}
+		return new SD_Payment_Twint();
+	}
 
 	public function __construct() {
 		$this->orchestrator = new SD_Payment_Orchestrator();
 		$this->paypal       = new SD_Payment_PayPal();
-		$this->twint        = new SD_Payment_Twint();
+		$this->twint        = $this->make_twint_adapter();
 
 		add_shortcode( 'sd_payment_checkout', array( $this, 'render_checkout' ) );
 		add_shortcode( 'sd_payment_confirmation', array( $this, 'render_confirmation' ) );
@@ -218,6 +231,65 @@ class SD_Payment_Flow {
 				exit;
 			}
 
+			$twint_provider = get_option( 'sd_payment_twint_provider', 'direct' );
+
+			if ( 'infomaniak' === $twint_provider ) {
+				// ---- Flusso Infomaniak: redirect alla pagina TWINT di Infomaniak ----.
+				$ok_url = add_query_arg(
+					array(
+						'sd_payment_action' => 'twint_ik_return',
+						'sdpt'              => rawurlencode( $token ),
+					),
+					$this->orchestrator->get_checkout_page_url()
+				);
+				$cancel_url = add_query_arg(
+					array(
+						'sdpt'   => rawurlencode( $token ),
+						'notice' => 'twint_cancelled',
+					),
+					$this->orchestrator->get_checkout_page_url()
+				);
+
+				$order = $this->twint->create_order(
+					array(
+						'amount'     => (float) $ctx->amount,
+						'currency'   => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+						'return_url' => $ok_url,
+						'cancel_url' => $cancel_url,
+					)
+				);
+
+				if ( is_wp_error( $order ) ) {
+					error_log( '[SD TWINT IK] start_twint create_order error: ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					wp_safe_redirect(
+						add_query_arg(
+							array(
+								'sdpt'   => rawurlencode( $token ),
+								'notice' => 'twint_error',
+							),
+							$this->orchestrator->get_checkout_page_url()
+						)
+					);
+					exit;
+				}
+
+				set_transient(
+					'sd_twint_order_' . $token,
+					array(
+						'order_id'  => $order['order_id'],
+						'member_id' => (int) $ctx->member_id,
+						'amount'    => (float) $ctx->amount,
+						'currency'  => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+					),
+					900
+				);
+
+				// Redirect a pagina esterna Infomaniak (non wp_safe_redirect che blocca domini esterni).
+				wp_redirect( esc_url_raw( $order['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+				exit;
+			}
+
+			// ---- Flusso diretto TWINT: mostra QR in-page ----.
 			$confirm_url = add_query_arg(
 				array(
 					'sd_payment_action' => 'twint_return',
@@ -273,6 +345,58 @@ class SD_Payment_Flow {
 					$this->orchestrator->get_checkout_page_url()
 				)
 			);
+			exit;
+		}
+
+		if ( 'twint_ik_return' === $action ) {
+			// Ritorno dalla pagina di pagamento Infomaniak TWINT.
+			$twint_data = get_transient( 'sd_twint_order_' . $token );
+			if ( empty( $twint_data['order_id'] ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'twint_error',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
+				exit;
+			}
+
+			$result = $this->twint->get_order( $twint_data['order_id'] );
+			if ( is_wp_error( $result ) || 'paid' !== $result['status'] ) {
+				$notice = is_wp_error( $result ) ? 'twint_error' : 'twint_cancelled';
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => $notice,
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
+				exit;
+			}
+
+			$accept = $this->orchestrator->accept_payment(
+				(int) $twint_data['member_id'],
+				array(
+					'provider'            => 'twint',
+					'provider_payment_id' => $twint_data['order_id'],
+					'payment_method'      => 'twint',
+					'amount'              => (float) $twint_data['amount'],
+					'payload_json'        => wp_json_encode( $result['payload'] ),
+					'notes'               => __( 'Pagamento TWINT confermato via Infomaniak.', 'sd-logbook' ),
+				)
+			);
+			delete_transient( 'sd_twint_order_' . $token );
+
+			$redirect = $this->orchestrator->get_confirmation_page_url();
+			if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
+				$redirect = $accept['redirect_to'];
+			}
+			wp_safe_redirect( $redirect );
 			exit;
 		}
 

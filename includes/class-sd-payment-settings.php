@@ -118,6 +118,30 @@ class SD_Payment_Settings {
 		);
 		register_setting(
 			self::OPTION_GROUP,
+			'sd_payment_twint_provider',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_twint_provider' ),
+				'default'           => 'direct',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_key',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_category_id',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 0,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
 			'sd_payment_twint_mode',
 			array(
 				'sanitize_callback' => array( $this, 'sanitize_twint_mode' ),
@@ -357,6 +381,17 @@ class SD_Payment_Settings {
 	}
 
 	/**
+	 * Sanitizza provider TWINT.
+	 *
+	 * @param string $value provider.
+	 * @return string
+	 */
+	public function sanitize_twint_provider( $value ) {
+		$value = sanitize_text_field( (string) $value );
+		return in_array( $value, array( 'direct', 'infomaniak' ), true ) ? $value : 'direct';
+	}
+
+	/**
 	 * Sanitizza colore hex.
 	 *
 	 * @param string $value colore.
@@ -541,6 +576,31 @@ class SD_Payment_Settings {
 							</tr>
 							<tr>
 								<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Configurazione TWINT Express Checkout', 'sd-logbook' ); ?></h3></th>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Provider TWINT', 'sd-logbook' ); ?></th>
+							<td>
+								<label><input type="radio" name="sd_payment_twint_provider" value="direct" <?php checked( get_option( 'sd_payment_twint_provider', 'direct' ), 'direct' ); ?>> <?php esc_html_e( 'Diretto (storeUuid + apiKey + certificato)', 'sd-logbook' ); ?></label><br>
+								<label><input type="radio" name="sd_payment_twint_provider" value="infomaniak" <?php checked( get_option( 'sd_payment_twint_provider', 'direct' ), 'infomaniak' ); ?>> <?php esc_html_e( 'Infomaniak eCommerce (etickets.infomaniak.com)', 'sd-logbook' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_ik_key"><?php esc_html_e( 'Infomaniak API Key', 'sd-logbook' ); ?></label></th>
+							<td>
+								<input type="password" class="regular-text" id="sd_payment_twint_ik_key" name="sd_payment_twint_ik_key" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_key', '' ) ); ?>">
+								<p class="description"><?php esc_html_e( 'Manager Infomaniak &rarr; Shop &rarr; Disponibilit&#224; online &rarr; Accesso API', 'sd-logbook' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_ik_category_id"><?php esc_html_e( 'Infomaniak Category ID (opz.)', 'sd-logbook' ); ?></label></th>
+							<td>
+								<input type="number" class="small-text" id="sd_payment_twint_ik_category_id" name="sd_payment_twint_ik_category_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_category_id', 0 ) ); ?>" min="0">
+								<p class="description"><?php esc_html_e( 'ID categoria biglietto da aggiungere all&apos;ordine (0 = nessun biglietto).', 'sd-logbook' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row" style="padding-top:12px;"><em><?php esc_html_e( '&#8212; Impostazioni provider Diretto &#8212;', 'sd-logbook' ); ?></em></th>
+							<td></td>
 						</tr>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Modalita TWINT', 'sd-logbook' ); ?></th>

@@ -68,6 +68,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-paypal.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-fattura.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-twint.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-twint-infomaniak.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-documents.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-orchestrator.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-flow.php';
