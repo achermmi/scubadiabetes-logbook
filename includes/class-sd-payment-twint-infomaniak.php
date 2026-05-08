@@ -82,9 +82,16 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 		}
 
 		$event_id = (int) get_option( 'sd_payment_twint_ik_event_id', 0 );
-		$url      = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code );
+		$url      = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/checkout';
+
+		// Hint informativo: usato solo lato debug/log, non crea automaticamente la resa.
 		if ( $event_id > 0 ) {
-			$url .= '/event/' . rawurlencode( (string) $event_id );
+			$url = add_query_arg(
+				array(
+					'event_id' => $event_id,
+				),
+				$url
+			);
 		}
 
 		return array(
