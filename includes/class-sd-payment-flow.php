@@ -51,6 +51,7 @@ class SD_Payment_Flow {
 
 		$ctx = $this->orchestrator->get_payment_context_by_token( $token );
 		if ( is_wp_error( $ctx ) ) {
+			error_log( '[SD Payment] handle_actions early exit – action=' . $action . ' token=' . $token . ' error=' . $ctx->get_error_code() . ': ' . $ctx->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return;
 		}
 
@@ -127,6 +128,7 @@ class SD_Payment_Flow {
 			);
 
 			if ( is_wp_error( $order ) ) {
+				error_log( '[SD PayPal] create_order error: ' . $order->get_error_code() . ' — ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				$redirect = add_query_arg(
 					array(
 						'sdpt'   => rawurlencode( $token ),
@@ -138,7 +140,10 @@ class SD_Payment_Flow {
 				exit;
 			}
 
-			wp_safe_redirect( $order['approval_url'] );
+			// PayPal approval URL è un dominio esterno (sandbox.paypal.com / paypal.com):
+			// wp_safe_redirect() blocca i redirect esterni e li manda al fallback locale → 404.
+			// Usiamo wp_redirect() che non ha questa restrizione.
+			wp_redirect( esc_url_raw( $order['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 			exit;
 		}
 

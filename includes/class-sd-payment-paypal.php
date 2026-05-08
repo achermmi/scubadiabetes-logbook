@@ -62,6 +62,7 @@ class SD_Payment_PayPal extends SD_Payment_Adapter {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( $code < 200 || $code >= 300 || empty( $body['access_token'] ) ) {
+			error_log( '[SD PayPal] auth failed – HTTP ' . $code . ' – ' . wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return new WP_Error( 'sd_paypal_auth_failed', __( 'Autenticazione PayPal non riuscita.', 'sd-logbook' ) );
 		}
 
