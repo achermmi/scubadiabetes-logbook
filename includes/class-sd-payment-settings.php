@@ -151,6 +151,14 @@ class SD_Payment_Settings {
 		);
 		register_setting(
 			self::OPTION_GROUP,
+			'sd_payment_twint_ik_shop_code',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_twint_ik_shop_code' ),
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
 			'sd_payment_twint_ik_mode',
 			array(
 				'sanitize_callback' => array( $this, 'sanitize_twint_ik_mode' ),
@@ -447,6 +455,18 @@ class SD_Payment_Settings {
 	public function sanitize_twint_ik_default_url_param( $value ) {
 		$value = sanitize_key( (string) $value );
 		return '' !== $value ? $value : 'url_default';
+	}
+
+	/**
+	 * Sanitizza codice shop Infomaniak (es. S9S93UKTS6).
+	 *
+	 * @param string $value valore.
+	 * @return string
+	 */
+	public function sanitize_twint_ik_shop_code( $value ) {
+		$value = strtoupper( sanitize_text_field( (string) $value ) );
+		$value = preg_replace( '/[^A-Z0-9]/', '', $value );
+		return (string) $value;
 	}
 
 	/**
@@ -1161,15 +1181,17 @@ class SD_Payment_Settings {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID + Shop ID', 'sd-logbook' ); ?></label></th>
+							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID + Shop', 'sd-logbook' ); ?></label></th>
 							<td>
 								<?php echo wp_kses( __( 'Event ID:', 'sd-logbook' ), array() ); ?>
 								<input type="number" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:120px">
+								&nbsp;&nbsp;<?php echo wp_kses( __( 'Shop Code:', 'sd-logbook' ), array() ); ?>
+								<input type="text" id="sd_payment_twint_ik_shop_code" name="sd_payment_twint_ik_shop_code" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_shop_code', '' ) ); ?>" style="width:120px" placeholder="S9S93UKTS6">
 								&nbsp;&nbsp;<?php echo wp_kses( __( 'Shop ID:', 'sd-logbook' ), array() ); ?>
 								<input type="number" id="sd_payment_twint_ik_shop_id" name="sd_payment_twint_ik_shop_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_shop_id', 0 ) ); ?>" min="0" style="width:100px">
 								&nbsp;
 								<button type="button" id="sd-ik-load-cats" class="button"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
-								<p class="description"><?php echo wp_kses( __( 'URL Manager: .../tickets/<strong>59285</strong>/events/<strong>392024</strong>/view → Shop ID = 59285, Event ID = 392024', 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
+								<p class="description"><?php echo wp_kses( __( 'URL shop pubblico: .../shop/scubadiabetes-switzerland-<strong>S9S93UKTS6</strong>/ (Shop Code). Manager: .../tickets/<strong>59285</strong>/events/<strong>392024</strong>/view (Shop ID/Event ID).', 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
 								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
 							</td>
 						</tr>

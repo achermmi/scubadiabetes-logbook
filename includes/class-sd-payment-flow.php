@@ -234,7 +234,7 @@ class SD_Payment_Flow {
 			$twint_provider = get_option( 'sd_payment_twint_provider', 'direct' );
 
 			if ( 'infomaniak' === $twint_provider ) {
-				// ---- Flusso Infomaniak: redirect alla pagina TWINT di Infomaniak ----.
+				// ---- Flusso Infomaniak hosted checkout ----.
 				$ok_url     = add_query_arg(
 					array(
 						'sd_payment_action' => 'twint_ik_return',
@@ -279,16 +279,18 @@ class SD_Payment_Flow {
 					exit;
 				}
 
-				set_transient(
-					'sd_twint_order_' . $token,
-					array(
-						'order_id'  => $order['order_id'],
-						'member_id' => (int) $ctx->member_id,
-						'amount'    => (float) $ctx->amount,
-						'currency'  => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
-					),
-					900
-				);
+				if ( ! empty( $order['order_id'] ) ) {
+					set_transient(
+						'sd_twint_order_' . $token,
+						array(
+							'order_id'  => $order['order_id'],
+							'member_id' => (int) $ctx->member_id,
+							'amount'    => (float) $ctx->amount,
+							'currency'  => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+						),
+						900
+					);
+				}
 
 				// Redirect a pagina esterna Infomaniak (non wp_safe_redirect che blocca domini esterni).
 				wp_redirect( esc_url_raw( $order['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect

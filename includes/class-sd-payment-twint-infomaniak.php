@@ -1,17 +1,13 @@
 <?php
 /**
- * Adapter TWINT via Infomaniak eCommerce API (etickets.infomaniak.com).
+ * Adapter TWINT via Infomaniak.
  *
- * Flusso redirect (simile a PayPal):
- *  1. create_order() → POST /api/shop/order/create → order_id
- *  2. customer lookup/create → POST /api/shop/customer/login oppure /customer/create
- *  3. attach customer      → POST /api/shop/order/{id}/customer {customer_id}
- *  4. payment URL          → GET  /api/shop/order/{id}/payment?... → approval_url
- *  2. get_order()    → GET /api/shop/order/{id} → status ('paid' = successo)
- *  3. cancel_order() → DELETE /api/shop/order/{id}
+ * Nota: il flusso TWINT reale Infomaniak usa il checkout hosted su endpoint
+ * /shop/{SHOP_CODE}/... e non l'endpoint privato /api/shop/order/{id}/payment.
  *
- * Autenticazione: header `key: <API_KEY>` (generata in Infomaniak manager →
- * Shop / Disponibilità online → Accesso API).
+ * Questo adapter usa quindi un fallback operativo: redirect al checkout hosted
+ * (shop/event page), lasciando al tunnel Infomaniak la gestione completa del
+ * pagamento TWINT.
  *
  * @package SD_Logbook
  */
@@ -77,99 +73,45 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	 * }
 	 */
 	public function create_order( array $args ) {
-		$api_key = trim( (string) get_option( 'sd_payment_twint_ik_key', '' ) );
-		if ( '' === $api_key ) {
+		$shop_code = $this->get_shop_code();
+		if ( '' === $shop_code ) {
 			return new WP_Error(
-				'sd_twint_ik_missing_key',
-				__( 'API Key Infomaniak non configurata.', 'sd-logbook' )
+				'sd_twint_ik_missing_shop_code',
+				__( 'Shop Code Infomaniak non configurato. Inserisci il codice shop (es. S9S93UKTS6) nelle impostazioni pagamento.', 'sd-logbook' )
 			);
 		}
 
-		// Seleziona category_id in base all'importo (30 / 50 / 75 CHF).
-		$amount      = (float) ( $args['amount'] ?? 0.0 );
-		$amount_key  = (int) round( $amount );
-		$category_id = (int) get_option( 'sd_payment_twint_ik_category_id_' . $amount_key, 0 );
-
-		// Fallback: primo tier configurato tra 30/50/75.
-		if ( $category_id <= 0 ) {
-			foreach ( array( 30, 50, 75 ) as $_tier ) {
-				$fallback = (int) get_option( 'sd_payment_twint_ik_category_id_' . $_tier, 0 );
-				if ( $fallback > 0 ) {
-					$category_id = $fallback;
-					break;
-				}
-			}
-		}
-
-		if ( $category_id <= 0 ) {
-			return new WP_Error(
-				'sd_twint_ik_missing_category',
-				__( 'Category ID Infomaniak non configurato. Configura i Category ID nelle impostazioni pagamento.', 'sd-logbook' )
-			);
-		}
-		// Crea ordine con biglietto incluso nel body.
-		$body = wp_json_encode(
-			array(
-				array(
-					'category_id' => $category_id,
-					'count'       => 1,
-				),
-			)
-		);
-
-		$response = wp_remote_post(
-			self::API_BASE . '/order/create',
-			$this->request_args(
-				array(
-					'headers' => array_merge(
-						$this->get_headers(),
-						array( 'Content-Type' => 'application/json' )
-					),
-					'body'    => $body,
-				)
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			error_log( '[SD TWINT IK] create order wp_error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return $response;
-		}
-
-		$code     = (int) wp_remote_retrieve_response_code( $response );
-		$raw      = wp_remote_retrieve_body( $response );
-		$order_id = trim( $raw, "\" \t\n\r" );
-
-		if ( $code < 200 || $code >= 300 || ! is_numeric( $order_id ) ) {
-			error_log( '[SD TWINT IK] create order failed HTTP ' . $code . ': ' . $raw ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return new WP_Error(
-				'sd_twint_ik_order_failed',
-				__( 'Creazione ordine Infomaniak non riuscita.', 'sd-logbook' )
-			);
-		}
-
-		// Alcuni shop richiedono un cliente associato all'ordine prima del redirect di pagamento.
-		$customer = isset( $args['customer'] ) && is_array( $args['customer'] ) ? $args['customer'] : array();
-		if ( ! empty( $customer ) ) {
-			$attach = $this->attach_customer_to_order( (string) $order_id, $customer );
-			if ( is_wp_error( $attach ) ) {
-				error_log( '[SD TWINT IK] attach customer failed: ' . $attach->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				return $attach;
-			}
-		}
-
-		// Ottieni URL pagamento TWINT.
-		$return_url = esc_url_raw( (string) ( $args['return_url'] ?? '' ) );
-		$cancel_url = esc_url_raw( (string) ( $args['cancel_url'] ?? $return_url ) );
-
-		$approval_url = $this->request_payment_url( (string) $order_id, $return_url, $cancel_url );
-		if ( is_wp_error( $approval_url ) ) {
-			return $approval_url;
+		$event_id = (int) get_option( 'sd_payment_twint_ik_event_id', 0 );
+		$url      = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code );
+		if ( $event_id > 0 ) {
+			$url .= '/event/' . rawurlencode( (string) $event_id );
 		}
 
 		return array(
-			'order_id'     => (string) $order_id,
-			'approval_url' => $approval_url,
+			'order_id'          => '',
+			'approval_url'      => $url,
+			'external_checkout' => true,
 		);
+	}
+
+	/**
+	 * Restituisce Shop Code Infomaniak in formato pulito.
+	 *
+	 * @return string
+	 */
+	private function get_shop_code() {
+		$shop_code = strtoupper( trim( (string) get_option( 'sd_payment_twint_ik_shop_code', '' ) ) );
+		$shop_code = preg_replace( '/[^A-Z0-9]/', '', $shop_code );
+		if ( '' !== $shop_code ) {
+			return (string) $shop_code;
+		}
+
+		$legacy_shop_id = (int) get_option( 'sd_payment_twint_ik_shop_id', 0 );
+		if ( $legacy_shop_id > 0 ) {
+			return (string) $legacy_shop_id;
+		}
+
+		return '';
 	}
 
 	/**
@@ -183,8 +125,9 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	private function request_payment_url( $order_id, $return_url, $cancel_url ) {
 		$payment_base = self::API_BASE . '/order/' . rawurlencode( (string) $order_id ) . '/payment';
 
-		$config_mode = trim( (string) get_option( 'sd_payment_twint_ik_mode', '' ) );
+		$config_mode     = trim( (string) get_option( 'sd_payment_twint_ik_mode', 'TWINT' ) );
 		$mode_candidates = array(
+			$config_mode,
 			'TWINT',
 			'twint',
 			'TWINT_QR',
@@ -192,27 +135,36 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			'TWINT_DIRECT',
 			'twint_direct',
 		);
-		if ( '' !== $config_mode ) {
-			array_unshift( $mode_candidates, $config_mode );
-		}
-		$mode_candidates = array_values( array_unique( $mode_candidates ) );
+		$mode_candidates = array_values( array_unique( array_filter( $mode_candidates ) ) );
 
-		$config_default_param = trim( (string) get_option( 'sd_payment_twint_ik_default_url_param', '' ) );
-		$default_url_params   = array( 'url_default', 'url', 'url_return', 'return_url' );
-		if ( '' !== $config_default_param ) {
-			array_unshift( $default_url_params, $config_default_param );
-		}
-		$default_url_params = array_values( array_unique( $default_url_params ) );
+		$config_default_param = trim( (string) get_option( 'sd_payment_twint_ik_default_url_param', 'url_default' ) );
+		$default_url_params   = array(
+			$config_default_param,
+			'url_default',
+			'url',
+			'url_return',
+			'return_url',
+		);
+		$default_url_params   = array_values( array_unique( array_filter( $default_url_params ) ) );
 
-		$attempts = array();
+		$attempts              = array();
+		$found_invalid_mode    = false;
+		$found_missing_default = false;
+
 		foreach ( $mode_candidates as $mode ) {
-			foreach ( $default_url_params as $default_param ) {
+			$tried_fallback_default_params = false;
+
+			foreach ( $default_url_params as $index => $default_param ) {
+				if ( $index > 0 && $tried_fallback_default_params ) {
+					break;
+				}
+
 				$query = array(
-					'mode'       => $mode,
-					'url_ok'     => $return_url,
-					'url_error'  => $cancel_url,
-					'url_cancel' => $cancel_url,
-					'locale'     => 'it-CH',
+					'mode'         => $mode,
+					'url_ok'       => $return_url,
+					'url_error'    => $cancel_url,
+					'url_cancel'   => $cancel_url,
+					'locale'       => 'it-CH',
 					$default_param => $return_url,
 				);
 
@@ -243,6 +195,19 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 					return $approval_url;
 				}
 
+				$error_message = $this->extract_api_error_message( $body );
+				if ( $this->contains_any( $error_message, array( 'modalit', 'mode de paiement', 'payment mode' ) ) ) {
+					$found_invalid_mode = true;
+				}
+				if ( $this->contains_any( $error_message, array( 'url predefinito', 'url par defaut', 'url par d', 'default url' ) ) ) {
+					$found_missing_default = true;
+					// Prova i fallback solo se l'API dice esplicitamente che manca la URL di default.
+					$tried_fallback_default_params = true;
+				} else {
+					// Se l'errore non riguarda la URL default, non insistiamo con altri param names.
+					$tried_fallback_default_params = false;
+				}
+
 				$attempts[] = array(
 					'mode'  => $mode,
 					'param' => $default_param,
@@ -254,10 +219,57 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 
 		error_log( '[SD TWINT IK] get payment URL failed: ' . wp_json_encode( $attempts ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
+		if ( $found_invalid_mode ) {
+			return new WP_Error(
+				'sd_twint_ik_invalid_mode',
+				__( 'Infomaniak ha rifiutato il mode di pagamento configurato. Verifica che TWINT sia abilitato nel tunnel checkout dello shop/evento e imposta il mode esatto richiesto.', 'sd-logbook' )
+			);
+		}
+
+		if ( $found_missing_default ) {
+			return new WP_Error(
+				'sd_twint_ik_missing_default_url',
+				__( 'Infomaniak richiede il parametro URL di default (tipicamente url_default). Verifica il nome parametro nelle impostazioni.', 'sd-logbook' )
+			);
+		}
+
 		return new WP_Error(
 			'sd_twint_ik_payment_url_failed',
 			__( 'Recupero URL pagamento TWINT non riuscito. Verifica mode e parametro URL default nelle opzioni Infomaniak.', 'sd-logbook' )
 		);
+	}
+
+	/**
+	 * Estrae il messaggio errore dalla risposta API.
+	 *
+	 * @param string $body Corpo risposta.
+	 * @return string
+	 */
+	private function extract_api_error_message( $body ) {
+		$body = (string) $body;
+		$data = json_decode( $body, true );
+		if ( is_array( $data ) && ! empty( $data['error'] ) ) {
+			return strtolower( (string) $data['error'] );
+		}
+		return strtolower( $body );
+	}
+
+	/**
+	 * True se il testo contiene almeno uno dei frammenti passati.
+	 *
+	 * @param string $haystack Testo da cercare.
+	 * @param array  $needles  Frammenti.
+	 * @return bool
+	 */
+	private function contains_any( $haystack, array $needles ) {
+		$haystack = strtolower( (string) $haystack );
+		foreach ( $needles as $needle ) {
+			$needle = strtolower( (string) $needle );
+			if ( '' !== $needle && false !== strpos( $haystack, $needle ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
