@@ -24,14 +24,13 @@
 			width: 100%;
 		}
 		.sd-checkout-notice {
+			display: block;
+			width: 100%;
 			max-width: 520px;
 			box-sizing: border-box;
 			padding: 8px 12px;
 			border-radius: 6px;
 			margin-bottom: 12px;
-			display: inline-block;
-			width: auto;
-			max-width: 520px;
 		}
 		.sd-checkout-notice.sd-notice-error  { background: #fde8e8; border: 1px solid #f5c2c2; color: #8b1a1a; }
 		.sd-checkout-notice.sd-notice-info   { background: #e8f0fd; border: 1px solid #c2d4f5; color: #1a3a8b; }
