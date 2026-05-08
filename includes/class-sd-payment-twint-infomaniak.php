@@ -4,8 +4,9 @@
  *
  * Flusso redirect (simile a PayPal):
  *  1. create_order() → POST /api/shop/order/create → order_id
- *     → (opz.) POST /api/shop/order/{id}/tickets (aggiunge biglietto configurato)
- *     → GET  /api/shop/order/{id}/payment?mode=twint&url_ok=... → approval_url
+ *  2. customer lookup/create → POST /api/shop/customer/login oppure /customer/create
+ *  3. attach customer      → POST /api/shop/order/{id}/customer {customer_id}
+ *  4. payment URL          → GET  /api/shop/order/{id}/payment?... → approval_url
  *  2. get_order()    → GET /api/shop/order/{id} → status ('paid' = successo)
  *  3. cancel_order() → DELETE /api/shop/order/{id}
  *
@@ -160,43 +161,9 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 		$return_url = esc_url_raw( (string) ( $args['return_url'] ?? '' ) );
 		$cancel_url = esc_url_raw( (string) ( $args['cancel_url'] ?? $return_url ) );
 
-		$payment_endpoint = add_query_arg(
-			array(
-				'mode'       => 'twint',
-				'url_ok'     => rawurlencode( $return_url ),
-				'url_error'  => rawurlencode( $cancel_url ),
-				'url_cancel' => rawurlencode( $cancel_url ),
-				'locale'     => 'it-CH',
-			),
-			self::API_BASE . '/order/' . $order_id . '/payment'
-		);
-
-		$pay_response = wp_remote_get(
-			$payment_endpoint,
-			$this->request_args()
-		);
-
-		if ( is_wp_error( $pay_response ) ) {
-			error_log( '[SD TWINT IK] get payment URL wp_error: ' . $pay_response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return $pay_response;
-		}
-
-		$pay_code     = (int) wp_remote_retrieve_response_code( $pay_response );
-		$pay_body     = wp_remote_retrieve_body( $pay_response );
-		$approval_url = trim( $pay_body, "\" \t\n\r" );
-
-		// Alcuni formati di risposta possono essere JSON con una chiave 'url'.
-		if ( ! filter_var( $approval_url, FILTER_VALIDATE_URL ) ) {
-			$decoded = json_decode( $pay_body, true );
-			if ( is_array( $decoded ) && ! empty( $decoded['url'] ) ) {
-				$approval_url = (string) $decoded['url'];
-			} else {
-				error_log( '[SD TWINT IK] get payment URL failed HTTP ' . $pay_code . ': ' . $pay_body ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				return new WP_Error(
-					'sd_twint_ik_payment_url_failed',
-					__( 'Recupero URL pagamento TWINT non riuscito.', 'sd-logbook' )
-				);
-			}
+		$approval_url = $this->request_payment_url( (string) $order_id, $return_url, $cancel_url );
+		if ( is_wp_error( $approval_url ) ) {
+			return $approval_url;
 		}
 
 		return array(
@@ -206,10 +173,95 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	}
 
 	/**
-	 * Associa i dati cliente a un ordine Infomaniak.
+	 * Richiede URL di pagamento provando combinazioni di mode/parametro url default.
 	 *
-	 * Nota: il naming dei campi varia tra versioni API, quindi proviamo payload
-	 * compatibili e endpoint alternativi.
+	 * @param string $order_id   ID ordine.
+	 * @param string $return_url URL successo.
+	 * @param string $cancel_url URL annullamento/errore.
+	 * @return string|WP_Error
+	 */
+	private function request_payment_url( $order_id, $return_url, $cancel_url ) {
+		$payment_base = self::API_BASE . '/order/' . rawurlencode( (string) $order_id ) . '/payment';
+
+		$config_mode = trim( (string) get_option( 'sd_payment_twint_ik_mode', '' ) );
+		$mode_candidates = array(
+			'TWINT',
+			'twint',
+			'TWINT_QR',
+			'twint_qr',
+			'TWINT_DIRECT',
+			'twint_direct',
+		);
+		if ( '' !== $config_mode ) {
+			array_unshift( $mode_candidates, $config_mode );
+		}
+		$mode_candidates = array_values( array_unique( $mode_candidates ) );
+
+		$config_default_param = trim( (string) get_option( 'sd_payment_twint_ik_default_url_param', '' ) );
+		$default_url_params   = array( 'url_default', 'url', 'url_return', 'return_url' );
+		if ( '' !== $config_default_param ) {
+			array_unshift( $default_url_params, $config_default_param );
+		}
+		$default_url_params = array_values( array_unique( $default_url_params ) );
+
+		$attempts = array();
+		foreach ( $mode_candidates as $mode ) {
+			foreach ( $default_url_params as $default_param ) {
+				$query = array(
+					'mode'       => $mode,
+					'url_ok'     => $return_url,
+					'url_error'  => $cancel_url,
+					'url_cancel' => $cancel_url,
+					'locale'     => 'it-CH',
+					$default_param => $return_url,
+				);
+
+				$endpoint = add_query_arg( $query, $payment_base );
+				$resp     = wp_remote_get( $endpoint, $this->request_args() );
+
+				if ( is_wp_error( $resp ) ) {
+					$attempts[] = array(
+						'mode'  => $mode,
+						'param' => $default_param,
+						'error' => $resp->get_error_message(),
+					);
+					continue;
+				}
+
+				$code = (int) wp_remote_retrieve_response_code( $resp );
+				$body = (string) wp_remote_retrieve_body( $resp );
+
+				$approval_url = trim( $body, "\" \t\n\r" );
+				if ( ! filter_var( $approval_url, FILTER_VALIDATE_URL ) ) {
+					$decoded = json_decode( $body, true );
+					if ( is_array( $decoded ) && ! empty( $decoded['url'] ) ) {
+						$approval_url = (string) $decoded['url'];
+					}
+				}
+
+				if ( $code >= 200 && $code < 300 && filter_var( $approval_url, FILTER_VALIDATE_URL ) ) {
+					return $approval_url;
+				}
+
+				$attempts[] = array(
+					'mode'  => $mode,
+					'param' => $default_param,
+					'code'  => $code,
+					'body'  => substr( $body, 0, 220 ),
+				);
+			}
+		}
+
+		error_log( '[SD TWINT IK] get payment URL failed: ' . wp_json_encode( $attempts ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		return new WP_Error(
+			'sd_twint_ik_payment_url_failed',
+			__( 'Recupero URL pagamento TWINT non riuscito. Verifica mode e parametro URL default nelle opzioni Infomaniak.', 'sd-logbook' )
+		);
+	}
+
+	/**
+	 * Associa un customer esistente all'ordine (flow ufficiale etickets API).
 	 *
 	 * @param string $order_id  ID ordine.
 	 * @param array  $customer  Dati cliente.
@@ -228,82 +280,136 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 		$last_name  = sanitize_text_field( (string) ( $customer['last_name'] ?? '' ) );
 		$phone      = sanitize_text_field( (string) ( $customer['phone'] ?? '' ) );
 
+		$customer_id = $this->get_or_create_customer_id( $email, $first_name, $last_name, $phone );
+		if ( is_wp_error( $customer_id ) ) {
+			return $customer_id;
+		}
+
+		$resp = wp_remote_post(
+			self::API_BASE . '/order/' . rawurlencode( $order_id ) . '/customer',
+			$this->request_args(
+				array(
+					'headers' => array_merge(
+						$this->get_headers(),
+						array( 'Content-Type' => 'application/json' )
+					),
+					'body'    => wp_json_encode(
+						array(
+							'customer_id' => (int) $customer_id,
+						)
+					),
+				)
+			)
+		);
+
+		if ( is_wp_error( $resp ) ) {
+			return $resp;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $resp );
+		$body = (string) wp_remote_retrieve_body( $resp );
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'sd_twint_ik_customer_attach_failed',
+				__( 'Associazione cliente Infomaniak non riuscita.', 'sd-logbook' ) . ' ' . substr( $body, 0, 220 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Ottiene customer_id con login idempotente, altrimenti crea il cliente.
+	 *
+	 * @param string $email      Email cliente.
+	 * @param string $first_name Nome.
+	 * @param string $last_name  Cognome.
+	 * @param string $phone      Telefono.
+	 * @return int|WP_Error
+	 */
+	private function get_or_create_customer_id( $email, $first_name, $last_name, $phone ) {
+		$login_resp = wp_remote_post(
+			self::API_BASE . '/customer/login',
+			$this->request_args(
+				array(
+					'headers' => array_merge(
+						$this->get_headers(),
+						array( 'Content-Type' => 'application/json' )
+					),
+					'body'    => wp_json_encode( array( 'email' => $email ) ),
+				)
+			)
+		);
+
+		if ( ! is_wp_error( $login_resp ) ) {
+			$login_code = (int) wp_remote_retrieve_response_code( $login_resp );
+			$login_body = json_decode( (string) wp_remote_retrieve_body( $login_resp ), true );
+			if ( $login_code >= 200 && $login_code < 300 && is_array( $login_body ) && ! empty( $login_body['id'] ) ) {
+				return (int) $login_body['id'];
+			}
+		}
+
 		if ( '' === $first_name && '' === $last_name ) {
 			$local      = sanitize_text_field( strtok( $email, '@' ) );
 			$first_name = '' !== $local ? $local : 'Cliente';
 		}
 
-		$payload_candidates = array(
-			array(
-				'firstname' => $first_name,
-				'lastname'  => $last_name,
-				'email'     => $email,
-				'phone'     => $phone,
-			),
-			array(
-				'first_name' => $first_name,
-				'last_name'  => $last_name,
-				'email'      => $email,
-				'phone'      => $phone,
-			),
-			array(
-				'name'  => trim( $first_name . ' ' . $last_name ),
-				'email' => $email,
-				'phone' => $phone,
-			),
-		);
-
-		$endpoints = array(
-			self::API_BASE . '/order/' . rawurlencode( $order_id ) . '/customer',
-			self::API_BASE . '/order/' . rawurlencode( $order_id ) . '/client',
-		);
-
-		$attempts = array();
-		foreach ( $endpoints as $endpoint ) {
-			foreach ( $payload_candidates as $payload ) {
-				$payload = array_filter(
-					$payload,
-					static function ( $value ) {
-						return '' !== (string) $value;
-					}
-				);
-				$resp    = wp_remote_post(
-					$endpoint,
-					$this->request_args(
+		$create_resp = wp_remote_post(
+			self::API_BASE . '/customer/create',
+			$this->request_args(
+				array(
+					'headers' => array_merge(
+						$this->get_headers(),
+						array( 'Content-Type' => 'application/json' )
+					),
+					'body'    => wp_json_encode(
 						array(
-							'headers' => array_merge(
-								$this->get_headers(),
-								array( 'Content-Type' => 'application/json' )
-							),
-							'body'    => wp_json_encode( $payload ),
+							'firstname' => $first_name,
+							'lastname'  => $last_name,
+							'email'     => $email,
+							'phone'     => $phone,
 						)
-					)
-				);
+					),
+				)
+			)
+		);
 
-				if ( is_wp_error( $resp ) ) {
-					$attempts[] = array(
-						'endpoint' => $endpoint,
-						'error'    => $resp->get_error_message(),
-					);
-					continue;
-				}
+		if ( is_wp_error( $create_resp ) ) {
+			return $create_resp;
+		}
 
-				$code       = (int) wp_remote_retrieve_response_code( $resp );
-				$body       = wp_remote_retrieve_body( $resp );
-				$attempts[] = array(
-					'endpoint' => $endpoint,
-					'code'     => $code,
-					'body'     => substr( (string) $body, 0, 300 ),
-				);
-				if ( $code >= 200 && $code < 300 ) {
-					return true;
-				}
+		$create_code = (int) wp_remote_retrieve_response_code( $create_resp );
+		$create_raw  = (string) wp_remote_retrieve_body( $create_resp );
+		$create_body = json_decode( $create_raw, true );
+		if ( $create_code >= 200 && $create_code < 300 && is_array( $create_body ) && ! empty( $create_body['id'] ) ) {
+			return (int) $create_body['id'];
+		}
+
+		// In caso di race su email esistente, riprova login.
+		$retry_login = wp_remote_post(
+			self::API_BASE . '/customer/login',
+			$this->request_args(
+				array(
+					'headers' => array_merge(
+						$this->get_headers(),
+						array( 'Content-Type' => 'application/json' )
+					),
+					'body'    => wp_json_encode( array( 'email' => $email ) ),
+				)
+			)
+		);
+
+		if ( ! is_wp_error( $retry_login ) ) {
+			$retry_code = (int) wp_remote_retrieve_response_code( $retry_login );
+			$retry_body = json_decode( (string) wp_remote_retrieve_body( $retry_login ), true );
+			if ( $retry_code >= 200 && $retry_code < 300 && is_array( $retry_body ) && ! empty( $retry_body['id'] ) ) {
+				return (int) $retry_body['id'];
 			}
 		}
 
 		return new WP_Error(
-			'sd_twint_ik_customer_attach_failed',
-			__( 'Associazione cliente Infomaniak non riuscita.', 'sd-logbook' ) . ' ' . wp_json_encode( $attempts )
+			'sd_twint_ik_customer_create_failed',
+			__( 'Creazione/lookup cliente Infomaniak non riuscita.', 'sd-logbook' ) . ' ' . substr( $create_raw, 0, 220 )
 		);
 	}
 
