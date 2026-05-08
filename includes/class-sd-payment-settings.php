@@ -149,6 +149,22 @@ class SD_Payment_Settings {
 				'default'           => 0,
 			)
 		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_mode',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_twint_ik_mode' ),
+				'default'           => 'TWINT',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_default_url_param',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_twint_ik_default_url_param' ),
+				'default'           => 'url_default',
+			)
+		);
 		foreach ( array( 30, 50, 75 ) as $_tier ) {
 			register_setting(
 				self::OPTION_GROUP,
@@ -408,6 +424,29 @@ class SD_Payment_Settings {
 	public function sanitize_twint_provider( $value ) {
 		$value = sanitize_text_field( (string) $value );
 		return in_array( $value, array( 'direct', 'infomaniak' ), true ) ? $value : 'direct';
+	}
+
+	/**
+	 * Sanitizza modalita pagamento Infomaniak (mode query param).
+	 *
+	 * @param string $value valore.
+	 * @return string
+	 */
+	public function sanitize_twint_ik_mode( $value ) {
+		$value = sanitize_text_field( (string) $value );
+		$value = preg_replace( '/[^A-Za-z0-9_\-]/', '', $value );
+		return '' !== $value ? $value : 'TWINT';
+	}
+
+	/**
+	 * Sanitizza nome parametro URL di default per Infomaniak.
+	 *
+	 * @param string $value valore.
+	 * @return string
+	 */
+	public function sanitize_twint_ik_default_url_param( $value ) {
+		$value = sanitize_key( (string) $value );
+		return '' !== $value ? $value : 'url_default';
 	}
 
 	/**
@@ -1132,6 +1171,20 @@ class SD_Payment_Settings {
 								<button type="button" id="sd-ik-load-cats" class="button"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
 								<p class="description"><?php echo wp_kses( __( 'URL Manager: .../tickets/<strong>59285</strong>/events/<strong>392024</strong>/view → Shop ID = 59285, Event ID = 392024', 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
 								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_ik_mode"><?php esc_html_e( 'Infomaniak mode', 'sd-logbook' ); ?></label></th>
+							<td>
+								<input type="text" class="regular-text" id="sd_payment_twint_ik_mode" name="sd_payment_twint_ik_mode" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_mode', 'TWINT' ) ); ?>" placeholder="TWINT">
+								<p class="description"><?php esc_html_e( 'Parametro query "mode" usato per /order/{id}/payment. Lascia TWINT salvo istruzioni diverse da Infomaniak.', 'sd-logbook' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_ik_default_url_param"><?php esc_html_e( 'Parametro URL default', 'sd-logbook' ); ?></label></th>
+							<td>
+								<input type="text" class="regular-text" id="sd_payment_twint_ik_default_url_param" name="sd_payment_twint_ik_default_url_param" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_default_url_param', 'url_default' ) ); ?>" placeholder="url_default">
+								<p class="description"><?php esc_html_e( 'Nome del parametro richiesto da Infomaniak per la URL di ritorno predefinita (es. url_default).', 'sd-logbook' ); ?></p>
 							</td>
 						</tr>
 						<tr>
