@@ -57,7 +57,7 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	}
 
 	/**
-	 * Crea un ordine Infomaniak e restituisce order_id + URL di pagamento TWINT.
+	 * Prepara il redirect verso checkout hosted Infomaniak.
 	 *
 	 * @param array $args {
 	 *     @type float  $amount      Importo in CHF (informativo, non inviato all'API).
@@ -68,8 +68,8 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	 * Richiede che sd_payment_twint_ik_category_id sia configurato (ID categoria
 	 * biglietto di un evento Infomaniak con periodo di vendita attivo).
 	 * @return array|WP_Error {
-	 *     @type string $order_id     ID ordine Infomaniak (numerico come stringa).
-	 *     @type string $approval_url URL della pagina di pagamento TWINT di Infomaniak.
+	 *     @type string $order_id     Vuoto nel fallback hosted checkout.
+	 *     @type string $approval_url URL checkout/evento Infomaniak.
 	 * }
 	 */
 	public function create_order( array $args ) {
@@ -91,6 +91,83 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			'order_id'          => '',
 			'approval_url'      => $url,
 			'external_checkout' => true,
+		);
+	}
+
+	/**
+	 * Verifica server-side il ritorno TWINT hosted via ref/resa.
+	 *
+	 * @param string $ref  Riferimento Infomaniak (query param ref).
+	 * @param string $resa UUID prenotazione Infomaniak (query param resa).
+	 * @return array|WP_Error
+	 */
+	public function verify_hosted_return( string $ref, string $resa ) {
+		$shop_code = $this->get_shop_code();
+		if ( '' === $shop_code ) {
+			return new WP_Error(
+				'sd_twint_ik_missing_shop_code',
+				__( 'Shop Code Infomaniak non configurato.', 'sd-logbook' )
+			);
+		}
+
+		$ref  = preg_replace( '/[^A-Za-z0-9]/', '', (string) $ref );
+		$resa = strtolower( sanitize_text_field( (string) $resa ) );
+
+		if ( '' === $ref || '' === $resa ) {
+			return new WP_Error(
+				'sd_twint_ik_missing_ref_resa',
+				__( 'Parametri ref/resa mancanti nel ritorno TWINT.', 'sd-logbook' )
+			);
+		}
+
+		if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $resa ) ) {
+			return new WP_Error(
+				'sd_twint_ik_invalid_resa',
+				__( 'Formato resa non valido.', 'sd-logbook' )
+			);
+		}
+
+		$success_url = add_query_arg(
+			array(
+				'ref'  => $ref,
+				'resa' => $resa,
+			),
+			'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/payment/twint/success'
+		);
+
+		$resp = wp_remote_get(
+			$success_url,
+			array(
+				'timeout'     => 20,
+				'redirection' => 0,
+				'headers'     => array(
+					'Accept-Language' => 'it_IT',
+				),
+			)
+		);
+
+		if ( is_wp_error( $resp ) ) {
+			return $resp;
+		}
+
+		$code     = (int) wp_remote_retrieve_response_code( $resp );
+		$location = (string) wp_remote_retrieve_header( $resp, 'location' );
+		$body     = (string) wp_remote_retrieve_body( $resp );
+
+		if ( 302 === $code ) {
+			return array(
+				'valid'    => true,
+				'ref'      => $ref,
+				'resa'     => $resa,
+				'code'     => $code,
+				'location' => $location,
+				'url'      => $success_url,
+			);
+		}
+
+		return new WP_Error(
+			'sd_twint_ik_hosted_not_confirmed',
+			__( 'Conferma pagamento TWINT non verificata sul ritorno hosted Infomaniak.', 'sd-logbook' ) . ' HTTP ' . $code . ' ' . substr( preg_replace( '/\s+/', ' ', $body ), 0, 180 )
 		);
 	}
 

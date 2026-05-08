@@ -50,6 +50,8 @@
 		<div class="sd-checkout-notice sd-notice-error"><?php esc_html_e( 'TWINT non disponibile al momento. Usa Fattura o riprova.', 'sd-logbook' ); ?></div>
 	<?php elseif ( 'twint_cancelled' === $notice ) : ?>
 		<div class="sd-checkout-notice sd-notice-info"><?php esc_html_e( 'Pagamento TWINT annullato. Puoi riprovare o usare un altro metodo.', 'sd-logbook' ); ?></div>
+	<?php elseif ( 'twint_ik_cancelled' === $notice ) : ?>
+		<div class="sd-checkout-notice sd-notice-info"><?php esc_html_e( 'Pagamento TWINT annullato dal checkout Infomaniak. Puoi riprovare o usare un altro metodo.', 'sd-logbook' ); ?></div>
 	<?php endif; ?>
 
 	<?php

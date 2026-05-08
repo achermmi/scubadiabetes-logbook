@@ -244,8 +244,8 @@ class SD_Payment_Flow {
 				);
 				$cancel_url = add_query_arg(
 					array(
-						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'twint_cancelled',
+						'sd_payment_action' => 'twint_ik_cancel',
+						'sdpt'              => rawurlencode( $token ),
 					),
 					$this->orchestrator->get_checkout_page_url()
 				);
@@ -359,7 +359,52 @@ class SD_Payment_Flow {
 		if ( 'twint_ik_return' === $action ) {
 			// Ritorno dalla pagina di pagamento Infomaniak TWINT.
 			$twint_data = get_transient( 'sd_twint_order_' . $token );
-			if ( empty( $twint_data['order_id'] ) ) {
+
+			// Branch legacy: ordine API numerico già disponibile.
+			if ( ! empty( $twint_data['order_id'] ) ) {
+				$result = $this->twint->get_order( $twint_data['order_id'] );
+				if ( is_wp_error( $result ) || 'paid' !== $result['status'] ) {
+					$notice = is_wp_error( $result ) ? 'twint_error' : 'twint_cancelled';
+					wp_safe_redirect(
+						add_query_arg(
+							array(
+								'sdpt'   => rawurlencode( $token ),
+								'notice' => $notice,
+							),
+							$this->orchestrator->get_checkout_page_url()
+						)
+					);
+					exit;
+				}
+
+				$accept = $this->orchestrator->accept_payment(
+					(int) $twint_data['member_id'],
+					array(
+						'provider'            => 'twint',
+						'provider_payment_id' => $twint_data['order_id'],
+						'payment_method'      => 'twint',
+						'amount'              => (float) $twint_data['amount'],
+						'payload_json'        => wp_json_encode( $result['payload'] ),
+						'notes'               => __( 'Pagamento TWINT confermato via Infomaniak.', 'sd-logbook' ),
+					)
+				);
+				delete_transient( 'sd_twint_order_' . $token );
+
+				$redirect = $this->orchestrator->get_confirmation_page_url();
+				if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
+					$redirect = $accept['redirect_to'];
+				}
+				wp_safe_redirect( $redirect );
+				exit;
+			}
+
+			// Branch hosted checkout: riconciliazione con parametri ref/resa.
+			$ref  = isset( $_GET['ref'] ) ? sanitize_text_field( wp_unslash( $_GET['ref'] ) ) : '';
+			$resa = isset( $_GET['resa'] ) ? sanitize_text_field( wp_unslash( $_GET['resa'] ) ) : '';
+
+			$verification = $this->twint->verify_hosted_return( $ref, $resa );
+			if ( is_wp_error( $verification ) ) {
+				error_log( '[SD TWINT IK] hosted return verification error: ' . $verification->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				wp_safe_redirect(
 					add_query_arg(
 						array(
@@ -372,30 +417,23 @@ class SD_Payment_Flow {
 				exit;
 			}
 
-			$result = $this->twint->get_order( $twint_data['order_id'] );
-			if ( is_wp_error( $result ) || 'paid' !== $result['status'] ) {
-				$notice = is_wp_error( $result ) ? 'twint_error' : 'twint_cancelled';
-				wp_safe_redirect(
-					add_query_arg(
-						array(
-							'sdpt'   => rawurlencode( $token ),
-							'notice' => $notice,
-						),
-						$this->orchestrator->get_checkout_page_url()
-					)
-				);
-				exit;
-			}
-
-			$accept = $this->orchestrator->accept_payment(
-				(int) $twint_data['member_id'],
+			$provider_payment_id = 'ik_resa_' . $verification['resa'];
+			$accept              = $this->orchestrator->accept_payment(
+				(int) $ctx->member_id,
 				array(
 					'provider'            => 'twint',
-					'provider_payment_id' => $twint_data['order_id'],
+					'provider_payment_id' => $provider_payment_id,
 					'payment_method'      => 'twint',
-					'amount'              => (float) $twint_data['amount'],
-					'payload_json'        => wp_json_encode( $result['payload'] ),
-					'notes'               => __( 'Pagamento TWINT confermato via Infomaniak.', 'sd-logbook' ),
+					'amount'              => (float) $ctx->amount,
+					'payload_json'        => wp_json_encode(
+						array(
+							'flow'         => 'infomaniak_hosted_checkout',
+							'ref'          => $verification['ref'],
+							'resa'         => $verification['resa'],
+							'verification' => $verification,
+						)
+					),
+					'notes'               => __( 'Pagamento TWINT riconciliato da ritorno Infomaniak (ref/resa).', 'sd-logbook' ),
 				)
 			);
 			delete_transient( 'sd_twint_order_' . $token );
@@ -405,6 +443,36 @@ class SD_Payment_Flow {
 				$redirect = $accept['redirect_to'];
 			}
 			wp_safe_redirect( $redirect );
+			exit;
+		}
+
+		if ( 'twint_ik_cancel' === $action ) {
+			$ref  = isset( $_GET['ref'] ) ? sanitize_text_field( wp_unslash( $_GET['ref'] ) ) : '';
+			$resa = isset( $_GET['resa'] ) ? sanitize_text_field( wp_unslash( $_GET['resa'] ) ) : '';
+
+			$log_payload = array(
+				'event'       => 'twint_ik_cancel',
+				'token'       => $token,
+				'member_id'   => (int) $ctx->member_id,
+				'ref'         => $ref,
+				'resa'        => $resa,
+				'request_uri' => isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
+				'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+				'time_gmt'    => gmdate( 'c' ),
+			);
+			error_log( '[SD TWINT IK] hosted cancel callback: ' . wp_json_encode( $log_payload ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+			delete_transient( 'sd_twint_order_' . $token );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'sdpt'   => rawurlencode( $token ),
+						'notice' => 'twint_ik_cancelled',
+					),
+					$this->orchestrator->get_checkout_page_url()
+				)
+			);
 			exit;
 		}
 
