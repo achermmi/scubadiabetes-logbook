@@ -492,11 +492,12 @@ class SD_Payment_Settings {
 			}
 			$api_id    = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
 			$period_id = (int) ( $evt['period_id'] ?? 0 );
+			$group_id  = (int) ( $evt['group_event_id'] ?? 0 );
 			if ( $api_id <= 0 ) {
 				continue;
 			}
 
-			// 2a: cerca tariffe embedded nell'oggetto evento (se l'API le include).
+			// 2a: cerca tariffe embedded nell'oggetto evento.
 			foreach ( array( 'tariffs', 'rates', 'tickets', 'prices', 'categories' ) as $tkey ) {
 				if ( ! empty( $evt[ $tkey ] ) && is_array( $evt[ $tkey ] ) ) {
 					$cats = $this->extract_ik_categories( $evt[ $tkey ] );
@@ -513,44 +514,108 @@ class SD_Payment_Settings {
 				}
 			}
 
-			// 2b: endpoint con period_id nel path + event_id API + ?key= query param.
-			$get_candidates = array();
+			// 2b: POST sui path con period_id (GET restituisce 405 = metodo non consentito).
 			if ( $period_id > 0 ) {
-				$get_candidates[ '/' . $period_id . '/event/' . $api_id . '/tariffs?key' ]    =
-					$base . '/' . $period_id . '/event/' . $api_id . '/tariffs' . $kparam;
-				$get_candidates[ '/' . $period_id . '/tariffs?event_id=' . $api_id . '&key' ] =
-					$base . '/' . $period_id . '/tariffs?event_id=' . $api_id . '&key=' . rawurlencode( $api_key );
-				$get_candidates[ '/' . $period_id . '/event/' . $api_id . '?key (full)' ]     =
-					$base . '/' . $period_id . '/event/' . $api_id . $kparam;
-			}
-			$get_candidates[ '/event/' . $api_id . '/tariffs?key' ] =
-				$base . '/event/' . $api_id . '/tariffs' . $kparam;
-
-			foreach ( $get_candidates as $label => $url ) {
-				$r                  = $this->fetch_ik_url( $url, $api_key );
-				$attempts[ $label ] = array(
-					'code'   => $r['code'],
-					'method' => $r['method'] ?? '?',
-					'body'   => substr( $r['body'], 0, 800 ),
+				$post_map = array(
+					'POST /' . $period_id . '/event/' . $api_id . '/tariffs' =>
+						$base . '/' . $period_id . '/event/' . $api_id . '/tariffs',
+					'POST /' . $period_id . '/tariffs event_id=' . $api_id =>
+						$base . '/' . $period_id . '/tariffs?event_id=' . $api_id,
 				);
-				if ( $r['code'] >= 200 && $r['code'] < 300 ) {
-					$data = json_decode( $r['body'], true );
-					$cats = $this->extract_ik_categories( $data );
-					if ( ! empty( $cats ) ) {
-						wp_send_json_success(
-							array(
-								'categories'   => $cats,
-								'endpoint'     => $label . ' ' . $url,
-								'raw'          => $r['body'],
-								'api_event_id' => $api_id,
-								'period_id'    => $period_id,
-							)
-						);
+				foreach ( $post_map as $label => $url ) {
+					$r                  = $this->fetch_ik_post( $url, $api_key, array() );
+					$attempts[ $label ] = array(
+						'code'   => $r['code'],
+						'method' => 'POST+curl',
+						'body'   => substr( $r['body'], 0, 800 ),
+					);
+					if ( $r['code'] >= 200 && $r['code'] < 300 ) {
+						$data = json_decode( $r['body'], true );
+						$cats = $this->extract_ik_categories( $data );
+						if ( ! empty( $cats ) ) {
+							wp_send_json_success(
+								array(
+									'categories'   => $cats,
+									'endpoint'     => $label,
+									'raw'          => $r['body'],
+									'api_event_id' => $api_id,
+									'period_id'    => $period_id,
+								)
+							);
+						}
+						$attempts[ $label ]['body'] = $r['body'];
 					}
-					// 200 ma nessuna categoria: mostra il body completo nel debug.
-					$attempts[ $label ]['body'] = $r['body'];
 				}
 			}
+
+			// 2c: endpoint pubblici con group_event_id (come /events, non richiedono auth).
+			if ( $group_id > 0 ) {
+				$pub_map = array(
+					'/events/' . $group_id . ' (public)' => $base . '/events/' . $group_id,
+					'/events/' . $group_id . '/dates (public)' => $base . '/events/' . $group_id . '/dates',
+					'/events/' . $group_id . '/tariffs (public)' => $base . '/events/' . $group_id . '/tariffs',
+				);
+				foreach ( $pub_map as $label => $url ) {
+					$r                  = $this->fetch_ik_url( $url, '' );
+					$attempts[ $label ] = array(
+						'code'   => $r['code'],
+						'method' => $r['method'] ?? '?',
+						'body'   => substr( $r['body'], 0, 800 ),
+					);
+					if ( $r['code'] >= 200 && $r['code'] < 300 ) {
+						$data = json_decode( $r['body'], true );
+						$cats = $this->extract_ik_categories( $data );
+						if ( ! empty( $cats ) ) {
+							wp_send_json_success(
+								array(
+									'categories'   => $cats,
+									'endpoint'     => $label,
+									'raw'          => $r['body'],
+									'api_event_id' => $api_id,
+									'group_id'     => $group_id,
+								)
+							);
+						}
+						$attempts[ $label ]['body'] = $r['body'];
+					}
+				}
+			}
+
+			// 2d: scraping della pagina pubblica del portale per trovare category_id nel JSON embed.
+			$portal_url = (string) ( $evt['portal_link_preview'] ?? '' );
+			if ( '' !== $portal_url ) {
+				$page                    = $this->fetch_ik_url( $portal_url, '' );
+				$attempts['portal_page'] = array(
+					'code'   => $page['code'],
+					'method' => 'GET',
+					'body'   => substr( $page['body'], 0, 400 ),
+				);
+				if ( $page['code'] >= 200 && $page['code'] < 300 ) {
+					// Cerca pattern "category_id":NNN nel body HTML/JS.
+					if ( preg_match_all( '/"category_id"\s*:\s*(\d+)/', $page['body'], $m_cat ) ) {
+						$attempts['portal_page']['category_ids_found'] = array_values( array_unique( $m_cat[1] ) );
+					}
+					// Cerca __NEXT_DATA__ (Next.js) o nuxtState con dati JSON embed.
+					if ( preg_match( '/<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)<\/script>/si', $page['body'], $nd ) ) {
+						$nd_data = json_decode( $nd[1], true );
+						if ( is_array( $nd_data ) ) {
+							$attempts['portal_page']['next_data_keys'] = array_keys( $nd_data );
+							$nd_json                                   = wp_json_encode( $nd_data );
+							if ( preg_match_all( '/"category_id"\s*:\s*(\d+)/', $nd_json, $m_nd ) ) {
+								$attempts['portal_page']['next_data_category_ids'] = array_values( array_unique( $m_nd[1] ) );
+							}
+						}
+					}
+				}
+			}
+
+			// 2e: GET /event/{api_id}/tariffs con key nel query param (restituisce 400 ma utile per debug).
+			$r = $this->fetch_ik_url( $base . '/event/' . $api_id . '/tariffs' . $kparam, $api_key );
+			$attempts[ '/event/' . $api_id . '/tariffs?key' ] = array(
+				'code'   => $r['code'],
+				'method' => $r['method'] ?? '?',
+				'body'   => $r['body'],
+			);
 		}
 
 		wp_send_json_error(
