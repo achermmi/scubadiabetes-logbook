@@ -67,6 +67,8 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	 *     @type string $return_url  URL di conferma successo (url_ok).
 	 *     @type string $cancel_url  URL di annullamento/errore (url_error / url_cancel).
 	 * }
+	 * Richiede che sd_payment_twint_ik_category_id sia configurato (ID categoria
+	 * biglietto di un evento Infomaniak con periodo di vendita attivo).
 	 * @return array|WP_Error {
 	 *     @type string $order_id     ID ordine Infomaniak (numerico come stringa).
 	 *     @type string $approval_url URL della pagina di pagamento TWINT di Infomaniak.
@@ -81,10 +83,49 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			);
 		}
 
-		// Step 1: crea ordine vuoto.
+		// Seleziona category_id in base all'importo (30 / 50 / 75 CHF).
+		$amount      = (float) ( $args['amount'] ?? 0.0 );
+		$amount_key  = (int) round( $amount );
+		$category_id = (int) get_option( 'sd_payment_twint_ik_category_id_' . $amount_key, 0 );
+
+		// Fallback: primo tier configurato tra 30/50/75.
+		if ( $category_id <= 0 ) {
+			foreach ( array( 30, 50, 75 ) as $_tier ) {
+				$fallback = (int) get_option( 'sd_payment_twint_ik_category_id_' . $_tier, 0 );
+				if ( $fallback > 0 ) {
+					$category_id = $fallback;
+					break;
+				}
+			}
+		}
+
+		if ( $category_id <= 0 ) {
+			return new WP_Error(
+				'sd_twint_ik_missing_category',
+				__( 'Category ID Infomaniak non configurato. Configura i Category ID nelle impostazioni pagamento.', 'sd-logbook' )
+			);
+		}
+		// Crea ordine con biglietto incluso nel body.
+		$body = wp_json_encode(
+			array(
+				array(
+					'category_id' => $category_id,
+					'count'       => 1,
+				),
+			)
+		);
+
 		$response = wp_remote_post(
 			self::API_BASE . '/order/create',
-			$this->request_args()
+			$this->request_args(
+				array(
+					'headers' => array_merge(
+						$this->get_headers(),
+						array( 'Content-Type' => 'application/json' )
+					),
+					'body'    => $body,
+				)
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -104,45 +145,7 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			);
 		}
 
-		// Step 2 (opzionale): aggiungi biglietto se configurato un category_id.
-		$category_id = (int) get_option( 'sd_payment_twint_ik_category_id', 0 );
-		if ( $category_id > 0 ) {
-			$ticket_response = wp_remote_post(
-				self::API_BASE . '/order/' . $order_id . '/tickets',
-				$this->request_args(
-					array(
-						'headers' => array_merge(
-							$this->get_headers(),
-							array( 'Content-Type' => 'application/json' )
-						),
-						'body'    => wp_json_encode(
-							array(
-								array(
-									'category_id' => $category_id,
-									'count'       => 1,
-								),
-							)
-						),
-					)
-				)
-			);
-
-			if ( is_wp_error( $ticket_response ) ) {
-				error_log( '[SD TWINT IK] add ticket wp_error: ' . $ticket_response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				return $ticket_response;
-			}
-
-			$ticket_code = (int) wp_remote_retrieve_response_code( $ticket_response );
-			if ( $ticket_code < 200 || $ticket_code >= 300 ) {
-				error_log( '[SD TWINT IK] add ticket failed HTTP ' . $ticket_code . ': ' . wp_remote_retrieve_body( $ticket_response ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				return new WP_Error(
-					'sd_twint_ik_ticket_failed',
-					__( 'Aggiunta biglietto ordine Infomaniak non riuscita.', 'sd-logbook' )
-				);
-			}
-		}
-
-		// Step 3: ottieni URL pagamento TWINT.
+		// Ottieni URL pagamento TWINT.
 		$return_url = esc_url_raw( (string) ( $args['return_url'] ?? '' ) );
 		$cancel_url = esc_url_raw( (string) ( $args['cancel_url'] ?? $return_url ) );
 

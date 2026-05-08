@@ -132,14 +132,16 @@ class SD_Payment_Settings {
 				'default'           => '',
 			)
 		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_category_id',
-			array(
-				'sanitize_callback' => 'absint',
-				'default'           => 0,
-			)
-		);
+		foreach ( array( 30, 50, 75 ) as $_tier ) {
+			register_setting(
+				self::OPTION_GROUP,
+				'sd_payment_twint_ik_category_id_' . $_tier,
+				array(
+					'sanitize_callback' => 'absint',
+					'default'           => 0,
+				)
+			);
+		}
 		register_setting(
 			self::OPTION_GROUP,
 			'sd_payment_twint_mode',
@@ -592,10 +594,17 @@ class SD_Payment_Settings {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_category_id"><?php esc_html_e( 'Infomaniak Category ID (opz.)', 'sd-logbook' ); ?></label></th>
+							<th scope="row"><?php esc_html_e( 'Infomaniak Category ID per importo', 'sd-logbook' ); ?></th>
 							<td>
-								<input type="number" class="small-text" id="sd_payment_twint_ik_category_id" name="sd_payment_twint_ik_category_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_category_id', 0 ) ); ?>" min="0">
-								<p class="description"><?php esc_html_e( 'ID categoria biglietto da aggiungere all&apos;ordine (0 = nessun biglietto).', 'sd-logbook' ); ?></p>
+								<?php foreach ( array( 30, 50, 75 ) as $tier ) : ?>
+								<p>
+									<label for="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>">
+										<strong>CHF <?php echo esc_html( $tier ); ?></strong> &mdash; Category ID:
+									</label>
+									<input type="number" class="small-text" id="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" name="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_category_id_' . $tier, 0 ) ); ?>" min="0">
+								</p>
+								<?php endforeach; ?>
+								<p class="description"><?php esc_html_e( 'Per ogni importo, inserisci l&apos;ID della categoria biglietto corrispondente nel tuo evento Infomaniak (Manager &rarr; etickets &rarr; evento &rarr; Categorie).', 'sd-logbook' ); ?></p>
 							</td>
 						</tr>
 						<tr>
