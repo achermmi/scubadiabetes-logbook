@@ -437,60 +437,95 @@ class SD_Payment_Settings {
 			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
 		}
 
-		$response = wp_remote_get(
-			'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories',
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'key'             => $api_key,
-					'currency'        => '1',
-					'Accept-Language' => 'it_IT',
-				),
-			)
+		$headers = array(
+			'key'             => $api_key,
+			'currency'        => '1',
+			'Accept-Language' => 'it_IT',
 		);
 
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( array( 'message' => $response->get_error_message() ) );
-		}
+		// Proviamo più endpoint candidati in sequenza.
+		$candidates = array(
+			'GET  /event/{id}'             => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id ),
+			'GET  /event/{id}/tariffs'     => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs' ),
+			'GET  /tariffs?event_id={id}'  => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/tariffs?event_id=' . $event_id ),
+			'GET  /categories'             => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/categories' ),
+		);
 
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
+		$attempts = array();
+		foreach ( $candidates as $label => $cfg ) {
+			$args = array(
+				'method'  => $cfg['method'],
+				'timeout' => 10,
+				'headers' => $headers,
+			);
+			$resp = wp_remote_request( $cfg['url'], $args );
+			$code = is_wp_error( $resp ) ? 0 : (int) wp_remote_retrieve_response_code( $resp );
+			$body = is_wp_error( $resp ) ? $resp->get_error_message() : wp_remote_retrieve_body( $resp );
+			$attempts[ $label ] = array( 'code' => $code, 'body' => $body );
 
-		if ( $code < 200 || $code >= 300 ) {
-			$msg = is_array( $data ) && ! empty( $data['error'] ) ? (string) $data['error'] : $body;
-			wp_send_json_error( array( 'message' => 'HTTP ' . $code . ': ' . $msg ) );
-		}
-
-		// Normalizza: accetta sia array piatto sia array con chiave 'data' o 'categories'.
-		$categories = array();
-		if ( is_array( $data ) ) {
-			$list = $data['data'] ?? ( $data['categories'] ?? $data );
-			if ( is_array( $list ) ) {
-				foreach ( $list as $cat ) {
-					if ( ! is_array( $cat ) ) {
-						continue;
-					}
-					$id    = $cat['id'] ?? $cat['category_id'] ?? null;
-					$name  = $cat['name'] ?? $cat['title'] ?? ( is_string( $cat['name'] ?? null ) ? $cat['name'] : '' );
-					$price = $cat['price'] ?? $cat['amount'] ?? null;
-					if ( null !== $id ) {
-						$categories[] = array(
-							'id'    => (int) $id,
-							'name'  => is_array( $name ) ? ( $name['it'] ?? $name['fr'] ?? reset( $name ) ) : (string) $name,
-							'price' => $price,
-						);
-					}
-				}
+			if ( ! is_wp_error( $resp ) && $code >= 200 && $code < 300 ) {
+				$data       = json_decode( $body, true );
+				$categories = $this->extract_ik_categories( $data );
+				wp_send_json_success(
+					array(
+						'categories' => $categories,
+						'endpoint'   => $label . ' ' . $cfg['url'],
+						'raw'        => $body,
+					)
+				);
 			}
 		}
 
-		wp_send_json_success(
+		// Tutti falliti: restituisci debug.
+		wp_send_json_error(
 			array(
-				'categories' => $categories,
-				'raw'        => $body,
+				'message'  => 'Nessun endpoint ha risposto con successo. Vedi dettagli debug.',
+				'attempts' => $attempts,
 			)
 		);
+	}
+
+	/**
+	 * Estrae array normalizzato di categorie da una risposta JSON Infomaniak.
+	 *
+	 * @param mixed $data Dato decodificato.
+	 * @return array
+	 */
+	private function extract_ik_categories( $data ) {
+		$categories = array();
+		if ( ! is_array( $data ) ) {
+			return $categories;
+		}
+
+		// Cerca la lista in chiavi comuni.
+		$list = null;
+		foreach ( array( 'categories', 'tariffs', 'data', 'rates', 'items' ) as $key ) {
+			if ( isset( $data[ $key ] ) && is_array( $data[ $key ] ) ) {
+				$list = $data[ $key ];
+				break;
+			}
+		}
+		if ( null === $list ) {
+			// Potrebbe essere un array piatto di oggetti.
+			$list = $data;
+		}
+
+		foreach ( $list as $cat ) {
+			if ( ! is_array( $cat ) ) {
+				continue;
+			}
+			$id    = $cat['id'] ?? $cat['category_id'] ?? $cat['tariff_id'] ?? null;
+			$name  = $cat['name'] ?? $cat['title'] ?? $cat['label'] ?? '';
+			$price = $cat['price'] ?? $cat['amount'] ?? $cat['price_chf'] ?? null;
+			if ( null !== $id ) {
+				$categories[] = array(
+					'id'    => (int) $id,
+					'name'  => is_array( $name ) ? ( $name['it'] ?? $name['fr'] ?? $name['en'] ?? reset( $name ) ) : (string) $name,
+					'price' => $price,
+				);
+			}
+		}
+		return $categories;
 	}
 
 	/**
@@ -684,7 +719,7 @@ class SD_Payment_Settings {
 							<td>
 								<input type="number" class="regular-text" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:180px">
 								<button type="button" id="sd-ik-load-cats" class="button" style="margin-left:8px;"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
-								<p class="description"><?php esc_html_e( 'L&apos;ID si trova nell&apos;URL di Infomaniak Manager: .../events/<strong>392024</strong>/view', 'sd-logbook' ); ?></p>
+								<p class="description"><?php echo wp_kses( __( "L'ID si trova nell'URL di Infomaniak Manager: .../events/<strong>392024</strong>/view", 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
 								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
 							</td>
 						</tr>
@@ -699,7 +734,7 @@ class SD_Payment_Settings {
 									<input type="number" class="small-text" id="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" name="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_category_id_' . $tier, 0 ) ); ?>" min="0">
 								</p>
 								<?php endforeach; ?>
-								<p class="description"><?php esc_html_e( 'Per ogni importo, inserisci l&apos;ID della categoria biglietto corrispondente nel tuo evento Infomaniak (Manager &rarr; etickets &rarr; evento &rarr; Categorie).', 'sd-logbook' ); ?></p>
+								<p class="description"><?php esc_html_e( "Per ogni importo, inserisci l'ID della categoria biglietto corrispondente nel tuo evento Infomaniak (Manager → etickets → evento → Categorie).", 'sd-logbook' ); ?></p>
 							</td>
 						</tr>
 						<script>
@@ -722,20 +757,27 @@ class SD_Payment_Settings {
 								fd.append('event_id', eventId);
 								fetch('<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>', {method:'POST', body:fd})
 									.then(function(r){ return r.json(); })
-									.then(function(data){
-										btn.disabled   = false;
+									.then(function(resp){
+										btn.disabled    = false;
 										btn.textContent = 'Carica categorie';
 										result.style.display = 'block';
-										if ( !data.success ) {
-											result.innerHTML = '<span style="color:red">Errore: ' + (data.data && data.data.message ? data.data.message : JSON.stringify(data)) + '</span>';
+										if ( !resp.success ) {
+											var msg = resp.data && resp.data.message ? resp.data.message : JSON.stringify(resp);
+											var dbg = '';
+											if ( resp.data && resp.data.attempts ) {
+												dbg = '<details style="margin-top:8px"><summary>Debug (tutti i tentativi)</summary><pre style="background:#f5f5f5;padding:8px;max-height:300px;overflow:auto;font-size:11px">' + JSON.stringify(resp.data.attempts, null, 2) + '</pre></details>';
+											}
+											result.innerHTML = '<span style="color:red">Errore: ' + msg + '</span>' + dbg;
 											return;
 										}
-										var cats = data.data.categories;
+										var cats = resp.data.categories;
+										var endpoint = resp.data.endpoint || '';
 										if ( !cats || cats.length === 0 ) {
-											result.innerHTML = '<em>Nessuna categoria trovata. Risposta raw:</em><pre style="background:#f5f5f5;padding:8px;max-height:200px;overflow:auto">' + data.data.raw + '</pre>';
+											result.innerHTML = '<em>Nessuna categoria trovata (endpoint: ' + endpoint + '). Raw:</em><pre style="background:#f5f5f5;padding:8px;max-height:200px;overflow:auto">' + resp.data.raw + '</pre>';
 											return;
 										}
-										var html = '<table style="border-collapse:collapse"><thead><tr><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">ID</th><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">Nome</th><th style="padding:4px 0;border-bottom:1px solid #ccc">Prezzo</th></tr></thead><tbody>';
+										var html = '<p style="color:green;margin-bottom:6px">&#10003; Trovate via: ' + endpoint + '</p>';
+										html += '<table style="border-collapse:collapse"><thead><tr><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">ID</th><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">Nome</th><th style="padding:4px 0;border-bottom:1px solid #ccc">Prezzo</th></tr></thead><tbody>';
 										cats.forEach(function(c){
 											html += '<tr><td style="padding:3px 12px 3px 0"><code>' + c.id + '</code></td><td style="padding:3px 12px 3px 0">' + c.name + '</td><td style="padding:3px 0">' + (c.price !== null && c.price !== undefined ? 'CHF ' + c.price : '') + '</td></tr>';
 										});
