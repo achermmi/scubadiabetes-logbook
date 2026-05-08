@@ -204,10 +204,11 @@ class SD_Payment_Documents {
 				$row_bg = $alt[ ( $ri - $start_idx ) % 2 ];
 				$ops .= $this->rect_fill( $margin_l, $row_y, $table_w, $row_h, $row_bg );
 
-				$nascita = ! empty( $r['date_of_birth'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['date_of_birth'] ) ) : '—';
-				$scad    = ! empty( $r['membership_expiry'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['membership_expiry'] ) ) : '—';
-				$datapag = ! empty( $r['payment_date'] ) ? date_i18n( 'd.m.Y', strtotime( substr( (string) $r['payment_date'], 0, 10 ) ) ) : '—';
-				$pagato  = ( ! empty( $r['has_paid_fee'] ) && (int) $r['has_paid_fee'] ) ? 'Si' : 'No';
+				$nascita = ! empty( $r['date_of_birth'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['date_of_birth'] ) ) : '-';
+				$scad    = ! empty( $r['membership_expiry'] ) ? date_i18n( 'd.m.Y', strtotime( (string) $r['membership_expiry'] ) ) : '-';
+				$has_paid = ! empty( $r['has_paid_fee'] ) && (int) $r['has_paid_fee'];
+				$datapag  = ( $has_paid && ! empty( $r['payment_date'] ) ) ? date_i18n( 'd.m.Y', strtotime( substr( (string) $r['payment_date'], 0, 10 ) ) ) : '-';
+				$pagato   = $has_paid ? 'Si' : 'No';
 				$metodo  = $method_labels[ $r['payment_method'] ?? '' ] ?? (string) ( $r['payment_method'] ?? '-' );
 				$tassa   = ! empty( $r['fee_amount'] ) ? number_format( (float) $r['fee_amount'], 2 ) : '-';
 				$name    = trim( (string) $r['last_name'] . ', ' . (string) $r['first_name'] );
