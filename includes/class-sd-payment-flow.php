@@ -256,6 +256,12 @@ class SD_Payment_Flow {
 						'currency'   => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
 						'return_url' => $ok_url,
 						'cancel_url' => $cancel_url,
+						'customer'   => array(
+							'first_name' => (string) ( $ctx->first_name ?? '' ),
+							'last_name'  => (string) ( $ctx->last_name ?? '' ),
+							'email'      => (string) ( $ctx->email ?? '' ),
+							'phone'      => (string) ( $ctx->phone ?? '' ),
+						),
 					)
 				);
 

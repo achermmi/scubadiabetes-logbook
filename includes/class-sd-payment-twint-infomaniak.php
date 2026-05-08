@@ -66,6 +66,7 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 	 *     @type float  $amount      Importo in CHF (informativo, non inviato all'API).
 	 *     @type string $return_url  URL di conferma successo (url_ok).
 	 *     @type string $cancel_url  URL di annullamento/errore (url_error / url_cancel).
+	 *     @type array  $customer    Dati cliente (first_name, last_name, email, phone).
 	 * }
 	 * Richiede che sd_payment_twint_ik_category_id sia configurato (ID categoria
 	 * biglietto di un evento Infomaniak con periodo di vendita attivo).
@@ -145,6 +146,16 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			);
 		}
 
+		// Alcuni shop richiedono un cliente associato all'ordine prima del redirect di pagamento.
+		$customer = isset( $args['customer'] ) && is_array( $args['customer'] ) ? $args['customer'] : array();
+		if ( ! empty( $customer ) ) {
+			$attach = $this->attach_customer_to_order( (string) $order_id, $customer );
+			if ( is_wp_error( $attach ) ) {
+				error_log( '[SD TWINT IK] attach customer failed: ' . $attach->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				return $attach;
+			}
+		}
+
 		// Ottieni URL pagamento TWINT.
 		$return_url = esc_url_raw( (string) ( $args['return_url'] ?? '' ) );
 		$cancel_url = esc_url_raw( (string) ( $args['cancel_url'] ?? $return_url ) );
@@ -191,6 +202,108 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 		return array(
 			'order_id'     => (string) $order_id,
 			'approval_url' => $approval_url,
+		);
+	}
+
+	/**
+	 * Associa i dati cliente a un ordine Infomaniak.
+	 *
+	 * Nota: il naming dei campi varia tra versioni API, quindi proviamo payload
+	 * compatibili e endpoint alternativi.
+	 *
+	 * @param string $order_id  ID ordine.
+	 * @param array  $customer  Dati cliente.
+	 * @return true|WP_Error
+	 */
+	private function attach_customer_to_order( $order_id, array $customer ) {
+		$email = sanitize_email( (string) ( $customer['email'] ?? '' ) );
+		if ( '' === $email || ! is_email( $email ) ) {
+			return new WP_Error(
+				'sd_twint_ik_missing_customer_email',
+				__( 'Email cliente mancante per pagamento TWINT Infomaniak.', 'sd-logbook' )
+			);
+		}
+
+		$first_name = sanitize_text_field( (string) ( $customer['first_name'] ?? '' ) );
+		$last_name  = sanitize_text_field( (string) ( $customer['last_name'] ?? '' ) );
+		$phone      = sanitize_text_field( (string) ( $customer['phone'] ?? '' ) );
+
+		if ( '' === $first_name && '' === $last_name ) {
+			$local      = sanitize_text_field( strtok( $email, '@' ) );
+			$first_name = '' !== $local ? $local : 'Cliente';
+		}
+
+		$payload_candidates = array(
+			array(
+				'firstname' => $first_name,
+				'lastname'  => $last_name,
+				'email'     => $email,
+				'phone'     => $phone,
+			),
+			array(
+				'first_name' => $first_name,
+				'last_name'  => $last_name,
+				'email'      => $email,
+				'phone'      => $phone,
+			),
+			array(
+				'name'  => trim( $first_name . ' ' . $last_name ),
+				'email' => $email,
+				'phone' => $phone,
+			),
+		);
+
+		$endpoints = array(
+			self::API_BASE . '/order/' . rawurlencode( $order_id ) . '/customer',
+			self::API_BASE . '/order/' . rawurlencode( $order_id ) . '/client',
+		);
+
+		$attempts = array();
+		foreach ( $endpoints as $endpoint ) {
+			foreach ( $payload_candidates as $payload ) {
+				$payload = array_filter(
+					$payload,
+					static function ( $value ) {
+						return '' !== (string) $value;
+					}
+				);
+				$resp    = wp_remote_post(
+					$endpoint,
+					$this->request_args(
+						array(
+							'headers' => array_merge(
+								$this->get_headers(),
+								array( 'Content-Type' => 'application/json' )
+							),
+							'body'    => wp_json_encode( $payload ),
+						)
+					)
+				);
+
+				if ( is_wp_error( $resp ) ) {
+					$attempts[] = array(
+						'endpoint' => $endpoint,
+						'error'    => $resp->get_error_message(),
+					);
+					continue;
+				}
+
+				$code       = (int) wp_remote_retrieve_response_code( $resp );
+				$body       = wp_remote_retrieve_body( $resp );
+				$attempts[] = array(
+					'endpoint' => $endpoint,
+					'code'     => $code,
+					'body'     => substr( (string) $body, 0, 300 ),
+				);
+				if ( $code >= 200 && $code < 300 ) {
+					return true;
+				}
+			}
+		}
+
+		return new WP_Error(
+			'sd_twint_ik_customer_attach_failed',
+			__( 'Associazione cliente Infomaniak non riuscita.', 'sd-logbook' ) . ' ' . wp_json_encode( $attempts )
 		);
 	}
 
