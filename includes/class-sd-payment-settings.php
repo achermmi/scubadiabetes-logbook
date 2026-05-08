@@ -113,7 +113,71 @@ class SD_Payment_Settings {
 			'sd_payment_enable_twint_stub',
 			array(
 				'sanitize_callback' => 'absint',
-				'default'           => 1,
+				'default'           => 0,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_mode',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_twint_mode' ),
+				'default'           => 'sandbox',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_sandbox_api_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => 'https://sandbox.twint.ch/v1',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_live_api_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+				'default'           => 'https://api.twint.ch/v1',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_store_uuid',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_api_key',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_cashregister_ref',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => 'SD-LOGBOOK',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_cert_path',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_cert_password',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
 			)
 		);
 		register_setting(
@@ -282,6 +346,17 @@ class SD_Payment_Settings {
 	}
 
 	/**
+	 * Sanitizza modalita twint.
+	 *
+	 * @param string $value valore.
+	 * @return string
+	 */
+	public function sanitize_twint_mode( $value ) {
+		$value = sanitize_text_field( (string) $value );
+		return in_array( $value, array( 'sandbox', 'live' ), true ) ? $value : 'sandbox';
+	}
+
+	/**
 	 * Sanitizza colore hex.
 	 *
 	 * @param string $value colore.
@@ -433,7 +508,7 @@ class SD_Payment_Settings {
 								<td>
 									<label><input type="checkbox" name="sd_payment_enable_paypal" value="1" <?php checked( (int) get_option( 'sd_payment_enable_paypal', 1 ), 1 ); ?>> PayPal</label><br>
 									<label><input type="checkbox" name="sd_payment_enable_invoice" value="1" <?php checked( (int) get_option( 'sd_payment_enable_invoice', 1 ), 1 ); ?>> Fattura</label><br>
-									<label><input type="checkbox" name="sd_payment_enable_twint_stub" value="1" <?php checked( (int) get_option( 'sd_payment_enable_twint_stub', 1 ), 1 ); ?>> TWINT (stub/coming soon)</label>
+									<label><input type="checkbox" name="sd_payment_enable_twint_stub" value="1" <?php checked( (int) get_option( 'sd_payment_enable_twint_stub', 0 ), 1 ); ?>> TWINT Express Checkout</label>
 								</td>
 							</tr>
 							<tr>
@@ -465,7 +540,45 @@ class SD_Payment_Settings {
 								<td><textarea class="large-text" rows="3" id="sd_payment_receipt_footer_note" name="sd_payment_receipt_footer_note"><?php echo esc_textarea( get_option( 'sd_payment_receipt_footer_note', '' ) ); ?></textarea></td>
 							</tr>
 							<tr>
-								<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Dati Fattura (Associazione)', 'sd-logbook' ); ?></h3></th>
+								<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Configurazione TWINT Express Checkout', 'sd-logbook' ); ?></h3></th>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Modalita TWINT', 'sd-logbook' ); ?></th>
+							<td>
+								<label><input type="radio" name="sd_payment_twint_mode" value="sandbox" <?php checked( get_option( 'sd_payment_twint_mode', 'sandbox' ), 'sandbox' ); ?>> Sandbox</label>&nbsp;&nbsp;
+								<label><input type="radio" name="sd_payment_twint_mode" value="live" <?php checked( get_option( 'sd_payment_twint_mode', 'sandbox' ), 'live' ); ?>> Live</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_sandbox_api_url"><?php esc_html_e( 'URL API Sandbox', 'sd-logbook' ); ?></label></th>
+							<td><input type="url" class="regular-text" id="sd_payment_twint_sandbox_api_url" name="sd_payment_twint_sandbox_api_url" value="<?php echo esc_attr( get_option( 'sd_payment_twint_sandbox_api_url', 'https://sandbox.twint.ch/v1' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_live_api_url"><?php esc_html_e( 'URL API Live', 'sd-logbook' ); ?></label></th>
+							<td><input type="url" class="regular-text" id="sd_payment_twint_live_api_url" name="sd_payment_twint_live_api_url" value="<?php echo esc_attr( get_option( 'sd_payment_twint_live_api_url', 'https://api.twint.ch/v1' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_store_uuid"><?php esc_html_e( 'Store UUID', 'sd-logbook' ); ?></label></th>
+							<td><input type="text" class="regular-text" id="sd_payment_twint_store_uuid" name="sd_payment_twint_store_uuid" value="<?php echo esc_attr( get_option( 'sd_payment_twint_store_uuid', '' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_api_key"><?php esc_html_e( 'API Key', 'sd-logbook' ); ?></label></th>
+							<td><input type="password" class="regular-text" id="sd_payment_twint_api_key" name="sd_payment_twint_api_key" value="<?php echo esc_attr( get_option( 'sd_payment_twint_api_key', '' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_cashregister_ref"><?php esc_html_e( 'Cash Register ID', 'sd-logbook' ); ?></label></th>
+							<td><input type="text" class="regular-text" id="sd_payment_twint_cashregister_ref" name="sd_payment_twint_cashregister_ref" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cashregister_ref', 'SD-LOGBOOK' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_cert_path"><?php esc_html_e( 'Percorso certificato SSL (opz.)', 'sd-logbook' ); ?></label></th>
+							<td><input type="text" class="regular-text" id="sd_payment_twint_cert_path" name="sd_payment_twint_cert_path" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cert_path', '' ) ); ?>"><p class="description"><?php esc_html_e( 'Percorso assoluto al file .pem del certificato client (richiesto da alcuni acquirer CH).', 'sd-logbook' ); ?></p></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="sd_payment_twint_cert_password"><?php esc_html_e( 'Password certificato (opz.)', 'sd-logbook' ); ?></label></th>
+							<td><input type="password" class="regular-text" id="sd_payment_twint_cert_password" name="sd_payment_twint_cert_password" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cert_password', '' ) ); ?>"></td>
+						</tr>
+						<tr>
+							<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Dati Fattura (Associazione)', 'sd-logbook' ); ?></h3></th>
 							</tr>
 							<tr>
 								<th scope="row"><label for="sd_payment_invoice_association_name"><?php esc_html_e( 'Nome Associazione', 'sd-logbook' ); ?></label></th>

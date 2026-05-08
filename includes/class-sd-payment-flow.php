@@ -25,13 +25,22 @@ class SD_Payment_Flow {
 	 */
 	private $paypal;
 
+	/**
+	 * @var SD_Payment_Twint
+	 */
+	private $twint;
+
 	public function __construct() {
 		$this->orchestrator = new SD_Payment_Orchestrator();
 		$this->paypal       = new SD_Payment_PayPal();
+		$this->twint        = new SD_Payment_Twint();
 
 		add_shortcode( 'sd_payment_checkout', array( $this, 'render_checkout' ) );
 		add_shortcode( 'sd_payment_confirmation', array( $this, 'render_confirmation' ) );
 		add_action( 'template_redirect', array( $this, 'handle_actions' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
+		add_action( 'wp_ajax_sd_twint_poll', array( $this, 'ajax_twint_poll' ) );
+		add_action( 'wp_ajax_nopriv_sd_twint_poll', array( $this, 'ajax_twint_poll' ) );
 	}
 
 	/**
@@ -44,6 +53,7 @@ class SD_Payment_Flow {
 		$token  = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
 		$paypal_enabled  = (int) get_option( 'sd_payment_enable_paypal', 1 ) === 1;
 		$invoice_enabled = (int) get_option( 'sd_payment_enable_invoice', 1 ) === 1;
+		$twint_enabled   = (int) get_option( 'sd_payment_enable_twint_stub', 0 ) === 1;
 
 		if ( '' === $action || '' === $token ) {
 			return;
@@ -193,6 +203,176 @@ class SD_Payment_Flow {
 			wp_safe_redirect( $redirect );
 			exit;
 		}
+
+		if ( 'start_twint' === $action ) {
+			if ( ! $twint_enabled ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'twint_disabled',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
+				exit;
+			}
+
+			$confirm_url = add_query_arg(
+				array(
+					'sd_payment_action' => 'twint_return',
+					'sdpt'              => rawurlencode( $token ),
+				),
+				$this->orchestrator->get_checkout_page_url()
+			);
+
+			$order = $this->twint->create_order(
+				array(
+					'reference_id' => 'member-' . (int) $ctx->member_id . '-' . gmdate( 'YmdHis' ),
+					'amount'       => (float) $ctx->amount,
+					'currency'     => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+					'return_url'   => $confirm_url,
+				)
+			);
+
+			if ( is_wp_error( $order ) ) {
+				error_log( '[SD TWINT] start_twint create_order error: ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'twint_error',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
+				exit;
+			}
+
+			// Salva i dati TWINT in un transient legato al token (TTL 15 minuti).
+			set_transient(
+				'sd_twint_order_' . $token,
+				array(
+					'order_uuid'    => $order['order_uuid'],
+					'pairing_token' => $order['pairing_token'],
+					'qr_code_svg'   => $order['qr_code_svg'],
+					'deep_link'     => $order['deep_link'],
+					'member_id'     => (int) $ctx->member_id,
+					'amount'        => (float) $ctx->amount,
+					'currency'      => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+				),
+				900
+			);
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'sdpt'        => rawurlencode( $token ),
+						'twint_order' => rawurlencode( $order['order_uuid'] ),
+					),
+					$this->orchestrator->get_checkout_page_url()
+				)
+			);
+			exit;
+		}
+
+		if ( 'twint_cancel' === $action ) {
+			$twint_data = get_transient( 'sd_twint_order_' . $token );
+			if ( ! empty( $twint_data['order_uuid'] ) ) {
+				$this->twint->cancel_order( $twint_data['order_uuid'] );
+				delete_transient( 'sd_twint_order_' . $token );
+			}
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'sdpt'   => rawurlencode( $token ),
+						'notice' => 'twint_cancelled',
+					),
+					$this->orchestrator->get_checkout_page_url()
+				)
+			);
+			exit;
+		}
+	}
+
+	/**
+	 * AJAX: polling stato ordine TWINT.
+	 *
+	 * @return void
+	 */
+	public function ajax_twint_poll() {
+		check_ajax_referer( 'sd_twint_poll', 'nonce' );
+
+		$token = isset( $_POST['sdpt'] ) ? sanitize_text_field( wp_unslash( $_POST['sdpt'] ) ) : '';
+		if ( '' === $token ) {
+			wp_send_json_error( array( 'message' => 'Token mancante.' ), 400 );
+			return;
+		}
+
+		$twint_data = get_transient( 'sd_twint_order_' . $token );
+		if ( empty( $twint_data['order_uuid'] ) ) {
+			wp_send_json_error( array( 'message' => 'Sessione TWINT scaduta o non trovata.' ), 404 );
+			return;
+		}
+
+		$result = $this->twint->get_order( $twint_data['order_uuid'] );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 500 );
+			return;
+		}
+
+		$status = $result['status'];
+
+		if ( 'SUCCESS' === $status ) {
+			// Accetta il pagamento nel sistema.
+			$accept = $this->orchestrator->accept_payment(
+				(int) $twint_data['member_id'],
+				array(
+					'provider'            => 'twint',
+					'provider_payment_id' => $twint_data['order_uuid'],
+					'payment_method'      => 'twint',
+					'amount'              => (float) $twint_data['amount'],
+					'payload_json'        => wp_json_encode( $result['payload'] ),
+					'notes'               => __( 'Pagamento TWINT confermato.', 'sd-logbook' ),
+				)
+			);
+			delete_transient( 'sd_twint_order_' . $token );
+
+			$redirect = $this->orchestrator->get_confirmation_page_url();
+			if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
+				$redirect = $accept['redirect_to'];
+			}
+
+			wp_send_json_success( array(
+				'status'       => 'SUCCESS',
+				'redirect_url' => esc_url_raw( $redirect ),
+			) );
+			return;
+		}
+
+		if ( in_array( $status, array( 'FAILURE', 'REVERSED' ), true ) ) {
+			delete_transient( 'sd_twint_order_' . $token );
+			wp_send_json_success( array( 'status' => 'FAILURE' ) );
+			return;
+		}
+
+		// IN_PROGRESS o UNKNOWN: continua polling.
+		wp_send_json_success( array( 'status' => 'IN_PROGRESS' ) );
+	}
+
+	/**
+	 * Registra gli asset di pagamento (script JS).
+	 *
+	 * @return void
+	 */
+	public function register_assets() {
+		wp_register_script(
+			'sd-twint-checkout',
+			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/js/twint-checkout.js',
+			array(),
+			SD_LOGBOOK_VERSION,
+			true
+		);
 	}
 
 	/**
