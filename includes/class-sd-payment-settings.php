@@ -445,23 +445,38 @@ class SD_Payment_Settings {
 
 		// Proviamo più endpoint candidati in sequenza.
 		$candidates = array(
-			'GET  /event/{id}'             => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id ),
-			'GET  /event/{id}/tariffs'     => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs' ),
-			'GET  /tariffs?event_id={id}'  => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/tariffs?event_id=' . $event_id ),
-			'GET  /categories'             => array( 'method' => 'GET',  'url' => 'https://etickets.infomaniak.com/api/shop/categories' ),
+			'GET  /event/{id}'            => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id,
+			),
+			'GET  /event/{id}/tariffs'    => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs',
+			),
+			'GET  /tariffs?event_id={id}' => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/tariffs?event_id=' . $event_id,
+			),
+			'GET  /categories'            => array(
+				'method' => 'GET',
+				'url'    => 'https://etickets.infomaniak.com/api/shop/categories',
+			),
 		);
 
 		$attempts = array();
 		foreach ( $candidates as $label => $cfg ) {
-			$args = array(
+			$args               = array(
 				'method'  => $cfg['method'],
 				'timeout' => 10,
 				'headers' => $headers,
 			);
-			$resp = wp_remote_request( $cfg['url'], $args );
-			$code = is_wp_error( $resp ) ? 0 : (int) wp_remote_retrieve_response_code( $resp );
-			$body = is_wp_error( $resp ) ? $resp->get_error_message() : wp_remote_retrieve_body( $resp );
-			$attempts[ $label ] = array( 'code' => $code, 'body' => $body );
+			$resp               = wp_remote_request( $cfg['url'], $args );
+			$code               = is_wp_error( $resp ) ? 0 : (int) wp_remote_retrieve_response_code( $resp );
+			$body               = is_wp_error( $resp ) ? $resp->get_error_message() : wp_remote_retrieve_body( $resp );
+			$attempts[ $label ] = array(
+				'code' => $code,
+				'body' => $body,
+			);
 
 			if ( ! is_wp_error( $resp ) && $code >= 200 && $code < 300 ) {
 				$data       = json_decode( $body, true );
@@ -561,7 +576,7 @@ class SD_Payment_Settings {
 
 		$redirect = add_query_arg(
 			array(
-				'page' => self::PAGE_SLUG,
+				'page'                     => self::PAGE_SLUG,
 				'sd_payment_pages_created' => 1,
 			),
 			admin_url( 'options-general.php' )
@@ -615,24 +630,24 @@ class SD_Payment_Settings {
 			wp_die( esc_html__( 'Permesso negato.', 'sd-logbook' ) );
 		}
 
-		$checkout_url = get_option( 'sd_payment_checkout_page_url', '' );
-		$confirm_url  = get_option( 'sd_payment_confirmation_page_url', '' );
-		$login_url    = get_option( 'sd_payment_login_url', home_url( '/login/' ) );
-		$invoice_association_name = get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' ) );
-		$invoice_association_address = get_option( 'sd_payment_invoice_association_address', '' );
+		$checkout_url                    = get_option( 'sd_payment_checkout_page_url', '' );
+		$confirm_url                     = get_option( 'sd_payment_confirmation_page_url', '' );
+		$login_url                       = get_option( 'sd_payment_login_url', home_url( '/login/' ) );
+		$invoice_association_name        = get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' ) );
+		$invoice_association_address     = get_option( 'sd_payment_invoice_association_address', '' );
 		$invoice_association_postal_code = get_option( 'sd_payment_invoice_association_postal_code', '' );
-		$invoice_association_city = get_option( 'sd_payment_invoice_association_city', '' );
-		$invoice_association_email = get_option( 'sd_payment_invoice_association_email', get_bloginfo( 'admin_email' ) );
-		$invoice_association_phone = get_option( 'sd_payment_invoice_association_phone', '' );
-		$invoice_bank_name = get_option( 'sd_payment_invoice_bank_name', '' );
-		$invoice_bank_address = get_option( 'sd_payment_invoice_bank_address', '' );
-		$invoice_bank_postal_code = get_option( 'sd_payment_invoice_bank_postal_code', '' );
-		$invoice_bank_city = get_option( 'sd_payment_invoice_bank_city', '' );
-		$invoice_bank_iban = get_option( 'sd_payment_invoice_bank_iban', '' );
-		$invoice_bank_swift = get_option( 'sd_payment_invoice_bank_swift', '' );
-		$invoice_bank_bic = get_option( 'sd_payment_invoice_bank_bic', '' );
-		$invoice_qr_payload = get_option( 'sd_payment_invoice_qr_payload', '' );
-		$invoice_qr_image_url = get_option( 'sd_payment_invoice_qr_image_url', '' );
+		$invoice_association_city        = get_option( 'sd_payment_invoice_association_city', '' );
+		$invoice_association_email       = get_option( 'sd_payment_invoice_association_email', get_bloginfo( 'admin_email' ) );
+		$invoice_association_phone       = get_option( 'sd_payment_invoice_association_phone', '' );
+		$invoice_bank_name               = get_option( 'sd_payment_invoice_bank_name', '' );
+		$invoice_bank_address            = get_option( 'sd_payment_invoice_bank_address', '' );
+		$invoice_bank_postal_code        = get_option( 'sd_payment_invoice_bank_postal_code', '' );
+		$invoice_bank_city               = get_option( 'sd_payment_invoice_bank_city', '' );
+		$invoice_bank_iban               = get_option( 'sd_payment_invoice_bank_iban', '' );
+		$invoice_bank_swift              = get_option( 'sd_payment_invoice_bank_swift', '' );
+		$invoice_bank_bic                = get_option( 'sd_payment_invoice_bank_bic', '' );
+		$invoice_qr_payload              = get_option( 'sd_payment_invoice_qr_payload', '' );
+		$invoice_qr_image_url            = get_option( 'sd_payment_invoice_qr_image_url', '' );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Pagamenti Soci - Impostazioni', 'sd-logbook' ); ?></h1>

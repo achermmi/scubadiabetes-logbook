@@ -235,7 +235,7 @@ class SD_Payment_Flow {
 
 			if ( 'infomaniak' === $twint_provider ) {
 				// ---- Flusso Infomaniak: redirect alla pagina TWINT di Infomaniak ----.
-				$ok_url = add_query_arg(
+				$ok_url     = add_query_arg(
 					array(
 						'sd_payment_action' => 'twint_ik_return',
 						'sdpt'              => rawurlencode( $token ),

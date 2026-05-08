@@ -170,8 +170,8 @@ class SD_Payment_Twint_Infomaniak extends SD_Payment_Adapter {
 			return $pay_response;
 		}
 
-		$pay_code    = (int) wp_remote_retrieve_response_code( $pay_response );
-		$pay_body    = wp_remote_retrieve_body( $pay_response );
+		$pay_code     = (int) wp_remote_retrieve_response_code( $pay_response );
+		$pay_body     = wp_remote_retrieve_body( $pay_response );
 		$approval_url = trim( $pay_body, "\" \t\n\r" );
 
 		// Alcuni formati di risposta possono essere JSON con una chiave 'url'.
