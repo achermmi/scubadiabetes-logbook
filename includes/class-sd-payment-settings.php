@@ -449,7 +449,7 @@ class SD_Payment_Settings {
 			'/events?key' => array(
 				'code'   => $events_result['code'],
 				'method' => $events_result['method'] ?? '?',
-				'body'   => substr( $events_result['body'], 0, 800 ),
+				'body'   => $events_result['body'], // corpo completo per debug.
 			),
 		);
 
@@ -463,7 +463,6 @@ class SD_Payment_Settings {
 		}
 
 		$events_data = json_decode( $events_result['body'], true );
-		// La risposta è un array piatto di eventi.
 		$events_list = null;
 		if ( is_array( $events_data ) ) {
 			foreach ( array( 'data', 'events', 'items' ) as $ekey ) {
@@ -473,54 +472,40 @@ class SD_Payment_Settings {
 				}
 			}
 			if ( null === $events_list ) {
-				$events_list = $events_data; // array piatto.
+				$events_list = $events_data;
 			}
 		}
 
 		if ( ! is_array( $events_list ) || empty( $events_list ) ) {
 			wp_send_json_error(
 				array(
-					'message'    => 'Lista eventi vuota o non parsabile.',
-					'events_raw' => substr( $events_result['body'], 0, 2000 ),
-					'attempts'   => $attempts,
+					'message'  => 'Lista eventi vuota o non parsabile.',
+					'attempts' => $attempts,
 				)
 			);
 		}
 
-		// Step 2: per ogni evento prova a ottenere le tariffe.
-		// Le GET con header key vengono strippate dal proxy Infomaniak; usiamo POST.
+		// Step 2: per ogni evento cerca le tariffe.
 		foreach ( $events_list as $evt ) {
 			if ( ! is_array( $evt ) ) {
 				continue;
 			}
-			// Campo corretto: 'event_id' o 'date_id' (non 'id').
-			$api_id = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
+			$api_id    = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
+			$period_id = (int) ( $evt['period_id'] ?? 0 );
 			if ( $api_id <= 0 ) {
 				continue;
 			}
 
-			// Prima proviamo POST (bypass proxy per il header key).
-			$post_endpoints = array(
-				'/event/' . $api_id . '/tariffs [POST]'    => $base . '/event/' . $api_id . '/tariffs',
-				'/event/' . $api_id . '/categories [POST]' => $base . '/event/' . $api_id . '/categories',
-				'/tariffs?event_id=' . $api_id . ' [POST]' => $base . '/tariffs?event_id=' . $api_id,
-			);
-			foreach ( $post_endpoints as $label => $url ) {
-				$r                  = $this->fetch_ik_post( $url, $api_key, array() );
-				$attempts[ $label ] = array(
-					'code'   => $r['code'],
-					'method' => 'POST',
-					'body'   => substr( $r['body'], 0, 600 ),
-				);
-				if ( $r['code'] >= 200 && $r['code'] < 300 ) {
-					$data = json_decode( $r['body'], true );
-					$cats = $this->extract_ik_categories( $data );
+			// 2a: cerca tariffe embedded nell'oggetto evento (se l'API le include).
+			foreach ( array( 'tariffs', 'rates', 'tickets', 'prices', 'categories' ) as $tkey ) {
+				if ( ! empty( $evt[ $tkey ] ) && is_array( $evt[ $tkey ] ) ) {
+					$cats = $this->extract_ik_categories( $evt[ $tkey ] );
 					if ( ! empty( $cats ) ) {
 						wp_send_json_success(
 							array(
 								'categories'   => $cats,
-								'endpoint'     => $label . ' ' . $url,
-								'raw'          => $r['body'],
+								'endpoint'     => 'embedded /events field: ' . $tkey,
+								'raw'          => wp_json_encode( $evt[ $tkey ] ),
 								'api_event_id' => $api_id,
 							)
 						);
@@ -528,17 +513,25 @@ class SD_Payment_Settings {
 				}
 			}
 
-			// Poi proviamo GET (potrebbero funzionare su host con proxy diverso).
-			$get_endpoints = array(
-				'/event/' . $api_id . '/tariffs?key'    => $base . '/event/' . $api_id . '/tariffs' . $kparam,
-				'/event/' . $api_id . '/categories?key' => $base . '/event/' . $api_id . '/categories' . $kparam,
-			);
-			foreach ( $get_endpoints as $label => $url ) {
+			// 2b: endpoint con period_id nel path + event_id API + ?key= query param.
+			$get_candidates = array();
+			if ( $period_id > 0 ) {
+				$get_candidates[ '/' . $period_id . '/event/' . $api_id . '/tariffs?key' ]    =
+					$base . '/' . $period_id . '/event/' . $api_id . '/tariffs' . $kparam;
+				$get_candidates[ '/' . $period_id . '/tariffs?event_id=' . $api_id . '&key' ] =
+					$base . '/' . $period_id . '/tariffs?event_id=' . $api_id . '&key=' . rawurlencode( $api_key );
+				$get_candidates[ '/' . $period_id . '/event/' . $api_id . '?key (full)' ]     =
+					$base . '/' . $period_id . '/event/' . $api_id . $kparam;
+			}
+			$get_candidates[ '/event/' . $api_id . '/tariffs?key' ] =
+				$base . '/event/' . $api_id . '/tariffs' . $kparam;
+
+			foreach ( $get_candidates as $label => $url ) {
 				$r                  = $this->fetch_ik_url( $url, $api_key );
 				$attempts[ $label ] = array(
 					'code'   => $r['code'],
 					'method' => $r['method'] ?? '?',
-					'body'   => substr( $r['body'], 0, 600 ),
+					'body'   => substr( $r['body'], 0, 800 ),
 				);
 				if ( $r['code'] >= 200 && $r['code'] < 300 ) {
 					$data = json_decode( $r['body'], true );
@@ -550,18 +543,20 @@ class SD_Payment_Settings {
 								'endpoint'     => $label . ' ' . $url,
 								'raw'          => $r['body'],
 								'api_event_id' => $api_id,
+								'period_id'    => $period_id,
 							)
 						);
 					}
+					// 200 ma nessuna categoria: mostra il body completo nel debug.
+					$attempts[ $label ]['body'] = $r['body'];
 				}
 			}
 		}
 
 		wp_send_json_error(
 			array(
-				'message'    => 'Nessuna tariffa trovata. Vedi debug.',
-				'events_raw' => substr( $events_result['body'], 0, 2000 ),
-				'attempts'   => $attempts,
+				'message'  => 'Nessuna tariffa trovata. Vedi debug.',
+				'attempts' => $attempts,
 			)
 		);
 	}
