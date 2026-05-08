@@ -493,8 +493,41 @@ class SD_Payment_Settings {
 			$api_id    = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
 			$period_id = (int) ( $evt['period_id'] ?? 0 );
 			$group_id  = (int) ( $evt['group_event_id'] ?? 0 );
+			$shop_code = '';
+			if ( ! empty( $evt['portal_link_preview'] ) && is_string( $evt['portal_link_preview'] ) ) {
+				if ( preg_match( '/-([A-Z0-9]{10})(?:[\\/?#]|$)/', $evt['portal_link_preview'], $shop_match ) ) {
+					$shop_code = strtoupper( (string) $shop_match[1] );
+				}
+			}
 			if ( $api_id <= 0 ) {
 				continue;
+			}
+
+			// 2aa: endpoint runtime pubblico usato dal frontend shop.
+			if ( '' !== $shop_code ) {
+				$runtime_label = '/shop/' . $shop_code . '/date/' . $api_id . '/tariffs (public runtime)';
+				$runtime_url   = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/date/' . rawurlencode( (string) $api_id ) . '/tariffs';
+				$runtime_resp  = $this->fetch_public_page( $runtime_url );
+				$attempts[ $runtime_label ] = array(
+					'code'   => $runtime_resp['code'],
+					'method' => $runtime_resp['method'],
+					'body'   => substr( $runtime_resp['body'], 0, 1200 ),
+				);
+				if ( $runtime_resp['code'] >= 200 && $runtime_resp['code'] < 300 ) {
+					$runtime_data = json_decode( $runtime_resp['body'], true );
+					$cats         = $this->extract_ik_categories( $runtime_data );
+					if ( ! empty( $cats ) ) {
+						wp_send_json_success(
+							array(
+								'categories'   => $cats,
+								'endpoint'     => $runtime_label,
+								'raw'          => $runtime_resp['body'],
+								'api_event_id' => $api_id,
+								'shop_code'    => $shop_code,
+							)
+						);
+					}
+				}
 			}
 
 			// 2a: cerca tariffe embedded nell'oggetto evento.
@@ -838,6 +871,23 @@ class SD_Payment_Settings {
 			return $categories;
 		}
 
+		// Formato runtime shop: tariffs[] contiene zone con sotto-array tariffs[].
+		if ( isset( $data['tariffs'] ) && is_array( $data['tariffs'] ) ) {
+			$nested = array();
+			foreach ( $data['tariffs'] as $zone ) {
+				if ( isset( $zone['tariffs'] ) && is_array( $zone['tariffs'] ) ) {
+					foreach ( $zone['tariffs'] as $tariff ) {
+						if ( is_array( $tariff ) ) {
+							$nested[] = $tariff;
+						}
+					}
+				}
+			}
+			if ( ! empty( $nested ) ) {
+				$data = array( 'tariffs' => $nested );
+			}
+		}
+
 		// Cerca la lista in chiavi comuni.
 		$list = null;
 		foreach ( array( 'categories', 'tariffs', 'data', 'rates', 'items' ) as $key ) {
@@ -857,7 +907,7 @@ class SD_Payment_Settings {
 			}
 			$id    = $cat['id'] ?? $cat['category_id'] ?? $cat['tariff_id'] ?? null;
 			$name  = $cat['name'] ?? $cat['title'] ?? $cat['label'] ?? '';
-			$price = $cat['price'] ?? $cat['amount'] ?? $cat['price_chf'] ?? null;
+			$price = $cat['float_price'] ?? $cat['price'] ?? $cat['amount'] ?? $cat['price_chf'] ?? null;
 			if ( null !== $id ) {
 				$categories[] = array(
 					'id'    => (int) $id,
