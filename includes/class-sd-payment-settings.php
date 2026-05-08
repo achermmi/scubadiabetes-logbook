@@ -490,13 +490,30 @@ class SD_Payment_Settings {
 			if ( ! is_array( $evt ) ) {
 				continue;
 			}
-			$api_id    = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
-			$period_id = (int) ( $evt['period_id'] ?? 0 );
-			$group_id  = (int) ( $evt['group_event_id'] ?? 0 );
-			$shop_code = '';
+			$api_id     = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
+			$period_id  = (int) ( $evt['period_id'] ?? 0 );
+			$group_id   = (int) ( $evt['group_event_id'] ?? 0 );
+			$portal_url = (string) ( $evt['portal_link_preview'] ?? '' );
+			$shop_code  = '';
 			if ( ! empty( $evt['portal_link_preview'] ) && is_string( $evt['portal_link_preview'] ) ) {
 				if ( preg_match( '/-([A-Z0-9]{10})(?:[\\/?#]|$)/', $evt['portal_link_preview'], $shop_match ) ) {
 					$shop_code = strtoupper( (string) $shop_match[1] );
+				}
+			}
+			if ( '' === $shop_code && '' !== $portal_url ) {
+				$portal_probe                        = $this->fetch_public_page( $portal_url );
+				$attempts['portal_page_for_shop_id'] = array(
+					'code'   => $portal_probe['code'],
+					'method' => $portal_probe['method'],
+					'body'   => substr( $portal_probe['body'], 0, 600 ),
+				);
+				if ( $portal_probe['code'] >= 200 && $portal_probe['code'] < 300 ) {
+					$portal_html = (string) $portal_probe['body'];
+					if ( preg_match( '/shop-id=["\']([A-Z0-9]{10})["\']/i', $portal_html, $shop_match ) ) {
+						$shop_code = strtoupper( (string) $shop_match[1] );
+					} elseif ( preg_match( '#/shop/([A-Z0-9]{10})(?:[/?#]|$)#i', $portal_html, $shop_match ) ) {
+						$shop_code = strtoupper( (string) $shop_match[1] );
+					}
 				}
 			}
 			if ( $api_id <= 0 ) {
@@ -505,9 +522,9 @@ class SD_Payment_Settings {
 
 			// 2aa: endpoint runtime pubblico usato dal frontend shop.
 			if ( '' !== $shop_code ) {
-				$runtime_label = '/shop/' . $shop_code . '/date/' . $api_id . '/tariffs (public runtime)';
-				$runtime_url   = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/date/' . rawurlencode( (string) $api_id ) . '/tariffs';
-				$runtime_resp  = $this->fetch_public_page( $runtime_url );
+				$runtime_label              = '/shop/' . $shop_code . '/date/' . $api_id . '/tariffs (public runtime)';
+				$runtime_url                = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/date/' . rawurlencode( (string) $api_id ) . '/tariffs';
+				$runtime_resp               = $this->fetch_public_page( $runtime_url );
 				$attempts[ $runtime_label ] = array(
 					'code'   => $runtime_resp['code'],
 					'method' => $runtime_resp['method'],
@@ -616,7 +633,6 @@ class SD_Payment_Settings {
 
 			// 2d: scraping pagine pubbliche con redirect following (fetch_public_page segue i 301).
 			$scrape_map = array();
-			$portal_url = (string) ( $evt['portal_link_preview'] ?? '' );
 			if ( '' !== $portal_url ) {
 				$scrape_map['portal_page'] = $portal_url;
 			}
