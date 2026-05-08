@@ -581,29 +581,40 @@ class SD_Payment_Settings {
 				}
 			}
 
-			// 2d: scraping della pagina pubblica del portale per trovare category_id nel JSON embed.
+			// 2d: scraping pagine pubbliche con redirect following (fetch_public_page segue i 301).
+			$scrape_map = array();
 			$portal_url = (string) ( $evt['portal_link_preview'] ?? '' );
 			if ( '' !== $portal_url ) {
-				$page                    = $this->fetch_ik_url( $portal_url, '' );
-				$attempts['portal_page'] = array(
+				$scrape_map['portal_page'] = $portal_url;
+			}
+			if ( $period_id > 0 ) {
+				$scrape_map['shop_page']       = 'https://etickets.infomaniak.com/shop/' . $period_id;
+				$scrape_map['shop_event_page'] = 'https://etickets.infomaniak.com/shop/' . $period_id . '/event/' . $api_id;
+			}
+			foreach ( $scrape_map as $page_label => $page_url ) {
+				$page                    = $this->fetch_public_page( $page_url );
+				$attempts[ $page_label ] = array(
 					'code'   => $page['code'],
-					'method' => 'GET',
-					'body'   => substr( $page['body'], 0, 400 ),
+					'method' => $page['method'],
+					'body'   => substr( $page['body'], 0, 600 ),
 				);
 				if ( $page['code'] >= 200 && $page['code'] < 300 ) {
-					// Cerca pattern "category_id":NNN nel body HTML/JS.
-					if ( preg_match_all( '/"category_id"\s*:\s*(\d+)/', $page['body'], $m_cat ) ) {
-						$attempts['portal_page']['category_ids_found'] = array_values( array_unique( $m_cat[1] ) );
+					$html = $page['body'];
+					// Cerca pattern category_id / tariff_id / rate_id.
+					foreach ( array( 'category_id', 'tariff_id', 'rate_id', 'ticket_type_id', 'tariffId', 'rateId' ) as $tid ) {
+						if ( preg_match_all( '/["\']?' . preg_quote( $tid, '/' ) . '["\']?\s*:\s*(\d+)/', $html, $mt ) ) {
+							$attempts[ $page_label ][ $tid . '_found' ] = array_values( array_unique( $mt[1] ) );
+						}
 					}
-					// Cerca __NEXT_DATA__ (Next.js) o nuxtState con dati JSON embed.
-					if ( preg_match( '/<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)<\/script>/si', $page['body'], $nd ) ) {
+					// Cerca __NEXT_DATA__ (Next.js).
+					if ( preg_match( '/<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)<\/script>/si', $html, $nd ) ) {
 						$nd_data = json_decode( $nd[1], true );
 						if ( is_array( $nd_data ) ) {
-							$attempts['portal_page']['next_data_keys'] = array_keys( $nd_data );
-							$nd_json                                   = wp_json_encode( $nd_data );
-							if ( preg_match_all( '/"category_id"\s*:\s*(\d+)/', $nd_json, $m_nd ) ) {
-								$attempts['portal_page']['next_data_category_ids'] = array_values( array_unique( $m_nd[1] ) );
+							$nd_json = wp_json_encode( $nd_data );
+							if ( preg_match_all( '/["\'"]?(?:category|tariff|rate)_?[Ii]d["\'"]?\s*:\s*(\d+)/', $nd_json, $m_nd ) ) {
+								$attempts[ $page_label ]['next_data_ids'] = array_values( array_unique( $m_nd[1] ) );
 							}
+							$attempts[ $page_label ]['next_data_body'] = substr( $nd_json, 0, 1200 );
 						}
 					}
 				}
@@ -758,6 +769,60 @@ class SD_Payment_Settings {
 			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
 			'body'   => wp_remote_retrieve_body( $resp ),
 			'method' => 'wp_fallback',
+		);
+	}
+
+	/**
+	 * Recupera una pagina pubblica seguendo i redirect (nessun header auth).
+	 *
+	 * @param string $url URL pubblica.
+	 * @return array{code:int, body:string, method:string}
+	 */
+	private function fetch_public_page( $url ) {
+		if ( function_exists( 'curl_init' ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions
+			$ch = curl_init( $url );
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_TIMEOUT        => 20,
+					CURLOPT_FOLLOWLOCATION => true,
+					CURLOPT_MAXREDIRS      => 5,
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; WordPress/6)',
+					CURLOPT_HTTPHEADER     => array( 'Accept: text/html,application/json,*/*' ),
+				)
+			);
+			$body = curl_exec( $ch );
+			$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+			$err  = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			return array(
+				'code'   => $err ? 0 : $code,
+				'body'   => $err ? $err : (string) $body,
+				'method' => 'curl-public',
+			);
+		}
+		$resp = wp_remote_get(
+			$url,
+			array(
+				'timeout'     => 20,
+				'redirection' => 5,
+			)
+		);
+		if ( is_wp_error( $resp ) ) {
+			return array(
+				'code'   => 0,
+				'body'   => $resp->get_error_message(),
+				'method' => 'wp-public',
+			);
+		}
+		return array(
+			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
+			'body'   => wp_remote_retrieve_body( $resp ),
+			'method' => 'wp-public',
 		);
 	}
 
