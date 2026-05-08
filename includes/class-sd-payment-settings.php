@@ -141,6 +141,14 @@ class SD_Payment_Settings {
 				'default'           => 0,
 			)
 		);
+		register_setting(
+			self::OPTION_GROUP,
+			'sd_payment_twint_ik_shop_id',
+			array(
+				'sanitize_callback' => 'absint',
+				'default'           => 0,
+			)
+		);
 		foreach ( array( 30, 50, 75 ) as $_tier ) {
 			register_setting(
 				self::OPTION_GROUP,
@@ -428,6 +436,8 @@ class SD_Payment_Settings {
 		}
 
 		$event_id = absint( $_POST['event_id'] ?? 0 );
+		$shop_id  = absint( $_POST['shop_id'] ?? 0 );
+
 		if ( $event_id <= 0 ) {
 			wp_send_json_error( array( 'message' => 'Event ID non valido.' ) );
 		}
@@ -437,78 +447,114 @@ class SD_Payment_Settings {
 			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
 		}
 
-		$headers     = array(
-			'key'             => $api_key,
-			'currency'        => '1',
-			'Accept-Language' => 'it_IT',
-		);
-		$key_encoded = rawurlencode( $api_key );
+		$base = 'https://etickets.infomaniak.com/api/shop';
 
-		// Proviamo più endpoint candidati in sequenza.
-		// La chiave è passata sia come header sia come query-param perché WP può
-		// droppare gli header custom quando segue un redirect HTTP.
-		$candidates = array(
-			'GET /event/{id}/tariffs (header)'        => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs',
-			),
-			'GET /event/{id}/tariffs (key qparam)'    => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/tariffs?key=' . $key_encoded,
-			),
-			'GET /event/{id}/categories (header)'     => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories',
-			),
-			'GET /event/{id}/categories (key qparam)' => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id . '/categories?key=' . $key_encoded,
-			),
-			'GET /event/{id} (header)'                => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/event/' . $event_id,
-			),
-			'GET /tariffs?event_id (header)'          => array(
-				'method' => 'GET',
-				'url'    => 'https://etickets.infomaniak.com/api/shop/tariffs?event_id=' . $event_id,
-			),
-		);
+		// Candidati: prima con shop_id nel path (se fornito), poi senza.
+		$candidates = array();
+		if ( $shop_id > 0 ) {
+			$candidates['/{shop}/event/{id}/tariffs'] = $base . '/' . $shop_id . '/event/' . $event_id . '/tariffs';
+			$candidates['/{shop}/event/{id}/rates']   = $base . '/' . $shop_id . '/event/' . $event_id . '/rates';
+			$candidates['/{shop}/event/{id}/tickets'] = $base . '/' . $shop_id . '/event/' . $event_id . '/tickets';
+			$candidates['/{shop}/event/{id}']         = $base . '/' . $shop_id . '/event/' . $event_id;
+			$candidates['/{shop}/tariffs?event_id']   = $base . '/' . $shop_id . '/tariffs?event_id=' . $event_id;
+		}
+		$candidates['/event/{id}/tariffs'] = $base . '/event/' . $event_id . '/tariffs';
+		$candidates['/event/{id}/rates']   = $base . '/event/' . $event_id . '/rates';
+		$candidates['/event/{id}/tickets'] = $base . '/event/' . $event_id . '/tickets';
+		$candidates['/event/{id}']         = $base . '/event/' . $event_id;
+		$candidates['/tariffs?event_id']   = $base . '/tariffs?event_id=' . $event_id;
 
 		$attempts = array();
-		foreach ( $candidates as $label => $cfg ) {
-			$args               = array(
-				'method'      => $cfg['method'],
-				'timeout'     => 10,
-				'redirection' => 0, // non seguire redirect: evita lo strip degli header.
-				'headers'     => $headers,
-			);
-			$resp               = wp_remote_request( $cfg['url'], $args );
-			$code               = is_wp_error( $resp ) ? 0 : (int) wp_remote_retrieve_response_code( $resp );
-			$body               = is_wp_error( $resp ) ? $resp->get_error_message() : wp_remote_retrieve_body( $resp );
+		foreach ( $candidates as $label => $url ) {
+			$result             = $this->fetch_ik_url( $url, $api_key );
+			$code               = $result['code'];
+			$body               = $result['body'];
 			$attempts[ $label ] = array(
 				'code' => $code,
-				'body' => $body,
+				'body' => substr( $body, 0, 600 ),
 			);
 
-			if ( ! is_wp_error( $resp ) && $code >= 200 && $code < 300 ) {
+			if ( $code >= 200 && $code < 300 ) {
 				$data       = json_decode( $body, true );
 				$categories = $this->extract_ik_categories( $data );
 				wp_send_json_success(
 					array(
 						'categories' => $categories,
-						'endpoint'   => $label . ' ' . $cfg['url'],
+						'endpoint'   => $label . ' ' . $url,
 						'raw'        => $body,
 					)
 				);
 			}
 		}
 
-		// Tutti falliti: restituisci debug.
 		wp_send_json_error(
 			array(
 				'message'  => 'Nessun endpoint ha risposto con successo. Vedi dettagli debug.',
 				'attempts' => $attempts,
 			)
+		);
+	}
+
+	/**
+	 * Esegue una richiesta GET usando cURL direttamente (se disponibile) per
+	 * garantire che l'header `key` non venga strippato da WP_Http.
+	 *
+	 * @param string $url     URL da chiamare.
+	 * @param string $api_key Chiave API Infomaniak.
+	 * @return array{code:int, body:string}
+	 */
+	private function fetch_ik_url( $url, $api_key ) {
+		if ( function_exists( 'curl_init' ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions
+			$ch = curl_init( $url );
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_TIMEOUT        => 15,
+					CURLOPT_HTTPHEADER     => array(
+						'key: ' . $api_key,
+						'currency: 1',
+						'Accept-Language: it_IT',
+					),
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_FOLLOWLOCATION => true,
+					CURLOPT_MAXREDIRS      => 5,
+				)
+			);
+			$body = curl_exec( $ch );
+			$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+			$err  = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable WordPress.WP.AlternativeFunctions
+			return array(
+				'code' => $err ? 0 : $code,
+				'body' => $err ? $err : $body,
+			);
+		}
+
+		// Fallback WP HTTP API.
+		$resp = wp_remote_get(
+			$url,
+			array(
+				'timeout'     => 15,
+				'redirection' => 0,
+				'headers'     => array(
+					'key'             => $api_key,
+					'currency'        => '1',
+					'Accept-Language' => 'it_IT',
+				),
+			)
+		);
+		if ( is_wp_error( $resp ) ) {
+			return array(
+				'code' => 0,
+				'body' => $resp->get_error_message(),
+			);
+		}
+		return array(
+			'code' => (int) wp_remote_retrieve_response_code( $resp ),
+			'body' => wp_remote_retrieve_body( $resp ),
 		);
 	}
 
@@ -742,11 +788,15 @@ class SD_Payment_Settings {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID', 'sd-logbook' ); ?></label></th>
+							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID + Shop ID', 'sd-logbook' ); ?></label></th>
 							<td>
-								<input type="number" class="regular-text" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:180px">
-								<button type="button" id="sd-ik-load-cats" class="button" style="margin-left:8px;"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
-								<p class="description"><?php echo wp_kses( __( "L'ID si trova nell'URL di Infomaniak Manager: .../events/<strong>392024</strong>/view", 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
+								<?php echo wp_kses( __( 'Event ID:', 'sd-logbook' ), array() ); ?>
+								<input type="number" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:120px">
+								&nbsp;&nbsp;<?php echo wp_kses( __( 'Shop ID:', 'sd-logbook' ), array() ); ?>
+								<input type="number" id="sd_payment_twint_ik_shop_id" name="sd_payment_twint_ik_shop_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_shop_id', 0 ) ); ?>" min="0" style="width:100px">
+								&nbsp;
+								<button type="button" id="sd-ik-load-cats" class="button"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
+								<p class="description"><?php echo wp_kses( __( 'URL Manager: .../tickets/<strong>59285</strong>/events/<strong>392024</strong>/view → Shop ID = 59285, Event ID = 392024', 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
 								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
 							</td>
 						</tr>
@@ -778,10 +828,13 @@ class SD_Payment_Settings {
 								btn.disabled = true;
 								btn.textContent = 'Caricamento...';
 								result.style.display='none';
+								var shopIdEl = document.getElementById('sd_payment_twint_ik_shop_id');
+								var shopId   = shopIdEl ? shopIdEl.value : '0';
 								var fd = new FormData();
 								fd.append('action',   'sd_load_ik_categories');
 								fd.append('nonce',    '<?php echo esc_js( wp_create_nonce( 'sd_ik_categories' ) ); ?>');
 								fd.append('event_id', eventId);
+								fd.append('shop_id',  shopId);
 								fetch('<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>', {method:'POST', body:fd})
 									.then(function(r){ return r.json(); })
 									.then(function(resp){
