@@ -92,16 +92,17 @@ class SD_Membership_Helper {
 
 	/**
 	 * Invia le email di registrazione
-	 * - Al nuovo socio (con credenziali)
+	 * - Al nuovo socio (con credenziali) — solo se $send_to_member è true
 	 * - Al genitore/tutore (se minorenne)
 	 * - A ogni famigliare iscritto (con credenziali, senza richiesta di pagamento)
-	 * - Al segretariato
+	 * - Al segretariato (sempre)
 	 *
 	 * @param int    $member_id        ID del socio intestatario
 	 * @param string $plain_password   Password in chiaro dell'intestatario
 	 * @param array  $registered_family Array di famigliari registrati [{first_name, last_name, email, password, member_id}]
+	 * @param bool   $send_to_member   Se false invia solo la notifica al segretariato (usare alla registrazione quando il pagamento è ancora pendente)
 	 */
-	public static function send_registration_emails( $member_id, $plain_password = '', $registered_family = array() ) {
+	public static function send_registration_emails( $member_id, $plain_password = '', $registered_family = array(), $send_to_member = true ) {
 		global $wpdb;
 		$db     = new SD_Database();
 		$member = $wpdb->get_row(
@@ -132,8 +133,10 @@ class SD_Membership_Helper {
 		}
 		/* translators: 1: site name, 2: year */
 		$subject = sprintf( __( '[%1$s] Conferma iscrizione %2$s', 'sd-logbook' ), $site_name, $year );
-		$body    = self::get_welcome_email_body( $member, $plain_password, $site_name, $site_url, $registered_family );
-		wp_mail( $to, $subject, $body, $reg_headers );
+		if ( $send_to_member ) {
+			$body = self::get_welcome_email_body( $member, $plain_password, $site_name, $site_url, $registered_family );
+			wp_mail( $to, $subject, $body, $reg_headers );
+		}
 
 		// === Email a ogni famigliare registrato ===
 		foreach ( (array) $registered_family as $fm ) {
@@ -146,8 +149,10 @@ class SD_Membership_Helper {
 				$site_name,
 				$year
 			);
-			$fm_body = self::get_family_welcome_email_body( $fm, $member, $site_name, $site_url );
-			wp_mail( $fm['email'], $fm_subject, $fm_body, $headers );
+			if ( $send_to_member ) {
+				$fm_body = self::get_family_welcome_email_body( $fm, $member, $site_name, $site_url );
+				wp_mail( $fm['email'], $fm_subject, $fm_body, $headers );
+			}
 		}
 
 		// === Email al segretariato ===

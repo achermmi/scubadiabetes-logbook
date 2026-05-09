@@ -649,8 +649,9 @@ class SD_Membership {
 		// === 11. Audit log ===
 		SD_Membership_Helper::log_audit( $member_id, 'register', 'sd_members', $member_id, null, $member_data );
 
-		// === 12. Invio email ===
-		SD_Membership_Helper::send_registration_emails( $member_id, $password, $registered_family );
+		// === 12. Notifica segretariato ===
+		// Le credenziali al socio vengono inviate SOLO dopo conferma pagamento (send_post_payment_emails).
+		SD_Membership_Helper::send_registration_emails( $member_id, $password, $registered_family, false );
 
 		$checkout_url = '';
 		if ( class_exists( 'SD_Payment_Orchestrator' ) ) {
