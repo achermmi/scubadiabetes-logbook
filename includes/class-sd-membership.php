@@ -88,14 +88,14 @@ class SD_Membership {
 	public function register_member() {
 		check_ajax_referer( 'sd_membership_nonce', 'nonce' );
 
-		// Rate limiting: max 3 tentativi per ora per IP
+		// Rate limiting: max 20 tentativi per 30 secondi per IP (per test/dev)
 		$ip        = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$rate_key  = 'sd_reg_attempts_' . md5( $ip );
 		$attempts  = (int) get_transient( $rate_key );
-		if ( $attempts >= 5 ) {
-			wp_send_json_error( array( 'message' => __( 'Troppi tentativi. Attendi un\'ora prima di riprovare.', 'sd-logbook' ) ) );
+		if ( $attempts >= 20 ) {
+			wp_send_json_error( array( 'message' => __( 'Troppi tentativi. Attendi 30 secondi prima di riprovare.', 'sd-logbook' ) ) );
 		}
-		set_transient( $rate_key, $attempts + 1, HOUR_IN_SECONDS );
+		set_transient( $rate_key, $attempts + 1, 30 );
 
 		// === 1. Sanitizzazione e validazione campi base ===
 		$first_name     = sanitize_text_field( wp_unslash( $_POST['first_name'] ?? '' ) );
