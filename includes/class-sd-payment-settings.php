@@ -21,7 +21,6 @@ class SD_Payment_Settings {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_post_sd_payment_create_pages', array( $this, 'handle_create_pages' ) );
-		add_action( 'wp_ajax_sd_load_ik_categories', array( $this, 'ajax_load_ik_categories' ) );
 	}
 
 	/**
@@ -111,105 +110,23 @@ class SD_Payment_Settings {
 		);
 		register_setting(
 			self::OPTION_GROUP,
-			'sd_payment_enable_twint_stub',
+			'sd_payment_enable_stripe',
 			array(
 				'sanitize_callback' => 'absint',
-				'default'           => 0,
+				'default'           => 1,
 			)
 		);
 		register_setting(
 			self::OPTION_GROUP,
-			'sd_payment_twint_provider',
+			'sd_payment_stripe_mode',
 			array(
-				'sanitize_callback' => array( $this, 'sanitize_twint_provider' ),
-				'default'           => 'direct',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_key',
-			array(
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_event_id',
-			array(
-				'sanitize_callback' => 'absint',
-				'default'           => 0,
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_shop_id',
-			array(
-				'sanitize_callback' => 'absint',
-				'default'           => 0,
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_shop_code',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_twint_ik_shop_code' ),
-				'default'           => '',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_mode',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_twint_ik_mode' ),
-				'default'           => 'TWINT',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_ik_default_url_param',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_twint_ik_default_url_param' ),
-				'default'           => 'url_default',
-			)
-		);
-		foreach ( array( 30, 50, 75 ) as $_tier ) {
-			register_setting(
-				self::OPTION_GROUP,
-				'sd_payment_twint_ik_category_id_' . $_tier,
-				array(
-					'sanitize_callback' => 'absint',
-					'default'           => 0,
-				)
-			);
-		}
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_mode',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_twint_mode' ),
+				'sanitize_callback' => array( $this, 'sanitize_stripe_mode' ),
 				'default'           => 'sandbox',
 			)
 		);
 		register_setting(
 			self::OPTION_GROUP,
-			'sd_payment_twint_sandbox_api_url',
-			array(
-				'sanitize_callback' => 'esc_url_raw',
-				'default'           => 'https://sandbox.twint.ch/v1',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_live_api_url',
-			array(
-				'sanitize_callback' => 'esc_url_raw',
-				'default'           => 'https://api.twint.ch/v1',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_store_uuid',
+			'sd_payment_stripe_sandbox_secret',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => '',
@@ -217,7 +134,7 @@ class SD_Payment_Settings {
 		);
 		register_setting(
 			self::OPTION_GROUP,
-			'sd_payment_twint_api_key',
+			'sd_payment_stripe_live_secret',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => '',
@@ -225,23 +142,7 @@ class SD_Payment_Settings {
 		);
 		register_setting(
 			self::OPTION_GROUP,
-			'sd_payment_twint_cashregister_ref',
-			array(
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => 'SD-LOGBOOK',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_cert_path',
-			array(
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
-			)
-		);
-		register_setting(
-			self::OPTION_GROUP,
-			'sd_payment_twint_cert_password',
+			'sd_payment_stripe_webhook_secret',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => '',
@@ -413,60 +314,14 @@ class SD_Payment_Settings {
 	}
 
 	/**
-	 * Sanitizza modalita twint.
+	 * Sanitizza modalita Stripe (sandbox / live).
 	 *
 	 * @param string $value valore.
 	 * @return string
 	 */
-	public function sanitize_twint_mode( $value ) {
+	public function sanitize_stripe_mode( $value ) {
 		$value = sanitize_text_field( (string) $value );
 		return in_array( $value, array( 'sandbox', 'live' ), true ) ? $value : 'sandbox';
-	}
-
-	/**
-	 * Sanitizza provider TWINT.
-	 *
-	 * @param string $value provider.
-	 * @return string
-	 */
-	public function sanitize_twint_provider( $value ) {
-		$value = sanitize_text_field( (string) $value );
-		return in_array( $value, array( 'direct', 'infomaniak' ), true ) ? $value : 'direct';
-	}
-
-	/**
-	 * Sanitizza modalita pagamento Infomaniak (mode query param).
-	 *
-	 * @param string $value valore.
-	 * @return string
-	 */
-	public function sanitize_twint_ik_mode( $value ) {
-		$value = sanitize_text_field( (string) $value );
-		$value = preg_replace( '/[^A-Za-z0-9_\-]/', '', $value );
-		return '' !== $value ? $value : 'TWINT';
-	}
-
-	/**
-	 * Sanitizza nome parametro URL di default per Infomaniak.
-	 *
-	 * @param string $value valore.
-	 * @return string
-	 */
-	public function sanitize_twint_ik_default_url_param( $value ) {
-		$value = sanitize_key( (string) $value );
-		return '' !== $value ? $value : 'url_default';
-	}
-
-	/**
-	 * Sanitizza codice shop Infomaniak (es. S9S93UKTS6).
-	 *
-	 * @param string $value valore.
-	 * @return string
-	 */
-	public function sanitize_twint_ik_shop_code( $value ) {
-		$value = strtoupper( sanitize_text_field( (string) $value ) );
-		$value = preg_replace( '/[^A-Z0-9]/', '', $value );
-		return (string) $value;
 	}
 
 	/**
@@ -481,517 +336,6 @@ class SD_Payment_Settings {
 			return strtoupper( $value );
 		}
 		return '#0055A5';
-	}
-
-	/**
-	 * AJAX: carica categorie Infomaniak per un dato event_id.
-	 *
-	 * @return void
-	 */
-	public function ajax_load_ik_categories() {
-		check_ajax_referer( 'sd_ik_categories', 'nonce' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'Permesso negato.' ), 403 );
-		}
-
-		$api_key = trim( (string) get_option( 'sd_payment_twint_ik_key', '' ) );
-		if ( '' === $api_key ) {
-			wp_send_json_error( array( 'message' => 'API Key Infomaniak non configurata. Salva prima le impostazioni.' ) );
-		}
-
-		$base   = 'https://etickets.infomaniak.com/api/shop';
-		$kparam = '?key=' . rawurlencode( $api_key );
-
-		// Step 1: ottieni lista eventi (endpoint pubblico, funziona).
-		$events_result = $this->fetch_ik_url( $base . '/events' . $kparam, $api_key );
-		$attempts      = array(
-			'/events?key' => array(
-				'code'   => $events_result['code'],
-				'method' => $events_result['method'] ?? '?',
-				'body'   => $events_result['body'], // corpo completo per debug.
-			),
-		);
-
-		if ( $events_result['code'] < 200 || $events_result['code'] >= 300 ) {
-			wp_send_json_error(
-				array(
-					'message'  => 'Impossibile ottenere la lista eventi (/events). Code: ' . $events_result['code'],
-					'attempts' => $attempts,
-				)
-			);
-		}
-
-		$events_data = json_decode( $events_result['body'], true );
-		$events_list = null;
-		if ( is_array( $events_data ) ) {
-			foreach ( array( 'data', 'events', 'items' ) as $ekey ) {
-				if ( isset( $events_data[ $ekey ] ) && is_array( $events_data[ $ekey ] ) ) {
-					$events_list = $events_data[ $ekey ];
-					break;
-				}
-			}
-			if ( null === $events_list ) {
-				$events_list = $events_data;
-			}
-		}
-
-		if ( ! is_array( $events_list ) || empty( $events_list ) ) {
-			wp_send_json_error(
-				array(
-					'message'  => 'Lista eventi vuota o non parsabile.',
-					'attempts' => $attempts,
-				)
-			);
-		}
-
-		// Step 2: per ogni evento cerca le tariffe.
-		foreach ( $events_list as $evt ) {
-			if ( ! is_array( $evt ) ) {
-				continue;
-			}
-			$api_id     = (int) ( $evt['event_id'] ?? $evt['date_id'] ?? $evt['id'] ?? 0 );
-			$period_id  = (int) ( $evt['period_id'] ?? 0 );
-			$group_id   = (int) ( $evt['group_event_id'] ?? 0 );
-			$portal_url = (string) ( $evt['portal_link_preview'] ?? '' );
-			$shop_code  = '';
-			if ( ! empty( $evt['portal_link_preview'] ) && is_string( $evt['portal_link_preview'] ) ) {
-				if ( preg_match( '/-([A-Z0-9]{10})(?:[\\/?#]|$)/', $evt['portal_link_preview'], $shop_match ) ) {
-					$shop_code = strtoupper( (string) $shop_match[1] );
-				}
-			}
-			if ( '' === $shop_code && '' !== $portal_url ) {
-				$portal_probe                        = $this->fetch_public_page( $portal_url );
-				$attempts['portal_page_for_shop_id'] = array(
-					'code'   => $portal_probe['code'],
-					'method' => $portal_probe['method'],
-					'body'   => substr( $portal_probe['body'], 0, 600 ),
-				);
-				if ( $portal_probe['code'] >= 200 && $portal_probe['code'] < 300 ) {
-					$portal_html = (string) $portal_probe['body'];
-					if ( preg_match( '/shop-id=["\']([A-Z0-9]{10})["\']/i', $portal_html, $shop_match ) ) {
-						$shop_code = strtoupper( (string) $shop_match[1] );
-					} elseif ( preg_match( '#/shop/([A-Z0-9]{10})(?:[/?#]|$)#i', $portal_html, $shop_match ) ) {
-						$shop_code = strtoupper( (string) $shop_match[1] );
-					}
-				}
-			}
-			if ( $api_id <= 0 ) {
-				continue;
-			}
-
-			// 2aa: endpoint runtime pubblico usato dal frontend shop.
-			if ( '' !== $shop_code ) {
-				$runtime_label              = '/shop/' . $shop_code . '/date/' . $api_id . '/tariffs (public runtime)';
-				$runtime_url                = 'https://etickets.infomaniak.com/shop/' . rawurlencode( $shop_code ) . '/date/' . rawurlencode( (string) $api_id ) . '/tariffs';
-				$runtime_resp               = $this->fetch_public_page( $runtime_url );
-				$attempts[ $runtime_label ] = array(
-					'code'   => $runtime_resp['code'],
-					'method' => $runtime_resp['method'],
-					'body'   => substr( $runtime_resp['body'], 0, 1200 ),
-				);
-				if ( $runtime_resp['code'] >= 200 && $runtime_resp['code'] < 300 ) {
-					$runtime_data = json_decode( $runtime_resp['body'], true );
-					$cats         = $this->extract_ik_categories( $runtime_data );
-					if ( ! empty( $cats ) ) {
-						wp_send_json_success(
-							array(
-								'categories'   => $cats,
-								'endpoint'     => $runtime_label,
-								'raw'          => $runtime_resp['body'],
-								'api_event_id' => $api_id,
-								'shop_code'    => $shop_code,
-							)
-						);
-					}
-				}
-			}
-
-			// 2a: cerca tariffe embedded nell'oggetto evento.
-			foreach ( array( 'tariffs', 'rates', 'tickets', 'prices', 'categories' ) as $tkey ) {
-				if ( ! empty( $evt[ $tkey ] ) && is_array( $evt[ $tkey ] ) ) {
-					$cats = $this->extract_ik_categories( $evt[ $tkey ] );
-					if ( ! empty( $cats ) ) {
-						wp_send_json_success(
-							array(
-								'categories'   => $cats,
-								'endpoint'     => 'embedded /events field: ' . $tkey,
-								'raw'          => wp_json_encode( $evt[ $tkey ] ),
-								'api_event_id' => $api_id,
-							)
-						);
-					}
-				}
-			}
-
-			// 2b: POST sui path con period_id (GET restituisce 405 = metodo non consentito).
-			if ( $period_id > 0 ) {
-				$post_map = array(
-					'POST /' . $period_id . '/event/' . $api_id . '/tariffs' =>
-						$base . '/' . $period_id . '/event/' . $api_id . '/tariffs',
-					'POST /' . $period_id . '/tariffs event_id=' . $api_id =>
-						$base . '/' . $period_id . '/tariffs?event_id=' . $api_id,
-				);
-				foreach ( $post_map as $label => $url ) {
-					$r                  = $this->fetch_ik_post( $url, $api_key, array() );
-					$attempts[ $label ] = array(
-						'code'   => $r['code'],
-						'method' => 'POST+curl',
-						'body'   => substr( $r['body'], 0, 800 ),
-					);
-					if ( $r['code'] >= 200 && $r['code'] < 300 ) {
-						$data = json_decode( $r['body'], true );
-						$cats = $this->extract_ik_categories( $data );
-						if ( ! empty( $cats ) ) {
-							wp_send_json_success(
-								array(
-									'categories'   => $cats,
-									'endpoint'     => $label,
-									'raw'          => $r['body'],
-									'api_event_id' => $api_id,
-									'period_id'    => $period_id,
-								)
-							);
-						}
-						$attempts[ $label ]['body'] = $r['body'];
-					}
-				}
-			}
-
-			// 2c: endpoint pubblici con group_event_id (come /events, non richiedono auth).
-			if ( $group_id > 0 ) {
-				$pub_map = array(
-					'/events/' . $group_id . ' (public)' => $base . '/events/' . $group_id,
-					'/events/' . $group_id . '/dates (public)' => $base . '/events/' . $group_id . '/dates',
-					'/events/' . $group_id . '/tariffs (public)' => $base . '/events/' . $group_id . '/tariffs',
-				);
-				foreach ( $pub_map as $label => $url ) {
-					$r                  = $this->fetch_ik_url( $url, '' );
-					$attempts[ $label ] = array(
-						'code'   => $r['code'],
-						'method' => $r['method'] ?? '?',
-						'body'   => substr( $r['body'], 0, 800 ),
-					);
-					if ( $r['code'] >= 200 && $r['code'] < 300 ) {
-						$data = json_decode( $r['body'], true );
-						$cats = $this->extract_ik_categories( $data );
-						if ( ! empty( $cats ) ) {
-							wp_send_json_success(
-								array(
-									'categories'   => $cats,
-									'endpoint'     => $label,
-									'raw'          => $r['body'],
-									'api_event_id' => $api_id,
-									'group_id'     => $group_id,
-								)
-							);
-						}
-						$attempts[ $label ]['body'] = $r['body'];
-					}
-				}
-			}
-
-			// 2d: scraping pagine pubbliche con redirect following (fetch_public_page segue i 301).
-			$scrape_map = array();
-			if ( '' !== $portal_url ) {
-				$scrape_map['portal_page'] = $portal_url;
-			}
-			if ( $period_id > 0 ) {
-				$scrape_map['shop_page']       = 'https://etickets.infomaniak.com/shop/' . $period_id;
-				$scrape_map['shop_event_page'] = 'https://etickets.infomaniak.com/shop/' . $period_id . '/event/' . $api_id;
-			}
-			foreach ( $scrape_map as $page_label => $page_url ) {
-				$page                    = $this->fetch_public_page( $page_url );
-				$attempts[ $page_label ] = array(
-					'code'   => $page['code'],
-					'method' => $page['method'],
-					'body'   => substr( $page['body'], 0, 600 ),
-				);
-				if ( $page['code'] >= 200 && $page['code'] < 300 ) {
-					$html = $page['body'];
-					// Cerca pattern category_id / tariff_id / rate_id.
-					foreach ( array( 'category_id', 'tariff_id', 'rate_id', 'ticket_type_id', 'tariffId', 'rateId' ) as $tid ) {
-						if ( preg_match_all( '/["\']?' . preg_quote( $tid, '/' ) . '["\']?\s*:\s*(\d+)/', $html, $mt ) ) {
-							$attempts[ $page_label ][ $tid . '_found' ] = array_values( array_unique( $mt[1] ) );
-						}
-					}
-					// Cerca __NEXT_DATA__ (Next.js).
-					if ( preg_match( '/<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)<\/script>/si', $html, $nd ) ) {
-						$nd_data = json_decode( $nd[1], true );
-						if ( is_array( $nd_data ) ) {
-							$nd_json = wp_json_encode( $nd_data );
-							if ( preg_match_all( '/["\'"]?(?:category|tariff|rate)_?[Ii]d["\'"]?\s*:\s*(\d+)/', $nd_json, $m_nd ) ) {
-								$attempts[ $page_label ]['next_data_ids'] = array_values( array_unique( $m_nd[1] ) );
-							}
-							$attempts[ $page_label ]['next_data_body'] = substr( $nd_json, 0, 1200 );
-						}
-					}
-				}
-			}
-
-			// 2e: GET /event/{api_id}/tariffs con key nel query param (restituisce 400 ma utile per debug).
-			$r = $this->fetch_ik_url( $base . '/event/' . $api_id . '/tariffs' . $kparam, $api_key );
-			$attempts[ '/event/' . $api_id . '/tariffs?key' ] = array(
-				'code'   => $r['code'],
-				'method' => $r['method'] ?? '?',
-				'body'   => $r['body'],
-			);
-		}
-
-		wp_send_json_error(
-			array(
-				'message'  => 'Nessuna tariffa trovata. Vedi debug.',
-				'attempts' => $attempts,
-			)
-		);
-	}
-
-	/**
-	 * Esegue una richiesta POST usando cURL per mantenere l'header `key`.
-	 *
-	 * @param string $url     URL da chiamare.
-	 * @param string $api_key Chiave API Infomaniak.
-	 * @param array  $body    Dati body (serializzati come JSON).
-	 * @return array{code:int, body:string, method:string}
-	 */
-	private function fetch_ik_post( $url, $api_key, $body ) {
-		$json_body = wp_json_encode( $body );
-		if ( function_exists( 'curl_init' ) ) {
-			// phpcs:disable WordPress.WP.AlternativeFunctions
-			$ch = curl_init( $url );
-			curl_setopt_array(
-				$ch,
-				array(
-					CURLOPT_RETURNTRANSFER => true,
-					CURLOPT_TIMEOUT        => 15,
-					CURLOPT_POST           => true,
-					CURLOPT_POSTFIELDS     => $json_body,
-					CURLOPT_HTTPHEADER     => array(
-						'key: ' . $api_key,
-						'currency: 1',
-						'Accept-Language: it_IT',
-						'Content-Type: application/json',
-					),
-					CURLOPT_SSL_VERIFYPEER => true,
-					CURLOPT_FOLLOWLOCATION => false,
-				)
-			);
-			$resp_body = curl_exec( $ch );
-			$code      = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-			$err       = curl_error( $ch );
-			curl_close( $ch );
-			// phpcs:enable WordPress.WP.AlternativeFunctions
-			return array(
-				'code'   => $err ? 0 : $code,
-				'body'   => $err ? $err : (string) $resp_body,
-				'method' => 'POST+curl',
-			);
-		}
-
-		$resp = wp_remote_post(
-			$url,
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'key'             => $api_key,
-					'currency'        => '1',
-					'Accept-Language' => 'it_IT',
-					'Content-Type'    => 'application/json',
-				),
-				'body'    => $json_body,
-			)
-		);
-		if ( is_wp_error( $resp ) ) {
-			return array(
-				'code'   => 0,
-				'body'   => $resp->get_error_message(),
-				'method' => 'POST+wp',
-			);
-		}
-		return array(
-			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
-			'body'   => wp_remote_retrieve_body( $resp ),
-			'method' => 'POST+wp',
-		);
-	}
-
-	/**
-	 * Esegue una richiesta GET usando cURL direttamente (se disponibile) per
-	 * garantire che l'header `key` non venga strippato da WP_Http.
-	 *
-	 * @param string $url     URL da chiamare.
-	 * @param string $api_key Chiave API Infomaniak.
-	 * @return array{code:int, body:string}
-	 */
-	private function fetch_ik_url( $url, $api_key ) {
-		if ( function_exists( 'curl_init' ) ) {
-			// phpcs:disable WordPress.WP.AlternativeFunctions
-			$ch = curl_init( $url );
-			curl_setopt_array(
-				$ch,
-				array(
-					CURLOPT_RETURNTRANSFER => true,
-					CURLOPT_TIMEOUT        => 15,
-					CURLOPT_HTTPHEADER     => array(
-						'key: ' . $api_key,
-						'currency: 1',
-						'Accept-Language: it_IT',
-					),
-					CURLOPT_SSL_VERIFYPEER => true,
-					// Non seguire redirect: evita che un redirect strippa gli header.
-					CURLOPT_FOLLOWLOCATION => false,
-				)
-			);
-			$body = curl_exec( $ch );
-			$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-			$err  = curl_error( $ch );
-			curl_close( $ch );
-			// phpcs:enable WordPress.WP.AlternativeFunctions.
-			return array(
-				'code'   => $err ? 0 : $code,
-				'body'   => $err ? $err : (string) $body,
-				'method' => 'curl',
-			);
-		}
-
-		// Fallback WP HTTP API (nota: WP può strippare header 'key' su GET).
-		$resp = wp_remote_get(
-			$url,
-			array(
-				'timeout'     => 15,
-				'redirection' => 0,
-				'headers'     => array(
-					'key'             => $api_key,
-					'currency'        => '1',
-					'Accept-Language' => 'it_IT',
-				),
-			)
-		);
-		if ( is_wp_error( $resp ) ) {
-			return array(
-				'code'   => 0,
-				'body'   => $resp->get_error_message(),
-				'method' => 'wp_fallback',
-			);
-		}
-		return array(
-			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
-			'body'   => wp_remote_retrieve_body( $resp ),
-			'method' => 'wp_fallback',
-		);
-	}
-
-	/**
-	 * Recupera una pagina pubblica seguendo i redirect (nessun header auth).
-	 *
-	 * @param string $url URL pubblica.
-	 * @return array{code:int, body:string, method:string}
-	 */
-	private function fetch_public_page( $url ) {
-		if ( function_exists( 'curl_init' ) ) {
-			// phpcs:disable WordPress.WP.AlternativeFunctions
-			$ch = curl_init( $url );
-			curl_setopt_array(
-				$ch,
-				array(
-					CURLOPT_RETURNTRANSFER => true,
-					CURLOPT_TIMEOUT        => 20,
-					CURLOPT_FOLLOWLOCATION => true,
-					CURLOPT_MAXREDIRS      => 5,
-					CURLOPT_SSL_VERIFYPEER => true,
-					CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; WordPress/6)',
-					CURLOPT_HTTPHEADER     => array( 'Accept: text/html,application/json,*/*' ),
-				)
-			);
-			$body = curl_exec( $ch );
-			$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-			$err  = curl_error( $ch );
-			curl_close( $ch );
-			// phpcs:enable WordPress.WP.AlternativeFunctions
-			return array(
-				'code'   => $err ? 0 : $code,
-				'body'   => $err ? $err : (string) $body,
-				'method' => 'curl-public',
-			);
-		}
-		$resp = wp_remote_get(
-			$url,
-			array(
-				'timeout'     => 20,
-				'redirection' => 5,
-			)
-		);
-		if ( is_wp_error( $resp ) ) {
-			return array(
-				'code'   => 0,
-				'body'   => $resp->get_error_message(),
-				'method' => 'wp-public',
-			);
-		}
-		return array(
-			'code'   => (int) wp_remote_retrieve_response_code( $resp ),
-			'body'   => wp_remote_retrieve_body( $resp ),
-			'method' => 'wp-public',
-		);
-	}
-
-	/**
-	 * Estrae array normalizzato di categorie da una risposta JSON Infomaniak.
-	 *
-	 * @param mixed $data Dato decodificato.
-	 * @return array
-	 */
-	private function extract_ik_categories( $data ) {
-		$categories = array();
-		if ( ! is_array( $data ) ) {
-			return $categories;
-		}
-
-		// Formato runtime shop: tariffs[] contiene zone con sotto-array tariffs[].
-		if ( isset( $data['tariffs'] ) && is_array( $data['tariffs'] ) ) {
-			$nested = array();
-			foreach ( $data['tariffs'] as $zone ) {
-				if ( isset( $zone['tariffs'] ) && is_array( $zone['tariffs'] ) ) {
-					foreach ( $zone['tariffs'] as $tariff ) {
-						if ( is_array( $tariff ) ) {
-							$nested[] = $tariff;
-						}
-					}
-				}
-			}
-			if ( ! empty( $nested ) ) {
-				$data = array( 'tariffs' => $nested );
-			}
-		}
-
-		// Cerca la lista in chiavi comuni.
-		$list = null;
-		foreach ( array( 'categories', 'tariffs', 'data', 'rates', 'items' ) as $key ) {
-			if ( isset( $data[ $key ] ) && is_array( $data[ $key ] ) ) {
-				$list = $data[ $key ];
-				break;
-			}
-		}
-		if ( null === $list ) {
-			// Potrebbe essere un array piatto di oggetti.
-			$list = $data;
-		}
-
-		foreach ( $list as $cat ) {
-			if ( ! is_array( $cat ) ) {
-				continue;
-			}
-			$id    = $cat['id'] ?? $cat['category_id'] ?? $cat['tariff_id'] ?? null;
-			$name  = $cat['name'] ?? $cat['title'] ?? $cat['label'] ?? '';
-			$price = $cat['float_price'] ?? $cat['price'] ?? $cat['amount'] ?? $cat['price_chf'] ?? null;
-			if ( null !== $id ) {
-				$categories[] = array(
-					'id'    => (int) $id,
-					'name'  => is_array( $name ) ? ( $name['it'] ?? $name['fr'] ?? $name['en'] ?? reset( $name ) ) : (string) $name,
-					'price' => $price,
-				);
-			}
-		}
-		return $categories;
 	}
 
 	/**
@@ -1130,9 +474,37 @@ class SD_Payment_Settings {
 							<tr>
 								<th scope="row"><?php esc_html_e( 'Metodi attivi', 'sd-logbook' ); ?></th>
 								<td>
+									<label><input type="checkbox" name="sd_payment_enable_stripe" value="1" <?php checked( (int) get_option( 'sd_payment_enable_stripe', 1 ), 1 ); ?>> Stripe (Carta / TWINT / Apple Pay / Google Pay)</label><br>
 									<label><input type="checkbox" name="sd_payment_enable_paypal" value="1" <?php checked( (int) get_option( 'sd_payment_enable_paypal', 1 ), 1 ); ?>> PayPal</label><br>
-									<label><input type="checkbox" name="sd_payment_enable_invoice" value="1" <?php checked( (int) get_option( 'sd_payment_enable_invoice', 1 ), 1 ); ?>> Fattura</label><br>
-									<label><input type="checkbox" name="sd_payment_enable_twint_stub" value="1" <?php checked( (int) get_option( 'sd_payment_enable_twint_stub', 0 ), 1 ); ?>> TWINT Express Checkout</label>
+									<label><input type="checkbox" name="sd_payment_enable_invoice" value="1" <?php checked( (int) get_option( 'sd_payment_enable_invoice', 1 ), 1 ); ?>> Fattura</label>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Configurazione Stripe', 'sd-logbook' ); ?></h3></th>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Modalità', 'sd-logbook' ); ?></th>
+								<td>
+									<label><input type="radio" name="sd_payment_stripe_mode" value="sandbox" <?php checked( get_option( 'sd_payment_stripe_mode', 'sandbox' ), 'sandbox' ); ?>> Sandbox (Test)</label>&nbsp;&nbsp;
+									<label><input type="radio" name="sd_payment_stripe_mode" value="live" <?php checked( get_option( 'sd_payment_stripe_mode', 'sandbox' ), 'live' ); ?>> Live</label>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="sd_payment_stripe_sandbox_secret"><?php esc_html_e( 'Sandbox Secret Key (sk_test_...)', 'sd-logbook' ); ?></label></th>
+								<td><input type="password" class="regular-text" id="sd_payment_stripe_sandbox_secret" name="sd_payment_stripe_sandbox_secret" value="<?php echo esc_attr( get_option( 'sd_payment_stripe_sandbox_secret', '' ) ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="sd_payment_stripe_live_secret"><?php esc_html_e( 'Live Secret Key (sk_live_...)', 'sd-logbook' ); ?></label></th>
+								<td><input type="password" class="regular-text" id="sd_payment_stripe_live_secret" name="sd_payment_stripe_live_secret" value="<?php echo esc_attr( get_option( 'sd_payment_stripe_live_secret', '' ) ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="sd_payment_stripe_webhook_secret"><?php esc_html_e( 'Webhook Secret (whsec_...)', 'sd-logbook' ); ?></label></th>
+								<td>
+									<input type="password" class="regular-text" id="sd_payment_stripe_webhook_secret" name="sd_payment_stripe_webhook_secret" value="<?php echo esc_attr( get_option( 'sd_payment_stripe_webhook_secret', '' ) ); ?>">
+									<p class="description">
+										<?php esc_html_e( 'URL webhook da configurare in Stripe Dashboard:', 'sd-logbook' ); ?>
+										<code><?php echo esc_html( add_query_arg( 'sd_stripe_webhook', '1', home_url( '/' ) ) ); ?></code>
+									</p>
 								</td>
 							</tr>
 							<tr>
@@ -1164,164 +536,6 @@ class SD_Payment_Settings {
 								<td><textarea class="large-text" rows="3" id="sd_payment_receipt_footer_note" name="sd_payment_receipt_footer_note"><?php echo esc_textarea( get_option( 'sd_payment_receipt_footer_note', '' ) ); ?></textarea></td>
 							</tr>
 							<tr>
-								<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Configurazione TWINT Express Checkout', 'sd-logbook' ); ?></h3></th>
-						</tr>
-						<tr>
-							<th scope="row"><?php esc_html_e( 'Provider TWINT', 'sd-logbook' ); ?></th>
-							<td>
-								<label><input type="radio" name="sd_payment_twint_provider" value="direct" <?php checked( get_option( 'sd_payment_twint_provider', 'direct' ), 'direct' ); ?>> <?php esc_html_e( 'Diretto (storeUuid + apiKey + certificato)', 'sd-logbook' ); ?></label><br>
-								<label><input type="radio" name="sd_payment_twint_provider" value="infomaniak" <?php checked( get_option( 'sd_payment_twint_provider', 'direct' ), 'infomaniak' ); ?>> <?php esc_html_e( 'Infomaniak eCommerce (etickets.infomaniak.com)', 'sd-logbook' ); ?></label>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_key"><?php esc_html_e( 'Infomaniak API Key', 'sd-logbook' ); ?></label></th>
-							<td>
-								<input type="password" class="regular-text" id="sd_payment_twint_ik_key" name="sd_payment_twint_ik_key" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_key', '' ) ); ?>">
-								<p class="description"><?php esc_html_e( 'Manager Infomaniak &rarr; Shop &rarr; Disponibilit&#224; online &rarr; Accesso API', 'sd-logbook' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_event_id"><?php esc_html_e( 'Infomaniak Event ID + Shop', 'sd-logbook' ); ?></label></th>
-							<td>
-								<?php echo wp_kses( __( 'Event ID:', 'sd-logbook' ), array() ); ?>
-								<input type="number" id="sd_payment_twint_ik_event_id" name="sd_payment_twint_ik_event_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_event_id', 0 ) ); ?>" min="0" style="width:120px">
-								&nbsp;&nbsp;<?php echo wp_kses( __( 'Shop Code:', 'sd-logbook' ), array() ); ?>
-								<input type="text" id="sd_payment_twint_ik_shop_code" name="sd_payment_twint_ik_shop_code" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_shop_code', '' ) ); ?>" style="width:120px" placeholder="S9S93UKTS6">
-								&nbsp;&nbsp;<?php echo wp_kses( __( 'Shop ID:', 'sd-logbook' ), array() ); ?>
-								<input type="number" id="sd_payment_twint_ik_shop_id" name="sd_payment_twint_ik_shop_id" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_shop_id', 0 ) ); ?>" min="0" style="width:100px">
-								&nbsp;
-								<button type="button" id="sd-ik-load-cats" class="button"><?php esc_html_e( 'Carica categorie', 'sd-logbook' ); ?></button>
-								<p class="description"><?php echo wp_kses( __( 'URL shop pubblico: .../shop/scubadiabetes-switzerland-<strong>S9S93UKTS6</strong>/ (Shop Code). Manager: .../tickets/<strong>59285</strong>/events/<strong>392024</strong>/view (Shop ID/Event ID).', 'sd-logbook' ), array( 'strong' => array() ) ); ?></p>
-								<div id="sd-ik-cats-result" style="margin-top:10px;display:none;"></div>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_mode"><?php esc_html_e( 'Infomaniak mode', 'sd-logbook' ); ?></label></th>
-							<td>
-								<input type="text" class="regular-text" id="sd_payment_twint_ik_mode" name="sd_payment_twint_ik_mode" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_mode', 'TWINT' ) ); ?>" placeholder="TWINT">
-								<p class="description"><?php esc_html_e( 'Parametro query "mode" usato per /order/{id}/payment. Lascia TWINT salvo istruzioni diverse da Infomaniak.', 'sd-logbook' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_ik_default_url_param"><?php esc_html_e( 'Parametro URL default', 'sd-logbook' ); ?></label></th>
-							<td>
-								<input type="text" class="regular-text" id="sd_payment_twint_ik_default_url_param" name="sd_payment_twint_ik_default_url_param" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_default_url_param', 'url_default' ) ); ?>" placeholder="url_default">
-								<p class="description"><?php esc_html_e( 'Nome del parametro richiesto da Infomaniak per la URL di ritorno predefinita (es. url_default).', 'sd-logbook' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><?php esc_html_e( 'Infomaniak Category ID per importo', 'sd-logbook' ); ?></th>
-							<td>
-								<?php foreach ( array( 30, 50, 75 ) as $tier ) : ?>
-								<p>
-									<label for="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>">
-										<strong>CHF <?php echo esc_html( $tier ); ?></strong> &mdash; Category ID:
-									</label>
-									<input type="number" class="small-text" id="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" name="sd_payment_twint_ik_category_id_<?php echo esc_attr( $tier ); ?>" value="<?php echo esc_attr( get_option( 'sd_payment_twint_ik_category_id_' . $tier, 0 ) ); ?>" min="0">
-								</p>
-								<?php endforeach; ?>
-								<p class="description"><?php esc_html_e( "Per ogni importo, inserisci l'ID della categoria biglietto corrispondente nel tuo evento Infomaniak (Manager → etickets → evento → Categorie).", 'sd-logbook' ); ?></p>
-							</td>
-						</tr>
-						<script>
-						(function(){
-							document.getElementById('sd-ik-load-cats').addEventListener('click', function(){
-								var btn = this;
-								var eventId = document.getElementById('sd_payment_twint_ik_event_id').value;
-								var result  = document.getElementById('sd-ik-cats-result');
-								if ( !eventId || parseInt(eventId) <= 0 ) {
-									result.style.display='block';
-									result.innerHTML='<span style="color:red">Inserisci prima l\'Event ID.</span>';
-									return;
-								}
-								btn.disabled = true;
-								btn.textContent = 'Caricamento...';
-								result.style.display='none';
-								var shopIdEl = document.getElementById('sd_payment_twint_ik_shop_id');
-								var shopId   = shopIdEl ? shopIdEl.value : '0';
-								var fd = new FormData();
-								fd.append('action',   'sd_load_ik_categories');
-								fd.append('nonce',    '<?php echo esc_js( wp_create_nonce( 'sd_ik_categories' ) ); ?>');
-								fd.append('event_id', eventId);
-								fd.append('shop_id',  shopId);
-								fetch('<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>', {method:'POST', body:fd})
-									.then(function(r){ return r.json(); })
-									.then(function(resp){
-										btn.disabled    = false;
-										btn.textContent = 'Carica categorie';
-										result.style.display = 'block';
-										if ( !resp.success ) {
-											var msg = resp.data && resp.data.message ? resp.data.message : JSON.stringify(resp);
-											var dbg = '';
-											if ( resp.data && resp.data.attempts ) {
-												dbg = '<details style="margin-top:8px"><summary>Debug (tutti i tentativi)</summary><pre style="background:#f5f5f5;padding:8px;max-height:300px;overflow:auto;font-size:11px">' + JSON.stringify(resp.data.attempts, null, 2) + '</pre></details>';
-											}
-											result.innerHTML = '<span style="color:red">Errore: ' + msg + '</span>' + dbg;
-											return;
-										}
-										var cats = resp.data.categories;
-										var endpoint = resp.data.endpoint || '';
-										if ( !cats || cats.length === 0 ) {
-											result.innerHTML = '<em>Nessuna categoria trovata (endpoint: ' + endpoint + '). Raw:</em><pre style="background:#f5f5f5;padding:8px;max-height:200px;overflow:auto">' + resp.data.raw + '</pre>';
-											return;
-										}
-										var html = '<p style="color:green;margin-bottom:6px">&#10003; Trovate via: ' + endpoint + '</p>';
-										html += '<table style="border-collapse:collapse"><thead><tr><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">ID</th><th style="padding:4px 12px 4px 0;border-bottom:1px solid #ccc">Nome</th><th style="padding:4px 0;border-bottom:1px solid #ccc">Prezzo</th></tr></thead><tbody>';
-										cats.forEach(function(c){
-											html += '<tr><td style="padding:3px 12px 3px 0"><code>' + c.id + '</code></td><td style="padding:3px 12px 3px 0">' + c.name + '</td><td style="padding:3px 0">' + (c.price !== null && c.price !== undefined ? 'CHF ' + c.price : '') + '</td></tr>';
-										});
-										html += '</tbody></table>';
-										result.innerHTML = html;
-									})
-									.catch(function(e){
-										btn.disabled = false;
-										btn.textContent = 'Carica categorie';
-										result.style.display = 'block';
-										result.innerHTML = '<span style="color:red">Errore rete: ' + e.message + '</span>';
-									});
-							});
-						})();
-						</script>
-						<tr>
-							<th scope="row" style="padding-top:12px;"><em><?php esc_html_e( '&#8212; Impostazioni provider Diretto &#8212;', 'sd-logbook' ); ?></em></th>
-							<td></td>
-						</tr>
-						<tr>
-							<th scope="row"><?php esc_html_e( 'Modalita TWINT', 'sd-logbook' ); ?></th>
-							<td>
-								<label><input type="radio" name="sd_payment_twint_mode" value="sandbox" <?php checked( get_option( 'sd_payment_twint_mode', 'sandbox' ), 'sandbox' ); ?>> Sandbox</label>&nbsp;&nbsp;
-								<label><input type="radio" name="sd_payment_twint_mode" value="live" <?php checked( get_option( 'sd_payment_twint_mode', 'sandbox' ), 'live' ); ?>> Live</label>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_sandbox_api_url"><?php esc_html_e( 'URL API Sandbox', 'sd-logbook' ); ?></label></th>
-							<td><input type="url" class="regular-text" id="sd_payment_twint_sandbox_api_url" name="sd_payment_twint_sandbox_api_url" value="<?php echo esc_attr( get_option( 'sd_payment_twint_sandbox_api_url', 'https://sandbox.twint.ch/v1' ) ); ?>"></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_live_api_url"><?php esc_html_e( 'URL API Live', 'sd-logbook' ); ?></label></th>
-							<td><input type="url" class="regular-text" id="sd_payment_twint_live_api_url" name="sd_payment_twint_live_api_url" value="<?php echo esc_attr( get_option( 'sd_payment_twint_live_api_url', 'https://api.twint.ch/v1' ) ); ?>"></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_store_uuid"><?php esc_html_e( 'Store UUID', 'sd-logbook' ); ?></label></th>
-							<td><input type="text" class="regular-text" id="sd_payment_twint_store_uuid" name="sd_payment_twint_store_uuid" value="<?php echo esc_attr( get_option( 'sd_payment_twint_store_uuid', '' ) ); ?>"></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_api_key"><?php esc_html_e( 'API Key', 'sd-logbook' ); ?></label></th>
-							<td><input type="password" class="regular-text" id="sd_payment_twint_api_key" name="sd_payment_twint_api_key" value="<?php echo esc_attr( get_option( 'sd_payment_twint_api_key', '' ) ); ?>"></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_cashregister_ref"><?php esc_html_e( 'Cash Register ID', 'sd-logbook' ); ?></label></th>
-							<td><input type="text" class="regular-text" id="sd_payment_twint_cashregister_ref" name="sd_payment_twint_cashregister_ref" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cashregister_ref', 'SD-LOGBOOK' ) ); ?>"></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_cert_path"><?php esc_html_e( 'Percorso certificato SSL (opz.)', 'sd-logbook' ); ?></label></th>
-							<td><input type="text" class="regular-text" id="sd_payment_twint_cert_path" name="sd_payment_twint_cert_path" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cert_path', '' ) ); ?>"><p class="description"><?php esc_html_e( 'Percorso assoluto al file .pem del certificato client (richiesto da alcuni acquirer CH).', 'sd-logbook' ); ?></p></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="sd_payment_twint_cert_password"><?php esc_html_e( 'Password certificato (opz.)', 'sd-logbook' ); ?></label></th>
-							<td><input type="password" class="regular-text" id="sd_payment_twint_cert_password" name="sd_payment_twint_cert_password" value="<?php echo esc_attr( get_option( 'sd_payment_twint_cert_password', '' ) ); ?>"></td>
-						</tr>
-						<tr>
 							<th scope="row" colspan="2" style="padding-top:18px;"><h3 style="margin:0;"><?php esc_html_e( 'Dati Fattura (Associazione)', 'sd-logbook' ); ?></h3></th>
 							</tr>
 							<tr>

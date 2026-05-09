@@ -368,7 +368,8 @@ function sd_val( $obj, $key, $default = '' ) {
 							<option value="carta_credito" <?php selected( $current_pay ? $current_pay->payment_method : '', 'carta_credito' ); ?>><?php esc_html_e( 'Carta di credito / debito', 'sd-logbook' ); ?></option>
 							<option value="apple_pay" <?php selected( $current_pay ? $current_pay->payment_method : '', 'apple_pay' ); ?>>Apple Pay</option>
 							<option value="google_pay" <?php selected( $current_pay ? $current_pay->payment_method : '', 'google_pay' ); ?>>Google Pay</option>
-							<option value="fattura" <?php selected( $current_pay ? $current_pay->payment_method : '', 'fattura' ); ?>><?php esc_html_e( 'Fattura', 'sd-logbook' ); ?></option>
+							<option value="stripe" <?php selected( $current_pay ? $current_pay->payment_method : '', 'stripe' ); ?>>Stripe</option>
+						<option value="fattura" <?php selected( $current_pay ? $current_pay->payment_method : '', 'fattura' ); ?>><?php esc_html_e( 'Fattura', 'sd-logbook' ); ?></option>
 						</select>
 					</div>
 					<div class="sd-field-group sd-field-quarter">

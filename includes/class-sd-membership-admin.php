@@ -607,7 +607,7 @@ class SD_Membership_Admin {
 				$pay_data['payment_date'] = ! empty( $payment_date ) ? $payment_date : gmdate( 'Y-m-d' );
 			}
 			// Salva il metodo di pagamento indipendentemente dallo stato
-			$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura' );
+			$allowed_methods = array( 'twint', 'paypal', 'bonifico_iban', 'carta_credito', 'apple_pay', 'google_pay', 'fattura', 'stripe' );
 			if ( isset( $_POST['payment_method'] ) ) {
 				if ( ! empty( $payment_method ) && in_array( $payment_method, $allowed_methods, true ) ) {
 					$pay_data['payment_method'] = $payment_method;

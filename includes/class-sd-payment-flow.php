@@ -6,6 +6,9 @@
  * - [sd_payment_checkout]
  * - [sd_payment_confirmation]
  *
+ * Gateway supportati: PayPal, Stripe (carta/Apple Pay/Google Pay/TWINT), Fattura.
+ * Webhook Stripe: configurare https://tuosite.com/?sd_stripe_webhook=1 nel dashboard Stripe.
+ *
  * @package SD_Logbook
  */
 
@@ -26,47 +29,32 @@ class SD_Payment_Flow {
 	private $paypal;
 
 	/**
-	 * @var SD_Payment_Adapter
+	 * @var SD_Payment_Stripe
 	 */
-	private $twint;
-
-	/**
-	 * Istanzia l'adapter TWINT corretto in base all'impostazione sd_payment_twint_provider.
-	 *
-	 * @return SD_Payment_Adapter
-	 */
-	private function make_twint_adapter() {
-		$provider = get_option( 'sd_payment_twint_provider', 'direct' );
-		if ( 'infomaniak' === $provider ) {
-			return new SD_Payment_Twint_Infomaniak();
-		}
-		return new SD_Payment_Twint();
-	}
+	private $stripe;
 
 	public function __construct() {
 		$this->orchestrator = new SD_Payment_Orchestrator();
 		$this->paypal       = new SD_Payment_PayPal();
-		$this->twint        = $this->make_twint_adapter();
+		$this->stripe       = new SD_Payment_Stripe();
 
 		add_shortcode( 'sd_payment_checkout', array( $this, 'render_checkout' ) );
 		add_shortcode( 'sd_payment_confirmation', array( $this, 'render_confirmation' ) );
 		add_action( 'template_redirect', array( $this, 'handle_actions' ) );
-		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
-		add_action( 'wp_ajax_sd_twint_poll', array( $this, 'ajax_twint_poll' ) );
-		add_action( 'wp_ajax_nopriv_sd_twint_poll', array( $this, 'ajax_twint_poll' ) );
+		add_action( 'init', array( $this, 'handle_stripe_webhook' ) );
 	}
 
 	/**
-	 * Gestisce azioni pubbliche di checkout.
+	 * Gestisce le azioni pubbliche di checkout (PayPal, Stripe, Fattura).
 	 *
 	 * @return void
 	 */
 	public function handle_actions() {
-		$action          = isset( $_GET['sd_payment_action'] ) ? sanitize_text_field( wp_unslash( $_GET['sd_payment_action'] ) ) : '';
-		$token           = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
+		$action          = isset( $_GET['sd_payment_action'] ) ? sanitize_text_field( wp_unslash( $_GET['sd_payment_action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$token           = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$paypal_enabled  = (int) get_option( 'sd_payment_enable_paypal', 1 ) === 1;
 		$invoice_enabled = (int) get_option( 'sd_payment_enable_invoice', 1 ) === 1;
-		$twint_enabled   = (int) get_option( 'sd_payment_enable_twint_stub', 0 ) === 1;
+		$stripe_enabled  = (int) get_option( 'sd_payment_enable_stripe', 1 ) === 1;
 
 		if ( '' === $action || '' === $token ) {
 			return;
@@ -74,10 +62,13 @@ class SD_Payment_Flow {
 
 		$ctx = $this->orchestrator->get_payment_context_by_token( $token );
 		if ( is_wp_error( $ctx ) ) {
-			error_log( '[SD Payment] handle_actions early exit – action=' . $action . ' token=' . $token . ' error=' . $ctx->get_error_code() . ': ' . $ctx->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[SD Payment] handle_actions – action=' . $action . ' error=' . $ctx->get_error_code() . ': ' . $ctx->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return;
 		}
 
+		// ----------------------------------------------------------------
+		// Fattura
+		// ----------------------------------------------------------------
 		if ( 'invoice_confirm' === $action ) {
 			if ( ! $invoice_enabled ) {
 				wp_safe_redirect(
@@ -91,6 +82,7 @@ class SD_Payment_Flow {
 				);
 				exit;
 			}
+
 			$result = $this->orchestrator->request_invoice_payment(
 				(int) $ctx->member_id,
 				array(
@@ -110,6 +102,9 @@ class SD_Payment_Flow {
 			exit;
 		}
 
+		// ----------------------------------------------------------------
+		// PayPal: avvio
+		// ----------------------------------------------------------------
 		if ( 'start_paypal' === $action ) {
 			if ( ! $paypal_enabled ) {
 				wp_safe_redirect(
@@ -123,6 +118,7 @@ class SD_Payment_Flow {
 				);
 				exit;
 			}
+
 			$return_url = add_query_arg(
 				array(
 					'sd_payment_action' => 'paypal_return',
@@ -151,49 +147,52 @@ class SD_Payment_Flow {
 			);
 
 			if ( is_wp_error( $order ) ) {
-				error_log( '[SD PayPal] create_order error: ' . $order->get_error_code() . ' — ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				$redirect = add_query_arg(
-					array(
-						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'paypal_error',
-					),
-					$this->orchestrator->get_checkout_page_url()
+				error_log( '[SD PayPal] create_order error: ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'paypal_error',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
 				);
-				wp_safe_redirect( $redirect );
 				exit;
 			}
 
-			// PayPal approval URL è un dominio esterno (sandbox.paypal.com / paypal.com):
-			// wp_safe_redirect() blocca i redirect esterni e li manda al fallback locale → 404.
-			// Usiamo wp_redirect() che non ha questa restrizione.
 			wp_redirect( esc_url_raw( $order['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 			exit;
 		}
 
+		// ----------------------------------------------------------------
+		// PayPal: ritorno
+		// ----------------------------------------------------------------
 		if ( 'paypal_return' === $action ) {
-			$order_id = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+			$order_id = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( '' === $order_id ) {
-				$redirect = add_query_arg(
-					array(
-						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'paypal_missing_order',
-					),
-					$this->orchestrator->get_checkout_page_url()
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'paypal_missing_order',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
 				);
-				wp_safe_redirect( $redirect );
 				exit;
 			}
 
 			$capture = $this->paypal->capture_order( $order_id );
 			if ( is_wp_error( $capture ) || ! in_array( $capture['status'], array( 'COMPLETED', 'APPROVED' ), true ) ) {
-				$redirect = add_query_arg(
-					array(
-						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'paypal_capture_failed',
-					),
-					$this->orchestrator->get_checkout_page_url()
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => 'paypal_capture_failed',
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
 				);
-				wp_safe_redirect( $redirect );
 				exit;
 			}
 
@@ -217,13 +216,16 @@ class SD_Payment_Flow {
 			exit;
 		}
 
-		if ( 'start_twint' === $action ) {
-			if ( ! $twint_enabled ) {
+		// ----------------------------------------------------------------
+		// Stripe: avvio
+		// ----------------------------------------------------------------
+		if ( 'start_stripe' === $action ) {
+			if ( ! $stripe_enabled ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
 							'sdpt'   => rawurlencode( $token ),
-							'notice' => 'twint_disabled',
+							'notice' => 'stripe_disabled',
 						),
 						$this->orchestrator->get_checkout_page_url()
 					)
@@ -231,97 +233,42 @@ class SD_Payment_Flow {
 				exit;
 			}
 
-			$twint_provider = get_option( 'sd_payment_twint_provider', 'direct' );
-
-			if ( 'infomaniak' === $twint_provider ) {
-				// ---- Flusso Infomaniak hosted checkout ----.
-				$ok_url     = add_query_arg(
-					array(
-						'sd_payment_action' => 'twint_ik_return',
-						'sdpt'              => rawurlencode( $token ),
-					),
-					$this->orchestrator->get_checkout_page_url()
-				);
-				$cancel_url = add_query_arg(
-					array(
-						'sd_payment_action' => 'twint_ik_cancel',
-						'sdpt'              => rawurlencode( $token ),
-					),
-					$this->orchestrator->get_checkout_page_url()
-				);
-
-				$order = $this->twint->create_order(
-					array(
-						'amount'     => (float) $ctx->amount,
-						'currency'   => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
-						'return_url' => $ok_url,
-						'cancel_url' => $cancel_url,
-						'customer'   => array(
-							'first_name' => (string) ( $ctx->first_name ?? '' ),
-							'last_name'  => (string) ( $ctx->last_name ?? '' ),
-							'email'      => (string) ( $ctx->email ?? '' ),
-							'phone'      => (string) ( $ctx->phone ?? '' ),
-						),
-					)
-				);
-
-				if ( is_wp_error( $order ) ) {
-					error_log( '[SD TWINT IK] start_twint create_order error: ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-					wp_safe_redirect(
-						add_query_arg(
-							array(
-								'sdpt'   => rawurlencode( $token ),
-								'notice' => 'twint_error',
-							),
-							$this->orchestrator->get_checkout_page_url()
-						)
-					);
-					exit;
-				}
-
-				if ( ! empty( $order['order_id'] ) ) {
-					set_transient(
-						'sd_twint_order_' . $token,
-						array(
-							'order_id'  => $order['order_id'],
-							'member_id' => (int) $ctx->member_id,
-							'amount'    => (float) $ctx->amount,
-							'currency'  => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
-						),
-						900
-					);
-				}
-
-				// Redirect a pagina esterna Infomaniak (non wp_safe_redirect che blocca domini esterni).
-				wp_redirect( esc_url_raw( $order['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-				exit;
-			}
-
-			// ---- Flusso diretto TWINT: mostra QR in-page ----.
-			$confirm_url = add_query_arg(
+			$return_url = add_query_arg(
 				array(
-					'sd_payment_action' => 'twint_return',
+					'sd_payment_action' => 'stripe_return',
 					'sdpt'              => rawurlencode( $token ),
 				),
 				$this->orchestrator->get_checkout_page_url()
 			);
 
-			$order = $this->twint->create_order(
+			$cancel_url = add_query_arg(
 				array(
-					'reference_id' => 'member-' . (int) $ctx->member_id . '-' . gmdate( 'YmdHis' ),
-					'amount'       => (float) $ctx->amount,
-					'currency'     => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
-					'return_url'   => $confirm_url,
+					'sd_payment_action' => 'stripe_cancel',
+					'sdpt'              => rawurlencode( $token ),
+				),
+				$this->orchestrator->get_checkout_page_url()
+			);
+
+			$session = $this->stripe->create_session(
+				array(
+					'amount'         => (float) $ctx->amount,
+					'currency'       => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+					'description'    => 'Quota sociale ScubaDiabetes ' . (int) $ctx->payment_year,
+					'return_url'     => $return_url,
+					'cancel_url'     => $cancel_url,
+					'customer_email' => (string) ( $ctx->email ?? '' ),
+					'sd_token'       => $token,
+					'member_id'      => (int) $ctx->member_id,
 				)
 			);
 
-			if ( is_wp_error( $order ) ) {
-				error_log( '[SD TWINT] start_twint create_order error: ' . $order->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			if ( is_wp_error( $session ) ) {
+				error_log( '[SD Stripe] create_session error: ' . $session->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				wp_safe_redirect(
 					add_query_arg(
 						array(
 							'sdpt'   => rawurlencode( $token ),
-							'notice' => 'twint_error',
+							'notice' => 'stripe_error',
 						),
 						$this->orchestrator->get_checkout_page_url()
 					)
@@ -329,87 +276,34 @@ class SD_Payment_Flow {
 				exit;
 			}
 
-			// Salva i dati TWINT in un transient legato al token (TTL 15 minuti).
+			// Salva session_id nel transient per la verifica al ritorno (TTL 30 min).
 			set_transient(
-				'sd_twint_order_' . $token,
+				'sd_stripe_session_' . $token,
 				array(
-					'order_uuid'    => $order['order_uuid'],
-					'pairing_token' => $order['pairing_token'],
-					'qr_code_svg'   => $order['qr_code_svg'],
-					'deep_link'     => $order['deep_link'],
-					'member_id'     => (int) $ctx->member_id,
-					'amount'        => (float) $ctx->amount,
-					'currency'      => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
+					'session_id' => $session['session_id'],
+					'member_id'  => (int) $ctx->member_id,
+					'amount'     => (float) $ctx->amount,
+					'currency'   => ! empty( $ctx->currency ) ? (string) $ctx->currency : 'CHF',
 				),
-				900
+				1800
 			);
 
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'sdpt'        => rawurlencode( $token ),
-						'twint_order' => rawurlencode( $order['order_uuid'] ),
-					),
-					$this->orchestrator->get_checkout_page_url()
-				)
-			);
+			wp_redirect( esc_url_raw( $session['approval_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 			exit;
 		}
 
-		if ( 'twint_ik_return' === $action ) {
-			// Ritorno dalla pagina di pagamento Infomaniak TWINT.
-			$twint_data = get_transient( 'sd_twint_order_' . $token );
+		// ----------------------------------------------------------------
+		// Stripe: ritorno dopo pagamento riuscito
+		// ----------------------------------------------------------------
+		if ( 'stripe_return' === $action ) {
+			$stripe_data = get_transient( 'sd_stripe_session_' . $token );
 
-			// Branch legacy: ordine API numerico già disponibile.
-			if ( ! empty( $twint_data['order_id'] ) ) {
-				$result = $this->twint->get_order( $twint_data['order_id'] );
-				if ( is_wp_error( $result ) || 'paid' !== $result['status'] ) {
-					$notice = is_wp_error( $result ) ? 'twint_error' : 'twint_cancelled';
-					wp_safe_redirect(
-						add_query_arg(
-							array(
-								'sdpt'   => rawurlencode( $token ),
-								'notice' => $notice,
-							),
-							$this->orchestrator->get_checkout_page_url()
-						)
-					);
-					exit;
-				}
-
-				$accept = $this->orchestrator->accept_payment(
-					(int) $twint_data['member_id'],
-					array(
-						'provider'            => 'twint',
-						'provider_payment_id' => $twint_data['order_id'],
-						'payment_method'      => 'twint',
-						'amount'              => (float) $twint_data['amount'],
-						'payload_json'        => wp_json_encode( $result['payload'] ),
-						'notes'               => __( 'Pagamento TWINT confermato via Infomaniak.', 'sd-logbook' ),
-					)
-				);
-				delete_transient( 'sd_twint_order_' . $token );
-
-				$redirect = $this->orchestrator->get_confirmation_page_url();
-				if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
-					$redirect = $accept['redirect_to'];
-				}
-				wp_safe_redirect( $redirect );
-				exit;
-			}
-
-			// Branch hosted checkout: riconciliazione con parametri ref/resa.
-			$ref  = isset( $_GET['ref'] ) ? sanitize_text_field( wp_unslash( $_GET['ref'] ) ) : '';
-			$resa = isset( $_GET['resa'] ) ? sanitize_text_field( wp_unslash( $_GET['resa'] ) ) : '';
-
-			$verification = $this->twint->verify_hosted_return( $ref, $resa );
-			if ( is_wp_error( $verification ) ) {
-				error_log( '[SD TWINT IK] hosted return verification error: ' . $verification->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			if ( empty( $stripe_data['session_id'] ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
 							'sdpt'   => rawurlencode( $token ),
-							'notice' => 'twint_error',
+							'notice' => 'stripe_error',
 						),
 						$this->orchestrator->get_checkout_page_url()
 					)
@@ -417,76 +311,54 @@ class SD_Payment_Flow {
 				exit;
 			}
 
-			$provider_payment_id = 'ik_resa_' . $verification['resa'];
-			$accept              = $this->orchestrator->accept_payment(
-				(int) $ctx->member_id,
-				array(
-					'provider'            => 'twint',
-					'provider_payment_id' => $provider_payment_id,
-					'payment_method'      => 'twint',
-					'amount'              => (float) $ctx->amount,
-					'payload_json'        => wp_json_encode(
+			$verified = $this->stripe->retrieve_session( $stripe_data['session_id'] );
+
+			if ( is_wp_error( $verified ) || 'paid' !== ( $verified['payment_status'] ?? '' ) ) {
+				$notice = is_wp_error( $verified ) ? 'stripe_error' : 'stripe_cancelled';
+				wp_safe_redirect(
+					add_query_arg(
 						array(
-							'flow'         => 'infomaniak_hosted_checkout',
-							'ref'          => $verification['ref'],
-							'resa'         => $verification['resa'],
-							'verification' => $verification,
-						)
-					),
-					'notes'               => __( 'Pagamento TWINT riconciliato da ritorno Infomaniak (ref/resa).', 'sd-logbook' ),
+							'sdpt'   => rawurlencode( $token ),
+							'notice' => $notice,
+						),
+						$this->orchestrator->get_checkout_page_url()
+					)
+				);
+				exit;
+			}
+
+			$result = $this->orchestrator->accept_payment(
+				(int) $stripe_data['member_id'],
+				array(
+					'provider'            => 'stripe',
+					'provider_payment_id' => $verified['payment_intent'],
+					'payment_method'      => $this->detect_stripe_payment_method( $verified ),
+					'amount'              => (float) $stripe_data['amount'],
+					'payload_json'        => $verified['payload'],
+					'notes'               => __( 'Pagamento confermato da Stripe Checkout.', 'sd-logbook' ),
 				)
 			);
-			delete_transient( 'sd_twint_order_' . $token );
+
+			delete_transient( 'sd_stripe_session_' . $token );
 
 			$redirect = $this->orchestrator->get_confirmation_page_url();
-			if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
-				$redirect = $accept['redirect_to'];
+			if ( ! is_wp_error( $result ) && ! empty( $result['redirect_to'] ) ) {
+				$redirect = $result['redirect_to'];
 			}
 			wp_safe_redirect( $redirect );
 			exit;
 		}
 
-		if ( 'twint_ik_cancel' === $action ) {
-			$ref  = isset( $_GET['ref'] ) ? sanitize_text_field( wp_unslash( $_GET['ref'] ) ) : '';
-			$resa = isset( $_GET['resa'] ) ? sanitize_text_field( wp_unslash( $_GET['resa'] ) ) : '';
-
-			$log_payload = array(
-				'event'       => 'twint_ik_cancel',
-				'token'       => $token,
-				'member_id'   => (int) $ctx->member_id,
-				'ref'         => $ref,
-				'resa'        => $resa,
-				'request_uri' => isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
-				'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
-				'time_gmt'    => gmdate( 'c' ),
-			);
-			error_log( '[SD TWINT IK] hosted cancel callback: ' . wp_json_encode( $log_payload ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-
-			delete_transient( 'sd_twint_order_' . $token );
-
+		// ----------------------------------------------------------------
+		// Stripe: annullamento
+		// ----------------------------------------------------------------
+		if ( 'stripe_cancel' === $action ) {
+			delete_transient( 'sd_stripe_session_' . $token );
 			wp_safe_redirect(
 				add_query_arg(
 					array(
 						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'twint_ik_cancelled',
-					),
-					$this->orchestrator->get_checkout_page_url()
-				)
-			);
-			exit;
-		}
-
-		if ( 'twint_cancel' === $action ) {
-			$twint_data = get_transient( 'sd_twint_order_' . $token );
-			if ( ! empty( $twint_data['order_uuid'] ) ) {
-				$this->twint->cancel_order( $twint_data['order_uuid'] );
-				delete_transient( 'sd_twint_order_' . $token );
-			}
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'sdpt'   => rawurlencode( $token ),
-						'notice' => 'twint_cancelled',
+						'notice' => 'stripe_cancelled',
 					),
 					$this->orchestrator->get_checkout_page_url()
 				)
@@ -496,85 +368,108 @@ class SD_Payment_Flow {
 	}
 
 	/**
-	 * AJAX: polling stato ordine TWINT.
+	 * Rileva il metodo di pagamento effettivo dalla sessione Stripe.
+	 * Nota: `payment_method_types` è la lista configurata, non il metodo usato.
+	 * Il valore esatto è disponibile solo recuperando il PaymentIntent separatamente.
+	 * Qui usiamo un'euristica: se la sessione ha solo twint, usiamo 'twint', altrimenti 'carta_credito'.
 	 *
-	 * @return void
+	 * @param array $session_data Dati sessione da retrieve_session().
+	 * @return string
 	 */
-	public function ajax_twint_poll() {
-		check_ajax_referer( 'sd_twint_poll', 'nonce' );
-
-		$token = isset( $_POST['sdpt'] ) ? sanitize_text_field( wp_unslash( $_POST['sdpt'] ) ) : '';
-		if ( '' === $token ) {
-			wp_send_json_error( array( 'message' => 'Token mancante.' ), 400 );
-			return;
+	private function detect_stripe_payment_method( array $session_data ) {
+		$types = (array) ( $session_data['payment_method_types'] ?? array() );
+		if ( array( 'twint' ) === $types ) {
+			return 'twint';
 		}
-
-		$twint_data = get_transient( 'sd_twint_order_' . $token );
-		if ( empty( $twint_data['order_uuid'] ) ) {
-			wp_send_json_error( array( 'message' => 'Sessione TWINT scaduta o non trovata.' ), 404 );
-			return;
-		}
-
-		$result = $this->twint->get_order( $twint_data['order_uuid'] );
-		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 500 );
-			return;
-		}
-
-		$status = $result['status'];
-
-		if ( 'SUCCESS' === $status ) {
-			// Accetta il pagamento nel sistema.
-			$accept = $this->orchestrator->accept_payment(
-				(int) $twint_data['member_id'],
-				array(
-					'provider'            => 'twint',
-					'provider_payment_id' => $twint_data['order_uuid'],
-					'payment_method'      => 'twint',
-					'amount'              => (float) $twint_data['amount'],
-					'payload_json'        => wp_json_encode( $result['payload'] ),
-					'notes'               => __( 'Pagamento TWINT confermato.', 'sd-logbook' ),
-				)
-			);
-			delete_transient( 'sd_twint_order_' . $token );
-
-			$redirect = $this->orchestrator->get_confirmation_page_url();
-			if ( ! is_wp_error( $accept ) && ! empty( $accept['redirect_to'] ) ) {
-				$redirect = $accept['redirect_to'];
-			}
-
-			wp_send_json_success(
-				array(
-					'status'       => 'SUCCESS',
-					'redirect_url' => esc_url_raw( $redirect ),
-				)
-			);
-			return;
-		}
-
-		if ( in_array( $status, array( 'FAILURE', 'REVERSED' ), true ) ) {
-			delete_transient( 'sd_twint_order_' . $token );
-			wp_send_json_success( array( 'status' => 'FAILURE' ) );
-			return;
-		}
-
-		// IN_PROGRESS o UNKNOWN: continua polling.
-		wp_send_json_success( array( 'status' => 'IN_PROGRESS' ) );
+		return 'carta_credito';
 	}
 
 	/**
-	 * Registra gli asset di pagamento (script JS).
+	 * Gestisce i webhook Stripe in ingresso.
+	 *
+	 * URL webhook da configurare in Stripe Dashboard:
+	 * https://tuosite.com/?sd_stripe_webhook=1
+	 *
+	 * Evento gestito: checkout.session.completed
 	 *
 	 * @return void
 	 */
-	public function register_assets() {
-		wp_register_script(
-			'sd-twint-checkout',
-			plugin_dir_url( __DIR__ ) . 'assets/js/twint-checkout.js',
-			array(),
-			SD_LOGBOOK_VERSION,
-			true
-		);
+	public function handle_stripe_webhook() {
+		if ( ! isset( $_GET['sd_stripe_webhook'] ) || '1' !== $_GET['sd_stripe_webhook'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+
+		$payload    = (string) file_get_contents( 'php://input' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$sig_header = isset( $_SERVER['HTTP_STRIPE_SIGNATURE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_STRIPE_SIGNATURE'] ) ) : '';
+
+		$event = $this->stripe->verify_webhook( $payload, $sig_header );
+		if ( is_wp_error( $event ) ) {
+			error_log( '[SD Stripe Webhook] errore verifica: ' . $event->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			wp_send_json( array( 'error' => $event->get_error_message() ), 400 );
+			exit;
+		}
+
+		if ( 'checkout.session.completed' === $event['type'] ) {
+			$session_obj    = $event['data']['object'] ?? array();
+			$pi_id          = sanitize_text_field( (string) ( $session_obj['payment_intent'] ?? '' ) );
+			$payment_status = (string) ( $session_obj['payment_status'] ?? '' );
+
+			if ( '' === $pi_id || 'paid' !== $payment_status ) {
+				wp_send_json( array( 'received' => true ) );
+				exit;
+			}
+
+			// Verifica idempotenza: controlla se già processato dal ritorno sincrono.
+			global $wpdb;
+			$db      = new SD_Database();
+			$already = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$db->table('payments')} WHERE provider = 'stripe' AND provider_payment_id = %s LIMIT 1",
+					$pi_id
+				)
+			);
+
+			if ( $already ) {
+				wp_send_json( array( 'received' => true ) );
+				exit;
+			}
+
+			// Recupera member_id dal metadata della sessione.
+			$metadata  = (array) ( $session_obj['metadata'] ?? array() );
+			$member_id = (int) ( $metadata['member_id'] ?? 0 );
+			$sd_token  = sanitize_text_field( (string) ( $metadata['sd_token'] ?? '' ) );
+
+			// Fallback: recupera member_id dal token di pagamento.
+			if ( $member_id <= 0 && '' !== $sd_token ) {
+				$payment_row = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT member_id, amount FROM {$db->table('payments')} WHERE confirmation_token = %s ORDER BY id DESC LIMIT 1",
+						$sd_token
+					)
+				);
+				if ( $payment_row ) {
+					$member_id = (int) $payment_row->member_id;
+				}
+			}
+
+			if ( $member_id > 0 ) {
+				$amount = isset( $session_obj['amount_total'] ) ? ( (float) $session_obj['amount_total'] / 100.0 ) : 0.0;
+				( new SD_Payment_Orchestrator() )->accept_payment(
+					$member_id,
+					array(
+						'provider'            => 'stripe',
+						'provider_payment_id' => $pi_id,
+						'payment_method'      => 'stripe',
+						'amount'              => $amount,
+						'payload_json'        => $session_obj,
+						'notes'               => __( 'Pagamento confermato da webhook Stripe.', 'sd-logbook' ),
+					)
+				);
+			}
+		}
+
+		wp_send_json( array( 'received' => true ) );
+		exit;
 	}
 
 	/**
@@ -583,17 +478,17 @@ class SD_Payment_Flow {
 	 * @return string
 	 */
 	public function render_checkout() {
-		$token = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
+		$token = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$ctx   = $this->orchestrator->get_payment_context_by_token( $token );
 		if ( is_wp_error( $ctx ) ) {
 			return '<div class="sd-notice sd-notice-error">' . esc_html( $ctx->get_error_message() ) . '</div>';
 		}
 
 		$checkout_action_base = $this->orchestrator->get_checkout_page_url();
-		$notice               = isset( $_GET['notice'] ) ? sanitize_text_field( wp_unslash( $_GET['notice'] ) ) : '';
+		$notice               = isset( $_GET['notice'] ) ? sanitize_text_field( wp_unslash( $_GET['notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$paypal_enabled       = (int) get_option( 'sd_payment_enable_paypal', 1 ) === 1;
 		$invoice_enabled      = (int) get_option( 'sd_payment_enable_invoice', 1 ) === 1;
-		$twint_enabled        = (int) get_option( 'sd_payment_enable_twint_stub', 1 ) === 1;
+		$stripe_enabled       = (int) get_option( 'sd_payment_enable_stripe', 1 ) === 1;
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/payment-checkout.php';
@@ -606,7 +501,7 @@ class SD_Payment_Flow {
 	 * @return string
 	 */
 	public function render_confirmation() {
-		$token = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : '';
+		$token = isset( $_GET['sdpt'] ) ? sanitize_text_field( wp_unslash( $_GET['sdpt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$ctx   = $this->orchestrator->get_payment_context_by_token( $token );
 		if ( is_wp_error( $ctx ) ) {
 			return '<div class="sd-notice sd-notice-error">' . esc_html( $ctx->get_error_message() ) . '</div>';
