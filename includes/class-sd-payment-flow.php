@@ -377,6 +377,16 @@ class SD_Payment_Flow {
 	 * @return string
 	 */
 	private function detect_stripe_payment_method( array $session_data ) {
+		// Preferisce il tipo effettivo dal PaymentIntent espanso (solo 1 elemento: il metodo usato).
+		$pi_types = (array) ( $session_data['payment_intent_types'] ?? array() );
+		if ( ! empty( $pi_types ) ) {
+			$used = strtolower( (string) ( $pi_types[0] ?? '' ) );
+			if ( 'twint' === $used ) {
+				return 'twint';
+			}
+			return 'carta_credito';
+		}
+		// Fallback euristica: se configurato SOLO Twint, è sicuramente Twint.
 		$types = (array) ( $session_data['payment_method_types'] ?? array() );
 		if ( array( 'twint' ) === $types ) {
 			return 'twint';
@@ -454,12 +464,19 @@ class SD_Payment_Flow {
 
 			if ( $member_id > 0 ) {
 				$amount = isset( $session_obj['amount_total'] ) ? ( (float) $session_obj['amount_total'] / 100.0 ) : 0.0;
+				// Rileva metodo dal webhook: usa payment_method_types della sessione come euristica.
+				$wh_method = $this->detect_stripe_payment_method(
+					array(
+						'payment_intent_types' => array(),
+						'payment_method_types' => (array) ( $session_obj['payment_method_types'] ?? array() ),
+					)
+				);
 				( new SD_Payment_Orchestrator() )->accept_payment(
 					$member_id,
 					array(
 						'provider'            => 'stripe',
 						'provider_payment_id' => $pi_id,
-						'payment_method'      => 'stripe',
+						'payment_method'      => $wh_method,
 						'amount'              => $amount,
 						'payload_json'        => $session_obj,
 						'notes'               => __( 'Pagamento confermato da webhook Stripe.', 'sd-logbook' ),

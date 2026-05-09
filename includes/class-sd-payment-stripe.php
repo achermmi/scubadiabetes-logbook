@@ -183,17 +183,23 @@ class SD_Payment_Stripe extends SD_Payment_Adapter {
 			return new WP_Error( 'sd_stripe_missing_session_id', __( 'Session ID Stripe mancante.', 'sd-logbook' ) );
 		}
 
-		$data = $this->request( 'GET', '/checkout/sessions/' . rawurlencode( $session_id ) );
+		$data = $this->request( 'GET', '/checkout/sessions/' . rawurlencode( $session_id ) . '?expand[]=payment_intent' );
 		if ( is_wp_error( $data ) ) {
 			return $data;
 		}
 
+		// payment_intent può essere un oggetto espanso o un semplice ID stringa.
+		$pi_raw        = $data['payment_intent'] ?? '';
+		$pi_id         = is_array( $pi_raw ) ? (string) ( $pi_raw['id'] ?? '' ) : (string) $pi_raw;
+		$pi_used_types = is_array( $pi_raw ) ? (array) ( $pi_raw['payment_method_types'] ?? array() ) : array();
+
 		return array(
-			'session_id'           => (string) ( $data['id'] ?? '' ),
-			'status'               => (string) ( $data['status'] ?? '' ),
-			'payment_status'       => (string) ( $data['payment_status'] ?? '' ),
-			'payment_intent'       => (string) ( $data['payment_intent'] ?? '' ),
-			'payment_method_types' => (array) ( $data['payment_method_types'] ?? array() ),
+			'session_id'            => (string) ( $data['id'] ?? '' ),
+			'status'                => (string) ( $data['status'] ?? '' ),
+			'payment_status'        => (string) ( $data['payment_status'] ?? '' ),
+			'payment_intent'        => $pi_id,
+			'payment_intent_types'  => $pi_used_types,
+			'payment_method_types'  => (array) ( $data['payment_method_types'] ?? array() ),
 			'amount_total'         => (int) ( $data['amount_total'] ?? 0 ),
 			'currency'             => (string) ( $data['currency'] ?? '' ),
 			'customer_email'       => (string) ( $data['customer_details']['email'] ?? '' ),
