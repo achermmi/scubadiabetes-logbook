@@ -10,17 +10,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - default
+          - sd-suisse
+          - scubadiabetes-dev
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy via rsync over SSH
+      - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./
-          remote_path: ${{ secrets.REMOTE_PATH }}
+          remote_path: ${{ matrix.target == 'default' && secrets.REMOTE_PATH || matrix.target == 'sd-suisse' && '/sites/sds/wp-content/plugins/scubadiabetes-logbook' || '/sites/scubadiabetes_dev/wp-content/plugins/scubadiabetes-logbook' }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}

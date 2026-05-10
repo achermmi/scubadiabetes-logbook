@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class SD_Payment_Adapter {
 
 	/**
-	 * Nome provider (paypal, fattura, twint).
+	 * Nome provider (PayPal, Fattura, Twint).
 	 *
 	 * @return string
 	 */
