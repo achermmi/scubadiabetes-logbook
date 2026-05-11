@@ -1556,7 +1556,8 @@ class SD_Membership_Admin {
 
 		$member = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, first_name, last_name, email, membership_expiry, fee_amount,
+				"SELECT id, member_number, first_name, last_name, email, membership_expiry, fee_amount,
+				        member_type, membership_type,
 				        has_paid_fee, COALESCE(is_active,1) AS is_active
 				 FROM {$db->table('members')}
 				 WHERE id = %d
@@ -1623,7 +1624,8 @@ class SD_Membership_Admin {
 		}
 		// 'all' → nessun filtro data extra
 
-		$base_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.membership_expiry, m.fee_amount,
+		$base_sql = "SELECT m.id, m.member_number, m.first_name, m.last_name, m.email, m.membership_expiry, m.fee_amount,
+			        m.member_type, m.membership_type,
 			        CASE
 			            WHEN m.parent_member_id IS NOT NULL
 			            THEN COALESCE(pm.has_paid_fee, 0)

@@ -11,9 +11,9 @@
  *   {{anno_oggi}}           → anno corrente (YYYY)
  *   {{anno_prossimo}}       → anno corrente + 1
  *   {{scadenza}}            → data scadenza iscrizione (DD.MM.YYYY)
- *   {{tipo_socio}}          → tipo iscrizione (es. individuale)
+ *   {{tipo_socio}}          → tipologia socio (es. attivo capo famiglia)
  *   {{tassa_sociale}}       → importo quota (CHF XX.XX)
- *   {{tassa_sociale_numero}}→ importo quota numerico (XX.XX)
+ *   {{tassa_sociale_numero}}→ numero socio
  *   {{nome}}                → nome socio
  *   {{cognome}}             → cognome socio
  *   {{nome_completo}}       → nome + cognome socio
@@ -145,7 +145,7 @@ class SD_Email_Templates {
 			),
 			array(
 				'tag'   => '{{tassa_sociale_numero}}',
-				'label' => __( 'Tassa sociale (numero)', 'sd-logbook' ),
+				'label' => __( 'Numero socio', 'sd-logbook' ),
 			),
 			array(
 				'tag'   => '{{nome}}',
@@ -218,6 +218,7 @@ class SD_Email_Templates {
 		// Valori derivati dal socio
 		$scadenza           = '';
 		$tipo_socio         = '';
+		$numero_socio       = '';
 		$tassa_sociale      = '';
 		$tassa_sociale_num  = '0.00';
 		$nome               = '';
@@ -231,7 +232,13 @@ class SD_Email_Templates {
 				$dt_exp = DateTime::createFromFormat( 'Y-m-d', (string) $member->membership_expiry );
 				$scadenza = $dt_exp ? $dt_exp->format( 'd.m.Y' ) : (string) $member->membership_expiry;
 			}
-			$tipo_socio    = ucfirst( (string) ( $member->membership_type ?? '' ) );
+			$member_type_raw = (string) ( $member->member_type ?? $member->membership_type ?? '' );
+			$member_type_raw = trim( str_replace( '_', ' ', $member_type_raw ) );
+			$tipo_socio      = ucfirst( $member_type_raw );
+			$numero_socio    = trim( (string) ( $member->member_number ?? '' ) );
+			if ( '' === $numero_socio && ! empty( $member->id ) ) {
+				$numero_socio = (string) $member->id;
+			}
 			$tassa_sociale_num = number_format( (float) ( $member->fee_amount ?? 0 ), 2 );
 			$tassa_sociale = 'CHF ' . $tassa_sociale_num;
 			$nome          = (string) ( $member->first_name ?? '' );
@@ -249,7 +256,7 @@ class SD_Email_Templates {
 			'{{scadenza}}'          => $scadenza,
 			'{{tipo_socio}}'        => $tipo_socio,
 			'{{tassa_sociale}}'     => $tassa_sociale,
-			'{{tassa_sociale_numero}}' => $tassa_sociale_num,
+			'{{tassa_sociale_numero}}' => $numero_socio,
 			'{{nome}}'              => $nome,
 			'{{cognome}}'           => $cognome,
 			'{{nome_completo}}'     => $nome_completo,
