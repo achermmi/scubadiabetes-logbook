@@ -694,7 +694,17 @@
 
                     var readings  = resp.data.readings;
                     var filled    = 0;
+                    var trendFilled = 0;
                     var deviceList = [];
+
+                    // Evita residui di una precedente importazione.
+                    $('.sd-trend-select').each(function() {
+                        var cp = $(this).data('cp');
+                        if (!cp) {
+                            return;
+                        }
+                        setTrendBtn(cp, 'NONE');
+                    });
 
                     $.each(readings, function(cp, data) {
                         if (!data) { return; }
@@ -709,6 +719,7 @@
                         // Imposta freccia trend
                         if (data.direction && data.direction !== 'NONE') {
                             setTrendBtn(cp, data.direction);
+                            trendFilled++;
                         }
 
                         if (data.device && deviceList.indexOf(data.device) === -1) {
@@ -721,7 +732,9 @@
 
                     var deviceLabel = deviceList.length ? deviceList[0].split('/')[0] : (sdLogbook.cgmDevice || 'CGM');
                     $msg.css('color', '#16a34a').text(
-                        filled + ' lettura/e importata/e da ' + deviceLabel + '. Verifica i valori nei campi Sensore.'
+                        filled + ' lettura/e importata/e da ' + deviceLabel +
+                        '. Trend importati: ' + trendFilled + '/' + filled +
+                        '. Verifica i valori nei campi Sensore.'
                     ).show();
                 }
             ).fail(function() {

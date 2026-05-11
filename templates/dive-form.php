@@ -129,6 +129,31 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
                 <?php esc_html_e( 'Equipaggiamento', 'sd-logbook' ); ?>
             </div>
 
+            <div class="sd-gear-profiles-box">
+                <div class="sd-subsection-label sd-subsection-label-inline"><?php esc_html_e( 'Profili attrezzatura riusabili', 'sd-logbook' ); ?></div>
+                <div class="sd-gear-profiles-grid">
+                    <div class="sd-field">
+                        <label for="sd-gear-profile-select"><?php esc_html_e( 'Profilo salvato', 'sd-logbook' ); ?></label>
+                        <select id="sd-gear-profile-select" name="gear_profile_select">
+                            <option value=""><?php esc_html_e( 'Seleziona un profilo', 'sd-logbook' ); ?></option>
+                        </select>
+                    </div>
+                    <div class="sd-field">
+                        <label for="sd-gear-profile-name"><?php esc_html_e( 'Nome profilo', 'sd-logbook' ); ?></label>
+                        <input type="text" id="sd-gear-profile-name" name="gear_profile_name" maxlength="60" placeholder="<?php esc_attr_e( 'es: apnea, OWD, tecnica', 'sd-logbook' ); ?>">
+                    </div>
+                </div>
+                <div class="sd-gear-profiles-actions">
+                    <button type="button" id="sd-gear-profile-apply" class="sd-gear-btn sd-gear-btn-apply"><?php esc_html_e( 'Applica Profilo', 'sd-logbook' ); ?></button>
+                    <button type="button" id="sd-gear-profile-save" class="sd-gear-btn sd-gear-btn-save"><?php esc_html_e( 'Salva Configurazione', 'sd-logbook' ); ?></button>
+                    <button type="button" id="sd-gear-profile-duplicate" class="sd-gear-btn sd-gear-btn-duplicate"><?php esc_html_e( 'Duplica Profilo', 'sd-logbook' ); ?></button>
+                    <button type="button" id="sd-gear-profile-up" class="sd-gear-btn sd-gear-btn-order"><?php esc_html_e( 'Sposta Su', 'sd-logbook' ); ?></button>
+                    <button type="button" id="sd-gear-profile-down" class="sd-gear-btn sd-gear-btn-order"><?php esc_html_e( 'Sposta Giù', 'sd-logbook' ); ?></button>
+                    <button type="button" id="sd-gear-profile-delete" class="sd-gear-btn sd-gear-btn-delete"><?php esc_html_e( 'Elimina Profilo', 'sd-logbook' ); ?></button>
+                </div>
+                <p id="sd-gear-profile-message" class="sd-gear-profile-message" style="display:none;"></p>
+            </div>
+
             <!-- Bombole -->
             <div class="sd-subsection-label"><?php esc_html_e( 'Bombole', 'sd-logbook' ); ?></div>
             <div class="sd-field-row">

@@ -21,6 +21,11 @@ class SD_Dive_Form {
 		add_action( 'wp_ajax_sd_save_dive', array( $this, 'save_dive' ) );
 		add_action( 'wp_ajax_sd_save_glycemia_unit', array( $this, 'save_glycemia_unit' ) );
 		add_action( 'wp_ajax_sd_cgm_prefill', array( $this, 'ajax_cgm_prefill' ) );
+		add_action( 'wp_ajax_sd_gear_profiles_list', array( $this, 'ajax_gear_profiles_list' ) );
+		add_action( 'wp_ajax_sd_gear_profile_save', array( $this, 'ajax_gear_profile_save' ) );
+		add_action( 'wp_ajax_sd_gear_profile_delete', array( $this, 'ajax_gear_profile_delete' ) );
+		add_action( 'wp_ajax_sd_gear_profile_duplicate', array( $this, 'ajax_gear_profile_duplicate' ) );
+		add_action( 'wp_ajax_sd_gear_profiles_reorder', array( $this, 'ajax_gear_profiles_reorder' ) );
 	}
 
 	/**
@@ -29,30 +34,39 @@ class SD_Dive_Form {
 	public function enqueue_assets() {
 		global $post;
 		if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'sd_dive_form' ) ) {
+			$form_css_path = SD_LOGBOOK_PLUGIN_DIR . 'assets/css/dive-form.css';
+			$form_css_ver  = file_exists( $form_css_path ) ? (string) filemtime( $form_css_path ) : SD_LOGBOOK_VERSION;
+			$dia_css_path  = SD_LOGBOOK_PLUGIN_DIR . 'assets/css/diabetes-form.css';
+			$dia_css_ver   = file_exists( $dia_css_path ) ? (string) filemtime( $dia_css_path ) : SD_LOGBOOK_VERSION;
+			$form_js_path  = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/dive-form.js';
+			$form_js_ver   = file_exists( $form_js_path ) ? (string) filemtime( $form_js_path ) : SD_LOGBOOK_VERSION;
+			$dia_js_path   = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/diabetes-form.js';
+			$dia_js_ver    = file_exists( $dia_js_path ) ? (string) filemtime( $dia_js_path ) : SD_LOGBOOK_VERSION;
+
 			wp_enqueue_style(
 				'sd-logbook-form',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css',
 				array(),
-				SD_LOGBOOK_VERSION
+				$form_css_ver
 			);
 			wp_enqueue_style(
 				'sd-logbook-diabetes',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/css/diabetes-form.css',
 				array( 'sd-logbook-form' ),
-				SD_LOGBOOK_VERSION
+				$dia_css_ver
 			);
 			wp_enqueue_script(
 				'sd-logbook-form',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-form.js',
 				array( 'jquery' ),
-				SD_LOGBOOK_VERSION,
+				$form_js_ver,
 				true
 			);
 			wp_enqueue_script(
 				'sd-logbook-diabetes',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/js/diabetes-form.js',
 				array( 'jquery', 'sd-logbook-form' ),
-				SD_LOGBOOK_VERSION,
+				$dia_js_ver,
 				true
 			);
 			// Get user's glycemia unit preference
@@ -99,6 +113,21 @@ class SD_Dive_Form {
 						'error'       => __( 'Errore nel salvataggio', 'sd-logbook' ),
 						'required'    => __( 'Campo obbligatorio', 'sd-logbook' ),
 						'confirmSave' => __( 'Confermi il salvataggio dell\'immersione?', 'sd-logbook' ),
+						'gearProfilesLoadError' => __( 'Impossibile caricare i profili attrezzatura.', 'sd-logbook' ),
+						'gearProfilesSaveError' => __( 'Impossibile salvare il profilo attrezzatura.', 'sd-logbook' ),
+						'gearProfilesDeleteError' => __( 'Impossibile eliminare il profilo attrezzatura.', 'sd-logbook' ),
+						'gearProfileNameRequired' => __( 'Inserisci un nome profilo (es. apnea, OWD, tecnica).', 'sd-logbook' ),
+						'gearProfileSaved' => __( 'Profilo attrezzatura salvato.', 'sd-logbook' ),
+						'gearProfileDeleted' => __( 'Profilo attrezzatura eliminato.', 'sd-logbook' ),
+						'gearProfileApplied' => __( 'Profilo attrezzatura applicato al form.', 'sd-logbook' ),
+						'gearProfileSelectRequired' => __( 'Seleziona prima un profilo attrezzatura.', 'sd-logbook' ),
+						'gearProfileDeleteConfirm' => __( 'Confermi l\'eliminazione del profilo selezionato?', 'sd-logbook' ),
+						'gearProfileDuplicateError' => __( 'Impossibile duplicare il profilo attrezzatura.', 'sd-logbook' ),
+						'gearProfileDuplicated' => __( 'Profilo attrezzatura duplicato.', 'sd-logbook' ),
+						'gearProfilesReorderError' => __( 'Impossibile aggiornare l\'ordine dei profili.', 'sd-logbook' ),
+						'gearProfilesOrderSaved' => __( 'Ordine profili aggiornato.', 'sd-logbook' ),
+						'gearProfilesReorderNeedTwo' => __( 'Servono almeno 2 profili per poter cambiare ordine.', 'sd-logbook' ),
+						'gearProfilesReorderAtBoundary' => __( 'Il profilo selezionato è già al limite dell\'elenco.', 'sd-logbook' ),
 					),
 				)
 			);
@@ -406,6 +435,382 @@ class SD_Dive_Form {
 	}
 
 	/**
+	 * AJAX: lista dei profili attrezzatura salvati dall'utente.
+	 */
+	public function ajax_gear_profiles_list() {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! current_user_can( 'sd_log_dive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'profiles' => $this->get_stored_gear_profiles( $user_id ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX: salva/aggiorna un profilo attrezzatura.
+	 */
+	public function ajax_gear_profile_save() {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! current_user_can( 'sd_log_dive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$profile_id   = sanitize_text_field( wp_unslash( $_POST['profile_id'] ?? '' ) );
+		$profile_name = sanitize_text_field( wp_unslash( $_POST['profile_name'] ?? '' ) );
+
+		if ( '' === $profile_name ) {
+			wp_send_json_error( array( 'message' => __( 'Nome profilo obbligatorio.', 'sd-logbook' ) ) );
+		}
+
+		$profile_raw = $_POST['profile'] ?? array();
+		if ( ! is_array( $profile_raw ) ) {
+			$profile_raw = array();
+		} else {
+			$profile_raw = wp_unslash( $profile_raw );
+		}
+
+		$profile_fields = $this->sanitize_gear_profile_fields( $profile_raw );
+		$profiles       = $this->get_stored_gear_profiles( $user_id );
+
+		if ( '' === $profile_id ) {
+			$profile_id = wp_generate_uuid4();
+		}
+
+		$updated = false;
+		foreach ( $profiles as $idx => $item ) {
+			if ( ( $item['id'] ?? '' ) === $profile_id ) {
+				$profiles[ $idx ] = array(
+					'id'         => $profile_id,
+					'name'       => $profile_name,
+					'fields'     => $profile_fields,
+					'updated_at' => current_time( 'mysql', true ),
+				);
+				$updated = true;
+				break;
+			}
+		}
+
+		if ( ! $updated ) {
+			$profiles[] = array(
+				'id'         => $profile_id,
+				'name'       => $profile_name,
+				'fields'     => $profile_fields,
+				'updated_at' => current_time( 'mysql', true ),
+			);
+		}
+
+		// Limite prudenziale per evitare payload troppo grandi in user_meta.
+		if ( count( $profiles ) > 30 ) {
+			$profiles = array_slice( $profiles, 0, 30 );
+		}
+
+		$this->save_stored_gear_profiles( $user_id, $profiles );
+
+		wp_send_json_success(
+			array(
+				'profiles'   => $profiles,
+				'profile_id' => $profile_id,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: elimina un profilo attrezzatura.
+	 */
+	public function ajax_gear_profile_delete() {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! current_user_can( 'sd_log_dive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$profile_id = sanitize_text_field( wp_unslash( $_POST['profile_id'] ?? '' ) );
+		if ( '' === $profile_id ) {
+			wp_send_json_error( array( 'message' => __( 'Profilo non valido.', 'sd-logbook' ) ) );
+		}
+
+		$profiles = $this->get_stored_gear_profiles( $user_id );
+		$before   = count( $profiles );
+
+		$profiles = array_values(
+			array_filter(
+				$profiles,
+				static function ( $item ) use ( $profile_id ) {
+					return ( $item['id'] ?? '' ) !== $profile_id;
+				}
+			)
+		);
+
+		if ( count( $profiles ) === $before ) {
+			wp_send_json_error( array( 'message' => __( 'Profilo non trovato.', 'sd-logbook' ) ) );
+		}
+
+		$this->save_stored_gear_profiles( $user_id, $profiles );
+
+		wp_send_json_success(
+			array(
+				'profiles' => $profiles,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: duplica un profilo attrezzatura.
+	 */
+	public function ajax_gear_profile_duplicate() {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! current_user_can( 'sd_log_dive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$profile_id = sanitize_text_field( wp_unslash( $_POST['profile_id'] ?? '' ) );
+		if ( '' === $profile_id ) {
+			wp_send_json_error( array( 'message' => __( 'Profilo non valido.', 'sd-logbook' ) ) );
+		}
+
+		$profiles = $this->get_stored_gear_profiles( $user_id );
+		$source   = null;
+
+		foreach ( $profiles as $item ) {
+			if ( ( $item['id'] ?? '' ) === $profile_id ) {
+				$source = $item;
+				break;
+			}
+		}
+
+		if ( ! $source ) {
+			wp_send_json_error( array( 'message' => __( 'Profilo non trovato.', 'sd-logbook' ) ) );
+		}
+
+		$base_name = sanitize_text_field( (string) ( $source['name'] ?? '' ) );
+		$new_name  = $base_name . ' (copia)';
+
+		$existing_names = array_map(
+			static function ( $item ) {
+				return strtolower( (string) ( $item['name'] ?? '' ) );
+			},
+			$profiles
+		);
+
+		$counter = 2;
+		while ( in_array( strtolower( $new_name ), $existing_names, true ) ) {
+			$new_name = sprintf( '%s (copia %d)', $base_name, $counter );
+			++$counter;
+		}
+
+		$new_profile = array(
+			'id'         => wp_generate_uuid4(),
+			'name'       => $new_name,
+			'fields'     => $this->sanitize_gear_profile_fields( is_array( $source['fields'] ?? null ) ? $source['fields'] : array() ),
+			'updated_at' => current_time( 'mysql', true ),
+		);
+
+		$inserted = false;
+		for ( $i = 0, $len = count( $profiles ); $i < $len; $i++ ) {
+			if ( ( $profiles[ $i ]['id'] ?? '' ) === $profile_id ) {
+				array_splice( $profiles, $i + 1, 0, array( $new_profile ) );
+				$inserted = true;
+				break;
+			}
+		}
+
+		if ( ! $inserted ) {
+			$profiles[] = $new_profile;
+		}
+
+		if ( count( $profiles ) > 30 ) {
+			$profiles = array_slice( $profiles, 0, 30 );
+		}
+
+		$this->save_stored_gear_profiles( $user_id, $profiles );
+
+		wp_send_json_success(
+			array(
+				'profiles'   => $profiles,
+				'profile_id' => $new_profile['id'],
+			)
+		);
+	}
+
+	/**
+	 * AJAX: aggiorna ordine manuale dei profili attrezzatura.
+	 */
+	public function ajax_gear_profiles_reorder() {
+		if ( ! check_ajax_referer( 'sd_dive_form_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sessione scaduta.', 'sd-logbook' ) ) );
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! current_user_can( 'sd_log_dive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$ordered_ids = $_POST['ordered_ids'] ?? array();
+		if ( ! is_array( $ordered_ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'Ordine profili non valido.', 'sd-logbook' ) ) );
+		}
+
+		$ordered_ids = array_map(
+			static function ( $id ) {
+				return sanitize_text_field( (string) $id );
+			},
+			wp_unslash( $ordered_ids )
+		);
+		$ordered_ids = array_values( array_filter( $ordered_ids ) );
+
+		$profiles = $this->get_stored_gear_profiles( $user_id );
+		if ( empty( $profiles ) ) {
+			wp_send_json_success( array( 'profiles' => array() ) );
+		}
+
+		$map = array();
+		foreach ( $profiles as $item ) {
+			$map[ $item['id'] ] = $item;
+		}
+
+		$reordered = array();
+		foreach ( $ordered_ids as $id ) {
+			if ( isset( $map[ $id ] ) ) {
+				$reordered[] = $map[ $id ];
+				unset( $map[ $id ] );
+			}
+		}
+
+		foreach ( $profiles as $item ) {
+			$id = $item['id'] ?? '';
+			if ( '' !== $id && isset( $map[ $id ] ) ) {
+				$reordered[] = $item;
+				unset( $map[ $id ] );
+			}
+		}
+
+		$this->save_stored_gear_profiles( $user_id, $reordered );
+
+		wp_send_json_success(
+			array(
+				'profiles' => $reordered,
+			)
+		);
+	}
+
+	/**
+	 * Restituisce i profili attrezzatura salvati in user_meta.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function get_stored_gear_profiles( int $user_id ): array {
+		$profiles = get_user_meta( $user_id, 'sd_gear_profiles', true );
+		if ( ! is_array( $profiles ) ) {
+			return array();
+		}
+
+		$normalized = array();
+		foreach ( $profiles as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$id     = sanitize_text_field( (string) ( $item['id'] ?? '' ) );
+			$name   = sanitize_text_field( (string) ( $item['name'] ?? '' ) );
+			$fields = is_array( $item['fields'] ?? null ) ? $item['fields'] : array();
+
+			if ( '' === $id || '' === $name ) {
+				continue;
+			}
+
+			$normalized[] = array(
+				'id'         => $id,
+				'name'       => $name,
+				'fields'     => $this->sanitize_gear_profile_fields( $fields ),
+				'updated_at' => sanitize_text_field( (string) ( $item['updated_at'] ?? '' ) ),
+			);
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Salva in user_meta la collezione profili attrezzatura.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param array $profiles Lista profili.
+	 * @return void
+	 */
+	private function save_stored_gear_profiles( int $user_id, array $profiles ): void {
+		update_user_meta( $user_id, 'sd_gear_profiles', $profiles );
+	}
+
+	/**
+	 * Sanitizza i campi del profilo attrezzatura.
+	 *
+	 * @param array $raw Payload raw da POST.
+	 * @return array<string,string>
+	 */
+	private function sanitize_gear_profile_fields( array $raw ): array {
+		$tank_count = isset( $raw['tank_count'] ) ? (int) $raw['tank_count'] : 1;
+		if ( ! in_array( $tank_count, array( 1, 2, 3 ), true ) ) {
+			$tank_count = 1;
+		}
+
+		$gas_mix = sanitize_text_field( (string) ( $raw['gas_mix'] ?? 'aria' ) );
+		if ( ! in_array( $gas_mix, array( 'aria', 'nitrox', 'trimix' ), true ) ) {
+			$gas_mix = 'aria';
+		}
+
+		$suit_type = sanitize_text_field( (string) ( $raw['suit_type'] ?? '' ) );
+		if ( ! in_array( $suit_type, array( '', 'umida', 'semistagna', 'stagna' ), true ) ) {
+			$suit_type = '';
+		}
+
+		$tank_capacity = '';
+		if ( isset( $raw['tank_capacity'] ) && '' !== (string) $raw['tank_capacity'] ) {
+			$tank_capacity = (string) round( (float) $raw['tank_capacity'], 1 );
+		}
+
+		$nitrox_percentage = '';
+		if ( isset( $raw['nitrox_percentage'] ) && '' !== (string) $raw['nitrox_percentage'] ) {
+			$nitrox = (float) $raw['nitrox_percentage'];
+			if ( $nitrox >= 21 && $nitrox <= 100 ) {
+				$nitrox_percentage = (string) round( $nitrox, 1 );
+			}
+		}
+
+		$ballast_kg = '';
+		if ( isset( $raw['ballast_kg'] ) && '' !== (string) $raw['ballast_kg'] ) {
+			$ballast_kg = (string) round( (float) $raw['ballast_kg'], 1 );
+		}
+
+		return array(
+			'tank_count'        => (string) $tank_count,
+			'gas_mix'           => $gas_mix,
+			'tank_capacity'     => $tank_capacity,
+			'nitrox_percentage' => $nitrox_percentage,
+			'ballast_kg'        => $ballast_kg,
+			'suit_type'         => $suit_type,
+			'gear_notes'        => sanitize_textarea_field( (string) ( $raw['gear_notes'] ?? '' ) ),
+		);
+	}
+
+	/**
 	 * Restituisce il nome del dispositivo CGM configurato dall'utente.
 	 * Controlla in ordine: Nightscout, Dexcom, LibreView, CareLink, Tidepool.
 	 *
@@ -589,10 +994,38 @@ class SD_Dive_Form {
 				)
 			);
 
+			$direction = $row && $row->direction ? (string) $row->direction : '';
+
+			// Fallback: se la lettura più vicina non ha trend, prova a recuperare
+			// la freccia dalla lettura con trend più vicina nella stessa finestra.
+			if ( $row && ( '' === $direction || 'NONE' === strtoupper( $direction ) ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$trend_row = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT direction
+						 FROM {$table}
+						 WHERE user_id = %d
+						   AND reading_time BETWEEN %s AND %s
+						   AND direction IS NOT NULL
+						   AND direction <> ''
+						   AND UPPER(direction) <> 'NONE'
+						 ORDER BY ABS( TIMESTAMPDIFF( SECOND, reading_time, %s ) )
+						 LIMIT 1",
+						$user_id,
+						$from,
+						$to,
+						$ref_utc
+					)
+				);
+				if ( $trend_row && ! empty( $trend_row->direction ) ) {
+					$direction = (string) $trend_row->direction;
+				}
+			}
+
 			$results[ $key ] = $row
 				? array(
 					'value'     => (int) $row->glucose_value,
-					'direction' => $row->direction ?: 'NONE',
+					'direction' => $direction ? $direction : 'NONE',
 					'time'      => $row->reading_time,
 					'device'    => $row->device,
 				)

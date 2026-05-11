@@ -40,15 +40,325 @@
         // ============================================================
         // MOSTRA/NASCONDI CAMPO NITROX %
         // ============================================================
-        $('#sd-gas-mix').on('change', function() {
-            var val = $(this).val();
+        function toggleNitroxField() {
+            var val = $('#sd-gas-mix').val();
             if (val === 'nitrox' || val === 'trimix') {
                 $('.sd-field-nitrox').slideDown(200);
             } else {
                 $('.sd-field-nitrox').slideUp(200);
                 $('#sd-nitrox-pct').val('');
             }
+        }
+
+        $('#sd-gas-mix').on('change', toggleNitroxField);
+
+        // ============================================================
+        // PROFILI ATTREZZATURA RIUSABILI
+        // ============================================================
+        var gearProfiles = [];
+
+        var $gearSelect = $('#sd-gear-profile-select');
+        var $gearName = $('#sd-gear-profile-name');
+        var $gearMsg = $('#sd-gear-profile-message');
+
+        function fetchGearProfiles() {
+            $.ajax({
+                url: sdLogbook.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'sd_gear_profiles_list',
+                    nonce: sdLogbook.nonce
+                },
+                success: function(response) {
+                    if (!response.success || !response.data || !Array.isArray(response.data.profiles)) {
+                        showGearMessage('error', sdLogbook.strings.gearProfilesLoadError);
+                        return;
+                    }
+                    gearProfiles = response.data.profiles;
+                    renderGearProfileOptions();
+                },
+                error: function() {
+                    showGearMessage('error', sdLogbook.strings.gearProfilesLoadError);
+                }
+            });
+        }
+
+        function renderGearProfileOptions(selectedId) {
+            selectedId = selectedId || '';
+            $gearSelect.empty();
+            $gearSelect.append('<option value="">Seleziona un profilo</option>');
+
+            gearProfiles.forEach(function(profile) {
+                var $opt = $('<option></option>')
+                    .val(profile.id)
+                    .text(profile.name || 'Profilo');
+                if (selectedId && profile.id === selectedId) {
+                    $opt.prop('selected', true);
+                }
+                $gearSelect.append($opt);
+            });
+        }
+
+        function getProfileById(profileId) {
+            return gearProfiles.find(function(profile) {
+                return profile.id === profileId;
+            });
+        }
+
+        function getCurrentGearData() {
+            return {
+                tank_count: $('[name="tank_count"]').val() || '1',
+                gas_mix: $('[name="gas_mix"]').val() || 'aria',
+                tank_capacity: $('[name="tank_capacity"]').val() || '',
+                nitrox_percentage: $('[name="nitrox_percentage"]').val() || '',
+                ballast_kg: $('[name="ballast_kg"]').val() || '',
+                suit_type: $('[name="suit_type"]').val() || '',
+                gear_notes: $('[name="gear_notes"]').val() || ''
+            };
+        }
+
+        function setIconSelectValue(fieldName, value) {
+            var $hidden = $('[name="' + fieldName + '"]');
+            var $group = $('.sd-icon-select[data-name="' + fieldName + '"]');
+            $group.find('.sd-icon-btn').removeClass('active');
+            if (value) {
+                $group.find('.sd-icon-btn[data-value="' + value + '"]').addClass('active');
+            }
+            $hidden.val(value || '');
+        }
+
+        function applyGearData(data) {
+            if (!data) {
+                return;
+            }
+            $('[name="tank_count"]').val(data.tank_count || '1');
+            $('[name="gas_mix"]').val(data.gas_mix || 'aria');
+            $('[name="tank_capacity"]').val(data.tank_capacity || '');
+            $('[name="nitrox_percentage"]').val(data.nitrox_percentage || '');
+            $('[name="ballast_kg"]').val(data.ballast_kg || '');
+            $('[name="gear_notes"]').val(data.gear_notes || '');
+            setIconSelectValue('suit_type', data.suit_type || '');
+            toggleNitroxField();
+        }
+
+        function saveGearProfile() {
+            var selectedId = $gearSelect.val() || '';
+            var profileName = ($gearName.val() || '').trim();
+
+            if (!profileName && selectedId) {
+                var selectedProfile = getProfileById(selectedId);
+                profileName = selectedProfile && selectedProfile.name ? selectedProfile.name : '';
+            }
+
+            if (!profileName) {
+                showGearMessage('error', sdLogbook.strings.gearProfileNameRequired);
+                $gearName.focus();
+                return;
+            }
+
+            var payload = getCurrentGearData();
+
+            $.ajax({
+                url: sdLogbook.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'sd_gear_profile_save',
+                    nonce: sdLogbook.nonce,
+                    profile_id: selectedId,
+                    profile_name: profileName,
+                    profile: payload
+                },
+                success: function(response) {
+                    if (!response.success || !response.data || !Array.isArray(response.data.profiles)) {
+                        showGearMessage('error', sdLogbook.strings.gearProfilesSaveError);
+                        return;
+                    }
+                    gearProfiles = response.data.profiles;
+                    renderGearProfileOptions(response.data.profile_id || selectedId);
+                    showGearMessage('success', sdLogbook.strings.gearProfileSaved);
+                },
+                error: function() {
+                    showGearMessage('error', sdLogbook.strings.gearProfilesSaveError);
+                }
+            });
+        }
+
+        function deleteGearProfile() {
+            var selectedId = $gearSelect.val() || '';
+            if (!selectedId) {
+                showGearMessage('error', sdLogbook.strings.gearProfileSelectRequired);
+                return;
+            }
+
+            if (!window.confirm(sdLogbook.strings.gearProfileDeleteConfirm)) {
+                return;
+            }
+
+            $.ajax({
+                url: sdLogbook.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'sd_gear_profile_delete',
+                    nonce: sdLogbook.nonce,
+                    profile_id: selectedId
+                },
+                success: function(response) {
+                    if (!response.success || !response.data || !Array.isArray(response.data.profiles)) {
+                        showGearMessage('error', sdLogbook.strings.gearProfilesDeleteError);
+                        return;
+                    }
+                    gearProfiles = response.data.profiles;
+                    renderGearProfileOptions('');
+                    $gearName.val('');
+                    showGearMessage('success', sdLogbook.strings.gearProfileDeleted);
+                },
+                error: function() {
+                    showGearMessage('error', sdLogbook.strings.gearProfilesDeleteError);
+                }
+            });
+        }
+
+        function duplicateGearProfile() {
+            var selectedId = $gearSelect.val() || '';
+            if (!selectedId) {
+                showGearMessage('error', sdLogbook.strings.gearProfileSelectRequired);
+                return;
+            }
+
+            $.ajax({
+                url: sdLogbook.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'sd_gear_profile_duplicate',
+                    nonce: sdLogbook.nonce,
+                    profile_id: selectedId
+                },
+                success: function(response) {
+                    if (!response.success || !response.data || !Array.isArray(response.data.profiles)) {
+                        showGearMessage('error', sdLogbook.strings.gearProfileDuplicateError);
+                        return;
+                    }
+                    gearProfiles = response.data.profiles;
+                    renderGearProfileOptions(response.data.profile_id || '');
+                    var duplicated = getProfileById(response.data.profile_id || '');
+                    $gearName.val(duplicated && duplicated.name ? duplicated.name : '');
+                    showGearMessage('success', sdLogbook.strings.gearProfileDuplicated);
+                },
+                error: function() {
+                    showGearMessage('error', sdLogbook.strings.gearProfileDuplicateError);
+                }
+            });
+        }
+
+        function reorderGearProfiles(direction) {
+            var selectedId = $gearSelect.val() || '';
+            if (!selectedId) {
+                showGearMessage('error', sdLogbook.strings.gearProfileSelectRequired);
+                return;
+            }
+
+            if (gearProfiles.length < 2) {
+                showGearMessage('error', sdLogbook.strings.gearProfilesReorderNeedTwo);
+                return;
+            }
+
+            var currentIndex = -1;
+            for (var i = 0; i < gearProfiles.length; i++) {
+                if (gearProfiles[i].id === selectedId) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+
+            if (currentIndex < 0) {
+                showGearMessage('error', sdLogbook.strings.gearProfilesLoadError);
+                return;
+            }
+
+            var targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+            if (targetIndex < 0 || targetIndex >= gearProfiles.length) {
+                showGearMessage('error', sdLogbook.strings.gearProfilesReorderAtBoundary);
+                return;
+            }
+
+            var moved = gearProfiles.splice(currentIndex, 1)[0];
+            gearProfiles.splice(targetIndex, 0, moved);
+
+            var orderedIds = gearProfiles.map(function(profile) {
+                return profile.id;
+            });
+
+            $.ajax({
+                url: sdLogbook.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'sd_gear_profiles_reorder',
+                    nonce: sdLogbook.nonce,
+                    'ordered_ids[]': orderedIds
+                },
+                success: function(response) {
+                    if (!response.success || !response.data || !Array.isArray(response.data.profiles)) {
+                        showGearMessage('error', sdLogbook.strings.gearProfilesReorderError);
+                        fetchGearProfiles();
+                        return;
+                    }
+                    gearProfiles = response.data.profiles;
+                    renderGearProfileOptions(selectedId);
+                    showGearMessage('success', sdLogbook.strings.gearProfilesOrderSaved);
+                },
+                error: function() {
+                    showGearMessage('error', sdLogbook.strings.gearProfilesReorderError);
+                    fetchGearProfiles();
+                }
+            });
+        }
+
+        function applySelectedGearProfile() {
+            var selectedId = $gearSelect.val() || '';
+            if (!selectedId) {
+                showGearMessage('error', sdLogbook.strings.gearProfileSelectRequired);
+                return;
+            }
+
+            var profile = getProfileById(selectedId);
+            if (!profile || !profile.fields) {
+                showGearMessage('error', sdLogbook.strings.gearProfilesLoadError);
+                return;
+            }
+
+            applyGearData(profile.fields);
+            $gearName.val(profile.name || '');
+            showGearMessage('success', sdLogbook.strings.gearProfileApplied);
+        }
+
+        function showGearMessage(type, msg) {
+            $gearMsg
+                .removeClass('sd-gear-msg-success sd-gear-msg-error')
+                .addClass(type === 'success' ? 'sd-gear-msg-success' : 'sd-gear-msg-error')
+                .text(msg)
+                .stop(true, true)
+                .slideDown(120);
+        }
+
+        $gearSelect.on('change', function() {
+            var profile = getProfileById($(this).val() || '');
+            $gearName.val(profile && profile.name ? profile.name : '');
         });
+
+        $('#sd-gear-profile-apply').on('click', applySelectedGearProfile);
+        $('#sd-gear-profile-save').on('click', saveGearProfile);
+        $('#sd-gear-profile-duplicate').on('click', duplicateGearProfile);
+        $('#sd-gear-profile-up').on('click', function() { reorderGearProfiles('up'); });
+        $('#sd-gear-profile-down').on('click', function() { reorderGearProfiles('down'); });
+        $('#sd-gear-profile-delete').on('click', deleteGearProfile);
+
+        fetchGearProfiles();
+        toggleNitroxField();
 
         // ============================================================
         // CALCOLO AUTOMATICO TEMPO IMMERSIONE

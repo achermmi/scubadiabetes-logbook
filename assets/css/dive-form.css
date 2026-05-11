@@ -308,6 +308,121 @@ body.page .container.single-page-container {
     margin: 12px 0 6px;
 }
 
+.sd-subsection-label-inline {
+    margin-top: 0;
+}
+
+/* ============================================================
+   PROFILI ATTREZZATURA RIUSABILI
+   ============================================================ */
+
+.sd-gear-profiles-box {
+    border: 1px dashed var(--sd-gray-300);
+    border-radius: var(--sd-radius-sm);
+    background: var(--sd-gray-50);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.sd-gear-profiles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.sd-gear-profiles-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sd-gear-btn {
+    border: 1px solid var(--sd-gray-300);
+    background: var(--sd-white);
+    color: var(--sd-gray-700);
+    border-radius: var(--sd-radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--sd-transition);
+}
+
+.sd-gear-btn:hover {
+    border-color: var(--sd-blue);
+    color: var(--sd-blue);
+    background: var(--sd-blue-pale);
+}
+
+.sd-gear-btn-apply {
+    border-color: var(--sd-blue);
+    color: var(--sd-blue-deep);
+}
+
+.sd-gear-btn-save {
+    border-color: #0f766e;
+    color: #0f766e;
+}
+
+.sd-gear-btn-save:hover {
+    border-color: #0d9488;
+    color: #0d9488;
+    background: #ecfeff;
+}
+
+.sd-gear-btn-duplicate {
+    border-color: #7c3aed;
+    color: #6d28d9;
+}
+
+.sd-gear-btn-duplicate:hover {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+    background: #f5f3ff;
+}
+
+.sd-gear-btn-order {
+    border-color: var(--sd-blue-deep);
+    color: var(--sd-blue-deep);
+}
+
+.sd-gear-btn-order:hover {
+    border-color: var(--sd-blue);
+    color: var(--sd-blue);
+    background: var(--sd-blue-pale);
+}
+
+.sd-gear-btn-delete {
+    border-color: #b91c1c;
+    color: #b91c1c;
+}
+
+.sd-gear-btn-delete:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.sd-gear-profile-message {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    border-radius: var(--sd-radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sd-gear-msg-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.sd-gear-msg-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
 /* ============================================================
    FIELDS
    ============================================================ */
@@ -616,6 +731,19 @@ body.page .container.single-page-container {
     .sd-icon-btn {
         padding: 8px 10px;
         min-width: 60px;
+    }
+
+    .sd-gear-profiles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sd-gear-profiles-actions {
+        flex-direction: column;
+    }
+
+    .sd-gear-btn {
+        width: 100%;
+        text-align: center;
     }
 
     .sd-form-header-text h2 {
