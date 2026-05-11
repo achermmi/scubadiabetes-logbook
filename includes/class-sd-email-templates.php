@@ -214,6 +214,16 @@ class SD_Email_Templates {
 		$mese_oggi    = $months_it[ $month ] ?? $now->format( 'F' );
 		$anno_oggi    = (string) $year;
 		$anno_prox    = (string) ( $year + 1 );
+		$member_type_labels = array(
+			'attivo'               => __( 'Attivo', 'sd-logbook' ),
+			'attivo_capo_famiglia' => __( 'Attivo Capo Famiglia', 'sd-logbook' ),
+			'attivo_famigliare'    => __( 'Attivo Famigliare', 'sd-logbook' ),
+			'passivo'              => __( 'Passivo', 'sd-logbook' ),
+			'accompagnatore'       => __( 'Accompagnatore', 'sd-logbook' ),
+			'sostenitore'          => __( 'Sostenitore', 'sd-logbook' ),
+			'onorario'             => __( 'Onorario', 'sd-logbook' ),
+			'fondatore'            => __( 'Fondatore', 'sd-logbook' ),
+		);
 
 		// Valori derivati dal socio
 		$scadenza           = '';
@@ -232,9 +242,12 @@ class SD_Email_Templates {
 				$dt_exp = DateTime::createFromFormat( 'Y-m-d', (string) $member->membership_expiry );
 				$scadenza = $dt_exp ? $dt_exp->format( 'd.m.Y' ) : (string) $member->membership_expiry;
 			}
-			$member_type_raw = (string) ( $member->member_type ?? $member->membership_type ?? '' );
-			$member_type_raw = trim( str_replace( '_', ' ', $member_type_raw ) );
-			$tipo_socio      = ucfirst( $member_type_raw );
+			$member_type_key = sanitize_key( (string) ( $member->member_type ?? '' ) );
+			if ( isset( $member_type_labels[ $member_type_key ] ) ) {
+				$tipo_socio = (string) $member_type_labels[ $member_type_key ];
+			} else {
+				$tipo_socio = (string) $member_type_labels['attivo'];
+			}
 			$numero_socio    = trim( (string) ( $member->member_number ?? '' ) );
 			if ( '' === $numero_socio && ! empty( $member->id ) ) {
 				$numero_socio = (string) $member->id;
