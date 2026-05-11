@@ -48,10 +48,10 @@ class SD_Membership_Admin {
 			return;
 		}
 
-		$existing = isset( $phpmailer->SMTPOptions ) && is_array( $phpmailer->SMTPOptions ) ? $phpmailer->SMTPOptions : array();
+		$existing = isset( $phpmailer->SMTPOptions ) && is_array( $phpmailer->SMTPOptions ) ? $phpmailer->SMTPOptions : array(); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		$existing_ssl = isset( $existing['ssl'] ) && is_array( $existing['ssl'] ) ? $existing['ssl'] : array();
 
-		$phpmailer->SMTPOptions = array_merge(
+		$phpmailer->SMTPOptions = array_merge( // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			$existing,
 			array(
 				'ssl' => array_merge(
@@ -1757,7 +1757,17 @@ class SD_Membership_Admin {
 				remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
 
 				if ( $sent ) {
-					SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry, 'template_id' => $template_id ) );
+					SD_Membership_Helper::log_audit(
+						(int) $member->id,
+						'renewal_reminder',
+						'sd_members',
+						(int) $member->id,
+						null,
+						array(
+							'expiry'      => $member->membership_expiry,
+							'template_id' => $template_id,
+						)
+					);
 				}
 				return (bool) $sent;
 			}

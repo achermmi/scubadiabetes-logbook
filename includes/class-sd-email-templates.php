@@ -111,22 +111,70 @@ class SD_Email_Templates {
 	 */
 	public static function get_variable_list(): array {
 		return array(
-			array( 'tag' => '{{data_oggi_breve}}',    'label' => __( 'Data oggi (DD.MM.YYYY)', 'sd-logbook' ) ),
-			array( 'tag' => '{{data_oggi_estesa}}',   'label' => __( 'Data oggi (es. 11 maggio 2026)', 'sd-logbook' ) ),
-			array( 'tag' => '{{mese_oggi}}',           'label' => __( 'Mese corrente', 'sd-logbook' ) ),
-			array( 'tag' => '{{anno_oggi}}',           'label' => __( 'Anno corrente', 'sd-logbook' ) ),
-			array( 'tag' => '{{anno_prossimo}}',       'label' => __( 'Anno prossimo', 'sd-logbook' ) ),
-			array( 'tag' => '{{scadenza}}',            'label' => __( 'Scadenza iscrizione', 'sd-logbook' ) ),
-			array( 'tag' => '{{tipo_socio}}',          'label' => __( 'Tipo socio', 'sd-logbook' ) ),
-			array( 'tag' => '{{tassa_sociale}}',       'label' => __( 'Tassa sociale (CHF)', 'sd-logbook' ) ),
-			array( 'tag' => '{{tassa_sociale_numero}}', 'label' => __( 'Tassa sociale (numero)', 'sd-logbook' ) ),
-			array( 'tag' => '{{nome}}',                'label' => __( 'Nome socio', 'sd-logbook' ) ),
-			array( 'tag' => '{{cognome}}',             'label' => __( 'Cognome socio', 'sd-logbook' ) ),
-			array( 'tag' => '{{nome_completo}}',       'label' => __( 'Nome completo socio', 'sd-logbook' ) ),
-			array( 'tag' => '{{email_socio}}',         'label' => __( 'E-mail socio', 'sd-logbook' ) ),
-			array( 'tag' => '{{email_associazione}}',  'label' => __( 'E-mail associazione', 'sd-logbook' ) ),
-			array( 'tag' => '{{logo}}',                'label' => __( 'Logo (piccolo)', 'sd-logbook' ) ),
-			array( 'tag' => '{{logo_esteso}}',         'label' => __( 'Logo (esteso)', 'sd-logbook' ) ),
+			array(
+				'tag'   => '{{data_oggi_breve}}',
+				'label' => __( 'Data oggi (DD.MM.YYYY)', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{data_oggi_estesa}}',
+				'label' => __( 'Data oggi (es. 11 maggio 2026)', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{mese_oggi}}',
+				'label' => __( 'Mese corrente', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{anno_oggi}}',
+				'label' => __( 'Anno corrente', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{anno_prossimo}}',
+				'label' => __( 'Anno prossimo', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{scadenza}}',
+				'label' => __( 'Scadenza iscrizione', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{tipo_socio}}',
+				'label' => __( 'Tipo socio', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{tassa_sociale}}',
+				'label' => __( 'Tassa sociale (CHF)', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{tassa_sociale_numero}}',
+				'label' => __( 'Tassa sociale (numero)', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{nome}}',
+				'label' => __( 'Nome socio', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{cognome}}',
+				'label' => __( 'Cognome socio', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{nome_completo}}',
+				'label' => __( 'Nome completo socio', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{email_socio}}',
+				'label' => __( 'E-mail socio', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{email_associazione}}',
+				'label' => __( 'E-mail associazione', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{logo}}',
+				'label' => __( 'Logo (piccolo)', 'sd-logbook' ),
+			),
+			array(
+				'tag'   => '{{logo_esteso}}',
+				'label' => __( 'Logo (esteso)', 'sd-logbook' ),
+			),
 		);
 	}
 
@@ -143,9 +191,18 @@ class SD_Email_Templates {
 	 */
 	public static function resolve( string $text, ?object $member = null ): string {
 		$months_it = array(
-			1  => 'gennaio', 2  => 'febbraio', 3  => 'marzo',    4  => 'aprile',
-			5  => 'maggio',  6  => 'giugno',   7  => 'luglio',   8  => 'agosto',
-			9  => 'settembre', 10 => 'ottobre', 11 => 'novembre', 12 => 'dicembre',
+			1  => 'gennaio',
+			2  => 'febbraio',
+			3  => 'marzo',
+			4  => 'aprile',
+			5  => 'maggio',
+			6  => 'giugno',
+			7  => 'luglio',
+			8  => 'agosto',
+			9  => 'settembre',
+			10 => 'ottobre',
+			11 => 'novembre',
+			12 => 'dicembre',
 		);
 
 		$now   = new DateTime( 'now', new DateTimeZone( 'Europe/Zurich' ) );
