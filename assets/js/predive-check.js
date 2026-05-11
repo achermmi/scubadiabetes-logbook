@@ -145,12 +145,24 @@
 		$age.text( formatAge( data.last_min ) );
 
 		// Etichetta stato
-		$statusLabel
-			.text( cfg.label )
-			.attr( 'class', 'sd-predive-status-label ' + cfg.labelClass );
+		if ( data.has_cgm ) {
+			$statusLabel
+				.text( cfg.label )
+				.attr( 'class', 'sd-predive-status-label ' + cfg.labelClass )
+				.show();
+		} else {
+			$statusLabel
+				.text( '' )
+				.attr( 'class', 'sd-predive-status-label' )
+				.hide();
+		}
 
 		// Raccomandazione
-		$recommendation.text( data.recommendation || '' );
+		if ( data.recommendation ) {
+			$recommendation.text( data.recommendation ).show();
+		} else {
+			$recommendation.text( '' ).hide();
+		}
 
 		// Avvisi
 		$alerts.empty();

@@ -287,6 +287,81 @@
 }
 
 /* ================================================================
+   LEGENDA COLORI
+   ================================================================ */
+
+.sd-predive-legend {
+	margin-top: 18px;
+	padding: 14px;
+	border: 1px solid #d1d5db;
+	border-radius: 10px;
+	background: #f8fafc;
+}
+
+.sd-predive-legend-title {
+	margin: 0 0 10px;
+	font-size: 1rem;
+	font-weight: 800;
+	color: #0f172a;
+}
+
+.sd-predive-legend-item {
+	border-left: 4px solid #64748b;
+	background: #ffffff;
+	border-radius: 8px;
+	padding: 10px 12px;
+	margin-bottom: 10px;
+}
+
+.sd-predive-legend-item:last-child {
+	margin-bottom: 0;
+}
+
+.sd-predive-legend-head {
+	margin: 0 0 6px;
+	font-size: .92rem;
+	font-weight: 800;
+}
+
+.sd-predive-legend-item ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.sd-predive-legend-item li {
+	margin: 3px 0;
+	font-size: .88rem;
+	line-height: 1.45;
+}
+
+.sd-predive-legend-red {
+	border-left-color: #dc2626;
+	background: #fff7f7;
+}
+
+.sd-predive-legend-red .sd-predive-legend-head {
+	color: #991b1b;
+}
+
+.sd-predive-legend-yellow {
+	border-left-color: #d97706;
+	background: #fffbeb;
+}
+
+.sd-predive-legend-yellow .sd-predive-legend-head {
+	color: #92400e;
+}
+
+.sd-predive-legend-green {
+	border-left-color: #059669;
+	background: #f0fdf4;
+}
+
+.sd-predive-legend-green .sd-predive-legend-head {
+	color: #065f46;
+}
+
+/* ================================================================
    RESPONSIVE
    ================================================================ */
 

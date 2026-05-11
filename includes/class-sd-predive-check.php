@@ -159,6 +159,7 @@ class SD_Predive_Check {
 
 		$t   = $wpdb->prefix . 'sd_nightscout_readings';
 		$now = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
+		$has_cgm = $this->user_has_cgm( $user_id );
 
 		// Ultima lettura CGM
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -190,7 +191,7 @@ class SD_Predive_Check {
 				'level' => 'danger',
 				'text'  => __( 'Nessun dato CGM trovato. Non è possibile valutare la glicemia.', 'sd-logbook' ),
 			);
-			return $this->build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit );
+			return $this->build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit, $has_cgm );
 		}
 
 		// Calcola minuti dall'ultima lettura
@@ -349,13 +350,13 @@ class SD_Predive_Check {
 			'text'  => __( 'Ricorda: porta sempre zucchero a rapido assorbimento in superficie e informa il tuo buddy della tua condizione.', 'sd-logbook' ),
 		);
 
-		return $this->build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit );
+		return $this->build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit, $has_cgm );
 	}
 
 	/**
 	 * Assembla l'array di risposta.
 	 */
-	private function build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit ) {
+	private function build_result( $status, $glucose, $glucose_display, $direction, $arrow, $last_min, $alerts, $unit, $has_cgm = true ) {
 		$is_mmol = ( 'mmol/l' === $unit );
 
 		$recommendation_map = array(
@@ -369,11 +370,12 @@ class SD_Predive_Check {
 			'glucose'         => $glucose,
 			'glucose_display' => $glucose_display,
 			'unit'            => $is_mmol ? 'mmol/L' : 'mg/dL',
+			'has_cgm'         => (bool) $has_cgm,
 			'direction'       => $direction,
 			'arrow'           => $arrow,
 			'last_min'        => $last_min,
 			'alerts'          => $alerts,
-			'recommendation'  => $recommendation_map[ $status ] ?? '',
+			'recommendation'  => $has_cgm ? ( $recommendation_map[ $status ] ?? '' ) : '',
 		);
 	}
 

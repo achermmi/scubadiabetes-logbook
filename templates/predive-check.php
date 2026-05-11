@@ -107,4 +107,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php esc_html_e( 'Segui sempre le indicazioni del protocollo Diabete Sommerso.', 'sd-logbook' ); ?>
 	</p>
 
+	<!-- ================================================================
+	     LEGENDA COLORI
+	     ================================================================ -->
+	<div class="sd-predive-legend" aria-label="<?php esc_attr_e( 'Legenda semaforo pre-immersione', 'sd-logbook' ); ?>">
+		<h3 class="sd-predive-legend-title"><?php esc_html_e( 'Legenda Colori', 'sd-logbook' ); ?></h3>
+
+		<div class="sd-predive-legend-item sd-predive-legend-red">
+			<p class="sd-predive-legend-head"><?php esc_html_e( 'ROSSO — sconsigliato immergersi', 'sd-logbook' ); ?></p>
+			<ul>
+				<li><?php esc_html_e( 'Nessuna lettura CGM nelle ultime 2 ore (stato ignoto)', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Glicemia < 90 mg/dL', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Glicemia > 300 mg/dL', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Trend DoubleDown o TripleDown (calo rapido a qualsiasi valore)', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Trend SingleDown o FortyFiveDown con glicemia < 130 mg/dL', 'sd-logbook' ); ?></li>
+			</ul>
+		</div>
+
+		<div class="sd-predive-legend-item sd-predive-legend-yellow">
+			<p class="sd-predive-legend-head"><?php esc_html_e( 'GIALLO — procedere con cautela / consultare il medico', 'sd-logbook' ); ?></p>
+			<ul>
+				<li><?php esc_html_e( 'Glicemia 90-119 mg/dL (zona borderline)', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Glicemia 250-300 mg/dL (iperglicemia elevata)', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Glicemia 181-249 mg/dL (sopra range target)', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Trend SingleDown o FortyFiveDown con glicemia 130-180 mg/dL', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Ultima lettura 60-120 minuti fa (dati datati)', 'sd-logbook' ); ?></li>
+			</ul>
+		</div>
+
+		<div class="sd-predive-legend-item sd-predive-legend-green">
+			<p class="sd-predive-legend-head"><?php esc_html_e( 'VERDE — condizioni favorevoli', 'sd-logbook' ); ?></p>
+			<ul>
+				<li><?php esc_html_e( 'Glicemia 120-180 mg/dL con trend stabile, piatto o in salita', 'sd-logbook' ); ?></li>
+				<li><?php esc_html_e( 'Ultima lettura entro 60 minuti', 'sd-logbook' ); ?></li>
+			</ul>
+		</div>
+	</div>
+
 </div><!-- .sd-predive-wrap -->
