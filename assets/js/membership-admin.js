@@ -11,17 +11,25 @@
 		perPage: 25,
 		total:   0,
 	};
+	var renewalsState = {
+		rows: [],
+		quickFilter: 'all'
+	};
 
 	// ===== INIZIALIZZAZIONE =====
 	$(document).ready(function () {
 		// Pagina gestione soci
 		if ($('#sd-management-page').length) {
 			loadMembers();
+			loadRenewalsDashboard();
 			bindFilters();
 			bindStatCards();
 			bindExport();
 			bindPagination();
 			bindBulkDelete();
+			bindRenewalsActions();
+			bindRenewalsQuickFilters();
+			bindRenewalsBulkReminder();
 		}
 
 		// Pagina modifica socio
@@ -94,6 +102,282 @@
 				$tbody.html('<tr><td colspan="13" class="sd-table-empty">Errore di rete.</td></tr>');
 			},
 		});
+	}
+
+	function loadRenewalsDashboard() {
+		var $tbody   = $('#sd-renewals-tbody');
+		var $loading = $('#sd-renewals-loading');
+		var $msg     = $('#sd-renewals-message');
+
+		if (!$tbody.length) {
+			return;
+		}
+
+		$loading.show();
+		$msg.hide();
+		$tbody.html('<tr><td colspan="7" class="sd-table-empty">Caricamento...</td></tr>');
+
+		$.ajax({
+			url: sdMembAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'sd_members_renewals_dashboard',
+				nonce: sdMembAdmin.nonce,
+				anno: $('#sd-filter-anno').val() || sdMembAdmin.currentYear
+			},
+			success: function(resp) {
+				$loading.hide();
+				if (!resp.success || !resp.data || !Array.isArray(resp.data.rows)) {
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalsLoadError) || 'Errore caricamento cruscotto rinnovi.');
+					$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore caricamento.</td></tr>');
+					updateBulkReminderButton();
+					return;
+				}
+				renewalsState.rows = resp.data.rows;
+				renderRenewalsRows(getFilteredRenewalsRows());
+				updateBulkReminderButton();
+			},
+			error: function() {
+				$loading.hide();
+				showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalsLoadError) || 'Errore caricamento cruscotto rinnovi.');
+				$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore di rete.</td></tr>');
+				updateBulkReminderButton();
+			}
+		});
+	}
+
+	function renderRenewalsRows(rows) {
+		var $tbody = $('#sd-renewals-tbody');
+		if (!$tbody.length) {
+			return;
+		}
+
+		if (!rows.length) {
+			$tbody.html('<tr><td colspan="7" class="sd-table-empty">Nessun socio trovato.</td></tr>');
+			return;
+		}
+
+		var html = '';
+		rows.forEach(function(r) {
+			var statusClass = 'sd-renewal-status-pending';
+			var statusLabel = 'Da definire';
+			if (r.status === 'valida') {
+				statusClass = 'sd-renewal-status-valid';
+				statusLabel = 'Valida';
+			} else if (r.status === 'in_scadenza') {
+				statusClass = 'sd-renewal-status-soon';
+				statusLabel = 'In scadenza';
+			} else if (r.status === 'scaduta') {
+				statusClass = 'sd-renewal-status-expired';
+				statusLabel = 'Scaduta';
+			}
+
+			var due = parseFloat(r.amount_due || 0);
+			var dueLabel = 'CHF ' + due.toFixed(2);
+			var dueClass = due > 0 ? 'sd-renewal-due-open' : 'sd-renewal-due-clear';
+
+			var actionHtml = '<span class="sd-renewal-disabled">—</span>';
+			if (r.can_remind && due > 0) {
+				actionHtml = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '">' +
+					((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder') +
+				'</button>';
+			}
+
+			html += '<tr>' +
+				'<td><strong>' + escapeHtml(r.name || '') + '</strong></td>' +
+				'<td>' + escapeHtml(r.email || '—') + '</td>' +
+				'<td><span class="sd-renewal-status ' + statusClass + '">' + statusLabel + '</span></td>' +
+				'<td>' + formatDate(r.membership_expiry) + '</td>' +
+				'<td><span class="' + dueClass + '">' + dueLabel + '</span></td>' +
+				'<td>' + formatDateTime(r.last_reminder_at) + '</td>' +
+				'<td>' + actionHtml + '</td>' +
+			'</tr>';
+		});
+
+		$tbody.html(html);
+	}
+
+	function bindRenewalsActions() {
+		$(document).on('click', '.sd-send-renewal-reminder', function() {
+			var $btn = $(this);
+			var memberId = parseInt($btn.data('member-id'), 10) || 0;
+			if (!memberId) {
+				return;
+			}
+
+			$btn.prop('disabled', true).text((sdMembAdmin.strings && sdMembAdmin.strings.sendingLabel) || 'Invio...');
+
+			$.ajax({
+				url: sdMembAdmin.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'sd_members_send_renewal_reminder',
+					nonce: sdMembAdmin.nonce,
+					member_id: memberId,
+					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				},
+				success: function(resp) {
+					if (!resp.success) {
+						$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder');
+						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.'));
+						return;
+					}
+					showRenewalsMessage('success', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderSent) || 'Reminder inviato con successo.'));
+					loadRenewalsDashboard();
+				},
+				error: function() {
+					$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder');
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.');
+				}
+			});
+		});
+
+		$('#sd-filter-anno').on('change', function() {
+			loadRenewalsDashboard();
+		});
+	}
+
+	function bindRenewalsQuickFilters() {
+		$(document).on('click', '.sd-renewals-filter', function() {
+			var $btn = $(this);
+			var mode = String($btn.data('renewals-filter') || 'all');
+			renewalsState.quickFilter = mode;
+
+			$('.sd-renewals-filter').removeClass('is-active');
+			$btn.addClass('is-active');
+
+			renderRenewalsRows(getFilteredRenewalsRows());
+		});
+	}
+
+	function bindRenewalsBulkReminder() {
+		$('#sd-renewals-bulk-remind').on('click', function() {
+			var $btn = $(this);
+			if ($btn.prop('disabled')) {
+				return;
+			}
+
+			var confirmText = buildBulkConfirmText();
+			if (!window.confirm(confirmText)) {
+				return;
+			}
+
+			$btn.prop('disabled', true).text((sdMembAdmin.strings && sdMembAdmin.strings.bulkSendingLabel) || 'Invio massivo...');
+
+			$.ajax({
+				url: sdMembAdmin.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'sd_members_send_renewal_reminders_bulk',
+					nonce: sdMembAdmin.nonce,
+					filter_type: renewalsState.quickFilter || 'in_scadenza',
+					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				},
+				success: function(resp) {
+					if (!resp.success) {
+						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.'));
+						updateBulkReminderButton();
+						return;
+					}
+					showRenewalsMessage('success', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.bulkReminderDone) || 'Invio massivo completato.'));
+					loadRenewalsDashboard();
+				},
+				error: function() {
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.');
+					updateBulkReminderButton();
+				}
+			});
+		});
+	}
+
+	function getFilteredRenewalsRows() {
+		var mode = renewalsState.quickFilter || 'all';
+		var rows = Array.isArray(renewalsState.rows) ? renewalsState.rows : [];
+
+		if (mode === 'scaduti') {
+			return rows.filter(function(r) { return r.status === 'scaduta'; });
+		}
+		if (mode === 'in_scadenza') {
+			return rows.filter(function(r) { return r.status === 'in_scadenza'; });
+		}
+		if (mode === 'non_pagati') {
+			return rows.filter(function(r) { return parseFloat(r.amount_due || 0) > 0; });
+		}
+
+		return rows;
+	}
+
+	function updateBulkReminderButton() {
+		var $btn = $('#sd-renewals-bulk-remind');
+		if (!$btn.length) {
+			return;
+		}
+
+		var eligible = getBulkEligibleCount();
+		var label = buildBulkButtonLabel(eligible);
+		$btn.text(label);
+		$btn.prop('disabled', eligible < 1);
+	}
+
+	function getBulkEligibleCount() {
+		var filtered = getFilteredRenewalsRows();
+		return filtered.filter(function(r) {
+			return parseFloat(r.amount_due || 0) > 0 && !!r.can_remind;
+		}).length;
+	}
+
+	function buildBulkButtonLabel(count) {
+		var mode = renewalsState.quickFilter || 'all';
+		var labelMap = {
+			'all':        'Invia reminder massivo a tutti',
+			'scaduti':    'Invia reminder massivo (scaduti)',
+			'in_scadenza':'Invia reminder massivo (in scadenza)',
+			'non_pagati': 'Invia reminder massivo (non pagati)'
+		};
+		var label = labelMap[mode] || 'Invia reminder massivo';
+		return label + ' [' + (count || 0) + ']';
+	}
+
+	function buildBulkConfirmText() {
+		var mode = renewalsState.quickFilter || 'all';
+		var msgMap = {
+			'all':        'Inviare il reminder a tutti i soci con quota dovuta?',
+			'scaduti':    'Inviare il reminder a tutti i soci con iscrizione scaduta e quota dovuta?',
+			'in_scadenza':(sdMembAdmin.strings && sdMembAdmin.strings.bulkReminderConfirm) || 'Inviare il reminder a tutti i soci in scadenza con quota dovuta?',
+			'non_pagati': 'Inviare il reminder a tutti i soci non pagati?'
+		};
+		return msgMap[mode] || 'Inviare il reminder massivo?';
+	}
+
+	function showRenewalsMessage(type, text) {
+		var $msg = $('#sd-renewals-message');
+		if (!$msg.length) {
+			return;
+		}
+		$msg
+			.removeClass('sd-notice-error sd-notice-success sd-notice-warning')
+			.addClass(type === 'success' ? 'sd-notice-success' : 'sd-notice-error')
+			.text(text)
+			.show();
+	}
+
+	function formatDateTime(value) {
+		if (!value) {
+			return '—';
+		}
+		var dt = new Date(String(value).replace(' ', 'T'));
+		if (isNaN(dt.getTime())) {
+			return escapeHtml(String(value));
+		}
+		var d = String(dt.getDate()).padStart(2, '0');
+		var m = String(dt.getMonth() + 1).padStart(2, '0');
+		var y = dt.getFullYear();
+		var hh = String(dt.getHours()).padStart(2, '0');
+		var mm = String(dt.getMinutes()).padStart(2, '0');
+		return d + '.' + m + '.' + y + ' ' + hh + ':' + mm;
 	}
 
 	function getFilters() {

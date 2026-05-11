@@ -16,6 +16,56 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SD_Membership_Admin {
 
+	/**
+	 * Ultimo errore catturato da wp_mail_failed durante l'invio reminder.
+	 *
+	 * @var string
+	 */
+	private $last_mail_error = '';
+
+	/**
+	 * In ambienti non-production consente TLS SMTP con certificato self-signed.
+	 *
+	 * @return bool
+	 */
+	private function should_relax_smtp_tls(): bool {
+		$env = function_exists( 'wp_get_environment_type' ) ? (string) wp_get_environment_type() : 'production';
+		if ( 'production' === $env ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Callback PHPMailer: abilita self-signed cert su ambienti dev/staging.
+	 *
+	 * @param object $phpmailer Istanza PHPMailer passata da WordPress.
+	 * @return void
+	 */
+	public function relax_phpmailer_tls_for_local( $phpmailer ) {
+		if ( ! $this->should_relax_smtp_tls() || ! is_object( $phpmailer ) ) {
+			return;
+		}
+
+		$existing = isset( $phpmailer->SMTPOptions ) && is_array( $phpmailer->SMTPOptions ) ? $phpmailer->SMTPOptions : array();
+		$existing_ssl = isset( $existing['ssl'] ) && is_array( $existing['ssl'] ) ? $existing['ssl'] : array();
+
+		$phpmailer->SMTPOptions = array_merge(
+			$existing,
+			array(
+				'ssl' => array_merge(
+					$existing_ssl,
+					array(
+						'verify_peer'       => false,
+						'verify_peer_name'  => false,
+						'allow_self_signed' => true,
+					)
+				),
+			)
+		);
+	}
+
 	public function __construct() {
 		add_shortcode( 'sd_gestione_soci', array( $this, 'render_management' ) );
 		add_shortcode( 'sd_iscrizione_edit', array( $this, 'render_edit' ) );
@@ -30,6 +80,9 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_export_pdf', array( $this, 'export_members_pdf' ) );
 		add_action( 'wp_ajax_sd_members_stats', array( $this, 'get_stats' ) );
 		add_action( 'wp_ajax_sd_resend_invoice_email', array( $this, 'resend_invoice_email' ) );
+		add_action( 'wp_ajax_sd_members_renewals_dashboard', array( $this, 'get_renewals_dashboard' ) );
+		add_action( 'wp_ajax_sd_members_send_renewal_reminder', array( $this, 'send_renewal_reminder_single' ) );
+		add_action( 'wp_ajax_sd_members_send_renewal_reminders_bulk', array( $this, 'send_renewal_reminders_bulk' ) );
 
 		// WP Cron per reminder rinnovo
 		add_action( 'sd_membership_renewal_check', array( $this, 'send_renewal_reminders' ) );
@@ -92,6 +145,21 @@ class SD_Membership_Admin {
 				'editUrl'    => $edit_url,
 				'currentYear' => gmdate( 'Y' ),
 				'membNonce'  => wp_create_nonce( 'sd_membership_nonce' ),
+				'strings'    => array(
+					'renewalsLoadError' => __( 'Errore nel caricamento del cruscotto rinnovi.', 'sd-logbook' ),
+					'renewalReminderSent' => __( 'Reminder inviato con successo.', 'sd-logbook' ),
+					'renewalReminderError' => __( 'Invio reminder non riuscito.', 'sd-logbook' ),
+					'sendReminderLabel' => __( 'Invia reminder', 'sd-logbook' ),
+					'sendingLabel' => __( 'Invio...', 'sd-logbook' ),
+					'bulkReminderLabel' => __( 'Invia reminder massivo (in scadenza)', 'sd-logbook' ),
+					'bulkSendingLabel' => __( 'Invio massivo...', 'sd-logbook' ),
+					'bulkReminderConfirm' => __( 'Inviare il reminder a tutti i soci in scadenza con quota dovuta?', 'sd-logbook' ),
+					'bulkReminderDone' => __( 'Invio massivo completato.', 'sd-logbook' ),
+					'quickFilterAll' => __( 'Tutti', 'sd-logbook' ),
+					'quickFilterExpired' => __( 'Solo scaduti', 'sd-logbook' ),
+					'quickFilterSoon' => __( 'Solo in scadenza', 'sd-logbook' ),
+					'quickFilterUnpaid' => __( 'Solo non pagati', 'sd-logbook' ),
+				),
 			)
 		);
 	}
@@ -1388,34 +1456,361 @@ class SD_Membership_Admin {
 		);
 
 		foreach ( $members as $member ) {
-			/* translators: 1: year, 2: expiry date */
-			$subject = sprintf(
-				__( '[ScubaDiabetes] Rinnovo iscrizione %1$s - Scadenza %2$s', 'sd-logbook' ),
-				gmdate( 'Y' ),
-				$member->membership_expiry
+			$this->send_renewal_email_for_member( $member );
+		}
+	}
+
+	/**
+	 * AJAX: dati per cruscotto rinnovi soci.
+	 */
+	public function get_renewals_dashboard() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db       = new SD_Database();
+		$year     = absint( $_POST['anno'] ?? gmdate( 'Y' ) );
+		$today    = gmdate( 'Y-m-d' );
+		$soon     = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
+
+		$rows = $wpdb->get_results(
+			"SELECT m.id, m.first_name, m.last_name, m.email, m.membership_expiry,
+			        m.fee_amount, m.parent_member_id, COALESCE(m.is_active,1) AS is_active,
+			        CASE
+			            WHEN m.parent_member_id IS NOT NULL
+			            THEN COALESCE(pm.has_paid_fee, 0)
+			            ELSE m.has_paid_fee
+			        END AS has_paid_effective,
+			        al.last_reminder_at
+			 FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 LEFT JOIN (
+			     SELECT record_id, MAX(created_at) AS last_reminder_at
+			     FROM {$db->table('audit_log')}
+			     WHERE action = 'renewal_reminder' AND table_name = 'sd_members'
+			     GROUP BY record_id
+			 ) al ON al.record_id = m.id
+			 WHERE COALESCE(m.is_active,1) = 1
+			   AND m.parent_member_id IS NULL
+			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC"
+		);
+
+		$result = array();
+		foreach ( (array) $rows as $row ) {
+			$expiry = ! empty( $row->membership_expiry ) ? (string) $row->membership_expiry : '';
+			$status = 'da_definire';
+			if ( $expiry ) {
+				if ( $expiry < $today ) {
+					$status = 'scaduta';
+				} elseif ( $expiry <= $soon ) {
+					$status = 'in_scadenza';
+				} else {
+					$status = 'valida';
+				}
+			}
+
+			$paid_effective = (int) $row->has_paid_effective;
+			$amount_due     = $paid_effective ? 0.0 : (float) $row->fee_amount;
+
+			$result[] = array(
+				'id'             => (int) $row->id,
+				'name'           => trim( (string) $row->last_name . ', ' . (string) $row->first_name ),
+				'email'          => (string) $row->email,
+				'membership_expiry' => $expiry,
+				'status'         => $status,
+				'has_paid'       => $paid_effective,
+				'amount_due'     => $amount_due,
+				'can_remind'     => ( ! empty( $row->email ) && is_email( $row->email ) && $amount_due > 0 ),
+				'last_reminder_at' => $row->last_reminder_at ? (string) $row->last_reminder_at : '',
 			);
+		}
 
-			$body  = '<html><body>';
-			/* translators: member full name */
-			$body .= '<p>' . sprintf( __( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ), esc_html( $member->first_name . ' ' . $member->last_name ) ) . '</p>';
-			/* translators: membership expiry date */
-			$body .= '<p>' . sprintf( __( 'La tua iscrizione all\'Associazione ScubaDiabetes scade il <strong>%s</strong>.', 'sd-logbook' ), esc_html( $member->membership_expiry ) ) . '</p>';
-			$body .= '<p>' . __( 'Per rinnovare l\'iscrizione, effettua il pagamento della tassa annuale:', 'sd-logbook' ) . '</p>';
-			/* translators: fee amount in CHF */
-			$body .= '<ul><li>' . sprintf( __( 'Importo: <strong>CHF %s</strong>', 'sd-logbook' ), number_format( (float) $member->fee_amount, 2 ) ) . '</li></ul>';
-			/* translators: admin email address */
-			$body .= '<p>' . sprintf( __( 'Per informazioni contatta il segretariato: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'admin_email' ) ), esc_html( get_option( 'admin_email' ) ) ) . '</p>';
-			$body .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br>ScubaDiabetes</p>';
-			$body .= '</body></html>';
+		wp_send_json_success(
+			array(
+				'rows' => $result,
+				'year' => $year,
+			)
+		);
+	}
 
-			wp_mail(
-				$member->email,
-				$subject,
-				$body,
-				array( 'Content-Type: text/html; charset=UTF-8' )
+	/**
+	 * AJAX: invio reminder rinnovo manuale (one-click).
+	 */
+	public function send_renewal_reminder_single() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		$member_id = absint( $_POST['member_id'] ?? 0 );
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Socio non valido.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db = new SD_Database();
+
+		$member = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, first_name, last_name, email, membership_expiry, fee_amount,
+				        has_paid_fee, COALESCE(is_active,1) AS is_active
+				 FROM {$db->table('members')}
+				 WHERE id = %d
+				 LIMIT 1",
+				$member_id
+			)
+		);
+
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => __( 'Socio non trovato.', 'sd-logbook' ) ) );
+		}
+		if ( 1 !== (int) $member->is_active ) {
+			wp_send_json_error( array( 'message' => __( 'Il socio non è attivo.', 'sd-logbook' ) ) );
+		}
+		if ( 1 === (int) $member->has_paid_fee ) {
+			wp_send_json_error( array( 'message' => __( 'Quota già pagata: reminder non necessario.', 'sd-logbook' ) ) );
+		}
+		if ( empty( $member->email ) || ! is_email( $member->email ) ) {
+			wp_send_json_error( array( 'message' => __( 'Email socio non valida.', 'sd-logbook' ) ) );
+		}
+
+		$sent = $this->send_renewal_email_for_member( $member, absint( $_POST['template_id'] ?? 0 ) );
+		if ( ! $sent ) {
+			wp_send_json_error( array( 'message' => $this->build_reminder_mail_error_message() ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Reminder inviato con successo.', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX: invio reminder massivo ai soci in scadenza con quota dovuta.
+	 */
+	public function send_renewal_reminders_bulk() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db          = new SD_Database();
+		$today       = gmdate( 'Y-m-d' );
+		$soon        = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
+		$filter_type = sanitize_text_field( wp_unslash( $_POST['filter_type'] ?? 'in_scadenza' ) );
+		$template_id = absint( $_POST['template_id'] ?? 0 );
+		$allowed_filters = array( 'all', 'scaduti', 'in_scadenza', 'non_pagati' );
+		if ( ! in_array( $filter_type, $allowed_filters, true ) ) {
+			$filter_type = 'in_scadenza';
+		}
+
+		// Costruisce la WHERE clause in base al filtro scelto
+		$where_extra = '';
+		$extra_params = array();
+		if ( 'in_scadenza' === $filter_type ) {
+			$where_extra    = ' AND m.membership_expiry BETWEEN %s AND %s';
+			$extra_params[] = $today;
+			$extra_params[] = $soon;
+		} elseif ( 'scaduti' === $filter_type ) {
+			$where_extra    = ' AND m.membership_expiry < %s';
+			$extra_params[] = $today;
+		} elseif ( 'non_pagati' === $filter_type ) {
+			// Solo quelli con quota dovuta: has_paid_effective = 0, gestito dopo il fetch
+			$where_extra = '';
+		}
+		// 'all' → nessun filtro data extra
+
+		$base_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.membership_expiry, m.fee_amount,
+			        CASE
+			            WHEN m.parent_member_id IS NOT NULL
+			            THEN COALESCE(pm.has_paid_fee, 0)
+			            ELSE m.has_paid_fee
+			        END AS has_paid_effective
+			 FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active,1) = 1
+			   AND m.parent_member_id IS NULL
+			{$where_extra}
+			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC";
+
+		$members = empty( $extra_params )
+			? $wpdb->get_results( $base_sql ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			: $wpdb->get_results( $wpdb->prepare( $base_sql, $extra_params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$sent_count    = 0;
+		$failed_count  = 0;
+		$skipped_count = 0;
+
+		foreach ( (array) $members as $member ) {
+			$has_paid = (int) $member->has_paid_effective;
+			if ( $has_paid || empty( $member->email ) || ! is_email( $member->email ) ) {
+				$skipped_count++;
+				continue;
+			}
+
+			$sent = $this->send_renewal_email_for_member( $member, $template_id );
+			if ( $sent ) {
+				$sent_count++;
+			} else {
+				$failed_count++;
+			}
+		}
+
+		if ( 0 === $sent_count && 0 === $failed_count ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Nessun socio con reminder inviabile per il filtro selezionato.', 'sd-logbook' ),
+				)
 			);
+		}
 
-			SD_Membership_Helper::log_audit( $member->id, 'renewal_reminder', 'sd_members', $member->id, null, array( 'expiry' => $member->membership_expiry ) );
+		$message = sprintf(
+			/* translators: 1: sent reminders, 2: failed reminders, 3: skipped members */
+			__( 'Invio massivo completato. Inviati: %1$d, falliti: %2$d, saltati: %3$d.', 'sd-logbook' ),
+			$sent_count,
+			$failed_count,
+			$skipped_count
+		);
+
+		if ( $failed_count > 0 && ! empty( $this->last_mail_error ) ) {
+			$message .= ' ' . $this->build_reminder_mail_error_message();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'sent'    => $sent_count,
+				'failed'  => $failed_count,
+				'skipped' => $skipped_count,
+			)
+		);
+	}
+
+	/**
+	 * Restituisce un messaggio utente esplicito in base al tipo di errore SMTP.
+	 *
+	 * @return string
+	 */
+	private function build_reminder_mail_error_message(): string {
+		$error = (string) $this->last_mail_error;
+		if ( '' === $error ) {
+			return (string) __( 'Invio reminder non riuscito. Controlla la configurazione email del sito.', 'sd-logbook' );
+		}
+
+		$lower = strtolower( $error );
+		$ssl_cert_error = false !== strpos( $lower, 'certificate verify failed' )
+			|| false !== strpos( $lower, 'stream_socket_enable_crypto' )
+			|| false !== strpos( $lower, 'ssl operation failed' );
+
+		if ( $ssl_cert_error ) {
+			if ( $this->should_relax_smtp_tls() ) {
+				return (string) __( 'Invio reminder non riuscito: il server SMTP rifiuta il certificato TLS in questo ambiente di sviluppo. Verifica host/porta/cifratura nel plugin SMTP oppure prova in produzione con SMTP Infomaniak.', 'sd-logbook' );
+			}
+
+			return (string) __( 'Invio reminder non riuscito: certificato TLS del server SMTP non valido o non verificabile. Controlla host SMTP, porta/cifratura e catena certificati sul provider.', 'sd-logbook' );
+		}
+
+		return (string) __( 'Invio reminder non riuscito. Controlla la configurazione email del sito.', 'sd-logbook' ) . ' (' . $error . ')';
+	}
+
+	/**
+	 * Invia email reminder rinnovo e registra audit.
+	 *
+	 * @param object $member       Row socio (id, first_name, last_name, email, membership_expiry, fee_amount).
+	 * @param int    $template_id  ID modello email (0 = testo predefinito).
+	 * @return bool
+	 */
+	private function send_renewal_email_for_member( $member, int $template_id = 0 ) {
+		$this->last_mail_error = '';
+
+		if ( empty( $member ) || empty( $member->email ) || ! is_email( (string) $member->email ) ) {
+			return false;
+		}
+
+		// Prova a usare un modello personalizzato.
+		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
+			$built = SD_Email_Templates::build( $template_id, $member );
+			if ( $built ) {
+				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );
+				if ( '' === trim( $subject ) ) {
+					$subject = sanitize_text_field( __( '[ScubaDiabetes] Reminder rinnovo iscrizione', 'sd-logbook' ) );
+				}
+
+				$html_body = '<html><body>' . $built['body'];
+				if ( ! empty( $built['signature'] ) ) {
+					$html_body .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0">' . $built['signature'];
+				}
+				$html_body .= '</body></html>';
+
+				add_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
+				add_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+				$sent = wp_mail(
+					(string) $member->email,
+					$subject,
+					$html_body,
+					array( 'Content-Type: text/html; charset=UTF-8' )
+				);
+				remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
+				remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+
+				if ( $sent ) {
+					SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry, 'template_id' => $template_id ) );
+				}
+				return (bool) $sent;
+			}
+		}
+
+		// Testo predefinito.
+		/* translators: 1: year, 2: expiry date */
+		$subject = sprintf(
+			__( '[ScubaDiabetes] Rinnovo iscrizione %1$s - Scadenza %2$s', 'sd-logbook' ),
+			gmdate( 'Y' ),
+			! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '—'
+		);
+
+		$body  = '<html><body>';
+		/* translators: member full name */
+		$body .= '<p>' . sprintf( __( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ), esc_html( (string) $member->first_name . ' ' . (string) $member->last_name ) ) . '</p>';
+		/* translators: membership expiry date */
+		$body .= '<p>' . sprintf( __( 'La tua iscrizione all\'Associazione ScubaDiabetes scade il <strong>%s</strong>.', 'sd-logbook' ), esc_html( ! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '—' ) ) . '</p>';
+		$body .= '<p>' . __( 'Per rinnovare l\'iscrizione, effettua il pagamento della tassa annuale:', 'sd-logbook' ) . '</p>';
+		/* translators: fee amount in CHF */
+		$body .= '<ul><li>' . sprintf( __( 'Importo: <strong>CHF %s</strong>', 'sd-logbook' ), number_format( (float) $member->fee_amount, 2 ) ) . '</li></ul>';
+		/* translators: admin email address */
+		$body .= '<p>' . sprintf( __( 'Per informazioni contatta il segretariato: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'admin_email' ) ), esc_html( get_option( 'admin_email' ) ) ) . '</p>';
+		$body .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br>ScubaDiabetes</p>';
+		$body .= '</body></html>';
+
+		add_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
+		add_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+		$sent = wp_mail(
+			(string) $member->email,
+			$subject,
+			$body,
+			array( 'Content-Type: text/html; charset=UTF-8' )
+		);
+		remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
+		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+
+		if ( $sent ) {
+			SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry ) );
+		}
+
+		return (bool) $sent;
+	}
+
+	/**
+	 * Callback per intercettare l'errore interno di wp_mail.
+	 *
+	 * @param WP_Error $wp_error Errore restituito da wp_mail_failed.
+	 * @return void
+	 */
+	public function capture_wp_mail_failed( $wp_error ) {
+		if ( is_wp_error( $wp_error ) ) {
+			$this->last_mail_error = (string) $wp_error->get_error_message();
 		}
 	}
 

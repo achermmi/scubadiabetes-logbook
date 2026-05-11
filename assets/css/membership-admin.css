@@ -389,3 +389,180 @@
 	font-size: 0.85rem;
 	color: #1d4ed8;
 }
+
+/* ===== CRUSCOTTO RINNOVI ===== */
+.sd-renewals-dashboard {
+	background: #f8fafc;
+	border: 1px solid var(--sd-border, #dde1e7);
+	border-radius: 10px;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.sd-renewals-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1rem;
+	margin-bottom: 0.8rem;
+}
+
+.sd-renewals-header h3 {
+	margin: 0;
+	font-size: 1rem;
+	color: #0f172a;
+}
+
+.sd-renewals-header p {
+	margin: 0;
+	color: #475569;
+	font-size: 0.86rem;
+}
+
+.sd-renewals-loading {
+	margin-bottom: 0.6rem;
+	font-size: 0.85rem;
+	color: #64748b;
+}
+
+.sd-renewals-template-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+.sd-renewals-template-label {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #374151;
+	white-space: nowrap;
+}
+
+.sd-renewals-template-select {
+	flex: 1;
+	min-width: 180px;
+	max-width: 360px;
+	padding: 6px 10px;
+	font-size: 0.85rem;
+}
+
+.sd-renewals-tools {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
+	flex-wrap: wrap;
+}
+	display: flex;
+	gap: 0.45rem;
+	flex-wrap: wrap;
+}
+
+.sd-renewals-filter.is-active {
+	background: #dbeafe;
+	border-color: #60a5fa;
+	color: #1e3a8a;
+}
+
+#sd-renewals-bulk-remind[disabled] {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.sd-renewals-table-wrap {
+	overflow-x: auto;
+	border-radius: 8px;
+	border: 1px solid #dbe3ee;
+	background: #fff;
+}
+
+.sd-renewals-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+}
+
+.sd-renewals-table thead {
+	background: #edf2f7;
+}
+
+.sd-renewals-table th,
+.sd-renewals-table td {
+	padding: 0.6rem 0.75rem;
+	text-align: left;
+	border-bottom: 1px solid #f1f5f9;
+	white-space: nowrap;
+}
+
+.sd-renewals-table th {
+	font-size: 0.79rem;
+	font-weight: 700;
+	color: #334155;
+	border-bottom: 2px solid #dde1e7;
+}
+
+.sd-renewals-table tbody tr:hover {
+	background: #f8fbff;
+}
+
+.sd-renewal-status {
+	display: inline-block;
+	padding: 0.2rem 0.55rem;
+	border-radius: 999px;
+	font-weight: 700;
+	font-size: 0.74rem;
+	letter-spacing: 0.02em;
+}
+
+.sd-renewal-status-valid {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.sd-renewal-status-soon {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.sd-renewal-status-expired {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.sd-renewal-status-pending {
+	background: #e2e8f0;
+	color: #334155;
+}
+
+.sd-renewal-due-open {
+	font-weight: 700;
+	color: #b91c1c;
+}
+
+.sd-renewal-due-clear {
+	font-weight: 700;
+	color: #166534;
+}
+
+.sd-renewal-disabled {
+	color: #94a3b8;
+}
+
+@media (max-width: 780px) {
+	.sd-renewals-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.sd-renewals-tools {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	#sd-renewals-bulk-remind {
+		width: 100%;
+	}
+}

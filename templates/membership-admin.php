@@ -49,6 +49,65 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 	</div>
 
+	<!-- Cruscotto rinnovi soci -->
+	<div class="sd-renewals-dashboard" id="sd-renewals-dashboard">
+		<div class="sd-renewals-header">
+			<h3><?php esc_html_e( 'Cruscotto Rinnovi Soci', 'sd-logbook' ); ?></h3>
+			<p><?php esc_html_e( 'Stato iscrizione, scadenza, importo dovuto e reminder email con un click.', 'sd-logbook' ); ?></p>
+		</div>
+		<div class="sd-renewals-loading" id="sd-renewals-loading" style="display:none;">
+			<?php esc_html_e( 'Caricamento cruscotto rinnovi...', 'sd-logbook' ); ?>
+		</div>
+		<div class="sd-renewals-message sd-notice" id="sd-renewals-message" style="display:none;"></div>
+
+		<!-- Selezione modello email per i reminder -->
+		<div class="sd-renewals-template-row">
+			<label class="sd-renewals-template-label" for="sd-renewals-template-id">
+				<?php esc_html_e( 'Modello email reminder:', 'sd-logbook' ); ?>
+			</label>
+			<select id="sd-renewals-template-id" class="sd-field-input sd-renewals-template-select">
+				<option value="0"><?php esc_html_e( '— Testo predefinito —', 'sd-logbook' ); ?></option>
+				<?php
+				if ( class_exists( 'SD_Email_Templates' ) ) {
+					foreach ( SD_Email_Templates::get_all_as_options() as $tpl_id => $tpl_name ) {
+						echo '<option value="' . esc_attr( $tpl_id ) . '">' . esc_html( $tpl_name ) . '</option>';
+					}
+				}
+				?>
+			</select>
+		</div>
+
+		<div class="sd-renewals-tools">
+			<div class="sd-renewals-quick-filters" id="sd-renewals-quick-filters" role="group" aria-label="<?php esc_attr_e( 'Filtro rapido rinnovi', 'sd-logbook' ); ?>">
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-renewals-filter is-active" data-renewals-filter="all"><?php esc_html_e( 'Tutti', 'sd-logbook' ); ?></button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-renewals-filter" data-renewals-filter="scaduti"><?php esc_html_e( 'Solo scaduti', 'sd-logbook' ); ?></button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-renewals-filter" data-renewals-filter="in_scadenza"><?php esc_html_e( 'Solo in scadenza', 'sd-logbook' ); ?></button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-renewals-filter" data-renewals-filter="non_pagati"><?php esc_html_e( 'Solo non pagati', 'sd-logbook' ); ?></button>
+			</div>
+			<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-renewals-bulk-remind"><?php esc_html_e( 'Invia reminder massivo (in scadenza)', 'sd-logbook' ); ?></button>
+		</div>
+		<div class="sd-renewals-table-wrap">
+			<table class="sd-renewals-table" id="sd-renewals-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Socio', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Stato Iscrizione', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Scadenza', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Importo Dovuto', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Ultimo Reminder', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Azione', 'sd-logbook' ); ?></th>
+					</tr>
+				</thead>
+				<tbody id="sd-renewals-tbody">
+					<tr>
+						<td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Caricamento in corso...', 'sd-logbook' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
 	<!-- Barra filtri -->
 	<div class="sd-filter-bar">
 		<form id="sd-member-filters" class="sd-filters-form">

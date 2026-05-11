@@ -887,6 +887,35 @@ class SD_Database {
 	}
 
 	// =====================================================================
+	// =====================================================================
+	// TABELLE EMAIL TEMPLATES
+	// =====================================================================
+
+	/**
+	 * Crea o aggiorna la tabella per i modelli email.
+	 * Idempotente: sicuro da chiamare più volte (usa dbDelta).
+	 */
+	public function create_email_template_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$table = $this->table( 'email_templates' );
+		$sql   = "CREATE TABLE {$table} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			name varchar(200) NOT NULL,
+			subject varchar(500) NOT NULL,
+			body longtext NOT NULL,
+			signature longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_name (name(100))
+		) {$charset_collate};";
+		dbDelta( $sql );
+	}
+
 	// TABELLE NIGHTSCOUT (aggiunto in v3.2.0)
 	// =====================================================================
 

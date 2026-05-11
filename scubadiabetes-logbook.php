@@ -82,6 +82,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-helper.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-membership-admin.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-email-templates.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-role-sync.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-import.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-nightscout.php';
@@ -143,6 +144,7 @@ final class SD_Logbook {
 		$db->create_tidepool_tables();
 		$db->create_libreview_tables();
 		$db->create_carelink_tables();
+		$db->create_email_template_tables();
 
 		// Crea ruoli utente personalizzati
 		$roles = new SD_Roles();
@@ -199,6 +201,7 @@ final class SD_Logbook {
 			$db->create_tidepool_tables();
 			$db->create_libreview_tables();
 			$db->create_carelink_tables();
+			$db->create_email_template_tables();
 
 			// v3.1.0: corregge valori non validi in member_type
 			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
@@ -245,6 +248,7 @@ final class SD_Logbook {
 		new SD_Dive_Edit();
 		new SD_Membership();
 		new SD_Membership_Admin();
+		new SD_Email_Templates();
 		new SD_Role_Sync();
 		new SD_Dive_Import();
 		new SD_Nightscout();
