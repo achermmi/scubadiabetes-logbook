@@ -36,10 +36,10 @@ class SD_Email_Templates {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 
 		// AJAX
-		add_action( 'wp_ajax_sd_email_tpl_list',   array( $this, 'ajax_list' ) );
-		add_action( 'wp_ajax_sd_email_tpl_save',   array( $this, 'ajax_save' ) );
+		add_action( 'wp_ajax_sd_email_tpl_list', array( $this, 'ajax_list' ) );
+		add_action( 'wp_ajax_sd_email_tpl_save', array( $this, 'ajax_save' ) );
 		add_action( 'wp_ajax_sd_email_tpl_delete', array( $this, 'ajax_delete' ) );
-		add_action( 'wp_ajax_sd_email_tpl_get',    array( $this, 'ajax_get' ) );
+		add_action( 'wp_ajax_sd_email_tpl_get', array( $this, 'ajax_get' ) );
 	}
 
 	// =========================================================================
