@@ -92,6 +92,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-libreview.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-carelink.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-cgm-dashboard.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-predive-check.php';
 	}
 
 	/**
@@ -254,6 +255,7 @@ final class SD_Logbook {
 		new SD_LibreView();
 		new SD_CareLink();
 		new SD_CGM_Dashboard();
+		new SD_Predive_Check();
 
 		// Cron rinnovi e sync Nightscout, Dexcom OAuth, Tidepool e LibreView (registra se non già programmato)
 		SD_Membership_Helper::schedule_cron();
