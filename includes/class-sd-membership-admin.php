@@ -427,7 +427,7 @@ class SD_Membership_Admin {
 		                     END AS has_paid_fee,
 			                     {$member_type_expr} AS member_type,
 		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
-		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
+		                     m.membership_expiry, m.sotto_tutela, m.guardian_email, m.registered_at,
 		                     m.wp_user_id, m.taglia_maglietta,
 		                     p.amount as paid_amount, p.payment_date, p.payment_method, p.status as payment_status
 		              FROM {$db->table('members')} m
@@ -1822,6 +1822,12 @@ class SD_Membership_Admin {
 			return false;
 		}
 
+		// Prepara header con CC al tutore se minorenne
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+		if ( ! empty( $member->sotto_tutela ) && $member->sotto_tutela == 1 && ! empty( $member->guardian_email ) && is_email( (string) $member->guardian_email ) ) {
+			$headers[] = 'Cc: ' . sanitize_email( (string) $member->guardian_email );
+		}
+
 		// Prova a usare un modello personalizzato.
 		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
 			$built = SD_Email_Templates::build( $template_id, $member );
@@ -1843,7 +1849,7 @@ class SD_Membership_Admin {
 					(string) $member->email,
 					$subject,
 					$html_body,
-					array( 'Content-Type: text/html; charset=UTF-8' )
+					$headers
 				);
 				remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 				remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
@@ -1903,7 +1909,7 @@ class SD_Membership_Admin {
 			(string) $member->email,
 			$subject,
 			$body,
-			array( 'Content-Type: text/html; charset=UTF-8' )
+			$headers
 		);
 		remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );

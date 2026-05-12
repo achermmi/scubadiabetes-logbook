@@ -463,7 +463,10 @@
 				return parts.length === 3 ? parts[2] + '.' + parts[1] + '.' + parts[0] : m.payment_date.substr(0, 10);
 			})();
 
-			html += '<tr data-member-id="' + escapeAttr(m.id) + '">' +
+			// Aggiungi classe per minorenni
+			var rowClass = m.sotto_tutela == 1 ? ' class="sd-minor-highlight"' : '';
+
+			html += '<tr data-member-id="' + escapeAttr(m.id) + '"' + rowClass + '>' +
 				'<td><input type="checkbox" class="sd-member-select" value="' + escapeAttr(m.id) + '" aria-label="Seleziona iscrizione"></td>' +
 				'<td><strong>' + escapeHtml(m.last_name) + '</strong>, ' + escapeHtml(m.first_name) + '</td>' +
 				'<td>' + escapeHtml(m.email) + '</td>' +

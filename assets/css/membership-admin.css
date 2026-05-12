@@ -244,6 +244,15 @@
 	border-bottom: none;
 }
 
+/* Evidenziazione minorenni (sotto tutela) */
+.sd-minor-highlight {
+	background-color: #ffffcc !important;
+}
+
+.sd-minor-highlight:hover {
+	background-color: #ffff99 !important;
+}
+
 .sd-table-empty {
 	text-align: center;
 	padding: 2rem;
