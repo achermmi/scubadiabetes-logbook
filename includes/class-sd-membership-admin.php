@@ -374,7 +374,7 @@ class SD_Membership_Admin {
 			} elseif ( 'attivo_capo_famiglia' === $member_type ) {
 				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table('members') . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
 			} else {
-				$where[]  = "IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type) = %s";
+				$where[]  = "IF ( m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type ) = %s";
 				$params[] = $member_type;
 			}
 		}
