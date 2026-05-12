@@ -374,7 +374,7 @@ class SD_Membership_Admin {
 			} elseif ( 'attivo_capo_famiglia' === $member_type ) {
 				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
 			} else {
-				$where[]  = "LOWER(TRIM(IF ( m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type ))) = %s";
+				$where[]  = "COALESCE(NULLIF(LOWER(TRIM(m.member_type)), ''), 'attivo') = %s";
 				$params[] = strtolower( $member_type );
 			}
 		}
@@ -407,7 +407,7 @@ class SD_Membership_Admin {
 		                     CASE
 		                         WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
 		                         WHEN fc.cnt > 0 THEN 'attivo_capo_famiglia'
-			                         ELSE LOWER(TRIM(IF ( m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type )))
+			                         ELSE COALESCE(NULLIF(LOWER(TRIM(m.member_type)), ''), 'attivo')
 		                     END AS member_type,
 		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
