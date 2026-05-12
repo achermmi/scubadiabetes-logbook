@@ -83,6 +83,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_renewals_dashboard', array( $this, 'get_renewals_dashboard' ) );
 		add_action( 'wp_ajax_sd_members_send_renewal_reminder', array( $this, 'send_renewal_reminder_single' ) );
 		add_action( 'wp_ajax_sd_members_send_renewal_reminders_bulk', array( $this, 'send_renewal_reminders_bulk' ) );
+		add_action( 'wp_ajax_sd_members_send_renewal_emails_all_active', array( $this, 'send_renewal_emails_all_active' ) );
 
 		// WP Cron per reminder rinnovo
 		add_action( 'sd_membership_renewal_check', array( $this, 'send_renewal_reminders' ) );
@@ -147,14 +148,17 @@ class SD_Membership_Admin {
 				'membNonce'  => wp_create_nonce( 'sd_membership_nonce' ),
 				'strings'    => array(
 					'renewalsLoadError' => __( 'Errore nel caricamento del cruscotto rinnovi.', 'sd-logbook' ),
-					'renewalReminderSent' => __( 'Reminder inviato con successo.', 'sd-logbook' ),
-					'renewalReminderError' => __( 'Invio reminder non riuscito.', 'sd-logbook' ),
-					'sendReminderLabel' => __( 'Invia reminder', 'sd-logbook' ),
+					'renewalReminderSent' => __( 'E-mail inviata con successo.', 'sd-logbook' ),
+					'renewalReminderError' => __( 'Invio e-mail non riuscito.', 'sd-logbook' ),
+					'sendReminderLabel' => __( 'Invia e-mail', 'sd-logbook' ),
 					'sendingLabel' => __( 'Invio...', 'sd-logbook' ),
-					'bulkReminderLabel' => __( 'Invia reminder massivo (in scadenza)', 'sd-logbook' ),
+					'bulkReminderLabel' => __( 'Invia e-mail massivo', 'sd-logbook' ),
 					'bulkSendingLabel' => __( 'Invio massivo...', 'sd-logbook' ),
-					'bulkReminderConfirm' => __( 'Inviare il reminder a tutti i soci in scadenza con quota dovuta?', 'sd-logbook' ),
+					'bulkReminderConfirm' => __( 'Inviare l\'e-mail a tutti i soci del filtro selezionato?', 'sd-logbook' ),
 					'bulkReminderDone' => __( 'Invio massivo completato.', 'sd-logbook' ),
+					'allActiveEmailLabel' => __( 'Invia e-mail a tutti i soci attivi', 'sd-logbook' ),
+					'allActiveSendingLabel' => __( 'Invio a tutti...', 'sd-logbook' ),
+					'allActiveEmailConfirm' => __( 'Inviare l\'e-mail a tutti i soci attivi con indirizzo email valido?', 'sd-logbook' ),
 					'quickFilterAll' => __( 'Tutti', 'sd-logbook' ),
 					'quickFilterExpired' => __( 'Solo scaduti', 'sd-logbook' ),
 					'quickFilterSoon' => __( 'Solo in scadenza', 'sd-logbook' ),
@@ -1523,7 +1527,7 @@ class SD_Membership_Admin {
 				'status'         => $status,
 				'has_paid'       => $paid_effective,
 				'amount_due'     => $amount_due,
-				'can_remind'     => ( ! empty( $row->email ) && is_email( $row->email ) && $amount_due > 0 ),
+				'can_remind'     => ( ! empty( $row->email ) && is_email( $row->email ) ),
 				'last_reminder_at' => $row->last_reminder_at ? (string) $row->last_reminder_at : '',
 			);
 		}
@@ -1572,9 +1576,6 @@ class SD_Membership_Admin {
 		if ( 1 !== (int) $member->is_active ) {
 			wp_send_json_error( array( 'message' => __( 'Il socio non è attivo.', 'sd-logbook' ) ) );
 		}
-		if ( 1 === (int) $member->has_paid_fee ) {
-			wp_send_json_error( array( 'message' => __( 'Quota già pagata: reminder non necessario.', 'sd-logbook' ) ) );
-		}
 		if ( empty( $member->email ) || ! is_email( $member->email ) ) {
 			wp_send_json_error( array( 'message' => __( 'Email socio non valida.', 'sd-logbook' ) ) );
 		}
@@ -1584,7 +1585,7 @@ class SD_Membership_Admin {
 			wp_send_json_error( array( 'message' => $this->build_reminder_mail_error_message() ) );
 		}
 
-		wp_send_json_success( array( 'message' => __( 'Reminder inviato con successo.', 'sd-logbook' ) ) );
+		wp_send_json_success( array( 'message' => __( 'E-mail inviata con successo.', 'sd-logbook' ) ) );
 	}
 
 	/**
@@ -1647,8 +1648,7 @@ class SD_Membership_Admin {
 		$skipped_count = 0;
 
 		foreach ( (array) $members as $member ) {
-			$has_paid = (int) $member->has_paid_effective;
-			if ( $has_paid || empty( $member->email ) || ! is_email( $member->email ) ) {
+			if ( empty( $member->email ) || ! is_email( $member->email ) ) {
 				$skipped_count++;
 				continue;
 			}
@@ -1672,6 +1672,82 @@ class SD_Membership_Admin {
 		$message = sprintf(
 			/* translators: 1: sent reminders, 2: failed reminders, 3: skipped members */
 			__( 'Invio massivo completato. Inviati: %1$d, falliti: %2$d, saltati: %3$d.', 'sd-logbook' ),
+			$sent_count,
+			$failed_count,
+			$skipped_count
+		);
+
+		if ( $failed_count > 0 && ! empty( $this->last_mail_error ) ) {
+			$message .= ' ' . $this->build_reminder_mail_error_message();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'sent'    => $sent_count,
+				'failed'  => $failed_count,
+				'skipped' => $skipped_count,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: invio massivo email a tutti i soci attivi (indipendente dal pagamento).
+	 */
+	public function send_renewal_emails_all_active() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$db          = new SD_Database();
+		$template_id = absint( $_POST['template_id'] ?? 0 );
+
+		$members = $wpdb->get_results(
+			"SELECT m.id, m.member_number, m.first_name, m.last_name, m.email, m.membership_expiry, m.fee_amount,
+			        m.member_type, m.membership_type,
+			        CASE
+			            WHEN m.parent_member_id IS NOT NULL
+			            THEN COALESCE(pm.has_paid_fee, 0)
+			            ELSE m.has_paid_fee
+			        END AS has_paid_effective
+			 FROM {$db->table('members')} m
+			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
+			 WHERE COALESCE(m.is_active,1) = 1
+			 ORDER BY m.last_name ASC, m.first_name ASC"
+		);
+
+		$sent_count    = 0;
+		$failed_count  = 0;
+		$skipped_count = 0;
+
+		foreach ( (array) $members as $member ) {
+			if ( empty( $member->email ) || ! is_email( $member->email ) ) {
+				$skipped_count++;
+				continue;
+			}
+
+			$sent = $this->send_renewal_email_for_member( $member, $template_id );
+			if ( $sent ) {
+				$sent_count++;
+			} else {
+				$failed_count++;
+			}
+		}
+
+		if ( 0 === $sent_count && 0 === $failed_count ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Nessun socio attivo con email valida trovato.', 'sd-logbook' ),
+				)
+			);
+		}
+
+		$message = sprintf(
+			/* translators: 1: sent emails, 2: failed emails, 3: skipped members */
+			__( 'Invio e-mail completato. Inviate: %1$d, fallite: %2$d, saltate: %3$d.', 'sd-logbook' ),
 			$sent_count,
 			$failed_count,
 			$skipped_count
@@ -1788,9 +1864,20 @@ class SD_Membership_Admin {
 		$body .= '<p>' . sprintf( __( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ), esc_html( (string) $member->first_name . ' ' . (string) $member->last_name ) ) . '</p>';
 		/* translators: membership expiry date */
 		$body .= '<p>' . sprintf( __( 'La tua iscrizione all\'Associazione ScubaDiabetes scade il <strong>%s</strong>.', 'sd-logbook' ), esc_html( ! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '—' ) ) . '</p>';
-		$body .= '<p>' . __( 'Per rinnovare l\'iscrizione, effettua il pagamento della tassa annuale:', 'sd-logbook' ) . '</p>';
-		/* translators: fee amount in CHF */
-		$body .= '<ul><li>' . sprintf( __( 'Importo: <strong>CHF %s</strong>', 'sd-logbook' ), number_format( (float) $member->fee_amount, 2 ) ) . '</li></ul>';
+		$has_paid = 0;
+		if ( isset( $member->has_paid_fee ) ) {
+			$has_paid = (int) $member->has_paid_fee;
+		} elseif ( isset( $member->has_paid_effective ) ) {
+			$has_paid = (int) $member->has_paid_effective;
+		}
+
+		if ( 1 === $has_paid ) {
+			$body .= '<p>' . __( 'La tua iscrizione risulta attiva. Conserva questa e-mail come promemoria amministrativo.', 'sd-logbook' ) . '</p>';
+		} else {
+			$body .= '<p>' . __( 'Per completare il rinnovo, effettua il pagamento della tassa annuale:', 'sd-logbook' ) . '</p>';
+			/* translators: fee amount in CHF */
+			$body .= '<ul><li>' . sprintf( __( 'Importo: <strong>CHF %s</strong>', 'sd-logbook' ), number_format( (float) $member->fee_amount, 2 ) ) . '</li></ul>';
+		}
 		/* translators: admin email address */
 		$body .= '<p>' . sprintf( __( 'Per informazioni contatta il segretariato: <a href="mailto:%1$s">%2$s</a>', 'sd-logbook' ), esc_attr( get_option( 'admin_email' ) ), esc_html( get_option( 'admin_email' ) ) ) . '</p>';
 		$body .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br>ScubaDiabetes</p>';

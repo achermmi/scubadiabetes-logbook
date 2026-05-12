@@ -30,6 +30,7 @@
 			bindRenewalsActions();
 			bindRenewalsQuickFilters();
 			bindRenewalsBulkReminder();
+			bindRenewalsAllActiveEmail();
 		}
 
 		// Pagina modifica socio
@@ -178,9 +179,9 @@
 			var dueClass = due > 0 ? 'sd-renewal-due-open' : 'sd-renewal-due-clear';
 
 			var actionHtml = '<span class="sd-renewal-disabled">—</span>';
-			if (r.can_remind && due > 0) {
+			if (r.can_remind) {
 				actionHtml = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '">' +
-					((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder') +
+					((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') +
 				'</button>';
 			}
 
@@ -220,16 +221,16 @@
 				},
 				success: function(resp) {
 					if (!resp.success) {
-						$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder');
-						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.'));
+						$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail');
+						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.'));
 						return;
 					}
-					showRenewalsMessage('success', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderSent) || 'Reminder inviato con successo.'));
+					showRenewalsMessage('success', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderSent) || 'E-mail inviata con successo.'));
 					loadRenewalsDashboard();
 				},
 				error: function() {
-					$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia reminder');
-					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.');
+					$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail');
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.');
 				}
 			});
 		});
@@ -278,7 +279,7 @@
 				},
 				success: function(resp) {
 					if (!resp.success) {
-						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.'));
+						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.'));
 						updateBulkReminderButton();
 						return;
 					}
@@ -286,8 +287,49 @@
 					loadRenewalsDashboard();
 				},
 				error: function() {
-					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio reminder non riuscito.');
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.');
 					updateBulkReminderButton();
+				}
+			});
+		});
+	}
+
+	function bindRenewalsAllActiveEmail() {
+		$('#sd-renewals-email-all-active').on('click', function() {
+			var $btn = $(this);
+			if ($btn.prop('disabled')) {
+				return;
+			}
+
+			var confirmText = (sdMembAdmin.strings && sdMembAdmin.strings.allActiveEmailConfirm) || 'Inviare l\'e-mail a tutti i soci attivi con email valida?';
+			if (!window.confirm(confirmText)) {
+				return;
+			}
+
+			$btn.prop('disabled', true).text((sdMembAdmin.strings && sdMembAdmin.strings.allActiveSendingLabel) || 'Invio a tutti...');
+
+			$.ajax({
+				url: sdMembAdmin.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'sd_members_send_renewal_emails_all_active',
+					nonce: sdMembAdmin.nonce,
+					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				},
+				success: function(resp) {
+					if (!resp.success) {
+						showRenewalsMessage('error', (resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.'));
+						$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.allActiveEmailLabel) || 'Invia e-mail a tutti i soci attivi');
+						return;
+					}
+					showRenewalsMessage('success', (resp.data && resp.data.message) || 'Invio e-mail completato.');
+					$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.allActiveEmailLabel) || 'Invia e-mail a tutti i soci attivi');
+					loadRenewalsDashboard();
+				},
+				error: function() {
+					showRenewalsMessage('error', (sdMembAdmin.strings && sdMembAdmin.strings.renewalReminderError) || 'Invio e-mail non riuscito.');
+					$btn.prop('disabled', false).text((sdMembAdmin.strings && sdMembAdmin.strings.allActiveEmailLabel) || 'Invia e-mail a tutti i soci attivi');
 				}
 			});
 		});
@@ -305,6 +347,9 @@
 		}
 		if (mode === 'non_pagati') {
 			return rows.filter(function(r) { return parseFloat(r.amount_due || 0) > 0; });
+		}
+		if (mode === 'valid_email') {
+			return rows.filter(function(r) { return r.can_remind; });
 		}
 
 		return rows;
@@ -325,31 +370,33 @@
 	function getBulkEligibleCount() {
 		var filtered = getFilteredRenewalsRows();
 		return filtered.filter(function(r) {
-			return parseFloat(r.amount_due || 0) > 0 && !!r.can_remind;
+			return !!r.can_remind;
 		}).length;
 	}
 
 	function buildBulkButtonLabel(count) {
 		var mode = renewalsState.quickFilter || 'all';
 		var labelMap = {
-			'all':        'Invia reminder massivo a tutti',
-			'scaduti':    'Invia reminder massivo (scaduti)',
-			'in_scadenza':'Invia reminder massivo (in scadenza)',
-			'non_pagati': 'Invia reminder massivo (non pagati)'
+			'all':        'Invia e-mail massivo a tutti',
+			'scaduti':    'Invia e-mail massivo (scaduti)',
+			'in_scadenza':'Invia e-mail massivo (in scadenza)',
+			'non_pagati': 'Invia e-mail massivo (non pagati)',
+			'valid_email':'Invia e-mail massivo (con e-mail valida)'
 		};
-		var label = labelMap[mode] || 'Invia reminder massivo';
+		var label = labelMap[mode] || 'Invia e-mail massivo';
 		return label + ' [' + (count || 0) + ']';
 	}
 
 	function buildBulkConfirmText() {
 		var mode = renewalsState.quickFilter || 'all';
 		var msgMap = {
-			'all':        'Inviare il reminder a tutti i soci con quota dovuta?',
-			'scaduti':    'Inviare il reminder a tutti i soci con iscrizione scaduta e quota dovuta?',
-			'in_scadenza':(sdMembAdmin.strings && sdMembAdmin.strings.bulkReminderConfirm) || 'Inviare il reminder a tutti i soci in scadenza con quota dovuta?',
-			'non_pagati': 'Inviare il reminder a tutti i soci non pagati?'
+			'all':        'Inviare l\'e-mail a tutti i soci del cruscotto?',
+			'scaduti':    'Inviare l\'e-mail a tutti i soci con iscrizione scaduta?',
+			'in_scadenza':(sdMembAdmin.strings && sdMembAdmin.strings.bulkReminderConfirm) || 'Inviare l\'e-mail a tutti i soci in scadenza?',
+			'non_pagati': 'Inviare l\'e-mail a tutti i soci non pagati?',
+			'valid_email': 'Inviare l\'e-mail a tutti i soci con e-mail valida?'
 		};
-		return msgMap[mode] || 'Inviare il reminder massivo?';
+		return msgMap[mode] || 'Inviare l\'e-mail massiva?';
 	}
 
 	function showRenewalsMessage(type, text) {
