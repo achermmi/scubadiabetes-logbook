@@ -372,7 +372,7 @@ class SD_Membership_Admin {
 			$where[]  = "(CASE
 			                 WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
 			                 WHEN (SELECT COUNT(*) FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id) > 0 THEN 'attivo_capo_famiglia'
-			                 ELSE COALESCE(m.member_type, 'attivo')
+			                 ELSE COALESCE(NULLIF(m.member_type, ''), 'attivo')
 			             END) = %s";
 			$params[] = $member_type;
 		}
@@ -405,7 +405,7 @@ class SD_Membership_Admin {
 		                     CASE
 		                         WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
 		                         WHEN fc.cnt > 0 THEN 'attivo_capo_famiglia'
-		                         ELSE COALESCE(m.member_type, 'attivo')
+		                         ELSE COALESCE(NULLIF(m.member_type, ''), 'attivo')
 		                     END AS member_type,
 		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
@@ -621,6 +621,9 @@ class SD_Membership_Admin {
 		} elseif ( ! empty( $old_data->parent_member_id ) ) {
 			// Questo socio è un famigliare → sempre attivo_famigliare
 			$update_data['member_type'] = 'attivo_famigliare';
+		} elseif ( empty( $update_data['member_type'] ) ) {
+			// Se il member_type è vuoto e non è un capo famiglia o famigliare, forzare a 'attivo'
+			$update_data['member_type'] = 'attivo';
 		}
 
 		// Aggiorna tabella members
