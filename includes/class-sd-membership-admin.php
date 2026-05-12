@@ -380,7 +380,7 @@ class SD_Membership_Admin {
 			$params[] = $diabetes;
 		}
 		if ( ! empty( $member_type ) ) {
-			$where[]  = $member_type_expr . ' = %s';
+			$where[]  = 'm.member_type = %s';
 			$params[] = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
 		}
 		if ( ! empty( $fee_filter ) ) {
