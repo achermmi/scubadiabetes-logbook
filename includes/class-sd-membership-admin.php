@@ -381,11 +381,22 @@ class SD_Membership_Admin {
 		}
 		if ( ! empty( $member_type ) ) {
 			$normalized_type = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
-			$where[]  = 'm.member_type = %s';
-			$params[] = $normalized_type;
-			// Se filtri per "attivo", escludi i capo famiglia (quelli con figli)
-			if ( 'attivo' === $normalized_type ) {
+			
+			if ( 'attivo_famigliare' === $normalized_type ) {
+				// Familiari: hanno parent_member_id
+				$where[] = 'm.parent_member_id IS NOT NULL';
+			} elseif ( 'attivo_capo_famiglia' === $normalized_type ) {
+				// Capo famiglia: hanno figli
+				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+			} elseif ( 'attivo' === $normalized_type ) {
+				// Attivo semplice: no figli, no parent
+				$where[]  = 'm.member_type = %s';
+				$params[] = $normalized_type;
 				$where[] = 'NOT EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+			} else {
+				// Tutti gli altri (passivo, accompagnatore, etc.): cercano nel DB
+				$where[]  = 'm.member_type = %s';
+				$params[] = $normalized_type;
 			}
 		}
 		if ( ! empty( $fee_filter ) ) {
