@@ -381,7 +381,7 @@ class SD_Membership_Admin {
 		}
 		if ( ! empty( $member_type ) ) {
 			$normalized_type = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
-			
+
 			if ( 'attivo_famigliare' === $normalized_type ) {
 				// Familiari: hanno parent_member_id
 				$where[] = 'm.parent_member_id IS NOT NULL';
