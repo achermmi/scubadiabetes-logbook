@@ -352,7 +352,10 @@ class SD_Membership_Admin {
 			WHEN EXISTS (
 				SELECT 1 FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id LIMIT 1
 			) THEN 'attivo_capo_famiglia'
-			ELSE COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo')
+			ELSE CASE
+				WHEN COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo') IN ('staff', 'medico') THEN 'attivo'
+				ELSE COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo')
+			END
 		END";
 
 		$where  = array();

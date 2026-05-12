@@ -382,14 +382,14 @@ class SD_Role_Sync {
 
 			case 'sd_staff':
 				return array(
-					'member_type'   => 'staff',
+					'member_type'   => 'attivo',
 					'is_scuba'      => 0,
 					'diabetes_type' => 'non_diabetico',
 				);
 
 			case 'sd_medical':
 				return array(
-					'member_type'   => 'medico',
+					'member_type'   => 'attivo',
 					'is_scuba'      => 0,
 					'diabetes_type' => 'non_diabetico',
 				);
