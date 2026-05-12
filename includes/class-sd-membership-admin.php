@@ -1824,7 +1824,7 @@ class SD_Membership_Admin {
 
 		// Prepara header con CC al tutore se minorenne
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		if ( ! empty( $member->sotto_tutela ) && $member->sotto_tutela == 1 && ! empty( $member->guardian_email ) && is_email( (string) $member->guardian_email ) ) {
+		if ( ! empty( $member->sotto_tutela ) && 1 === $member->sotto_tutela && ! empty( $member->guardian_email ) && is_email( (string) $member->guardian_email ) ) {
 			$headers[] = 'Cc: ' . sanitize_email( (string) $member->guardian_email );
 		}
 
