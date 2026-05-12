@@ -380,8 +380,13 @@ class SD_Membership_Admin {
 			$params[] = $diabetes;
 		}
 		if ( ! empty( $member_type ) ) {
+			$normalized_type = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
 			$where[]  = 'm.member_type = %s';
-			$params[] = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
+			$params[] = $normalized_type;
+			// Se filtri per "attivo", escludi i capo famiglia (quelli con figli)
+			if ( 'attivo' === $normalized_type ) {
+				$where[] = 'NOT EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+			}
 		}
 		if ( ! empty( $fee_filter ) ) {
 			$where[]  = 'm.fee_amount = %f';
