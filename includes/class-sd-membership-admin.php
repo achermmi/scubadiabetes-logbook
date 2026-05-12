@@ -369,12 +369,14 @@ class SD_Membership_Admin {
 			$params[] = $diabetes;
 		}
 		if ( ! empty( $member_type ) ) {
-			$where[]  = "(CASE
-			                 WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
-			                 WHEN (SELECT COUNT(*) FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id) > 0 THEN 'attivo_capo_famiglia'
-			                 ELSE IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type)
-			             END) = %s";
-			$params[] = $member_type;
+			if ( 'attivo_famigliare' === $member_type ) {
+				$where[] = 'm.parent_member_id IS NOT NULL';
+			} elseif ( 'attivo_capo_famiglia' === $member_type ) {
+				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table('members') . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+			} else {
+				$where[]  = "IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type) = %s";
+				$params[] = $member_type;
+			}
 		}
 		if ( ! empty( $fee_filter ) ) {
 			$where[]  = 'm.fee_amount = %f';
