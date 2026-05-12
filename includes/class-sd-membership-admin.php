@@ -386,16 +386,16 @@ class SD_Membership_Admin {
 				// Familiari: hanno parent_member_id
 				$where[] = 'm.parent_member_id IS NOT NULL';
 			} elseif ( 'attivo_capo_famiglia' === $normalized_type ) {
-				// Capo famiglia: hanno figli
-				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+				// Capo famiglia: usa la stessa logica del CASE nel SELECT
+				$where[] = $member_type_expr . ' = %s';
+				$params[] = 'attivo_capo_famiglia';
 			} elseif ( 'attivo' === $normalized_type ) {
-				// Attivo semplice: no figli, no parent
-				$where[]  = 'm.member_type = %s';
-				$params[] = $normalized_type;
-				$where[] = 'NOT EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
+				// Attivo semplice: usa la stessa logica del CASE nel SELECT
+				$where[]  = $member_type_expr . ' = %s';
+				$params[] = 'attivo';
 			} else {
-				// Tutti gli altri (passivo, accompagnatore, etc.): cercano nel DB
-				$where[]  = 'm.member_type = %s';
+				// Tutti gli altri (passivo, accompagnatore, etc.): usa la stessa logica del CASE
+				$where[]  = $member_type_expr . ' = %s';
 				$params[] = $normalized_type;
 			}
 		}
