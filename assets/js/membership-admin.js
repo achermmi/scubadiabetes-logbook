@@ -886,7 +886,11 @@
 			'onorario':             'Onorario',
 			'fondatore':            'Fondatore',
 		};
-		return escapeHtml(labels[type] || '—');
+		// Se il tipo è vuoto o non trovato, default a 'Attivo'
+		if (!type || type === '') {
+			return escapeHtml('Attivo');
+		}
+		return escapeHtml(labels[type] || 'Attivo');
 	}
 
 	function escapeHtml(str) {

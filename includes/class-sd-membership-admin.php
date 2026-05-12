@@ -280,7 +280,7 @@ class SD_Membership_Admin {
 			$wpdb->prepare(
 				"SELECT m.id, m.first_name, m.last_name, m.email, m.phone, m.date_of_birth,
 				        m.gender, m.is_scuba, m.diabetes_type, COALESCE(m.is_active, 1) AS is_active, m.fee_amount,
-				        COALESCE(m.member_type, 'attivo_famigliare') AS member_type, m.wp_user_id, m.member_since
+				        IF(m.member_type = '' OR m.member_type IS NULL, 'attivo_famigliare', m.member_type) AS member_type, m.wp_user_id, m.member_since
 				 FROM {$db->table('members')} m
 				 WHERE m.parent_member_id = %d
 				 ORDER BY m.last_name, m.first_name",
@@ -372,7 +372,7 @@ class SD_Membership_Admin {
 			$where[]  = "(CASE
 			                 WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
 			                 WHEN (SELECT COUNT(*) FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id) > 0 THEN 'attivo_capo_famiglia'
-			                 ELSE COALESCE(NULLIF(m.member_type, ''), 'attivo')
+			                 ELSE IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type)
 			             END) = %s";
 			$params[] = $member_type;
 		}
@@ -405,7 +405,7 @@ class SD_Membership_Admin {
 		                     CASE
 		                         WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
 		                         WHEN fc.cnt > 0 THEN 'attivo_capo_famiglia'
-		                         ELSE COALESCE(NULLIF(m.member_type, ''), 'attivo')
+		                         ELSE IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type)
 		                     END AS member_type,
 		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
@@ -1175,7 +1175,7 @@ class SD_Membership_Admin {
 				        m.gender, m.fiscal_code, m.sotto_tutela,
 				        m.address_street, m.address_postal, m.address_city,
 				        m.address_country, m.address_canton,
-				        m.member_type, m.membership_type,
+				        IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type) AS member_type, m.membership_type,
 				        m.taglia_maglietta,
 				        m.is_scuba, m.diabetes_type, m.diabetology_center,
 		        m.fee_amount,
@@ -1408,7 +1408,7 @@ class SD_Membership_Admin {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT m.first_name, m.last_name, m.email,
-				        m.date_of_birth, m.member_type, m.fee_amount,
+				        m.date_of_birth, IF(m.member_type = '' OR m.member_type IS NULL, 'attivo', m.member_type) AS member_type, m.fee_amount,
 				        m.membership_expiry,
 				        CASE WHEN m.member_type = 'attivo_famigliare' AND m.parent_member_id IS NOT NULL
 				             THEN COALESCE(pm_exp.has_paid_fee, 0)
