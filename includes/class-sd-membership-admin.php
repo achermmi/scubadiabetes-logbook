@@ -347,6 +347,14 @@ class SD_Membership_Admin {
 		$wp_role          = sanitize_text_field( wp_unslash( $_POST['wp_role'] ?? '' ) );
 		$fee_filter       = sanitize_text_field( wp_unslash( $_POST['fee_amount'] ?? '' ) );
 
+		$member_type_expr = "CASE
+			WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+			WHEN EXISTS (
+				SELECT 1 FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id LIMIT 1
+			) THEN 'attivo_capo_famiglia'
+			ELSE COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo')
+		END";
+
 		$where  = array();
 		$params = array();
 
@@ -369,14 +377,8 @@ class SD_Membership_Admin {
 			$params[] = $diabetes;
 		}
 		if ( ! empty( $member_type ) ) {
-			if ( 'attivo_famigliare' === $member_type ) {
-				$where[] = 'm.parent_member_id IS NOT NULL';
-			} elseif ( 'attivo_capo_famiglia' === $member_type ) {
-				$where[] = 'EXISTS (SELECT 1 FROM ' . $db->table( 'members' ) . ' fc2 WHERE fc2.parent_member_id = m.id LIMIT 1)';
-			} else {
-				$where[]  = "COALESCE(NULLIF(LOWER(TRIM(m.member_type)), ''), 'attivo') = %s";
-				$params[] = strtolower( $member_type );
-			}
+			$where[]  = $member_type_expr . ' = %s';
+			$params[] = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
 		}
 		if ( ! empty( $fee_filter ) ) {
 			$where[]  = 'm.fee_amount = %f';
@@ -404,11 +406,7 @@ class SD_Membership_Admin {
 		                         THEN COALESCE(pm.has_paid_fee, 0)
 		                         ELSE m.has_paid_fee
 		                     END AS has_paid_fee,
-		                     CASE
-		                         WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
-		                         WHEN fc.cnt > 0 THEN 'attivo_capo_famiglia'
-			                         ELSE COALESCE(NULLIF(LOWER(TRIM(m.member_type)), ''), 'attivo')
-		                     END AS member_type,
+			                     {$member_type_expr} AS member_type,
 		                     m.is_scuba, COALESCE(m.is_active, 1) AS is_active, m.diabetes_type, m.member_since,
 		                     m.membership_expiry, m.sotto_tutela, m.registered_at,
 		                     m.wp_user_id, m.taglia_maglietta,
@@ -417,12 +415,6 @@ class SD_Membership_Admin {
 		              LEFT JOIN {$db->table('payments')} p
 		                ON p.member_id = m.id AND p.payment_year = %d
 		              {$pm_join}
-		              LEFT JOIN (
-		                  SELECT parent_member_id, COUNT(*) AS cnt
-		                  FROM {$db->table('members')}
-		                  WHERE parent_member_id IS NOT NULL
-		                  GROUP BY parent_member_id
-		              ) fc ON fc.parent_member_id = m.id
 		              {$where_sql}
 		              ORDER BY m.last_name ASC, m.first_name ASC
 		              LIMIT %d OFFSET %d";
@@ -1503,7 +1495,6 @@ class SD_Membership_Admin {
 			     GROUP BY record_id
 			 ) al ON al.record_id = m.id
 			 WHERE COALESCE(m.is_active,1) = 1
-			   AND m.parent_member_id IS NULL
 			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC"
 		);
 
@@ -1640,7 +1631,6 @@ class SD_Membership_Admin {
 			 FROM {$db->table('members')} m
 			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
 			 WHERE COALESCE(m.is_active,1) = 1
-			   AND m.parent_member_id IS NULL
 			{$where_extra}
 			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC";
 
