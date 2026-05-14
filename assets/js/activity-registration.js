@@ -599,6 +599,7 @@
 		},
 
 		syncSectionOrder: function (sections) {
+			const self = this;
 			const hasPriceCards = Array.isArray(this.prices) && this.prices.length > 0;
 			const fixedOrders = {
 				personal: this.getConfiguredSectionOrder('personal', sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal')),
