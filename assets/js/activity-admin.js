@@ -2202,7 +2202,7 @@
 		var html = '<label class="sd-label">Ordine blocchi Dati Attivita</label><ul class="sd-mini-list">';
 		var activityDataFields = (state.currentFields || []).filter(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
-			return sectionKey !== 'personal' && sectionKey !== 'pricing' && sectionKey !== 'consents';
+			return sectionKey !== 'personal';
 		}).sort(function (a, b) {
 			var sectionOrderA = parseInt(a.section_order || 20, 10);
 			var sectionOrderB = parseInt(b.section_order || 20, 10);
@@ -2227,10 +2227,28 @@
 					label: sectionLabel,
 					order: sectionOrder,
 					count: 0,
+					metric: 'campi',
 				};
 			}
 			sectionMap[mapKey].count += 1;
 		});
+
+		var prices = (state.currentActivity && Array.isArray(state.currentActivity.prices)) ? state.currentActivity.prices : [];
+		if (prices.length) {
+			var sectionMeta = getSectionMeta();
+			var pricingLabel = String((sectionMeta.tariffe && sectionMeta.tariffe.label) || getDefaultSectionLabelByKey('pricing'));
+			var pricingOrder = parseInt((sectionMeta.tariffe && sectionMeta.tariffe.order) || inferSectionOrder('pricing'), 10);
+			var pricingKey = String(pricingLabel).toLowerCase().trim() + '|' + String(pricingOrder);
+			if (!sectionMap[pricingKey]) {
+				sectionMap[pricingKey] = {
+					label: pricingLabel,
+					order: pricingOrder,
+					count: prices.length,
+					metric: 'tariffe',
+				};
+			}
+		}
+
 		var activityDataSections = Object.keys(sectionMap).map(function (key) {
 			return sectionMap[key];
 		}).sort(function (a, b) {
@@ -2247,7 +2265,8 @@
 				}
 
 				activityDataSections.forEach(function (section) {
-					var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' campi</small>';
+					var metric = String(section.metric || 'campi');
+					var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' ' + esc(metric) + '</small>';
 					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
 					html += '<div><strong>' + esc(section.label || 'Sezione') + '</strong><br>' + sectionMeta + '</div>';
 					html += '<div class="sd-field-list-actions">';
