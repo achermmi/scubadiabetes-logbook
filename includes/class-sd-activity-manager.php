@@ -62,6 +62,8 @@ class SD_Activity_Manager {
 		add_action( 'wp_ajax_sd_activity_delete_form_field', array( $this, 'ajax_delete_form_field' ) );
 		add_action( 'wp_ajax_sd_activity_move_form_field', array( $this, 'ajax_move_form_field' ) );
 		add_action( 'wp_ajax_sd_activity_price_save', array( $this, 'ajax_save_activity_price' ) );
+		add_action( 'wp_ajax_sd_activity_price_delete', array( $this, 'ajax_delete_activity_price' ) );
+		add_action( 'wp_ajax_sd_activity_price_set_default', array( $this, 'ajax_set_default_activity_price' ) );
 		add_action( 'wp_ajax_sd_activity_delete_all_prices', array( $this, 'ajax_delete_all_prices' ) );
 		add_action( 'wp_ajax_sd_activity_registration_list', array( $this, 'ajax_get_registrations_list' ) );
 		add_action( 'wp_ajax_sd_activity_registration_update_status', array( $this, 'ajax_update_registration_status' ) );
@@ -257,7 +259,7 @@ class SD_Activity_Manager {
 
 		$prices = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM ' . $wpdb->prefix . 'sd_activity_prices WHERE activity_id = %d ORDER BY id ASC',
+				'SELECT * FROM ' . $wpdb->prefix . 'sd_activity_prices WHERE activity_id = %d ORDER BY is_default DESC, id ASC',
 				$activity_id
 			),
 			ARRAY_A
@@ -292,9 +294,14 @@ class SD_Activity_Manager {
 		);
 
 		$data = wp_parse_args( $data, $defaults );
+		$set_default = ! empty( $data['is_default'] );
 
 		if ( empty( $data['price_name'] ) || floatval( $data['price_chf'] ) <= 0 ) {
 			return false;
+		}
+
+		if ( $set_default ) {
+			$this->clear_default_prices( $activity_id );
 		}
 
 		return $wpdb->insert(
@@ -306,11 +313,147 @@ class SD_Activity_Manager {
 				'price_eur'          => floatval( $data['price_eur'] ) ?: null,
 				'currency_rate'      => floatval( $data['currency_rate'] ) ?: null,
 				'currency_rate_date' => sanitize_text_field( $data['currency_rate_date'] ) ?: null,
-				'is_default'         => intval( $data['is_default'] ),
+				'is_default'         => $set_default ? 1 : 0,
 				'created_at'         => current_time( 'mysql' ),
 			),
 			array( '%d', '%s', '%f', '%f', '%f', '%s', '%d', '%s' )
 		) ? $wpdb->insert_id : false;
+	}
+
+	/**
+	 * Aggiorna una tariffa esistente.
+	 *
+	 * @param int   $activity_id ID attività.
+	 * @param int   $price_id ID tariffa.
+	 * @param array $data Dati tariffa.
+	 * @return bool
+	 */
+	public function update_price( $activity_id, $price_id, $data = array() ) {
+		global $wpdb;
+
+		$defaults = array(
+			'price_name'         => '',
+			'price_chf'          => 0,
+			'price_eur'          => 0,
+			'currency_rate'      => null,
+			'currency_rate_date' => null,
+			'is_default'         => false,
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+		$set_default = ! empty( $data['is_default'] );
+
+		if ( intval( $price_id ) <= 0 || empty( $data['price_name'] ) || floatval( $data['price_chf'] ) <= 0 ) {
+			return false;
+		}
+
+		if ( $set_default ) {
+			$this->clear_default_prices( $activity_id, $price_id );
+		}
+
+		$result = $wpdb->update(
+			$wpdb->prefix . 'sd_activity_prices',
+			array(
+				'price_name'         => sanitize_text_field( $data['price_name'] ),
+				'price_chf'          => floatval( $data['price_chf'] ),
+				'price_eur'          => floatval( $data['price_eur'] ) ?: null,
+				'currency_rate'      => floatval( $data['currency_rate'] ) ?: null,
+				'currency_rate_date' => sanitize_text_field( $data['currency_rate_date'] ) ?: null,
+				'is_default'         => $set_default ? 1 : 0,
+			),
+			array(
+				'id'          => intval( $price_id ),
+				'activity_id' => intval( $activity_id ),
+			),
+			array( '%s', '%f', '%f', '%f', '%s', '%d' ),
+			array( '%d', '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Elimina una singola tariffa di un'attività.
+	 *
+	 * @param int $activity_id ID attività.
+	 * @param int $price_id ID tariffa.
+	 * @return bool
+	 */
+	public function delete_price( $activity_id, $price_id ) {
+		global $wpdb;
+
+		$result = $wpdb->delete(
+			$wpdb->prefix . 'sd_activity_prices',
+			array(
+				'id'          => intval( $price_id ),
+				'activity_id' => intval( $activity_id ),
+			),
+			array( '%d', '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Imposta una tariffa come predefinita.
+	 *
+	 * @param int $activity_id ID attività.
+	 * @param int $price_id ID tariffa.
+	 * @return bool
+	 */
+	public function set_default_price( $activity_id, $price_id ) {
+		global $wpdb;
+
+		$price = $this->get_price( $price_id );
+		if ( ! $price || intval( $price['activity_id'] ) !== intval( $activity_id ) ) {
+			return false;
+		}
+
+		$this->clear_default_prices( $activity_id, $price_id );
+
+		$result = $wpdb->update(
+			$wpdb->prefix . 'sd_activity_prices',
+			array( 'is_default' => 1 ),
+			array(
+				'id'          => intval( $price_id ),
+				'activity_id' => intval( $activity_id ),
+			),
+			array( '%d' ),
+			array( '%d', '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Azzera il flag predefinita su tutte le tariffe dell'attività.
+	 *
+	 * @param int $activity_id ID attività.
+	 * @param int $exclude_price_id ID tariffa da escludere.
+	 * @return bool
+	 */
+	private function clear_default_prices( $activity_id, $exclude_price_id = 0 ) {
+		global $wpdb;
+
+		$activity_id = intval( $activity_id );
+		$exclude_price_id = intval( $exclude_price_id );
+
+		if ( $exclude_price_id > 0 ) {
+			$query = $wpdb->prepare(
+				'UPDATE ' . $wpdb->prefix . 'sd_activity_prices SET is_default = 0 WHERE activity_id = %d AND id != %d',
+				$activity_id,
+				$exclude_price_id
+			);
+		} else {
+			$query = $wpdb->prepare(
+				'UPDATE ' . $wpdb->prefix . 'sd_activity_prices SET is_default = 0 WHERE activity_id = %d',
+				$activity_id
+			);
+		}
+
+		$result = $wpdb->query( $query ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
+		return false !== $result;
 	}
 
 	/**
@@ -1385,6 +1528,7 @@ class SD_Activity_Manager {
 
 		$activity_id = intval( $_POST['activity_id'] ?? 0 );
 		$price_data  = isset( $_POST['price'] ) ? (array) $_POST['price'] : array();
+		$price_id    = intval( $price_data['id'] ?? 0 );
 
 		if ( ! $activity_id || empty( $price_data ) ) {
 			wp_send_json_error( array( 'message' => __( 'Dati tariffa non validi', 'sd-logbook' ) ) );
@@ -1399,18 +1543,103 @@ class SD_Activity_Manager {
 			'is_default'         => ! empty( $price_data['is_default'] ) ? 1 : 0,
 		);
 
-		$price_id = $this->create_price( $activity_id, $price_payload );
+		if ( $price_payload['price_chf'] > 0 && class_exists( 'SD_Currency_Converter' ) ) {
+			if ( empty( $price_payload['currency_rate_date'] ) ) {
+				$price_payload['currency_rate_date'] = wp_date( 'Y-m-d' );
+			}
 
-		if ( ! $price_id ) {
+			$converter = SD_Currency_Converter::get_instance();
+
+			if ( $price_payload['currency_rate'] <= 0 ) {
+				$rate = $converter->get_rate( $price_payload['currency_rate_date'] );
+				if ( $rate ) {
+					$price_payload['currency_rate'] = floatval( $rate );
+				}
+			}
+
+			if ( $price_payload['price_eur'] <= 0 ) {
+				$converted = $converter->convert_chf_to_eur( $price_payload['price_chf'], $price_payload['currency_rate_date'] );
+				if ( false !== $converted ) {
+					$price_payload['price_eur'] = floatval( $converted );
+				}
+			}
+		}
+
+		if ( $price_id > 0 ) {
+			$updated = $this->update_price( $activity_id, $price_id, $price_payload );
+
+			if ( ! $updated ) {
+				wp_send_json_error( array( 'message' => __( 'Errore nell\'aggiornamento della tariffa', 'sd-logbook' ) ) );
+			}
+
+			wp_send_json_success(
+				array(
+					'price_id' => $price_id,
+					'message'  => __( 'Tariffa aggiornata con successo', 'sd-logbook' ),
+				)
+			);
+		}
+
+		$created_price_id = $this->create_price( $activity_id, $price_payload );
+
+		if ( ! $created_price_id ) {
 			wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio della tariffa', 'sd-logbook' ) ) );
 		}
 
 		wp_send_json_success(
 			array(
-				'price_id' => $price_id,
+				'price_id' => $created_price_id,
 				'message'  => __( 'Tariffa salvata con successo', 'sd-logbook' ),
 			)
 		);
+	}
+
+	/**
+	 * AJAX (Admin): Elimina una tariffa attività.
+	 */
+	public function ajax_delete_activity_price() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		$price_id    = intval( $_POST['price_id'] ?? 0 );
+
+		if ( ! $activity_id || ! $price_id ) {
+			wp_send_json_error( array( 'message' => __( 'Dati tariffa non validi', 'sd-logbook' ) ) );
+		}
+
+		if ( ! $this->delete_price( $activity_id, $price_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Impossibile eliminare la tariffa', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Tariffa eliminata', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX (Admin): Imposta una tariffa predefinita.
+	 */
+	public function ajax_set_default_activity_price() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		$price_id    = intval( $_POST['price_id'] ?? 0 );
+
+		if ( ! $activity_id || ! $price_id ) {
+			wp_send_json_error( array( 'message' => __( 'Dati tariffa non validi', 'sd-logbook' ) ) );
+		}
+
+		if ( ! $this->set_default_price( $activity_id, $price_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Impossibile impostare la tariffa predefinita', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Tariffa predefinita aggiornata', 'sd-logbook' ) ) );
 	}
 
 	/**

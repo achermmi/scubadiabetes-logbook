@@ -573,6 +573,7 @@
 		},
 
 		syncSectionOrder: function (sections) {
+			const hasPriceCards = Array.isArray(this.prices) && this.prices.length > 0;
 			const orderMap = {
 				personal: sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal'),
 				additional: sections.additional ? sections.additional.order : this.getDefaultSectionOrder('additional'),
@@ -583,7 +584,7 @@
 			// Show/hide sections based on whether they have fields
 			$('#sd-section-personal').attr('data-section-order', orderMap.personal).toggle(!!sections.personal);
 			$('#sd-dynamic-fields-section').attr('data-section-order', orderMap.additional).toggle(!!sections.additional);
-			$('#sd-pricing-section').attr('data-section-order', orderMap.pricing).toggle(!!sections.pricing);
+			$('#sd-pricing-section').attr('data-section-order', orderMap.pricing).toggle(!!sections.pricing || hasPriceCards);
 			$('#sd-consents-section').attr('data-section-order', orderMap.consents).toggle(!!sections.consents);
 
 			const sectionNodes = this.$form.children('.sd-form-section[data-section-key]:visible').get().concat(this.$customSections.children('.sd-form-section[data-section-key]').get());
@@ -803,9 +804,14 @@
 			const self = this;
 
 			if (this.prices.length === 0) {
-				$('#sd-pricing-section').hide();
+				$('#sd-pricing-section').show();
+				this.$feeCards.html('');
+				this.$priceError.text('Nessuna tariffa disponibile per questa attivita. Contatta l\'organizzatore.').show();
 				return;
 			}
+
+			this.$priceError.hide().text('');
+			$('#sd-pricing-section').show();
 
 			let html = '';
 
@@ -832,9 +838,11 @@
 
 			this.$feeCards.html(html);
 
-			// Select first price by default
+			// Keep configured default selection; fallback to first only if none is marked default.
 			if (this.prices.length > 0) {
-				$('input[name="price_id"]:first').prop('checked', true);
+				if (!$('input[name="price_id"]:checked').length) {
+					$('input[name="price_id"]:first').prop('checked', true);
+				}
 				this.updatePriceDisplay();
 			}
 		},

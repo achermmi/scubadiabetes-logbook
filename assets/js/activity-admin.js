@@ -16,6 +16,7 @@
 	};
 
 	var visualDescriptionEditorEnabled = true;
+	var priceRateNoteDefault = 'Salva prima l\'attivita per poter aggiungere tariffe.';
 
 	var defaultSections = [
 		{ key: 'personal', label: 'Dati Personali', order: 10 },
@@ -73,6 +74,8 @@
 		$('#sd-activity-form').on('submit', saveActivity);
 		$('#sd-activity-form-reset').on('click', resetActivityForm);
 		$('#sd-activity-price-form').on('submit', savePrice);
+		$('#sd-price-cancel-edit').on('click', resetPriceForm);
+		$('#sd-price-chf').on('input change', updatePriceEurPreview);
 		$('#sd-activity-field-form').on('submit', saveField);
 		$('#sd-field-type').on('change', toggleFieldOptions);
 		$('#sd-field-section').on('change', toggleFieldSectionInputs);
@@ -114,6 +117,18 @@
 
 		$(document).on('click', '.sd-field-delete', function () {
 			deleteField(parseInt($(this).data('id'), 10) || 0);
+		});
+
+		$(document).on('click', '.sd-price-edit', function () {
+			startPriceEdit(parseInt($(this).data('id'), 10) || 0);
+		});
+
+		$(document).on('click', '.sd-price-delete', function () {
+			deletePrice(parseInt($(this).data('id'), 10) || 0);
+		});
+
+		$(document).on('click', '.sd-price-set-default', function () {
+			setDefaultPrice(parseInt($(this).data('id'), 10) || 0);
 		});
 
 		$(document).on('click', '.sd-field-move', function () {
@@ -295,6 +310,7 @@
 			updateActivityShortcodeHint(state.selectedActivityId);
 
 			renderPricesList(a.prices || []);
+			resetPriceForm();
 			populateFieldSectionSelect(a.form_fields || []);
 			renderActivityDataExtraFields(a.form_fields || []);
 			renderActivityDataStaticOrderControls();
@@ -787,44 +803,173 @@
 		}
 
 		var priceName = $('#sd-price-name').val();
+		var priceId = parseInt($('#sd-price-id').val(), 10) || 0;
 		var priceChf = parseFloat($('#sd-price-chf').val() || 0);
+		var priceEur = parseFloat($('#sd-price-eur').val() || 0);
+		var isDefault = $('#sd-price-is-default').is(':checked') ? 1 : 0;
+		var currentRate = parseFloat((window.sdActivityAdmin && window.sdActivityAdmin.currentChfEurRate) || 0);
 		if (!priceName || priceChf <= 0) {
 			showMessage('error', 'Inserisci nome tariffa e importo CHF valido.');
 			return;
 		}
 
+		if (priceEur <= 0) {
+			priceEur = getPriceEurWithCurrentRate(priceChf, 0);
+		}
+
 		$.post(sdActivityAdmin.ajaxUrl, {
-			action: 'sd_get_eur_price',
+			action: 'sd_activity_price_save',
 			nonce: sdActivityAdmin.nonce,
-			price_chf: priceChf,
-		}, function (eurResp) {
-			var eur = (eurResp && eurResp.success && eurResp.data.price_eur) ? parseFloat(eurResp.data.price_eur) : 0;
-			var rate = (eurResp && eurResp.success && eurResp.data.rate) ? parseFloat(eurResp.data.rate) : 0;
+			activity_id: state.selectedActivityId,
+			price: {
+				id: priceId,
+				price_name: priceName,
+				price_chf: priceChf,
+				price_eur: priceEur,
+				currency_rate: currentRate,
+				currency_rate_date: todayYmd(),
+				is_default: isDefault,
+			},
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				return;
+			}
 
-			$.post(sdActivityAdmin.ajaxUrl, {
-				action: 'sd_activity_price_save',
-				nonce: sdActivityAdmin.nonce,
-				activity_id: state.selectedActivityId,
-				price: {
-					price_name: priceName,
-					price_chf: priceChf,
-					price_eur: eur,
-					currency_rate: rate,
-					currency_rate_date: todayYmd(),
-					is_default: 0,
-				},
-			}, function (resp) {
-				if (!resp || !resp.success) {
-					showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
-					return;
-				}
-
-				$('#sd-price-name').val('');
-				$('#sd-price-chf').val('');
-				showMessage('success', resp.data.message || 'Tariffa salvata.');
-				editActivity(state.selectedActivityId);
-			});
+			resetPriceForm();
+			showMessage('success', resp.data.message || 'Tariffa salvata.');
+			editActivity(state.selectedActivityId);
 		});
+	}
+
+	function formatRateNote(rate) {
+		var parsedRate = parseFloat(rate || 0);
+		if (parsedRate > 0) {
+			return 'Cambio del giorno: 1 CHF = EUR ' + num(parsedRate) + '.';
+		}
+
+		if (!state.selectedActivityId) {
+			return priceRateNoteDefault;
+		}
+
+		return 'Tasso CHF/EUR non disponibile ora. L\'EUR verra calcolato al salvataggio se il cambio del giorno e disponibile.';
+	}
+
+	function updatePriceRateNote(text) {
+		var $note = $('#sd-price-rate-note');
+		if ($note.length) {
+			$note.text(text || '');
+		}
+	}
+
+	function resetPriceForm() {
+		$('#sd-price-id').val('0');
+		$('#sd-price-name').val('');
+		$('#sd-price-chf').val('');
+		$('#sd-price-eur').val('');
+		$('#sd-price-is-default').prop('checked', false);
+		$('#sd-price-submit-btn').text('Aggiungi Tariffa');
+		$('#sd-price-cancel-edit').hide();
+		updatePriceRateNote(formatRateNote((window.sdActivityAdmin && window.sdActivityAdmin.currentChfEurRate) || 0));
+	}
+
+	function startPriceEdit(priceId) {
+		if (!priceId) {
+			return;
+		}
+
+		var prices = (state.currentActivity && Array.isArray(state.currentActivity.prices)) ? state.currentActivity.prices : [];
+		var price = prices.find(function (row) {
+			return parseInt(row.id, 10) === parseInt(priceId, 10);
+		});
+
+		if (!price) {
+			showMessage('error', 'Tariffa non trovata.');
+			return;
+		}
+
+		$('#sd-price-id').val(String(parseInt(price.id, 10)));
+		$('#sd-price-name').val(price.price_name || '');
+		$('#sd-price-chf').val((parseFloat(price.price_chf || 0)).toFixed(2));
+		$('#sd-price-eur').val((parseFloat(price.price_eur || 0)).toFixed(2));
+		$('#sd-price-is-default').prop('checked', !!price.is_default);
+		$('#sd-price-submit-btn').text('Aggiorna Tariffa');
+		$('#sd-price-cancel-edit').show();
+		updatePriceEurPreview();
+	}
+
+	function deletePrice(priceId) {
+		if (!priceId || !state.selectedActivityId) {
+			return;
+		}
+
+		if (!window.confirm('Eliminare questa tariffa?')) {
+			return;
+		}
+
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_activity_price_delete',
+			nonce: sdActivityAdmin.nonce,
+			activity_id: state.selectedActivityId,
+			price_id: priceId,
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				return;
+			}
+
+			resetPriceForm();
+			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Tariffa eliminata.');
+			editActivity(state.selectedActivityId);
+		});
+	}
+
+	function setDefaultPrice(priceId) {
+		if (!priceId || !state.selectedActivityId) {
+			return;
+		}
+
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_activity_price_set_default',
+			nonce: sdActivityAdmin.nonce,
+			activity_id: state.selectedActivityId,
+			price_id: priceId,
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				return;
+			}
+
+			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Tariffa predefinita aggiornata.');
+			editActivity(state.selectedActivityId);
+		});
+	}
+
+	function updatePriceEurPreview() {
+		var rawValue = String($('#sd-price-chf').val() || '').trim();
+		var chf = parseFloat(rawValue);
+		var rate = parseFloat((window.sdActivityAdmin && window.sdActivityAdmin.currentChfEurRate) || 0);
+
+		if (!rawValue) {
+			$('#sd-price-eur').val('');
+			updatePriceRateNote(formatRateNote(rate));
+			return;
+		}
+
+		if (isNaN(chf) || chf <= 0) {
+			$('#sd-price-eur').val('');
+			updatePriceRateNote('Inserisci un importo CHF valido maggiore di zero.');
+			return;
+		}
+
+		if (rate > 0) {
+			$('#sd-price-eur').val((chf * rate).toFixed(2));
+			updatePriceRateNote(formatRateNote(rate));
+			return;
+		}
+
+		$('#sd-price-eur').val('');
+		updatePriceRateNote(formatRateNote(0));
 	}
 
 	var fieldOptions = [];
@@ -1660,7 +1805,22 @@
 			html = '<li class="sd-mini-list-empty">Nessuna tariffa configurata.</li>';
 		} else {
 			prices.forEach(function (price) {
-				html += '<li><strong>' + esc(price.price_name) + '</strong> - CHF ' + num(price.price_chf) + ' / EUR ' + num(price.price_eur) + '</li>';
+				var priceId = parseInt(price.id, 10) || 0;
+				var isDefault = !!price.is_default;
+				html += '<li class="sd-price-item' + (isDefault ? ' is-default' : '') + '">';
+				html += '<div class="sd-price-item-main">';
+				html += '<strong>' + esc(price.price_name) + '</strong>';
+				if (isDefault) {
+					html += ' <span class="sd-status-badge sd-status-published">Predefinita</span>';
+				}
+				html += '<div class="sd-field-list-meta"><span>CHF ' + num(price.price_chf) + ' / EUR ' + num(price.price_eur) + '</span></div>';
+				html += '</div>';
+				html += '<div class="sd-price-item-actions">';
+				html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-price-edit" data-id="' + priceId + '">Modifica</button>';
+				html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-price-set-default" data-id="' + priceId + '">Predefinita</button>';
+				html += '<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-price-delete" data-id="' + priceId + '">Elimina</button>';
+				html += '</div>';
+				html += '</li>';
 			});
 		}
 		$('#sd-prices-list').html(html);
@@ -2987,6 +3147,7 @@
 		updateActivityShortcodeHint(0);
 		$('#sd-activity-data-extra-fields').hide().empty();
 		$('#sd-activity-static-order-controls').hide().empty();
+		resetPriceForm();
 		$('#sd-prices-list').html('<li class="sd-mini-list-empty">Salva l\'attivita per aggiungere tariffe.</li>');
 		$('#sd-fields-list').html('<div class="sd-mini-list-empty">Salva l\'attivita per aggiungere campi.</div>');
 		populateFieldSectionSelect([]);

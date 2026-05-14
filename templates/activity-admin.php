@@ -164,6 +164,45 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</form>
 
 		<div class="sd-admin-grid-2" id="sd-sections-secondary-stack">
+			<div class="sd-form-section" id="sd-section-tariffe" data-layout-key="tariffe">
+				<h3 class="sd-section-title"><?php esc_html_e( 'Tariffe', 'sd-logbook' ); ?></h3>
+				<p class="sd-field-note"><?php esc_html_e( 'Definisci le diverse tariffe dell\'attivita. Il valore EUR viene proposto automaticamente dal cambio CHF/EUR del giorno.', 'sd-logbook' ); ?></p>
+				<form id="sd-activity-price-form">
+					<input type="hidden" id="sd-price-id" value="0">
+					<div class="sd-price-form-grid">
+						<div class="sd-field-group">
+							<label for="sd-price-name" class="sd-label sd-label-required"><?php esc_html_e( 'Nome tariffa', 'sd-logbook' ); ?></label>
+							<input type="text" id="sd-price-name" class="sd-input" placeholder="<?php esc_attr_e( 'Es. Soci, Non soci, Early bird', 'sd-logbook' ); ?>" required>
+						</div>
+						<div class="sd-field-group">
+							<label for="sd-price-chf" class="sd-label sd-label-required"><?php esc_html_e( 'Importo CHF', 'sd-logbook' ); ?></label>
+							<input type="number" id="sd-price-chf" class="sd-input" min="0" step="0.01" inputmode="decimal" placeholder="520.00" required>
+						</div>
+						<div class="sd-field-group">
+							<label for="sd-price-eur" class="sd-label"><?php esc_html_e( 'Importo EUR', 'sd-logbook' ); ?></label>
+							<input type="number" id="sd-price-eur" class="sd-input" min="0" step="0.01" inputmode="decimal" placeholder="0.00" readonly>
+						</div>
+						<div class="sd-field-group sd-price-submit-wrap">
+							<label class="sd-label sd-label-ghost">&nbsp;</label>
+							<button type="submit" id="sd-price-submit-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Aggiungi Tariffa', 'sd-logbook' ); ?></button>
+						</div>
+					</div>
+					<div class="sd-price-form-actions">
+						<label class="sd-admin-inline-check">
+							<input type="checkbox" id="sd-price-is-default" value="1">
+							<span><?php esc_html_e( 'Tariffa predefinita', 'sd-logbook' ); ?></span>
+						</label>
+						<button type="button" id="sd-price-cancel-edit" class="sd-btn sd-btn-secondary sd-btn-sm" style="display:none;"><?php esc_html_e( 'Annulla modifica', 'sd-logbook' ); ?></button>
+					</div>
+					<p id="sd-price-rate-note" class="sd-field-note sd-price-rate-note">
+						<?php esc_html_e( 'Salva prima l\'attivita per poter aggiungere tariffe.', 'sd-logbook' ); ?>
+					</p>
+				</form>
+				<ul id="sd-prices-list" class="sd-mini-list">
+					<li class="sd-mini-list-empty"><?php esc_html_e( 'Salva l\'attivita per aggiungere tariffe.', 'sd-logbook' ); ?></li>
+				</ul>
+			</div>
+
 			<div class="sd-form-section" id="sd-section-campi-modulo" data-layout-key="campi_modulo">
 				<h3 class="sd-section-title"><?php esc_html_e( 'Campi Modulo', 'sd-logbook' ); ?></h3>
 				<form id="sd-activity-field-form">
