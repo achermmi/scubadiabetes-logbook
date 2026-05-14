@@ -275,6 +275,15 @@
 	margin-bottom: 0;
 }
 
+.sd-activity-status-wrap {
+	display: grid;
+	grid-template-columns: minmax(0, 320px);
+	gap: 1rem;
+	margin-bottom: 1.15rem;
+	position: relative;
+	z-index: 1;
+}
+
 #sd-personal-fields {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));

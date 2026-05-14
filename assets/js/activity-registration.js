@@ -310,6 +310,7 @@
 				$('#sd-activity-end-date').text(endDate + ' ore ' + endTime);
 			}
 			$('#sd-activity-location').text(activity.location || '-');
+			$('#sd-activity-status-value').text(this.getEventStatusLabel(activity.event_status || 'draft'));
 
 			const imageUrl = String(activity.thumbnail_url || '').trim();
 			if (imageUrl) {
@@ -332,8 +333,10 @@
 
 			if (activity.description) {
 				$('#sd-activity-description').html(this.sanitizeHtml(activity.description));
+				$('#sd-activity-description').show();
 			} else {
 				$('#sd-activity-description').empty();
+				$('#sd-activity-description').hide();
 			}
 
 			const extraContentHtml = (this.fields || [])
@@ -348,6 +351,14 @@
 			} else {
 				$('#sd-activity-extra-content').empty().hide();
 			}
+
+			if (String(activity.event_status || '').trim()) {
+				$('#sd-activity-status-wrap').show();
+			} else {
+				$('#sd-activity-status-wrap').hide();
+			}
+
+			this.syncActivityInfoBlockOrder();
 		},
 
 		// Render dynamic form fields
@@ -372,10 +383,11 @@
 					return;
 				}
 				if (!sections[sectionKey]) {
+					const fallbackOrder = parseInt(field.section_order || self.getDefaultSectionOrder(sectionKey), 10);
 					sections[sectionKey] = {
 						key: sectionKey,
 						label: field.section_label || self.getDefaultSectionLabel(sectionKey),
-						order: parseInt(field.section_order || self.getDefaultSectionOrder(sectionKey), 10),
+						order: self.getConfiguredSectionOrder(sectionKey, fallbackOrder),
 						fields: [],
 					};
 				}
@@ -603,10 +615,88 @@
 				$(this).find('.sd-section-index').first().text(index + '.');
 				index += 1;
 			});
-			this.$customSections.children('.sd-form-section[data-section-key]').each(function () {
-				$(this).find('.sd-section-index').first().text(index + '.');
-				index += 1;
+		},
+
+		getActivityDataLayoutOrder: function () {
+			const defaults = ['core', 'thumbnail', 'description', 'status', 'extra_fields'];
+			const formConfig = this.activity && this.activity.form_configuration ? this.activity.form_configuration : {};
+			const configured = Array.isArray(formConfig.activity_data_layout_order) ? formConfig.activity_data_layout_order : [];
+			const merged = [];
+
+			configured.forEach(function (key) {
+				if (defaults.indexOf(key) !== -1 && merged.indexOf(key) === -1) {
+					merged.push(key);
+				}
 			});
+
+			defaults.forEach(function (key) {
+				if (merged.indexOf(key) === -1) {
+					merged.push(key);
+				}
+			});
+
+			return merged;
+		},
+
+		ensureActivityInfoBlocks: function () {
+			const $info = this.$container.find('.sd-activity-info').first();
+			const $image = $('#sd-activity-image-wrap').attr('data-activity-block', 'thumbnail');
+			const $details = $info.find('.sd-activity-details').first().attr('data-activity-block', 'core');
+			const $description = $('#sd-activity-description').attr('data-activity-block', 'description');
+			const $extra = $('#sd-activity-extra-content').attr('data-activity-block', 'extra_fields');
+			let $status = $('#sd-activity-status-wrap');
+
+			if (!$status.length) {
+				$status = $(
+					'<div id="sd-activity-status-wrap" class="sd-activity-status-wrap" data-activity-block="status" style="display:none;">' +
+						'<div class="sd-detail-item">' +
+							'<span class="sd-detail-label">Stato</span>' +
+							'<span class="sd-detail-value" id="sd-activity-status-value"></span>' +
+						'</div>' +
+					'</div>'
+				);
+				$description.after($status);
+			}
+
+			return {
+				info: $info,
+				core: $details,
+				thumbnail: $image,
+				description: $description,
+				status: $status,
+				extra_fields: $extra,
+			};
+		},
+
+		syncActivityInfoBlockOrder: function () {
+			const blocks = this.ensureActivityInfoBlocks();
+			const orderedNodes = [];
+			const seen = {};
+
+			this.getActivityDataLayoutOrder().forEach(function (key) {
+				if (blocks[key] && blocks[key].length) {
+					orderedNodes.push(blocks[key][0]);
+					seen[key] = true;
+				}
+			});
+
+			['core', 'thumbnail', 'description', 'status', 'extra_fields'].forEach(function (key) {
+				if (!seen[key] && blocks[key] && blocks[key].length) {
+					orderedNodes.push(blocks[key][0]);
+				}
+			});
+
+			blocks.info.append($(orderedNodes));
+		},
+
+		getEventStatusLabel: function (status) {
+			switch (String(status || 'draft')) {
+				case 'published': return 'Pubblicata';
+				case 'closed': return 'Conclusa';
+				case 'archived': return 'Archiviata';
+				case 'draft':
+				default: return 'Bozza';
+			}
 		},
 
 		getDefaultSectionLabel: function (sectionKey) {
