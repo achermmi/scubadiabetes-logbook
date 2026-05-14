@@ -160,6 +160,7 @@ class SD_Activity_Manager {
 
 		// Recupera campi modulo
 		$activity['form_fields'] = $this->get_form_fields( $activity_id );
+		$activity['section_layout_order'] = $this->get_section_layout_order( $activity );
 
 		// Recupera iscrizioni
 		$activity['registrations_count'] = $this->get_registrations_count( $activity_id );
@@ -549,6 +550,43 @@ class SD_Activity_Manager {
 			default:
 				return 20;
 		}
+	}
+
+	/**
+	 * Calcola l'ordine normalizzato delle sezioni del modulo.
+	 *
+	 * @param array $activity Dati attività già decodificati.
+	 * @return array
+	 */
+	private function get_section_layout_order( $activity ) {
+		$layout_order = array();
+
+		if ( ! empty( $activity['form_configuration']['section_meta']['layout_order'] ) && is_array( $activity['form_configuration']['section_meta']['layout_order'] ) ) {
+			foreach ( $activity['form_configuration']['section_meta']['layout_order'] as $section_key ) {
+				$section_key = sanitize_key( $section_key );
+				if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
+					$layout_order[] = $section_key;
+				}
+			}
+		}
+
+		$default_keys = array( 'personal', 'additional', 'pricing', 'consents' );
+		if ( ! empty( $activity['form_fields'] ) && is_array( $activity['form_fields'] ) ) {
+			foreach ( $activity['form_fields'] as $field ) {
+				$section_key = sanitize_key( $field['section_key'] ?? 'additional' );
+				if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
+					$layout_order[] = $section_key;
+				}
+			}
+		}
+
+		foreach ( $default_keys as $section_key ) {
+			if ( ! in_array( $section_key, $layout_order, true ) ) {
+				$layout_order[] = $section_key;
+			}
+		}
+
+		return $layout_order;
 	}
 
 	/**

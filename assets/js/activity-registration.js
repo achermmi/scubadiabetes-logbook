@@ -754,6 +754,12 @@
 		},
 
 		getSectionLayoutOrder: function (sections) {
+			if (this.activity && Array.isArray(this.activity.section_layout_order) && this.activity.section_layout_order.length) {
+				return this.activity.section_layout_order.filter(function (key) {
+					return String(key || '').trim().length > 0;
+				});
+			}
+
 			const meta = this.getSectionMeta();
 			const saved = Array.isArray(meta.layout_order) ? meta.layout_order.filter(function (key) {
 				return String(key || '').trim().length > 0;
