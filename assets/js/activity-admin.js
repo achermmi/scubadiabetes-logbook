@@ -2461,17 +2461,21 @@
 			return;
 		}
 
-		var current = sections[idx];
-		var target = sections[targetIdx];
+		var reordered = sections.slice();
+		var temp = reordered[idx];
+		reordered[idx] = reordered[targetIdx];
+		reordered[targetIdx] = temp;
+
 		var requests = [];
 		var meta = getSectionMeta();
 		var metaChanged = false;
 
-		var queueSectionOrderUpdate = function (section, newOrder) {
+		reordered.forEach(function (section, index) {
 			if (!section || !section.key) {
 				return;
 			}
 
+			var newOrder = (index + 2) * 10; // 20, 30, 40... (after personal)
 			var metaKey = section.key === 'pricing' ? 'tariffe' : section.key;
 			meta[metaKey] = meta[metaKey] || {};
 			meta[metaKey].label = meta[metaKey].label || section.label || getDefaultSectionLabelByKey(section.key);
@@ -2480,11 +2484,7 @@
 				metaChanged = true;
 			}
 
-			if (section.key === 'pricing') {
-				return;
-			}
-
-			if (section.key === 'activity_data') {
+			if (section.key === 'pricing' || section.key === 'activity_data') {
 				return;
 			}
 
@@ -2496,10 +2496,7 @@
 					section_order: parseInt(newOrder, 10),
 				}));
 			});
-		};
-
-		queueSectionOrderUpdate(current, target.order);
-		queueSectionOrderUpdate(target, current.order);
+		});
 
 		var fieldsPromise = requests.length ? $.when.apply($, requests) : $.Deferred().resolve().promise();
 		fieldsPromise.done(function () {
