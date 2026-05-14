@@ -2470,23 +2470,19 @@
 				return;
 			}
 
+			var metaKey = section.key === 'pricing' ? 'tariffe' : section.key;
+			meta[metaKey] = meta[metaKey] || {};
+			meta[metaKey].label = meta[metaKey].label || section.label || getDefaultSectionLabelByKey(section.key);
+			if (parseInt(meta[metaKey].order || 0, 10) !== parseInt(newOrder, 10)) {
+				meta[metaKey].order = parseInt(newOrder, 10);
+				metaChanged = true;
+			}
+
 			if (section.key === 'pricing') {
-				meta.tariffe = meta.tariffe || {};
-				meta.tariffe.label = meta.tariffe.label || section.label || getDefaultSectionLabelByKey('pricing');
-				if (parseInt(meta.tariffe.order || 0, 10) !== parseInt(newOrder, 10)) {
-					meta.tariffe.order = parseInt(newOrder, 10);
-					metaChanged = true;
-				}
 				return;
 			}
 
 			if (section.key === 'activity_data') {
-				meta.activity_data = meta.activity_data || {};
-				meta.activity_data.label = meta.activity_data.label || section.label || getDefaultSectionLabelByKey('activity_data');
-				if (parseInt(meta.activity_data.order || 0, 10) !== parseInt(newOrder, 10)) {
-					meta.activity_data.order = parseInt(newOrder, 10);
-					metaChanged = true;
-				}
 				return;
 			}
 
