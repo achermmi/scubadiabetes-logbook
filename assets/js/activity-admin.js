@@ -2192,6 +2192,7 @@
 	}
 
 	function getActivityDataSectionsSummary() {
+		var meta = getSectionMeta();
 		var activityDataFields = (state.currentFields || []).filter(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
 			return sectionKey !== 'personal' && sectionKey !== 'activity_data';
@@ -2212,11 +2213,13 @@
 		var sectionMap = {};
 		activityDataFields.forEach(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
+			var metaKey = sectionKey === 'pricing' ? 'tariffe' : sectionKey;
+			var metaEntry = (meta[metaKey] && typeof meta[metaKey] === 'object') ? meta[metaKey] : null;
 			if (!sectionMap[sectionKey]) {
 				sectionMap[sectionKey] = {
 					key: sectionKey,
-					label: String(field.section_label || getDefaultSectionLabelByKey(sectionKey)),
-					order: parseInt(field.section_order || inferSectionOrder(sectionKey), 10),
+					label: String((metaEntry && metaEntry.label) || field.section_label || getDefaultSectionLabelByKey(sectionKey)),
+					order: parseInt((metaEntry && metaEntry.order) || field.section_order || inferSectionOrder(sectionKey), 10),
 					count: 0,
 					metric: 'campi',
 				};
@@ -2226,9 +2229,8 @@
 
 		var prices = (state.currentActivity && Array.isArray(state.currentActivity.prices)) ? state.currentActivity.prices : [];
 		if (prices.length) {
-			var sectionMeta = getSectionMeta();
-			var pricingLabel = String((sectionMeta.tariffe && sectionMeta.tariffe.label) || getDefaultSectionLabelByKey('pricing'));
-			var pricingOrder = parseInt((sectionMeta.tariffe && sectionMeta.tariffe.order) || inferSectionOrder('pricing'), 10);
+			var pricingLabel = String((meta.tariffe && meta.tariffe.label) || getDefaultSectionLabelByKey('pricing'));
+			var pricingOrder = parseInt((meta.tariffe && meta.tariffe.order) || inferSectionOrder('pricing'), 10);
 			if (!sectionMap.pricing) {
 				sectionMap.pricing = {
 					key: 'pricing',
@@ -2611,11 +2613,13 @@
 				return;
 			}
 			var known = knownByKey[sectionKey] || null;
+			var metaKey = sectionKey === 'pricing' ? 'tariffe' : sectionKey;
+			var metaEntry = (meta[metaKey] && typeof meta[metaKey] === 'object') ? meta[metaKey] : null;
 			if (!sectionMap[sectionKey]) {
 				sectionMap[sectionKey] = {
 					key: sectionKey,
-					label: field.section_label || (known ? known.label : sectionKey),
-					order: parseInt(field.section_order || (known ? known.order : 20), 10),
+					label: (metaEntry && metaEntry.label) || field.section_label || (known ? known.label : sectionKey),
+					order: parseInt((metaEntry && metaEntry.order) || field.section_order || (known ? known.order : 20), 10),
 					fields: [],
 					virtual: false,
 				};
