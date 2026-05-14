@@ -1838,8 +1838,20 @@ class SD_Activity_Manager {
 
 		wp_enqueue_media();
 		wp_enqueue_editor();
-		wp_enqueue_style( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-admin.css', array(), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable' ), SD_LOGBOOK_VERSION, true );
+		$activity_admin_css_version = SD_LOGBOOK_VERSION;
+		$activity_admin_css_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/css/activity-admin.css';
+		if ( file_exists( $activity_admin_css_file ) ) {
+			$activity_admin_css_version .= '.' . filemtime( $activity_admin_css_file );
+		}
+
+		$activity_admin_js_version = SD_LOGBOOK_VERSION;
+		$activity_admin_js_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/activity-admin.js';
+		if ( file_exists( $activity_admin_js_file ) ) {
+			$activity_admin_js_version .= '.' . filemtime( $activity_admin_js_file );
+		}
+
+		wp_enqueue_style( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-admin.css', array(), $activity_admin_css_version );
+		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable' ), $activity_admin_js_version, true );
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/activity-admin.php';

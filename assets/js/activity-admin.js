@@ -695,6 +695,98 @@
 		return window.tinymce.get('sd-field-content-editor') || null;
 	}
 
+	function destroyFieldContentEditor() {
+		var editor = getFieldContentEditor();
+		if (editor) {
+			try {
+				if (typeof editor.save === 'function') {
+					editor.save();
+				}
+				if (typeof editor.remove === 'function') {
+					editor.remove();
+				}
+			} catch (err) {
+				// Ignore removal errors and continue with textarea fallback.
+			}
+		}
+
+		$('#sd-field-content-editor').prop('readonly', false).prop('disabled', false).show();
+	}
+
+	function ensureFieldContentEditorEditable() {
+		var $textarea = $('#sd-field-content-editor');
+		if (!$textarea.length) {
+			return true;
+		}
+
+		$textarea.prop('readonly', false).prop('disabled', false).show();
+		$textarea.css({
+			'pointer-events': 'auto',
+			'user-select': 'text',
+			'cursor': 'text',
+		});
+
+		var editor = getFieldContentEditor();
+		if (!editor) {
+			return false;
+		}
+
+		try {
+			if (typeof editor.setMode === 'function') {
+				editor.setMode('design');
+			}
+		} catch (err) {
+			// Keep going with body/doc adjustments below.
+		}
+
+		var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+		if (body) {
+			body.setAttribute('contenteditable', 'true');
+			body.classList.remove('mce-content-readonly');
+			body.style.pointerEvents = 'auto';
+			body.style.userSelect = 'text';
+			body.style.cursor = 'text';
+			body.style.minHeight = '220px';
+		}
+
+		if (typeof editor.getDoc === 'function' && editor.getDoc()) {
+			try {
+				editor.getDoc().designMode = 'on';
+			} catch (err2) {
+				// Ignore doc mode errors.
+			}
+		}
+
+		return !!(body && body.getAttribute('contenteditable') !== 'false');
+	}
+
+	function setFieldContentEditorValue(value, options) {
+		var normalized = String(value || '');
+		var opts = options || {};
+		var editor = getFieldContentEditor();
+		var $textarea = $('#sd-field-content-editor');
+
+		$textarea.val(normalized).prop('readonly', false).prop('disabled', false);
+
+		if (!editor) {
+			return false;
+		}
+
+		try {
+			editor.setContent(normalized);
+			if (typeof editor.save === 'function') {
+				editor.save();
+			}
+			ensureFieldContentEditorEditable();
+			if (opts.focus && typeof editor.focus === 'function') {
+				editor.focus();
+			}
+			return true;
+		} catch (err) {
+			return false;
+		}
+	}
+
 	function initFieldContentEditor() {
 		if (!window.tinymce || typeof window.tinymce.init !== 'function') {
 			return;
@@ -705,7 +797,9 @@
 			return;
 		}
 
-		if (getFieldContentEditor()) {
+		var existingEditor = getFieldContentEditor();
+		if (existingEditor) {
+			ensureFieldContentEditorEditable();
 			return;
 		}
 
@@ -715,6 +809,15 @@
 			toolbar: 'formatselect | bold italic underline | bullist numlist | link image | alignleft aligncenter alignright',
 			menubar: 'edit insert format table',
 			height: 250,
+			setup: function (editor) {
+				editor.on('init', function () {
+					ensureFieldContentEditorEditable();
+					editor.save();
+				});
+				editor.on('change keyup SetContent Undo Redo', function () {
+					editor.save();
+				});
+			},
 		});
 	}
 
@@ -991,7 +1094,10 @@
 		
 		// Initialize TinyMCE for formatted-content field with explicit target.
 		if (isContent && window.tinymce) {
-			setTimeout(initFieldContentEditor, 100);
+			window.setTimeout(function () {
+				initFieldContentEditor();
+				ensureFieldContentEditorEditable();
+			}, 100);
 		}
 	}
 
@@ -1395,6 +1501,7 @@
 			}
 			var editor = getFieldContentEditor();
 			if (editor) {
+				ensureFieldContentEditorEditable();
 				contentValue = editor.getContent();
 			} else {
 				contentValue = $('#sd-field-content-editor').val();
@@ -1494,15 +1601,17 @@
 		
 		// Set content in editor if it's a content field
 		if (field.field_type === 'content' && window.tinymce) {
-			setTimeout(function() {
+			destroyFieldContentEditor();
+			setTimeout(function () {
 				initFieldContentEditor();
-				var editor = getFieldContentEditor();
-				if (editor) {
-					editor.setContent(field.content || '');
-				} else {
+				if (!setFieldContentEditorValue(field.content || '', { focus: true })) {
 					$('#sd-field-content-editor').val(field.content || '');
 				}
-			}, 200);
+				window.setTimeout(function () {
+					ensureFieldContentEditorEditable();
+					setFieldContentEditorValue(field.content || '', { focus: false });
+				}, 160);
+			}, 120);
 		}
 
 		// Load image configuration if it's an image field
@@ -2064,6 +2173,25 @@
 		return mergedOrder;
 	}
 
+	function getFieldTypeLabel(type) {
+		var map = {
+			text: 'Testo',
+			textarea: 'Textarea',
+			datetime: 'Data e ora',
+			date: 'Data',
+			number: 'Numero',
+			select: 'Select',
+			checkbox: 'Checkbox',
+			radio: 'Radio',
+			content: 'Contenuto formattato',
+			image: 'Immagine',
+			price: 'Tariffa',
+			info: 'Info',
+		};
+
+		return map[String(type || 'text')] || String(type || 'text');
+	}
+
 	function renderActivityDataStaticOrderControls() {
 		var $wrap = $('#sd-activity-static-order-controls');
 		if (!$wrap.length) {
@@ -2088,7 +2216,7 @@
 				// extra_fields slot in the layout order (same as static blocks).
 				activityDataFields.forEach(function (field) {
 					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
-					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(field.field_type || 'text') + ')</span></div>';
+					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type || 'text')) + ')</span></div>';
 					html += '<div class="sd-field-list-actions">';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="up">↑</button>';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="down">↓</button>';
@@ -2431,7 +2559,7 @@
 						if (entry.type === 'base') {
 							html += '<li data-personal-token="' + esc(entry.token) + '" data-static-personal-key="' + esc(entry.key) + '"><div class="sd-field-list-item sd-field-list-item-static">';
 							html += '<div>';
-							html += '<strong>' + esc(entry.field.field_label) + '</strong> <span>(' + esc(entry.field.field_type) + ')</span>';
+							html += '<strong>' + esc(entry.field.field_label) + '</strong> <span>(' + esc(getFieldTypeLabel(entry.field.field_type)) + ')</span>';
 							html += '<div class="sd-field-list-meta"><span>Campo base modulo</span><span>Sempre visibile</span><span>' + (entry.span === 6 ? 'Metà riga' : 'Intera riga') + '</span></div>';
 							html += '</div>';
 							html += '<div class="sd-field-list-actions">';
@@ -2447,7 +2575,7 @@
 						var optionsCount = Array.isArray(field.options) ? field.options.length : 0;
 						html += '<li data-personal-token="' + esc(entry.token) + '" data-field-id="' + parseInt(field.id, 10) + '"><div class="sd-field-list-item" data-field-id="' + parseInt(field.id, 10) + '">';
 						html += '<div>';
-						html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(field.field_type) + ')</span>';
+						html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type)) + ')</span>';
 						html += '<div class="sd-field-list-meta">';
 						html += '<span>Ordine personalizzato</span>';
 						if (optionsCount > 0) {
@@ -2471,7 +2599,7 @@
 						if (field._virtual) {
 							html += '<li><div class="sd-field-list-item sd-field-list-item-static">';
 							html += '<div>';
-							html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(field.field_type) + ')</span>';
+							html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type)) + ')</span>';
 							html += '<div class="sd-field-list-meta"><span>' + esc(field.value || '-') + '</span></div>';
 							html += '</div>';
 							html += '</div></li>';
@@ -2492,7 +2620,7 @@
 							html += imgPreviewHtml;
 						}
 						html += '<div>';
-						html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(fieldType) + ')</span>';
+						html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(getFieldTypeLabel(fieldType)) + ')</span>';
 						html += '<div class="sd-field-list-meta">';
 						html += '<span>Ordine: ' + parseInt(field.field_order || 0, 10) + '</span>';
 						if (optionsCount > 0) {
@@ -2552,7 +2680,7 @@
 				html += imgPreviewHtml;
 			}
 			html += '<div>';
-			html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(fieldType) + ')</span>';
+			html += '<strong>' + esc(field.field_label) + '</strong> <span>(' + esc(getFieldTypeLabel(fieldType)) + ')</span>';
 			html += '<div class="sd-field-list-meta">';
 			html += '<span>Ordine: ' + parseInt(field.field_order || 0, 10) + '</span>';
 			html += field.is_required ? '<span>Obbligatorio</span>' : '';
@@ -3155,6 +3283,7 @@
 	}
 
 	function resetFieldForm(keepSections) {
+		destroyFieldContentEditor();
 		$('#sd-field-id').val('0');
 		$('#sd-field-label').val('');
 		$('#sd-field-type').val('text');
@@ -3174,6 +3303,7 @@
 		$('input[name="sd-image-align-h"]').val(['left']);
 		$('input[name="sd-image-align-v"]').val(['top']);
 		$('#sd-image-alt-text').val('');
+		$('#sd-field-content-editor').val('');
 		$('#sd-field-submit-btn').text('Aggiungi Campo');
 		$('#sd-field-cancel-edit, #sd-field-cancel-edit-secondary').hide();
 		if (!keepSections) {
