@@ -311,7 +311,6 @@
 				$('#sd-activity-end-date').text(endDate + ' ore ' + endTime);
 			}
 			$('#sd-activity-location').text(activity.location || '-');
-			$('#sd-activity-status-value').text(this.getEventStatusLabel(activity.event_status || 'draft'));
 
 			const imageUrl = String(activity.thumbnail_url || '').trim();
 			if (imageUrl) {
@@ -354,13 +353,7 @@
 			}
 
 			if (String(activity.event_status || '').trim()) {
-				$('#sd-activity-status-wrap').show();
-			} else {
-				$('#sd-activity-status-wrap').hide();
-			}
-
-			this.syncActivityInfoBlockOrder();
-		},
+			,
 
 		// Render dynamic form fields
 		renderDynamicFields: function () {
@@ -665,7 +658,7 @@
 		},
 
 		getActivityDataLayoutOrder: function () {
-			const defaults = ['core', 'thumbnail', 'description', 'status', 'extra_fields'];
+			const defaults = ['core', 'thumbnail', 'description', 'extra_fields'];
 			const formConfig = this.activity && this.activity.form_configuration ? this.activity.form_configuration : {};
 			const configured = Array.isArray(formConfig.activity_data_layout_order) ? formConfig.activity_data_layout_order : [];
 			const merged = [];
@@ -691,26 +684,12 @@
 			const $details = $info.find('.sd-activity-details').first().attr('data-activity-block', 'core');
 			const $description = $('#sd-activity-description').attr('data-activity-block', 'description');
 			const $extra = $('#sd-activity-extra-content').attr('data-activity-block', 'extra_fields');
-			let $status = $('#sd-activity-status-wrap');
-
-			if (!$status.length) {
-				$status = $(
-					'<div id="sd-activity-status-wrap" class="sd-activity-status-wrap" data-activity-block="status" style="display:none;">' +
-						'<div class="sd-detail-item">' +
-							'<span class="sd-detail-label">Stato</span>' +
-							'<span class="sd-detail-value" id="sd-activity-status-value"></span>' +
-						'</div>' +
-					'</div>'
-				);
-				$description.after($status);
-			}
 
 			return {
 				info: $info,
 				core: $details,
 				thumbnail: $image,
 				description: $description,
-				status: $status,
 				extra_fields: $extra,
 			};
 		},
@@ -727,7 +706,7 @@
 				}
 			});
 
-			['core', 'thumbnail', 'description', 'status', 'extra_fields'].forEach(function (key) {
+			['core', 'thumbnail', 'description', 'extra_fields'].forEach(function (key) {
 				if (!seen[key] && blocks[key] && blocks[key].length) {
 					orderedNodes.push(blocks[key][0]);
 				}

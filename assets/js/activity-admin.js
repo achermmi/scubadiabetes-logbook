@@ -37,7 +37,6 @@
 		core: { key: 'core', label: 'Titolo, Luogo, Date e Max Partecipanti' },
 		thumbnail: { key: 'thumbnail', label: 'Immagine URL' },
 		description: { key: 'description', label: 'Descrizione' },
-		status: { key: 'status', label: 'Stato' },
 		extra_fields: { key: 'extra_fields', label: 'Campi aggiuntivi Dati Attivita' },
 	};
 
