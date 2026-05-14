@@ -2469,6 +2469,12 @@
 		var requests = [];
 		var meta = getSectionMeta();
 		var metaChanged = false;
+		meta.layout_order = reordered.map(function (section) {
+			return String(section.key || '').trim();
+		}).filter(function (key) {
+			return !!key;
+		});
+		metaChanged = true;
 
 		reordered.forEach(function (section, index) {
 			if (!section || !section.key) {

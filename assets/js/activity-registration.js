@@ -629,7 +629,7 @@
 				return parseInt($(a).attr('data-section-order'), 10) - parseInt($(b).attr('data-section-order'), 10);
 			});
 
-			const orderedNodes = [];
+			const nodesByKey = {};
 			[
 				$('#sd-section-personal[data-section-key]').first(),
 				$('#sd-dynamic-fields-section[data-section-key]').first(),
@@ -637,31 +637,27 @@
 				$('#sd-consents-section[data-section-key]').first(),
 			].forEach(function ($node) {
 				if ($node.length && $node.is(':visible')) {
-					orderedNodes.push($node.get(0));
+					nodesByKey[String($node.attr('data-section-key') || '')] = $node.get(0);
 				}
 			});
 
 			customNodes.forEach(function (node) {
 				if ($(node).is(':visible')) {
-					orderedNodes.push(node);
+					nodesByKey[String($(node).attr('data-section-key') || '')] = node;
 				}
 			});
 
-			orderedNodes.sort(function (a, b) {
-				const orderA = parseInt($(a).attr('data-section-order') || 0, 10) || 0;
-				const orderB = parseInt($(b).attr('data-section-order') || 0, 10) || 0;
-				if (orderA !== orderB) {
-					return orderA - orderB;
+			const orderedNodes = [];
+			this.getSectionLayoutOrder(sections).forEach(function (key) {
+				if (nodesByKey[key]) {
+					orderedNodes.push(nodesByKey[key]);
 				}
-				const titleA = String($(a).attr('data-section-title') || $(a).find('.sd-section-title-text').first().text() || '').toLowerCase();
-				const titleB = String($(b).attr('data-section-title') || $(b).find('.sd-section-title-text').first().text() || '').toLowerCase();
-				if (titleA < titleB) {
-					return -1;
+			});
+
+			Object.keys(nodesByKey).forEach(function (key) {
+				if (orderedNodes.indexOf(nodesByKey[key]) === -1) {
+					orderedNodes.push(nodesByKey[key]);
 				}
-				if (titleA > titleB) {
-					return 1;
-				}
-				return 0;
 			});
 
 			this.$customSections.before($(orderedNodes));
@@ -755,6 +751,23 @@
 			}
 
 			return formConfig.section_meta;
+		},
+
+		getSectionLayoutOrder: function (sections) {
+			const meta = this.getSectionMeta();
+			const saved = Array.isArray(meta.layout_order) ? meta.layout_order.filter(function (key) {
+				return String(key || '').trim().length > 0;
+			}) : [];
+			const knownKeys = Object.keys(sections || {});
+			const merged = saved.slice();
+
+			knownKeys.forEach(function (key) {
+				if (merged.indexOf(key) === -1) {
+					merged.push(key);
+				}
+			});
+
+			return merged;
 		},
 
 		getConfiguredSectionOrder: function (sectionKey, fallbackOrder) {
