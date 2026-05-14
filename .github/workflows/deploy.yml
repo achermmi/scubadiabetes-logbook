@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - target: default
-            remote_path: ${{ secrets.REMOTE_PATH }}
+            remote_path: ""
           - target: sd-suisse
             remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
           - target: scubadiabetes-dev
@@ -38,7 +38,7 @@ jobs:
         with:
           switches: -avz --mkpath --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./
-          remote_path: ${{ matrix.remote_path }}
+          remote_path: ${{ matrix.target == 'default' && secrets.REMOTE_PATH || matrix.remote_path }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
