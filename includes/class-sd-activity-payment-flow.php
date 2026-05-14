@@ -92,6 +92,7 @@ class SD_Activity_Payment_Flow {
 					r.email,
 					r.first_name,
 					r.last_name,
+					r.registration_data,
 					r.payment_status,
 					r.price_chf,
 					r.price_eur,
@@ -121,6 +122,8 @@ class SD_Activity_Payment_Flow {
 			return new WP_Error( 'sd_act_pay_token_expired', __( 'Il link di pagamento è scaduto. Contatta l\'organizzatore.', 'sd-logbook' ) );
 		}
 
+		$this->hydrate_price_name_from_registration_data( $row );
+
 		return $row;
 	}
 
@@ -146,6 +149,7 @@ class SD_Activity_Payment_Flow {
 					r.email,
 					r.first_name,
 					r.last_name,
+					r.registration_data,
 					r.payment_status,
 					r.price_chf,
 					r.price_eur,
@@ -168,7 +172,34 @@ class SD_Activity_Payment_Flow {
 			return new WP_Error( 'sd_act_pay_not_found', __( 'Registrazione non trovata.', 'sd-logbook' ) );
 		}
 
+		$this->hydrate_price_name_from_registration_data( $row );
+
 		return $row;
+	}
+
+	/**
+	 * Arricchisce il contesto con i nomi tariffa selezionati (multi-tariffa).
+	 *
+	 * @param object $row Contesto registrazione.
+	 * @return void
+	 */
+	private function hydrate_price_name_from_registration_data( $row ) {
+		if ( ! isset( $row->registration_data ) ) {
+			return;
+		}
+
+		$registration_data = json_decode( (string) $row->registration_data, true );
+		if ( ! is_array( $registration_data ) ) {
+			return;
+		}
+
+		$selected_names = isset( $registration_data['selected_price_names'] ) && is_array( $registration_data['selected_price_names'] )
+			? array_values( array_filter( array_map( 'sanitize_text_field', $registration_data['selected_price_names'] ) ) )
+			: array();
+
+		if ( ! empty( $selected_names ) ) {
+			$row->price_name = implode( ' + ', $selected_names );
+		}
 	}
 
 	/**

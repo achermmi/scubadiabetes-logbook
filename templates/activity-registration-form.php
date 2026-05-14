@@ -85,6 +85,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<h3 class="sd-section-title"><span class="sd-section-index">3.</span> <span class="sd-section-title-text"><?php esc_html_e( 'Selezione Tariffa', 'sd-logbook' ); ?></span></h3>
 				<div id="sd-pricing-extra-fields"></div>
 				<div class="sd-fee-cards" id="sd-fee-cards-container"></div>
+				<div id="sd-price-total" class="sd-price-total" style="display:none;"></div>
 				<div id="sd-price-error" class="sd-error-message" style="display:none;"></div>
 			</div>
 

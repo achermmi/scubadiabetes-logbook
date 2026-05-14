@@ -575,11 +575,16 @@
 	display: block;
 }
 
-.sd-fee-card input[type="radio"] {
-	position: absolute;
-	opacity: 0;
-	width: 0;
-	height: 0;
+.sd-fee-card input[type="radio"],
+.sd-fee-card input[type="checkbox"] {
+	position: absolute !important;
+	opacity: 0 !important;
+	width: 1px !important;
+	height: 1px !important;
+	pointer-events: none !important;
+	appearance: none !important;
+	clip-path: inset(50%);
+	overflow: hidden;
 }
 
 .sd-fee-card-inner {
@@ -601,14 +606,50 @@
 	box-shadow: 0 20px 38px rgba(15, 50, 87, 0.1);
 }
 
-.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner {
-	border-color: #0055a5;
-	background: linear-gradient(140deg, #fbfdff 0%, #ebf5ff 100%);
+.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner,
+.sd-fee-card input[type="checkbox"]:checked + .sd-fee-card-inner {
+	border-color: #2f86cf;
+	background: linear-gradient(140deg, #edf7ff 0%, #dceeff 100%);
 	box-shadow: 0 22px 40px rgba(0, 85, 165, 0.16);
 	transform: translateY(-1px);
 }
 
-.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner::before {
+.sd-fee-card.sd-fee-card-selected .sd-fee-card-inner {
+	border: 2px solid #1f75be;
+	background: linear-gradient(140deg, #e2f1ff 0%, #cde5ff 100%);
+	box-shadow: 0 0 0 3px rgba(31, 117, 190, 0.2), 0 24px 44px rgba(0, 85, 165, 0.22);
+	transform: translateY(-2px);
+}
+
+.sd-fee-card.sd-fee-card-selected .sd-fee-card-inner::after {
+	content: 'SELEZIONATA';
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	padding: 0.22rem 0.5rem;
+	border-radius: 999px;
+	background: #1f75be;
+	color: #ffffff;
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.1;
+	text-transform: uppercase;
+	box-shadow: 0 8px 16px rgba(31, 117, 190, 0.25);
+}
+
+.sd-fee-card.sd-fee-card-selected .sd-fee-label {
+	color: #0e3f72;
+	padding-top: 1.25rem;
+}
+
+.sd-fee-card.sd-fee-card-selected .sd-price-chf strong,
+.sd-fee-card.sd-fee-card-selected .sd-price-eur strong {
+	color: #004a8d;
+}
+
+.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner::before,
+.sd-fee-card input[type="checkbox"]:checked + .sd-fee-card-inner::before {
 	content: '✓';
 	position: absolute;
 	top: 14px;
@@ -684,6 +725,50 @@
 
 .sd-price-rate.loading {
 	animation: pulse 1.5s ease-in-out infinite;
+}
+
+.sd-price-total {
+	margin: 0.55rem 0 0.65rem;
+	padding: 1rem 1.15rem;
+	border: 2px solid rgba(0, 85, 165, 0.35);
+	border-radius: 16px;
+	background: linear-gradient(180deg, #eef7ff 0%, #e5f1ff 100%);
+	box-shadow: 0 12px 24px rgba(0, 85, 165, 0.12);
+	color: #12314f;
+}
+
+.sd-price-total-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.8rem;
+	font-weight: 800;
+	font-size: 1.1rem;
+}
+
+.sd-price-total-label {
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	margin-right: 0.35rem;
+}
+
+.sd-price-total-row strong {
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: #073764;
+}
+
+.sd-price-total-sub {
+	margin-top: 0.35rem;
+	font-size: 1rem;
+	font-weight: 700;
+	color: #1a4f86;
+}
+
+.sd-price-total-rate {
+	margin-top: 0.3rem;
+	font-size: 0.88rem;
+	color: #5b7188;
 }
 
 @keyframes pulse {
@@ -930,4 +1015,43 @@
 	.sd-activity-registration-wrap .sd-form-section {
 		box-shadow: none;
 	}
+}
+
+/* Conflict-proof fee selection styles (avoid overrides from shared fee-card CSS on other pages). */
+#sd-activity-registration-page .sd-price-checkbox {
+	position: absolute !important;
+	opacity: 0 !important;
+	width: 1px !important;
+	height: 1px !important;
+	margin: 0 !important;
+	pointer-events: none !important;
+	appearance: none !important;
+	clip-path: inset(50%) !important;
+	overflow: hidden !important;
+}
+
+#sd-activity-registration-page .sd-fee-card .sd-price-checkbox:checked + .sd-fee-card-inner,
+#sd-activity-registration-page .sd-fee-card.sd-fee-card-selected .sd-fee-card-inner {
+	border: 2px solid #1f75be !important;
+	background: linear-gradient(140deg, #dff0ff 0%, #cae4ff 100%) !important;
+	box-shadow: 0 0 0 3px rgba(31, 117, 190, 0.22), 0 24px 44px rgba(0, 85, 165, 0.22) !important;
+	transform: translateY(-2px) !important;
+}
+
+#sd-activity-registration-page .sd-fee-card .sd-price-checkbox:checked + .sd-fee-card-inner::after,
+#sd-activity-registration-page .sd-fee-card.sd-fee-card-selected .sd-fee-card-inner::after {
+	content: 'SELEZIONATA' !important;
+	position: absolute !important;
+	top: 12px !important;
+	left: 12px !important;
+	padding: 0.22rem 0.5rem !important;
+	border-radius: 999px !important;
+	background: #1f75be !important;
+	color: #ffffff !important;
+	font-size: 0.68rem !important;
+	font-weight: 800 !important;
+	letter-spacing: 0.04em !important;
+	line-height: 1.1 !important;
+	text-transform: uppercase !important;
+	box-shadow: 0 8px 16px rgba(31, 117, 190, 0.25) !important;
 }

@@ -40,6 +40,7 @@
 			this.$minorWarning = $('#sd-minor-warning');
 			this.$customSections = $('#sd-custom-sections-container');
 			this.$feeCards = $('#sd-fee-cards-container');
+			this.$priceTotal = $('#sd-price-total');
 			this.$submitBtn = $('#sd-submit-btn');
 			this.$priceError = $('#sd-price-error');
 		},
@@ -54,8 +55,8 @@
 				self.validateForm();
 			});
 
-			// Price card selection - real-time EUR conversion
-			$(document).on('change', 'input[name="price_id"]', function () {
+			// Multi price selection - real-time total conversion
+			$(document).on('change', 'input[name="price_ids[]"]', function () {
 				self.updatePriceDisplay();
 			});
 
@@ -820,7 +821,7 @@
 				const cardClass = isDefault ? 'sd-fee-card-selected' : '';
 
 				html += '<label class="sd-fee-card ' + cardClass + '">';
-				html += '<input type="radio" name="price_id" class="sd-price-radio" value="' + price.id + '" data-price-chf="' + parseFloat(price.price_chf) + '" ' + isDefault + '>';
+				html += '<input type="checkbox" name="price_ids[]" class="sd-price-checkbox" value="' + price.id + '" data-price-chf="' + parseFloat(price.price_chf) + '" data-price-eur="' + parseFloat(price.price_eur || price.price_chf * 1.05) + '" ' + isDefault + '>';
 				html += '<div class="sd-fee-card-inner">';
 				html += '<div class="sd-fee-card-header">';
 				html += '<span class="sd-fee-label">' + self.escapeHtml(price.price_name) + '</span>';
@@ -840,40 +841,97 @@
 
 			// Keep configured default selection; fallback to first only if none is marked default.
 			if (this.prices.length > 0) {
-				if (!$('input[name="price_id"]:checked').length) {
-					$('input[name="price_id"]:first').prop('checked', true);
+				if (!$('input[name="price_ids[]"]:checked').length) {
+					$('input[name="price_ids[]"]:first').prop('checked', true);
 				}
 				this.updatePriceDisplay();
 			}
 		},
 
-		// Update price display with real-time EUR conversion
+		// Update total price display with real-time EUR conversion
 		updatePriceDisplay: function () {
 			const self = this;
-			const selectedPriceId = $('input[name="price_id"]:checked').val();
+			const selectedInputs = $('input[name="price_ids[]"]:checked');
+			const selectedPriceIds = selectedInputs.map(function () {
+				return parseInt($(this).val(), 10) || 0;
+			}).get().filter(function (id) { return id > 0; });
 
-			if (!selectedPriceId) {
+			if (!selectedPriceIds.length) {
+				this.currentPrice = null;
+				$('.sd-fee-card').removeClass('sd-fee-card-selected');
+				this.$priceTotal.hide().empty();
 				return;
 			}
 
-			const selectedPrice = this.prices.find(p => p.id == selectedPriceId);
-			if (!selectedPrice) {
+			const selectedPrices = this.prices.filter(function (price) {
+				return selectedPriceIds.indexOf(parseInt(price.id, 10)) !== -1;
+			});
+
+			if (!selectedPrices.length) {
+				this.currentPrice = null;
+				this.$priceTotal.hide().empty();
 				return;
 			}
 
-			this.currentPrice = selectedPrice;
+			const totalChf = selectedPrices.reduce(function (sum, price) {
+				return sum + parseFloat(price.price_chf || 0);
+			}, 0);
 
-			// Update card styling
+			const fallbackEur = selectedPrices.reduce(function (sum, price) {
+				const eur = parseFloat(price.price_eur || 0);
+				if (eur > 0) {
+					return sum + eur;
+				}
+				return sum + (parseFloat(price.price_chf || 0) * 1.05);
+			}, 0);
+
+			const labels = selectedPrices.map(function (price) {
+				return String(price.price_name || 'Tariffa');
+			});
+
+			this.currentPrice = {
+				id: selectedPriceIds[0],
+				ids: selectedPriceIds,
+				price_name: labels.join(' + '),
+				price_chf: totalChf,
+				price_eur: fallbackEur,
+			};
+
+			// Update card styling (also apply inline so it works regardless of CSS cache)
 			$('.sd-fee-card').removeClass('sd-fee-card-selected');
-			$('input[name="price_id"]:checked').closest('.sd-fee-card').addClass('sd-fee-card-selected');
+			$('.sd-fee-card .sd-fee-card-inner').css({
+				border: '',
+				background: '',
+				boxShadow: '',
+				transform: ''
+			});
+			$('.sd-fee-card .sd-fee-card-inner .sd-selected-badge').remove();
 
-			// Fetch real-time EUR conversion
+			selectedInputs.closest('.sd-fee-card').addClass('sd-fee-card-selected');
+			selectedInputs.closest('.sd-fee-card').find('.sd-fee-card-inner').css({
+				border: '2px solid #1f75be',
+				background: 'linear-gradient(140deg, #dff0ff 0%, #cae4ff 100%)',
+				boxShadow: '0 0 0 3px rgba(31,117,190,0.22), 0 24px 44px rgba(0,85,165,0.22)',
+				transform: 'translateY(-2px)'
+			});
+			selectedInputs.closest('.sd-fee-card').find('.sd-fee-card-inner').each(function () {
+				if (!$(this).find('.sd-selected-badge').length) {
+					$(this).prepend('<span class="sd-selected-badge" style="position:absolute;top:10px;left:10px;background:#1f75be;color:#fff;font-size:0.65rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;padding:0.18rem 0.45rem;border-radius:999px;line-height:1.2;z-index:2;">Selezionata</span>');
+				}
+			});
+
+			this.$priceTotal.html(
+				'<div class="sd-price-total-row"><span class="sd-price-total-label">Totale selezionato: </span><strong>CHF ' + parseFloat(totalChf).toFixed(2) + '</strong></div>' +
+				'<div class="sd-price-total-sub">= EUR ' + parseFloat(fallbackEur).toFixed(2) + ' (stima)</div>'
+			).show();
+
+			// Fetch real-time EUR conversion for the selected total CHF
 			$.ajax({
 				url: window.sdActivityRegistration.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'sd_get_eur_price',
-					price_chf: parseFloat(selectedPrice.price_chf),
+					price_chf: parseFloat(totalChf),
 					nonce: window.sdActivityRegistration.actionNonce,
 				},
 				success: function (response) {
@@ -881,15 +939,13 @@
 						const priceEur = response.data.price_eur;
 						const rate = response.data.rate;
 
-						$('input[name="price_id"]:checked').closest('.sd-fee-card').find('.sd-price-eur').html(
-							'= € <strong>' + parseFloat(priceEur).toFixed(2) + '</strong>'
-						);
+						self.$priceTotal.html(
+							'<div class="sd-price-total-row"><span class="sd-price-total-label">Totale selezionato: </span><strong>CHF ' + parseFloat(totalChf).toFixed(2) + '</strong></div>' +
+							'<div class="sd-price-total-sub">= EUR ' + parseFloat(priceEur).toFixed(2) + '</div>' +
+							'<div class="sd-price-total-rate">Tasso: 1 CHF = ' + parseFloat(rate).toFixed(4) + ' EUR</div>'
+						).show();
 
-						$('input[name="price_id"]:checked').closest('.sd-fee-card').find('.sd-price-rate').text(
-							'Tasso: 1 CHF = ' + parseFloat(rate).toFixed(4) + ' €'
-						);
-
-						self.currentPrice.price_eur = priceEur;
+						self.currentPrice.price_eur = parseFloat(priceEur);
 					}
 				},
 			});
@@ -937,10 +993,12 @@
 
 			this.updateMinorWarning();
 
-			// Validate price selection
-			if (!$('input[name="price_id"]:checked').val()) {
-				this.$priceError.text(window.sdActivityRegistration.i18n.selectPrice).show();
+			// Validate multi-price selection
+			if (!$('input[name="price_ids[]"]:checked').length) {
+				this.$priceError.text('Seleziona almeno una tariffa.').show();
 				isValid = false;
+			} else {
+				this.$priceError.hide().text('');
 			}
 
 			// Validate dynamic required fields (gestione gruppi checkbox/radio inclusa)
@@ -1013,6 +1071,15 @@
 		// Submit form via AJAX
 		submitForm: function () {
 			const self = this;
+			const selectedPriceIds = $('input[name="price_ids[]"]:checked').map(function () {
+				return parseInt($(this).val(), 10) || 0;
+			}).get().filter(function (id) { return id > 0; });
+
+			if (!selectedPriceIds.length || !this.currentPrice) {
+				this.$priceError.text('Seleziona almeno una tariffa.').show();
+				this.$submitBtn.prop('disabled', false).text('Procedi al Pagamento');
+				return;
+			}
 
 			// Disable button
 			this.$submitBtn.prop('disabled', true).text(window.sdActivityRegistration.i18n.redirecting);
@@ -1023,6 +1090,7 @@
 			formData.append('action', 'sd_activity_register');
 			formData.append('activity_id', window.sdActivityRegistration.activityId);
 			formData.append('price_id', this.currentPrice.id);
+			formData.append('price_ids', JSON.stringify(selectedPriceIds));
 			formData.append('price_chf', parseFloat(this.currentPrice.price_chf));
 			formData.append('price_eur', parseFloat(this.currentPrice.price_eur));
 
@@ -1053,6 +1121,7 @@
 
 			registrationData.birth_date = $('#sd-birth-date').val() || '';
 			registrationData.is_minor = this.getMinorInfoFromBirthDate(registrationData.birth_date).isMinor ? 1 : 0;
+			registrationData.selected_price_ids = selectedPriceIds;
 
 			formData.append('registration_data', JSON.stringify(registrationData));
 

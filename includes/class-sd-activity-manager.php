@@ -1278,17 +1278,71 @@ class SD_Activity_Manager {
 		$email       = sanitize_email( $_POST['email'] ?? '' );
 		$first_name  = sanitize_text_field( $_POST['first_name'] ?? '' );
 		$last_name   = sanitize_text_field( $_POST['last_name'] ?? '' );
-		$price_id    = intval( $_POST['price_id'] ?? 0 );
+		$price_ids_raw = array();
+		if ( isset( $_POST['price_ids'] ) ) {
+			$raw_price_ids = wp_unslash( $_POST['price_ids'] );
+			if ( is_string( $raw_price_ids ) ) {
+				$decoded = json_decode( $raw_price_ids, true );
+				if ( is_array( $decoded ) ) {
+					$price_ids_raw = $decoded;
+				} elseif ( '' !== trim( $raw_price_ids ) ) {
+					$price_ids_raw = explode( ',', $raw_price_ids );
+				}
+			} elseif ( is_array( $raw_price_ids ) ) {
+				$price_ids_raw = $raw_price_ids;
+			}
+		}
 
-		if ( ! $email || ! $first_name || ! $last_name || ! $price_id ) {
+		$price_ids = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'intval', (array) $price_ids_raw ),
+					static function ( $value ) {
+						return $value > 0;
+					}
+				)
+			)
+		);
+
+		if ( empty( $price_ids ) ) {
+			$legacy_price_id = intval( $_POST['price_id'] ?? 0 );
+			if ( $legacy_price_id > 0 ) {
+				$price_ids = array( $legacy_price_id );
+			}
+		}
+
+		if ( ! $email || ! $first_name || ! $last_name || empty( $price_ids ) ) {
 			wp_send_json_error( array( 'message' => __( 'Campi obbligatori mancanti', 'sd-logbook' ) ) );
 		}
 
-		// Verificare che il prezzo appartiene a questa attività
-		$price = $this->get_price( $price_id );
-		if ( ! $price || $price['activity_id'] != $activity_id ) {
-			wp_send_json_error( array( 'message' => __( 'Tariffa non valida', 'sd-logbook' ) ) );
+		// Verificare che i prezzi appartengono a questa attività e calcolare i totali.
+		$selected_prices     = array();
+		$total_price_chf     = 0.0;
+		$total_price_eur     = 0.0;
+		$selected_price_names = array();
+
+		foreach ( $price_ids as $single_price_id ) {
+			$price = $this->get_price( $single_price_id );
+			if ( ! $price || intval( $price['activity_id'] ) !== intval( $activity_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'Tariffa non valida', 'sd-logbook' ) ) );
+			}
+
+			$selected_prices[] = $price;
+			$total_price_chf  += floatval( $price['price_chf'] );
+
+			$price_eur = floatval( $price['price_eur'] );
+			if ( $price_eur <= 0 && class_exists( 'SD_Currency_Converter' ) ) {
+				$converted = SD_Currency_Converter::get_instance()->convert_chf_to_eur( floatval( $price['price_chf'] ) );
+				if ( false !== $converted ) {
+					$price_eur = floatval( $converted );
+				}
+			}
+			$total_price_eur += max( 0, $price_eur );
+
+			$selected_price_names[] = sanitize_text_field( $price['price_name'] ?? '' );
 		}
+
+		$primary_price_id = intval( $price_ids[0] ?? 0 );
 
 		// Raccogliere dati del modulo
 		$registration_data_raw = wp_unslash( $_POST['registration_data'] ?? '' );
@@ -1311,6 +1365,10 @@ class SD_Activity_Manager {
 			}
 		}
 
+		$registration_data['selected_price_ids']   = $price_ids;
+		$registration_data['selected_price_names'] = $selected_price_names;
+		$registration_data['selected_price_count'] = count( $price_ids );
+
 		// Determinare se l'utente è loggato
 		$member_id = is_user_logged_in() ? get_current_user_id() : null;
 
@@ -1323,9 +1381,9 @@ class SD_Activity_Manager {
 				'first_name'        => $first_name,
 				'last_name'         => $last_name,
 				'registration_data' => $registration_data,
-				'price_id'          => $price_id,
-				'price_chf'         => $price['price_chf'],
-				'price_eur'         => $price['price_eur'],
+				'price_id'          => $primary_price_id,
+				'price_chf'         => $total_price_chf,
+				'price_eur'         => $total_price_eur,
 			)
 		);
 
@@ -1334,7 +1392,7 @@ class SD_Activity_Manager {
 		}
 
 		// Se il prezzo è zero o non configurato, iscrizione immediata senza pagamento.
-		$amount_chf = floatval( $price['price_chf'] );
+		$amount_chf = floatval( $total_price_chf );
 		if ( $amount_chf <= 0 ) {
 			global $wpdb;
 			$wpdb->update(
