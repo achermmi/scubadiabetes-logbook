@@ -2226,7 +2226,7 @@
 				// Show each extra field as a row, but the ↑/↓ moves the entire
 				// extra_fields slot in the layout order (same as static blocks).
 				activityDataFields.forEach(function (field) {
-					var sectionLabel = String(field.section_label || getDefaultSectionLabel(field.section_key || 'additional'));
+					var sectionLabel = String(field.section_label || getDefaultSectionLabelByKey(field.section_key || 'additional'));
 					var sectionBadge = '<small style="opacity:.72; font-weight:600;">Sezione: ' + esc(sectionLabel) + '</small>';
 					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
 					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type || 'text')) + ')</span><br>' + sectionBadge + '</div>';
