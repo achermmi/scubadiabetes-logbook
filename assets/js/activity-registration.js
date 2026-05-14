@@ -43,6 +43,7 @@
 			this.$priceTotal = $('#sd-price-total');
 			this.$submitBtn = $('#sd-submit-btn');
 			this.$priceError = $('#sd-price-error');
+			this.$activityExtraContent = $('#sd-activity-extra-content');
 		},
 
 		// Bind events
@@ -370,6 +371,7 @@
 			this.$dynamicFields.empty();
 			this.$pricingFields.empty();
 			this.$consentsFields.empty();
+			this.$activityExtraContent.empty().hide();
 			this.renderPersonalFields();
 			this.$customSections.empty();
 
@@ -427,7 +429,10 @@
 						self.$dynamicFields.html(html);
 						break;
 					case 'activity_data':
-						// Activity data fields are rendered in the activity info card, not as form inputs.
+							// Render all activity_data fields (not only content) in the activity info card.
+							if ($.trim(html).length) {
+								self.$activityExtraContent.html(html).show();
+							}
 						break;
 					default:
 						self.$customSections.append(
@@ -468,7 +473,7 @@
 				html += '<div class="sd-field-row sd-field-content" data-field-id="' + parseInt(field.id, 10) + '">';
 				html += '<div class="sd-field-group sd-field-full">';
 				html += '<div class="sd-content-block">';
-				html += field.content || '';
+				html += self.sanitizeHtml(field.content || '');
 				html += '</div>';
 				html += '</div>';
 				html += '</div>';
