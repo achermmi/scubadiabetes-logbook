@@ -1550,6 +1550,7 @@ class SD_Activity_Manager {
 		}
 
 		wp_enqueue_media();
+		wp_enqueue_editor();
 		wp_enqueue_style( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-admin.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable' ), SD_LOGBOOK_VERSION, true );
 
@@ -1588,7 +1589,12 @@ class SD_Activity_Manager {
 
 		// Enqueue CSS e JS
 		wp_enqueue_style( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-registration.css', array(), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-registration.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		$registration_js_version = SD_LOGBOOK_VERSION;
+		$registration_js_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/activity-registration.js';
+		if ( file_exists( $registration_js_file ) ) {
+			$registration_js_version .= '.' . filemtime( $registration_js_file );
+		}
+		wp_enqueue_script( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-registration.js', array( 'jquery' ), $registration_js_version, true );
 
 		// Render template
 		ob_start();

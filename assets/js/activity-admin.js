@@ -42,6 +42,7 @@
 			return;
 		}
 
+		initActivityDescriptionEditor();
 		bindTabs();
 		bindActions();
 		loadActivities();
@@ -79,6 +80,8 @@
 		$(document).on('change', '#sd-image-width, #sd-image-height', updateImagePreview);
 		$(document).on('change', 'input[name="sd-image-align-h"], input[name="sd-image-align-v"]', updateImagePreview);
 		$(document).on('change', '#sd-image-aspect-ratio', updateImagePreview);
+		$(document).on('input change', '#sd-activity-thumbnail', updateActivityThumbnailPreview);
+		$(document).on('click', '#sd-activity-thumbnail-media-btn', openMediaLibraryForActivityThumbnail);
 		$('#sd-add-condition-rule').on('click', function () {
 			addConditionRuleRow();
 		});
@@ -277,7 +280,8 @@
 			$('#sd-activity-location').val(a.location || '');
 			$('#sd-activity-status').val(a.event_status || 'draft');
 			$('#sd-activity-thumbnail').val(a.thumbnail_url || '');
-			$('#sd-activity-description').val(a.description || '');
+			updateActivityThumbnailPreview();
+			setActivityDescriptionValue(a.description || '');
 			$('#sd-activity-max').val(a.max_participants || '');
 			$('#sd-activity-start').val(toDateTimeLocal(a.start_date));
 			$('#sd-activity-end').val(toDateTimeLocal(a.end_date));
@@ -314,7 +318,7 @@
 		var activityId = parseInt($('#sd-activity-id').val(), 10) || 0;
 		var payload = {
 			title: $('#sd-activity-title').val(),
-			description: $('#sd-activity-description').val(),
+			description: getActivityDescriptionValue(),
 			start_date: fromDateTimeLocal($('#sd-activity-start').val()),
 			end_date: fromDateTimeLocal($('#sd-activity-end').val()),
 			location: $('#sd-activity-location').val(),
@@ -324,7 +328,7 @@
 		};
 
 		if (!payload.title || !payload.start_date || !payload.end_date) {
-			showMessage('error', 'Compila almeno titolo, data inizio e data fine.');
+			showMessage('error', 'Compila almeno titolo, data inizio e data fine.', 'top');
 			return;
 		}
 
@@ -335,16 +339,122 @@
 			activity: payload,
 		}, function (resp) {
 			if (!resp || !resp.success) {
-				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error, 'top');
 				return;
 			}
 
 			state.selectedActivityId = parseInt(resp.data.activity_id, 10) || 0;
 			$('#sd-activity-id').val(state.selectedActivityId);
-			showMessage('success', resp.data.message || 'Attivita salvata.');
+			showMessage('success', resp.data.message || 'Attivita salvata.', 'top');
 			loadActivities();
 			editActivity(state.selectedActivityId);
 		});
+	}
+
+	function initActivityDescriptionEditor() {
+		if (!$('#sd-activity-description').length) {
+			return;
+		}
+
+		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
+			if (window.tinymce && window.tinymce.get('sd-activity-description')) {
+				return;
+			}
+
+			window.wp.editor.initialize('sd-activity-description', {
+				mediaButtons: true,
+				quicktags: true,
+				tinymce: {
+					wpautop: true,
+					height: 260,
+					toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,unlink,undo,redo',
+					toolbar2: 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,wp_help',
+				},
+			});
+			return;
+		}
+
+		if (window.tinymce && !window.tinymce.get('sd-activity-description')) {
+			window.tinymce.init({
+				selector: '#sd-activity-description',
+				plugins: 'link image media lists',
+				toolbar: 'formatselect | bold italic underline | bullist numlist | link image | alignleft aligncenter alignright',
+				menubar: 'edit insert format table',
+				height: 260,
+			});
+		}
+	}
+
+	function getActivityDescriptionValue() {
+		if (window.tinymce && window.tinymce.get('sd-activity-description')) {
+			return window.tinymce.get('sd-activity-description').getContent();
+		}
+
+		return $('#sd-activity-description').val() || '';
+	}
+
+	function setActivityDescriptionValue(value) {
+		var text = String(value || '');
+
+		if (window.tinymce && window.tinymce.get('sd-activity-description')) {
+			window.tinymce.get('sd-activity-description').setContent(text);
+			return;
+		}
+
+		$('#sd-activity-description').val(text);
+	}
+
+	function openMediaLibraryForActivityThumbnail(e) {
+		if (e) {
+			e.preventDefault();
+		}
+
+		if (!window.wp || !window.wp.media) {
+			showMessage('warning', 'Media Library non disponibile in questa pagina.');
+			return;
+		}
+
+		var mediaFrame = window.wp.media({
+			title: 'Seleziona Immagine Attivita',
+			button: { text: 'Usa Immagine' },
+			multiple: false,
+			library: { type: 'image' },
+		});
+
+		mediaFrame.on('open', function () {
+			$('body').addClass('sd-activity-media-fix-open');
+		});
+
+		mediaFrame.on('close', function () {
+			$('body').removeClass('sd-activity-media-fix-open');
+		});
+
+		mediaFrame.on('select', function () {
+			var attachment = mediaFrame.state().get('selection').first();
+			if (!attachment || !attachment.attributes || !attachment.attributes.url) {
+				return;
+			}
+
+			$('#sd-activity-thumbnail').val(String(attachment.attributes.url));
+			updateActivityThumbnailPreview();
+		});
+
+		mediaFrame.open();
+	}
+
+	function updateActivityThumbnailPreview() {
+		var $preview = $('#sd-activity-thumb-preview');
+		if (!$preview.length) {
+			return;
+		}
+
+		var url = String($('#sd-activity-thumbnail').val() || '').trim();
+		if (!url) {
+			$preview.html('<div class="sd-activity-thumb-placeholder">Anteprima immagine attivita</div>');
+			return;
+		}
+
+		$preview.html('<img src="' + esc(url) + '" alt="Anteprima immagine attività" loading="lazy">');
 	}
 
 	function deleteActivity(activityId) {
@@ -2585,6 +2695,8 @@
 		state.currentActivity = null;
 		$('#sd-activity-id').val('0');
 		$('#sd-activity-form')[0].reset();
+		setActivityDescriptionValue('');
+		updateActivityThumbnailPreview();
 		updateActivityShortcodeHint(0);
 		$('#sd-activity-data-extra-fields').hide().empty();
 		$('#sd-activity-static-order-controls').hide().empty();

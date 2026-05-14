@@ -109,7 +109,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="sd-field-row">
 						<div class="sd-field-group sd-field-full">
 							<label for="sd-activity-thumbnail" class="sd-label"><?php esc_html_e( 'Immagine URL', 'sd-logbook' ); ?></label>
-							<input type="url" id="sd-activity-thumbnail" class="sd-input">
+							<div class="sd-activity-thumbnail-row">
+								<input type="url" id="sd-activity-thumbnail" class="sd-input">
+								<button type="button" id="sd-activity-thumbnail-media-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Media Library', 'sd-logbook' ); ?></button>
+							</div>
+							<div class="sd-activity-thumb-preview" id="sd-activity-thumb-preview">
+								<div class="sd-activity-thumb-placeholder"><?php esc_html_e( 'Anteprima immagine attività', 'sd-logbook' ); ?></div>
+							</div>
 						</div>
 					</div>
 				</div>

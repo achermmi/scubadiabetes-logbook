@@ -292,12 +292,22 @@
 				activity.location ? 'LUOGO: ' + activity.location : 'Scopri i dettagli dell\'attività'
 			);
 
-			// Format dates (DD.MM.YYYY)
-			const startDate = this.formatDate(activity.start_date);
-			const endDate = this.formatDate(activity.end_date);
+			// Format dates (DD.MM.YYYY) and times (HH:MM).
+			const rawStartDate = activity.start_date || activity.start_date_formatted || '';
+			const rawEndDate = activity.end_date || activity.end_date_formatted || '';
+			const startDate = this.formatDate(rawStartDate);
+			const endDate = this.formatDate(rawEndDate);
+			const startTime = this.extractTime(activity.start_date_formatted || rawStartDate);
+			const endTime = this.extractTime(activity.end_date_formatted || rawEndDate);
+			const hideTimes = startTime === '00:00' && endTime === '00:00';
 
-			$('#sd-activity-start-date').text(startDate);
-			$('#sd-activity-end-date').text(endDate);
+			if (hideTimes) {
+				$('#sd-activity-start-date').text(startDate);
+				$('#sd-activity-end-date').text(endDate);
+			} else {
+				$('#sd-activity-start-date').text(startDate + ' ore ' + startTime);
+				$('#sd-activity-end-date').text(endDate + ' ore ' + endTime);
+			}
 			$('#sd-activity-location').text(activity.location || '-');
 
 			const imageUrl = String(activity.thumbnail_url || '').trim();
@@ -1079,11 +1089,42 @@
 
 		// Format date (YYYY-MM-DD to DD.MM.YYYY)
 		formatDate: function (dateString) {
-			if (!dateString) return '-';
-			const date = new Date(dateString);
+			if (!dateString) {
+				return '-';
+			}
+
+			const text = String(dateString).trim();
+			const italianMatch = text.match(/^(\d{2})[./-](\d{2})[./-](\d{4})/);
+			if (italianMatch) {
+				return italianMatch[1] + '.' + italianMatch[2] + '.' + italianMatch[3];
+			}
+
+			const date = new Date(text.replace(' ', 'T'));
+			if (isNaN(date.getTime())) {
+				return '-';
+			}
 			return ('0' + date.getDate()).slice(-2) + '.' + 
 				   ('0' + (date.getMonth() + 1)).slice(-2) + '.' + 
 				   date.getFullYear();
+		},
+
+		extractTime: function (dateString) {
+			if (!dateString) {
+				return '00:00';
+			}
+
+			const text = String(dateString).trim();
+			const match = text.match(/\b(\d{2}):(\d{2})(?::\d{2})?\b/);
+			if (match) {
+				return match[1] + ':' + match[2];
+			}
+
+			const parsed = new Date(text.replace(' ', 'T'));
+			if (isNaN(parsed.getTime())) {
+				return '00:00';
+			}
+
+			return ('0' + parsed.getHours()).slice(-2) + ':' + ('0' + parsed.getMinutes()).slice(-2);
 		},
 
 		getTodayYmd: function () {
