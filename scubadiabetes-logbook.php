@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.2.0' );
+define( 'SD_LOGBOOK_VERSION', '1.3.46' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.6.0';
+	const DB_VERSION = '3.7.2';
 
 	/**
 	 * Ottieni istanza singleton
@@ -64,6 +64,7 @@ final class SD_Logbook {
 	private function load_dependencies() {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-database.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-roles.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-currency-converter.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-adapter.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-paypal.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-fattura.php';
@@ -72,6 +73,9 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-orchestrator.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-flow.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-settings.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-manager.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-settings.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-payment-flow.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-form.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dashboard.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-diver-profile.php';
@@ -138,6 +142,7 @@ final class SD_Logbook {
 		$db = new SD_Database();
 		$db->create_tables();
 		$db->create_membership_tables();
+		$db->create_activity_tables();
 		$db->create_nightscout_tables();
 		$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
 		$db->create_dexcom_oauth_tables();
@@ -195,6 +200,7 @@ final class SD_Logbook {
 			$db = new SD_Database();
 			$db->create_tables();
 			$db->create_membership_tables();
+			$db->create_activity_tables();
 			$db->create_nightscout_tables();
 			$db->create_dexcom_tables();       // mantiene tabella Share API (dati esistenti)
 			$db->create_dexcom_oauth_tables();
@@ -237,8 +243,12 @@ final class SD_Logbook {
 	 * Inizializza i componenti frontend
 	 */
 	public function init_components() {
+		SD_Currency_Converter::get_instance();
 		new SD_Payment_Flow();
 		new SD_Payment_Settings();
+		SD_Activity_Manager::get_instance();
+		new SD_Activity_Settings();
+		new SD_Activity_Payment_Flow();
 		new SD_Dive_Form();
 		new SD_Dashboard();
 		new SD_Diver_Profile();

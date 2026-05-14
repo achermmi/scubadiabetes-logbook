@@ -1158,6 +1158,232 @@ class SD_Database {
 	}
 
 	/**
+	 * Crea le tabelle per il sistema di attività e iscrizioni
+	 * Versione: 3.7.0 (aggiungiamo il sistema di attività)
+	 */
+	public function create_activity_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		// =====================================================================
+		// TABELLA: ATTIVITÀ (sd_activities)
+		// Informazioni sull'evento/attività
+		// =====================================================================
+		$table_activities = $this->table( 'activities' );
+		$sql_activities   = "CREATE TABLE {$table_activities} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			title varchar(255) NOT NULL,
+			description longtext DEFAULT NULL,
+			start_date datetime NOT NULL,
+			end_date datetime DEFAULT NULL,
+			location varchar(255) DEFAULT NULL,
+			max_participants int(11) DEFAULT NULL,
+			current_participants int(11) DEFAULT 0,
+			event_status varchar(30) DEFAULT 'draft',
+			thumbnail_url varchar(500) DEFAULT NULL,
+			form_configuration longtext DEFAULT NULL,
+			price_configuration longtext DEFAULT NULL,
+			created_by int(11) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_event_status (event_status),
+			KEY idx_start_date (start_date)
+		) {$charset_collate};";
+		dbDelta( $sql_activities );
+
+		// =====================================================================
+		// TABELLA: CAMPI MODULO DINAMICO (sd_activity_form_fields)
+		// Configurazione dinamica dei campi per ogni attività
+		// =====================================================================
+		$table_form_fields = $this->table( 'activity_form_fields' );
+		$sql_form_fields   = "CREATE TABLE {$table_form_fields} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			activity_id int(11) NOT NULL,
+			field_type varchar(50) NOT NULL,
+			field_name varchar(100) NOT NULL,
+			field_label varchar(255) NOT NULL,
+			placeholder varchar(255) DEFAULT NULL,
+			is_required tinyint(1) DEFAULT 0,
+			section_key varchar(60) DEFAULT 'additional',
+			section_label varchar(255) DEFAULT NULL,
+			section_order int(11) DEFAULT 20,
+			field_order int(11) DEFAULT 0,
+			options longtext DEFAULT NULL,
+			content longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			FOREIGN KEY (activity_id) REFERENCES {$table_activities}(id) ON DELETE CASCADE
+		) {$charset_collate};";
+		dbDelta( $sql_form_fields );
+
+		// =====================================================================
+		// TABELLA: TARIFFE ATTIVITÀ (sd_activity_prices)
+		// Configurazione delle diverse tariffe per l'evento
+		// =====================================================================
+		$table_prices = $this->table( 'activity_prices' );
+		$sql_prices   = "CREATE TABLE {$table_prices} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			activity_id int(11) NOT NULL,
+			price_name varchar(255) NOT NULL,
+			price_chf decimal(10,2) NOT NULL,
+			price_eur decimal(10,2) DEFAULT NULL,
+			currency_rate decimal(8,4) DEFAULT NULL,
+			currency_rate_date date DEFAULT NULL,
+			is_default tinyint(1) DEFAULT 0,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			FOREIGN KEY (activity_id) REFERENCES {$table_activities}(id) ON DELETE CASCADE
+		) {$charset_collate};";
+		dbDelta( $sql_prices );
+
+		// =====================================================================
+		// TABELLA: ISCRIZIONI ATTIVITÀ (sd_activity_registrations)
+		// Record di iscrizione di ogni partecipante all'attività
+		// =====================================================================
+		$table_registrations = $this->table( 'activity_registrations' );
+		$sql_registrations   = "CREATE TABLE {$table_registrations} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			activity_id int(11) NOT NULL,
+			member_id int(11) DEFAULT NULL,
+			email varchar(255) DEFAULT NULL,
+			first_name varchar(100) DEFAULT NULL,
+			last_name varchar(100) DEFAULT NULL,
+			registration_data longtext DEFAULT NULL,
+			status varchar(30) DEFAULT 'registered',
+			payment_status varchar(30) DEFAULT 'pending',
+			payment_date datetime DEFAULT NULL,
+			price_id int(11) DEFAULT NULL,
+			price_chf decimal(10,2) DEFAULT NULL,
+			price_eur decimal(10,2) DEFAULT NULL,
+			payment_method varchar(50) DEFAULT NULL,
+			transaction_id varchar(255) DEFAULT NULL,
+			invoice_number varchar(50) DEFAULT NULL,
+			confirmation_token varchar(255) DEFAULT NULL,
+			confirmation_expires_at datetime DEFAULT NULL,
+			invoice_pdf_path varchar(500) DEFAULT NULL,
+			receipt_pdf_path varchar(500) DEFAULT NULL,
+			is_notification_sent tinyint(1) DEFAULT 0,
+			created_by int(11) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			KEY idx_member_id (member_id),
+			KEY idx_payment_status (payment_status),
+			KEY idx_email (email),
+			KEY idx_confirmation_token (confirmation_token),
+			FOREIGN KEY (activity_id) REFERENCES {$table_activities}(id) ON DELETE CASCADE,
+			FOREIGN KEY (price_id) REFERENCES {$table_prices}(id) ON DELETE SET NULL
+		) {$charset_collate};";
+		dbDelta( $sql_registrations );
+
+		// =====================================================================
+		// TABELLA: PAGAMENTI ATTIVITÀ (sd_activity_payments)
+		// Tracciamento dettagliato dei pagamenti per le attività
+		// =====================================================================
+		$table_activity_payments = $this->table( 'activity_payments' );
+		$sql_activity_payments   = "CREATE TABLE {$table_activity_payments} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			registration_id int(11) NOT NULL,
+			activity_id int(11) NOT NULL,
+			member_id int(11) DEFAULT NULL,
+			email varchar(255) DEFAULT NULL,
+			amount_chf decimal(10,2) NOT NULL,
+			amount_eur decimal(10,2) DEFAULT NULL,
+			payment_method varchar(50) NOT NULL,
+			status varchar(30) DEFAULT 'in_attesa',
+			transaction_id varchar(255) DEFAULT NULL,
+			provider_payment_id varchar(255) DEFAULT NULL,
+			confirmation_token varchar(255) DEFAULT NULL,
+			confirmation_expires_at datetime DEFAULT NULL,
+			invoice_pdf_path varchar(500) DEFAULT NULL,
+			receipt_pdf_path varchar(500) DEFAULT NULL,
+			completed_at datetime DEFAULT NULL,
+			provider_payload longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_registration_id (registration_id),
+			KEY idx_activity_id (activity_id),
+			KEY idx_member_id (member_id),
+			KEY idx_status (status),
+			KEY idx_payment_method (payment_method),
+			KEY idx_confirmation_token (confirmation_token),
+			FOREIGN KEY (registration_id) REFERENCES {$table_registrations}(id) ON DELETE CASCADE,
+			FOREIGN KEY (activity_id) REFERENCES {$table_activities}(id) ON DELETE CASCADE
+		) {$charset_collate};";
+		dbDelta( $sql_activity_payments );
+
+		// =====================================================================
+		// TABELLA: EMAIL TEMPLATE PER ATTIVITÀ (sd_activity_emails)
+		// Template customizzabili per comunicazioni attività
+		// =====================================================================
+		$table_activity_emails = $this->table( 'activity_emails' );
+		$sql_activity_emails   = "CREATE TABLE {$table_activity_emails} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			activity_id int(11) DEFAULT NULL,
+			template_type varchar(50) NOT NULL,
+			subject varchar(255) NOT NULL,
+			body longtext NOT NULL,
+			variables_list longtext DEFAULT NULL,
+			is_enabled tinyint(1) DEFAULT 1,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			KEY idx_template_type (template_type),
+			FOREIGN KEY (activity_id) REFERENCES {$table_activities}(id) ON DELETE CASCADE
+		) {$charset_collate};";
+		dbDelta( $sql_activity_emails );
+
+		// =====================================================================
+		// TABELLA: LOG ATTIVITÀ (sd_activity_log)
+		// Tracciamento modifiche alle attività e iscrizioni
+		// =====================================================================
+		$table_activity_log = $this->table( 'activity_log' );
+		$sql_activity_log   = "CREATE TABLE {$table_activity_log} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			activity_id int(11) DEFAULT NULL,
+			registration_id int(11) DEFAULT NULL,
+			action varchar(100) NOT NULL,
+			table_name varchar(100) DEFAULT NULL,
+			old_data longtext DEFAULT NULL,
+			new_data longtext DEFAULT NULL,
+			user_id int(11) DEFAULT NULL,
+			ip_address varchar(45) DEFAULT NULL,
+			user_agent varchar(500) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			KEY idx_registration_id (registration_id),
+			KEY idx_action (action),
+			KEY idx_created_at (created_at)
+		) {$charset_collate};";
+		dbDelta( $sql_activity_log );
+
+		// =====================================================================
+		// TABELLA: TASSO DI CAMBIO GIORNALIERO (sd_currency_rates)
+		// Conserva il tasso CHF/EUR per ogni giorno
+		// =====================================================================
+		$table_currency_rates = $this->table( 'currency_rates' );
+		$sql_currency_rates   = "CREATE TABLE {$table_currency_rates} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			rate_date date NOT NULL,
+			chf_to_eur decimal(8,4) NOT NULL,
+			source varchar(100) DEFAULT 'xe.com',
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			UNIQUE KEY idx_rate_date (rate_date)
+		) {$charset_collate};";
+		dbDelta( $sql_currency_rates );
+	}
+
+	/**
 	 * Verifica se le tabelle esistono
 	 */
 	public function tables_exist() {

@@ -1,0 +1,445 @@
+<?php
+/**
+ * Template: Dashboard Admin Attivita
+ *
+ * Shortcode: [sd_gestione_attivita]
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+?>
+<div class="sd-form-wrap sd-activity-admin-wrap" id="sd-activity-admin-page">
+
+	<div class="sd-form-header">
+		<h2 class="sd-form-title"><?php esc_html_e( 'Gestione Attivita', 'sd-logbook' ); ?></h2>
+		<p class="sd-form-subtitle"><?php esc_html_e( 'Crea attivita, configura modulo/tariffe e gestisci iscrizioni e pagamenti.', 'sd-logbook' ); ?></p>
+	</div>
+
+	<div id="sd-activity-admin-message" class="sd-notice" style="display:none;"></div>
+
+	<div class="sd-admin-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Dashboard Attivita', 'sd-logbook' ); ?>">
+		<button type="button" class="sd-admin-tab is-active" data-tab="attivita"><?php esc_html_e( 'Attivita', 'sd-logbook' ); ?></button>
+		<button type="button" class="sd-admin-tab" data-tab="modifica"><?php esc_html_e( 'Modifica Attivita', 'sd-logbook' ); ?></button>
+		<button type="button" class="sd-admin-tab" data-tab="registrazioni"><?php esc_html_e( 'Registrazioni', 'sd-logbook' ); ?></button>
+		<button type="button" class="sd-admin-tab" data-tab="pagamenti"><?php esc_html_e( 'Pagamenti', 'sd-logbook' ); ?></button>
+	</div>
+
+	<!-- TAB ATTIVITA -->
+	<section class="sd-admin-panel is-active" data-panel="attivita">
+		<div class="sd-admin-toolbar">
+			<div class="sd-admin-filter-row">
+				<input type="text" id="sd-activity-search" class="sd-input" placeholder="<?php esc_attr_e( 'Cerca per titolo o luogo...', 'sd-logbook' ); ?>">
+				<select id="sd-activity-status-filter" class="sd-select">
+					<option value=""><?php esc_html_e( 'Tutti gli stati', 'sd-logbook' ); ?></option>
+					<option value="draft"><?php esc_html_e( 'Draft', 'sd-logbook' ); ?></option>
+					<option value="published"><?php esc_html_e( 'Pubblicata', 'sd-logbook' ); ?></option>
+					<option value="closed"><?php esc_html_e( 'Conclusa', 'sd-logbook' ); ?></option>
+					<option value="archived"><?php esc_html_e( 'Archiviata', 'sd-logbook' ); ?></option>
+				</select>
+				<button type="button" id="sd-activity-filter-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Filtra', 'sd-logbook' ); ?></button>
+			</div>
+			<button type="button" id="sd-activity-new-btn" class="sd-btn sd-btn-primary"><?php esc_html_e( '+ Nuova Attivita', 'sd-logbook' ); ?></button>
+		</div>
+
+		<div class="sd-table-wrap">
+			<table class="sd-admin-table" id="sd-activities-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'ID', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Titolo', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Data Inizio', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Luogo', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Posti', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></th>
+						<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
+					</tr>
+				</thead>
+				<tbody id="sd-activities-tbody">
+					<tr><td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Caricamento attivita...', 'sd-logbook' ); ?></td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<!-- TAB MODIFICA -->
+	<section class="sd-admin-panel" data-panel="modifica">
+		<div id="sd-modifica-sections-stack">
+		<form id="sd-activity-form" class="sd-form-section" novalidate data-layout-key="activity_data">
+			<input type="hidden" id="sd-activity-id" value="0">
+			<div class="sd-section-headbar">
+				<h3 class="sd-section-title"><span class="sd-section-title-text"><?php esc_html_e( 'Dati Attivita', 'sd-logbook' ); ?></span></h3>
+				<div class="sd-section-headbar-tools">
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-section-rename" data-section="activity_data"><?php esc_html_e( 'Rinomina', 'sd-logbook' ); ?></button>
+				</div>
+			</div>
+
+			<div id="sd-activity-static-order-controls" class="sd-static-order-controls" style="display:none;"></div>
+
+			<div id="sd-activity-static-blocks">
+				<div class="sd-activity-static-block" data-static-block="core">
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-half">
+							<label for="sd-activity-title" class="sd-label sd-label-required"><?php esc_html_e( 'Titolo', 'sd-logbook' ); ?></label>
+							<input type="text" id="sd-activity-title" class="sd-input" required>
+						</div>
+						<div class="sd-field-group sd-field-half">
+							<label for="sd-activity-location" class="sd-label"><?php esc_html_e( 'Luogo', 'sd-logbook' ); ?></label>
+							<input type="text" id="sd-activity-location" class="sd-input">
+						</div>
+					</div>
+
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-third">
+							<label for="sd-activity-start" class="sd-label sd-label-required"><?php esc_html_e( 'Data Inizio', 'sd-logbook' ); ?></label>
+							<input type="datetime-local" id="sd-activity-start" class="sd-input" required>
+						</div>
+						<div class="sd-field-group sd-field-third">
+							<label for="sd-activity-end" class="sd-label sd-label-required"><?php esc_html_e( 'Data Fine', 'sd-logbook' ); ?></label>
+							<input type="datetime-local" id="sd-activity-end" class="sd-input" required>
+						</div>
+						<div class="sd-field-group sd-field-third">
+							<label for="sd-activity-max" class="sd-label"><?php esc_html_e( 'Max Partecipanti', 'sd-logbook' ); ?></label>
+							<input type="number" id="sd-activity-max" class="sd-input" min="1">
+						</div>
+					</div>
+				</div>
+
+				<div class="sd-activity-static-block" data-static-block="thumbnail">
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-full">
+							<label for="sd-activity-thumbnail" class="sd-label"><?php esc_html_e( 'Immagine URL', 'sd-logbook' ); ?></label>
+							<input type="url" id="sd-activity-thumbnail" class="sd-input">
+						</div>
+					</div>
+				</div>
+
+				<div class="sd-activity-static-block" data-static-block="description">
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-full">
+							<label for="sd-activity-description" class="sd-label"><?php esc_html_e( 'Descrizione', 'sd-logbook' ); ?></label>
+							<textarea id="sd-activity-description" class="sd-textarea" rows="5"></textarea>
+						</div>
+					</div>
+				</div>
+
+				<div class="sd-activity-static-block" data-static-block="status">
+					<div class="sd-field-row">
+						<div class="sd-field-group sd-field-full">
+							<label for="sd-activity-status" class="sd-label"><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></label>
+							<select id="sd-activity-status" class="sd-select">
+								<option value="draft"><?php esc_html_e( 'Draft', 'sd-logbook' ); ?></option>
+								<option value="published"><?php esc_html_e( 'Pubblicata', 'sd-logbook' ); ?></option>
+								<option value="closed"><?php esc_html_e( 'Conclusa', 'sd-logbook' ); ?></option>
+								<option value="archived"><?php esc_html_e( 'Archiviata', 'sd-logbook' ); ?></option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="sd-activity-static-block" data-static-block="extra_fields">
+					<div id="sd-activity-data-extra-fields" class="sd-field-row" style="display:none;"></div>
+				</div>
+			</div>
+
+			<div class="sd-form-actions">
+				<button type="submit" class="sd-btn sd-btn-primary"><?php esc_html_e( 'Salva Attivita', 'sd-logbook' ); ?></button>
+				<button type="button" id="sd-activity-form-reset" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Nuova', 'sd-logbook' ); ?></button>
+			</div>
+
+			<p id="sd-activity-shortcode-hint" class="sd-field-note" style="margin-top:0.75rem;">
+				<?php esc_html_e( 'Salva l\'attivita per ottenere lo shortcode.', 'sd-logbook' ); ?>
+			</p>
+			<p>
+				<button type="button" id="sd-copy-shortcode-btn" class="sd-btn sd-btn-secondary" style="display:none;">
+					<?php esc_html_e( 'Copia shortcode', 'sd-logbook' ); ?>
+				</button>
+			</p>
+		</form>
+
+		<div class="sd-admin-grid-2" id="sd-sections-secondary-stack">
+			<div class="sd-form-section" id="sd-section-campi-modulo" data-layout-key="campi_modulo">
+				<h3 class="sd-section-title"><?php esc_html_e( 'Campi Modulo', 'sd-logbook' ); ?></h3>
+				<form id="sd-activity-field-form">
+					<input type="hidden" id="sd-field-id" value="0">
+					<div class="sd-inline-form">
+						<input type="text" id="sd-field-label" class="sd-input" placeholder="<?php esc_attr_e( 'Etichetta campo', 'sd-logbook' ); ?>" required>
+						<select id="sd-field-type" class="sd-select">
+							<option value="text">Text</option>
+							<option value="textarea">Textarea</option>
+							<option value="select">Select</option>
+							<option value="checkbox">Checkbox</option>
+							<option value="radio">Radio</option>
+							<option value="date">Date</option>
+							<option value="number">Number</option>
+							<option value="content">Contenuto Formattato</option>						<option value="image">Immagine</option>						</select>
+						<button type="submit" class="sd-btn sd-btn-secondary" id="sd-field-submit-btn"><?php esc_html_e( 'Aggiungi Campo', 'sd-logbook' ); ?></button>
+					</div>
+					<div class="sd-field-builder-meta">
+						<select id="sd-field-section" class="sd-select">
+							<option value="personal"><?php esc_html_e( 'Sezione: Dati Personali', 'sd-logbook' ); ?></option>
+							<option value="activity_data"><?php esc_html_e( 'Sezione: Dati Attivita', 'sd-logbook' ); ?></option>
+							<option value="additional" selected><?php esc_html_e( 'Sezione: Informazioni Aggiuntive', 'sd-logbook' ); ?></option>
+							<option value="pricing"><?php esc_html_e( 'Sezione: Selezione Tariffa', 'sd-logbook' ); ?></option>
+							<option value="consents"><?php esc_html_e( 'Sezione: Consensi', 'sd-logbook' ); ?></option>
+							<option value="__new__"><?php esc_html_e( 'Nuova sezione personalizzata', 'sd-logbook' ); ?></option>
+						</select>
+						<input type="number" id="sd-field-section-order" class="sd-input" min="1" step="1" value="20" placeholder="<?php esc_attr_e( 'Ordine sezione', 'sd-logbook' ); ?>">
+						<label class="sd-admin-inline-check">
+							<input type="checkbox" id="sd-field-required" value="1">
+							<span><?php esc_html_e( 'Obbligatorio', 'sd-logbook' ); ?></span>
+						</label>
+					</div>
+					<div id="sd-custom-section-wrap" class="sd-inline-form sd-custom-section-row" style="display:none;">
+						<input type="text" id="sd-custom-section-label" class="sd-input" placeholder="<?php esc_attr_e( 'Titolo nuova sezione', 'sd-logbook' ); ?>">
+						<input type="text" id="sd-custom-section-key" class="sd-input" placeholder="<?php esc_attr_e( 'Chiave sezione (opzionale)', 'sd-logbook' ); ?>">
+						<button type="button" id="sd-field-cancel-edit" class="sd-btn sd-btn-secondary" style="display:none;"><?php esc_html_e( 'Annulla Modifica', 'sd-logbook' ); ?></button>
+					</div>
+					<div id="sd-field-options-wrap" style="display:none;">
+						<p class="sd-field-options-label"><?php esc_html_e( 'Opzioni (aggiungi le scelte disponibili):', 'sd-logbook' ); ?></p>
+						<div class="sd-inline-form sd-options-add-row">
+							<input type="text" id="sd-option-label" class="sd-input" placeholder="<?php esc_attr_e( 'Etichetta opzione', 'sd-logbook' ); ?>">
+							<input type="text" id="sd-option-value" class="sd-input" placeholder="<?php esc_attr_e( 'Valore (slug)', 'sd-logbook' ); ?>">
+							<button type="button" id="sd-add-option-btn" class="sd-btn sd-btn-outline"><?php esc_html_e( '+ Opzione', 'sd-logbook' ); ?></button>
+						</div>
+						<ul id="sd-options-preview" class="sd-mini-list"></ul>
+					</div>
+					<div id="sd-field-content-wrap" style="display:none;">
+						<p class="sd-field-options-label"><?php esc_html_e( 'Contenuto Formattato:', 'sd-logbook' ); ?></p>
+						<textarea id="sd-field-content-editor" style="width:100%; min-height:250px;"></textarea>
+					</div>
+					<div id="sd-field-image-wrap" style="display:none;">
+						<p class="sd-field-options-label"><?php esc_html_e( 'Configurazione Immagine:', 'sd-logbook' ); ?></p>
+						
+						<!-- Image Preview -->
+						<div class="sd-image-preview-container">
+							<div id="sd-image-preview" class="sd-image-preview-box">
+								<div class="sd-image-preview-placeholder">
+									<?php esc_html_e( 'Anteprima immagine', 'sd-logbook' ); ?>
+								</div>
+							</div>
+						</div>
+						
+						<div class="sd-field-builder-meta">
+							<label class="sd-label">Tipo:</label>
+							<div class="sd-radio-group">
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-type" value="display" checked>
+									<span><?php esc_html_e( 'Visualizzazione (immagine statica)', 'sd-logbook' ); ?></span>
+								</label>
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-type" value="upload">
+									<span><?php esc_html_e( 'Upload (utente carica file)', 'sd-logbook' ); ?></span>
+								</label>
+							</div>
+						</div>
+						<div class="sd-field-builder-meta" id="sd-image-source-wrap">
+							<label for="sd-image-url" class="sd-label">URL Immagine (per Display):</label>
+							<div class="sd-inline-form">
+								<input type="url" id="sd-image-url" class="sd-input" placeholder="https://example.com/image.jpg">
+								<button type="button" id="sd-image-media-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Media Library', 'sd-logbook' ); ?></button>
+							</div>
+						</div>
+						<div class="sd-field-builder-meta">
+							<label class="sd-label">Dimensionamento:</label>
+							<div class="sd-inline-form">
+								<input type="number" id="sd-image-width" class="sd-input" placeholder="Larghezza (px)" min="50">
+								<input type="number" id="sd-image-height" class="sd-input" placeholder="Altezza (px)" min="50">
+								<label class="sd-admin-inline-check">
+									<input type="checkbox" id="sd-image-aspect-ratio" checked>
+									<span><?php esc_html_e( 'Mantieni proporzioni', 'sd-logbook' ); ?></span>
+								</label>
+							</div>
+						</div>
+						<div class="sd-field-builder-meta">
+							<label class="sd-label">Allineamento Orizzontale:</label>
+							<div class="sd-radio-group">
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-h" value="left" checked>
+									<span><?php esc_html_e( 'Sinistra', 'sd-logbook' ); ?></span>
+								</label>
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-h" value="center">
+									<span><?php esc_html_e( 'Centro', 'sd-logbook' ); ?></span>
+								</label>
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-h" value="right">
+									<span><?php esc_html_e( 'Destra', 'sd-logbook' ); ?></span>
+								</label>
+							</div>
+						</div>
+						<div class="sd-field-builder-meta">
+							<label class="sd-label">Allineamento Verticale:</label>
+							<div class="sd-radio-group">
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-v" value="top" checked>
+									<span><?php esc_html_e( 'Alto', 'sd-logbook' ); ?></span>
+								</label>
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-v" value="middle">
+									<span><?php esc_html_e( 'Centro', 'sd-logbook' ); ?></span>
+								</label>
+								<label class="sd-admin-inline-check">
+									<input type="radio" name="sd-image-align-v" value="bottom">
+									<span><?php esc_html_e( 'Basso', 'sd-logbook' ); ?></span>
+								</label>
+							</div>
+						</div>
+						<div class="sd-field-builder-meta">
+							<label for="sd-image-alt-text" class="sd-label">Testo Alt (per accessibilità):</label>
+							<input type="text" id="sd-image-alt-text" class="sd-input" placeholder="Descrizione immagine">
+						</div>
+					</div>
+					<div id="sd-field-condition-wrap" class="sd-field-builder-meta">
+						<select id="sd-condition-mode" class="sd-select">
+							<option value="and"><?php esc_html_e( 'Tutte vere (AND)', 'sd-logbook' ); ?></option>
+							<option value="or"><?php esc_html_e( 'Almeno una vera (OR)', 'sd-logbook' ); ?></option>
+						</select>
+						<button type="button" id="sd-add-condition-rule" class="sd-btn sd-btn-secondary"><?php esc_html_e( '+ Condizione', 'sd-logbook' ); ?></button>
+					</div>
+					<div id="sd-condition-rules"></div>
+					<p class="sd-field-options-label"><?php esc_html_e( 'Condizione: il campo sarà visibile solo quando la condizione è vera.', 'sd-logbook' ); ?></p>
+					<div class="sd-field-builder-actions">
+						<button type="button" id="sd-field-cancel-edit-secondary" class="sd-btn sd-btn-secondary" style="display:none;"><?php esc_html_e( 'Annulla Modifica', 'sd-logbook' ); ?></button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="sd-form-section sd-form-section-wide" id="sd-section-sezioni-modulo" data-layout-key="sezioni_modulo">
+			<h3 class="sd-section-title"><?php esc_html_e( 'Sezioni Modulo', 'sd-logbook' ); ?></h3>
+			<div id="sd-fields-list" class="sd-fields-container"></div>
+		</div>
+		</div>
+	</section>
+
+	<!-- TAB REGISTRAZIONI -->
+	<section class="sd-admin-panel" data-panel="registrazioni">
+		<div class="sd-form-section">
+			<div id="sd-reg-minor-alert" class="sd-notice sd-notice-error" style="display:none;"></div>
+			<div class="sd-admin-filter-row">
+				<select id="sd-reg-activity-id" class="sd-select"></select>
+				<select id="sd-reg-payment-filter" class="sd-select">
+					<option value=""><?php esc_html_e( 'Tutti i pagamenti', 'sd-logbook' ); ?></option>
+					<option value="pending"><?php esc_html_e( 'In attesa', 'sd-logbook' ); ?></option>
+					<option value="paid"><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
+					<option value="invoice_requested"><?php esc_html_e( 'Fattura richiesta', 'sd-logbook' ); ?></option>
+					<option value="invoice_sent"><?php esc_html_e( 'Fattura inviata', 'sd-logbook' ); ?></option>
+					<option value="invoice_error"><?php esc_html_e( 'Errore invio fattura', 'sd-logbook' ); ?></option>
+					<option value="cancelled"><?php esc_html_e( 'Annullato', 'sd-logbook' ); ?></option>
+				</select>
+				<input type="text" id="sd-reg-search" class="sd-input" placeholder="<?php esc_attr_e( 'Cerca nome, cognome, email...', 'sd-logbook' ); ?>">
+				<button type="button" id="sd-reg-filter-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Applica', 'sd-logbook' ); ?></button>
+			</div>
+
+			<div class="sd-table-wrap">
+				<table class="sd-admin-table" id="sd-reg-table">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Pagamento', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Tariffa', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Data', 'sd-logbook' ); ?></th>
+							<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
+						</tr>
+					</thead>
+					<tbody id="sd-reg-tbody">
+						<tr><td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Seleziona una attivita per vedere le registrazioni.', 'sd-logbook' ); ?></td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+
+	<!-- TAB PAGAMENTI -->
+	<section class="sd-admin-panel" data-panel="pagamenti">
+		<div class="sd-form-section">
+			<div class="sd-admin-stats" id="sd-payment-stats">
+				<div class="sd-stat-card"><span class="sd-stat-label"><?php esc_html_e( 'Totale Registrazioni', 'sd-logbook' ); ?></span><span class="sd-stat-value" id="sd-pay-total">0</span></div>
+				<div class="sd-stat-card"><span class="sd-stat-label"><?php esc_html_e( 'Pagati', 'sd-logbook' ); ?></span><span class="sd-stat-value" id="sd-pay-paid">0</span></div>
+				<div class="sd-stat-card"><span class="sd-stat-label"><?php esc_html_e( 'In Attesa', 'sd-logbook' ); ?></span><span class="sd-stat-value" id="sd-pay-pending">0</span></div>
+			</div>
+			<p class="sd-field-note"><?php esc_html_e( 'Le azioni di aggiornamento pagamento sono disponibili nella tab Registrazioni.', 'sd-logbook' ); ?></p>
+		</div>
+	</section>
+</div>
+
+<?php
+// Initialize WYSIWYG editor for content fields
+wp_enqueue_editor();
+?>
+
+<script>
+window.sdActivityAdmin = {
+	ajaxUrl: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
+	nonce: '<?php echo esc_attr( wp_create_nonce( 'sd_nonce' ) ); ?>',
+	currentChfEurRate: <?php echo esc_js( (string) ( class_exists( 'SD_Currency_Converter' ) ? floatval( SD_Currency_Converter::get_instance()->get_rate() ) : 0 ) ); ?>,
+	strings: {
+		confirmDelete: '<?php esc_attr_e( 'Eliminare questa attivita?', 'sd-logbook' ); ?>',
+		saveFirst: '<?php esc_attr_e( 'Salva prima l\'attivita.', 'sd-logbook' ); ?>',
+		error: '<?php esc_attr_e( 'Si e verificato un errore.', 'sd-logbook' ); ?>',
+		loading: '<?php esc_attr_e( 'Caricamento...', 'sd-logbook' ); ?>'
+	}
+};
+
+// Fallback anti-cache: traduce i valori status/payment_status in italiano
+// anche se activity-admin.js viene servito da cache.
+(function () {
+	var map = {
+		'draft': 'Bozza',
+		'published': 'Pubblicata',
+		'closed': 'Conclusa',
+		'archived': 'Archiviata',
+		'registered': 'Registrato',
+		'waitlist': 'Lista d\'attesa',
+		'cancelled': 'Annullato',
+		'pending': 'In attesa',
+		'paid': 'Pagato',
+		'free': 'Gratuito',
+		'invoice_requested': 'Fattura richiesta',
+		'invoice_sent': 'Fattura inviata',
+		'invoice_error': 'Errore invio fattura'
+	};
+
+	function normalizeKey(text) {
+		return String(text || '').trim().toLowerCase();
+	}
+
+	function translateBadgesInTbody(tbodyId) {
+		var tbody = document.getElementById(tbodyId);
+		if (!tbody) {
+			return;
+		}
+
+		var badges = tbody.querySelectorAll('.sd-status-badge');
+		badges.forEach(function (badge) {
+			var current = normalizeKey(badge.textContent);
+			if (map[current]) {
+				badge.textContent = map[current];
+			}
+		});
+	}
+
+	function observeTbody(tbodyId) {
+		var tbody = document.getElementById(tbodyId);
+		if (!tbody || typeof MutationObserver === 'undefined') {
+			return;
+		}
+
+		var observer = new MutationObserver(function () {
+			translateBadgesInTbody(tbodyId);
+		});
+
+		observer.observe(tbody, { childList: true, subtree: true });
+	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		translateBadgesInTbody('sd-activities-tbody');
+		translateBadgesInTbody('sd-reg-tbody');
+		observeTbody('sd-activities-tbody');
+		observeTbody('sd-reg-tbody');
+	});
+})();
+</script>

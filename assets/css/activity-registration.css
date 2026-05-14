@@ -1,0 +1,933 @@
+/**
+ * Stili Iscrizione Attività - ScubaDiabetes Logbook
+ *
+ * Layout dedicato al frontend iscrizione attività.
+ * Usa selettori più specifici per evitare conflitti col tema.
+ */
+
+.sd-activity-registration-wrap {
+	max-width: 1040px;
+	margin: 0 auto;
+	padding: 0 1rem 2.5rem;
+	color: #16324f;
+}
+
+.sd-activity-registration-wrap #sd-reg-form-container {
+	display: grid;
+	gap: 1.4rem;
+}
+
+.sd-activity-registration-wrap .sd-form-header {
+	margin-bottom: 0;
+	padding: 1.6rem 1.8rem 1.2rem;
+	border: 1px solid rgba(0, 85, 165, 0.12);
+	border-radius: 24px;
+	background: linear-gradient(140deg, #ffffff 0%, #f4f9ff 100%);
+	box-shadow: 0 20px 44px rgba(15, 50, 87, 0.08);
+	position: relative;
+	overflow: hidden;
+}
+
+.sd-activity-registration-wrap .sd-form-header::after {
+	content: '';
+	position: absolute;
+	inset: auto -60px -60px auto;
+	width: 220px;
+	height: 220px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(0, 85, 165, 0.1) 0%, rgba(0, 85, 165, 0) 72%);
+	pointer-events: none;
+}
+
+.sd-activity-registration-wrap .sd-form-title {
+	font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+	line-height: 1.05;
+	margin: 0;
+	position: relative;
+	z-index: 1;
+}
+
+.sd-activity-registration-wrap .sd-form-subtitle {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 0.45rem;
+	width: max-content;
+	max-width: 100%;
+	margin: 0.7rem 0 0;
+	padding: 0.45rem 0.85rem;
+	border-radius: 999px;
+	border: 1px solid rgba(0, 85, 165, 0.2);
+	background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+	box-shadow: 0 8px 18px rgba(0, 85, 165, 0.12);
+	font-size: 0.94rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #1c446d;
+	clear: both;
+	position: relative;
+	z-index: 1;
+}
+
+.sd-activity-registration-wrap .sd-form-subtitle::before {
+	content: none;
+	display: none;
+}
+
+.sd-loading-spinner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	gap: 1rem;
+	padding: 2rem;
+	border-radius: 24px;
+	background: #fff;
+	box-shadow: 0 18px 36px rgba(15, 50, 87, 0.08);
+}
+
+.sd-spinner {
+	width: 42px;
+	height: 42px;
+	border: 4px solid var(--sd-border, #dde1e7);
+	border-top-color: var(--sd-primary, #0055a5);
+	border-radius: 50%;
+	animation: sd-spin 0.8s linear infinite;
+}
+
+@keyframes sd-spin {
+	to { transform: rotate(360deg); }
+}
+
+.sd-notice {
+	padding: 1rem 1.15rem;
+	border-radius: 14px;
+	margin-bottom: 1rem;
+	border-left: 4px solid;
+	animation: slideDown 0.3s ease;
+	box-shadow: 0 14px 32px rgba(15, 50, 87, 0.06);
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.sd-notice-error {
+	background-color: #fff1f1;
+	border-color: #dc2626;
+	color: #991b1b;
+}
+
+.sd-notice-success {
+	background-color: #eefbf1;
+	border-color: #16a34a;
+	color: #166534;
+}
+
+.sd-error-message {
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: #c81e1e;
+	margin-top: 0.45rem;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.sd-error-message::before {
+	content: '⚠';
+	font-size: 0.9rem;
+}
+
+.sd-activity-registration-wrap .sd-form-section {
+	background: #fff;
+	border: 1px solid rgba(23, 78, 132, 0.12);
+	border-radius: 24px;
+	padding: 1.5rem 1.5rem 1.35rem;
+	margin-bottom: 0;
+	box-shadow: 0 20px 44px rgba(15, 50, 87, 0.08);
+	position: relative;
+	overflow: hidden;
+}
+
+.sd-activity-registration-wrap .sd-form-section::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto;
+	height: 5px;
+	background: linear-gradient(90deg, #0055a5 0%, #2d7fd3 45%, #8fc4ff 100%);
+	opacity: 0.95;
+}
+
+.sd-activity-registration-wrap .sd-section-title {
+	font-size: 1.08rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	margin: 0 0 1.15rem;
+	padding-top: 0.2rem;
+}
+
+.sd-activity-info {
+	background: linear-gradient(135deg, #ffffff 0%, #f4faff 100%);
+	border-color: rgba(0, 85, 165, 0.16);
+}
+
+.sd-activity-info::after {
+	content: '';
+	position: absolute;
+	top: -22px;
+	right: -24px;
+	width: 180px;
+	height: 180px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(0, 85, 165, 0.08) 0%, rgba(0, 85, 165, 0) 70%);
+	pointer-events: none;
+}
+
+.sd-activity-image-wrap {
+	position: relative;
+	z-index: 1;
+	margin-bottom: 1rem;
+	border-radius: 16px;
+	overflow: hidden;
+	border: 1px solid rgba(0, 85, 165, 0.15);
+	background: #ffffff;
+}
+
+.sd-activity-image {
+	display: block;
+	width: 100%;
+	max-height: 360px;
+	object-fit: cover;
+}
+
+.sd-activity-details {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 1rem;
+	margin-bottom: 1.15rem;
+	position: relative;
+	z-index: 1;
+}
+
+.sd-detail-item {
+	padding: 0.95rem 1rem;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid rgba(0, 85, 165, 0.09);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.sd-detail-label {
+	font-size: 0.76rem;
+	font-weight: 800;
+	color: #0055a5;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.sd-detail-value {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #17324f;
+	line-height: 1.25;
+}
+
+.sd-activity-description {
+	position: relative;
+	z-index: 1;
+	margin-top: 0;
+	padding-top: 1.1rem;
+	border-top: 1px solid rgba(0, 85, 165, 0.12);
+	color: #41566d;
+	line-height: 1.65;
+	font-size: 0.98rem;
+}
+
+.sd-activity-description p {
+	margin: 0.55rem 0;
+}
+
+.sd-activity-extra-content {
+	position: relative;
+	z-index: 1;
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px dashed rgba(0, 85, 165, 0.2);
+}
+
+.sd-activity-extra-content .sd-content-block {
+	margin-bottom: 0.8rem;
+}
+
+.sd-activity-extra-content .sd-content-block:last-child {
+	margin-bottom: 0;
+}
+
+#sd-personal-fields {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 1rem 1.2rem;
+	margin-bottom: 1rem;
+}
+
+.sd-activity-registration-wrap .sd-field-row {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 1rem 1.2rem;
+	margin-bottom: 1rem;
+	align-items: start;
+	grid-column: span 12;
+}
+
+.sd-activity-registration-wrap .sd-field-row.sd-field-span-6 {
+	grid-column: span 6;
+}
+
+.sd-activity-registration-wrap .sd-field-row.sd-field-content {
+	background: transparent;
+	border: none;
+	padding: 0;
+	margin-bottom: 1.2rem;
+}
+
+#sd-minor-warning {
+	margin: 0.6rem 0 0.9rem;
+	border-left-width: 5px;
+	font-weight: 700;
+}
+
+.sd-activity-registration-wrap .sd-content-block {
+	grid-column: span 12;
+	line-height: 1.6;
+	color: #16324f;
+	font-size: 0.95rem;
+}
+
+.sd-activity-registration-wrap .sd-content-block h1,
+.sd-activity-registration-wrap .sd-content-block h2,
+.sd-activity-registration-wrap .sd-content-block h3,
+.sd-activity-registration-wrap .sd-content-block h4,
+.sd-activity-registration-wrap .sd-content-block h5,
+.sd-activity-registration-wrap .sd-content-block h6 {
+	margin: 1rem 0 0.5rem;
+	color: #0f172a;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.sd-activity-registration-wrap .sd-content-block h1 { font-size: 1.75rem; }
+.sd-activity-registration-wrap .sd-content-block h2 { font-size: 1.5rem; }
+.sd-activity-registration-wrap .sd-content-block h3 { font-size: 1.3rem; }
+.sd-activity-registration-wrap .sd-content-block h4 { font-size: 1.1rem; }
+
+.sd-activity-registration-wrap .sd-content-block p {
+	margin: 0.5rem 0;
+}
+
+.sd-activity-registration-wrap .sd-content-block ul,
+.sd-activity-registration-wrap .sd-content-block ol {
+	margin: 0.5rem 0 0.5rem 1.5rem;
+	padding: 0;
+}
+
+.sd-activity-registration-wrap .sd-content-block li {
+	margin-bottom: 0.3rem;
+}
+
+.sd-activity-registration-wrap .sd-content-block a {
+	color: #0055a5;
+	text-decoration: none;
+	border-bottom: 1px solid rgba(0, 85, 165, 0.3);
+	transition: all 0.2s ease;
+}
+
+.sd-activity-registration-wrap .sd-content-block a:hover {
+	color: #003d7a;
+	border-bottom-color: #0055a5;
+}
+
+.sd-activity-registration-wrap .sd-content-block img {
+	max-width: 100%;
+	height: auto;
+	margin: 1rem 0;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sd-activity-registration-wrap .sd-content-block img.alignleft {
+	float: left;
+	margin-right: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.sd-activity-registration-wrap .sd-content-block img.alignright {
+	float: right;
+	margin-left: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.sd-activity-registration-wrap .sd-content-block img.aligncenter {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.sd-activity-registration-wrap .sd-content-block strong {
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.sd-activity-registration-wrap .sd-content-block em {
+	font-style: italic;
+}
+
+.sd-activity-registration-wrap .sd-content-block code {
+	background: #f0f4f8;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	padding: 0.2em 0.4em;
+	font-family: 'Courier New', monospace;
+	font-size: 0.9em;
+}
+
+.sd-activity-registration-wrap .sd-content-block blockquote {
+	border-left: 4px solid #0055a5;
+	padding-left: 1rem;
+	margin-left: 0;
+	margin-right: 0;
+	color: #64748b;
+	font-style: italic;
+	margin: 1rem 0;
+}
+
+.sd-activity-registration-wrap .sd-field-row:last-child {
+	margin-bottom: 0;
+}
+
+.sd-activity-registration-wrap .sd-field-group {
+	min-width: 0;
+	padding: 1rem 1rem 0.9rem;
+	border-radius: 18px;
+	background: linear-gradient(180deg, #fdfefe 0%, #f6f9fc 100%);
+	border: 1px solid rgba(22, 50, 79, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+	box-sizing: border-box;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+	grid-column: span 12;
+}
+
+.sd-activity-registration-wrap .sd-field-group:focus-within {
+	border-color: rgba(0, 85, 165, 0.34);
+	box-shadow: 0 0 0 4px rgba(0, 85, 165, 0.08);
+	transform: translateY(-1px);
+}
+
+.sd-activity-registration-wrap .sd-field-half {
+	grid-column: span 6;
+}
+
+.sd-activity-registration-wrap .sd-field-third {
+	grid-column: span 4;
+}
+
+.sd-activity-registration-wrap .sd-field-quarter {
+	grid-column: span 3;
+}
+
+.sd-activity-registration-wrap .sd-field-full {
+	grid-column: span 12;
+}
+
+.sd-activity-registration-wrap .sd-label {
+	display: block;
+	font-size: 0.84rem;
+	font-weight: 800;
+	color: #284969;
+	margin-bottom: 0.5rem;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.sd-activity-registration-wrap .sd-label-required::after {
+	content: " *";
+	color: #f97316;
+}
+
+.sd-activity-registration-wrap .sd-input,
+.sd-activity-registration-wrap .sd-select,
+.sd-activity-registration-wrap .sd-textarea,
+.sd-activity-registration-wrap .sd-dynamic-field:not([type="checkbox"]):not([type="radio"]) {
+	width: 100% !important;
+	min-width: 0;
+	min-height: 54px;
+	padding: 0.9rem 1rem;
+	border: 1px solid #cad7e5;
+	border-radius: 14px;
+	font-size: 0.98rem;
+	line-height: 1.35;
+	color: #132c47;
+	background: #fff;
+	box-sizing: border-box;
+	transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+	appearance: none;
+}
+
+.sd-activity-registration-wrap .sd-textarea {
+	min-height: 130px;
+	resize: vertical;
+}
+
+.sd-activity-registration-wrap input::placeholder,
+.sd-activity-registration-wrap textarea::placeholder {
+	color: #8ca0b5;
+	opacity: 1;
+}
+
+.sd-activity-registration-wrap .sd-input:focus,
+.sd-activity-registration-wrap .sd-select:focus,
+.sd-activity-registration-wrap .sd-textarea:focus,
+.sd-activity-registration-wrap .sd-dynamic-field:not([type="checkbox"]):not([type="radio"]):focus {
+	outline: none;
+	border-color: #1b6bb7;
+	box-shadow: 0 0 0 4px rgba(0, 85, 165, 0.12);
+	background: #fff;
+}
+
+.sd-dynamic-field.sd-input-error,
+.sd-input-error,
+.sd-select-error,
+.sd-textarea-error {
+	border-color: #dc2626 !important;
+	background-color: #fff6f6 !important;
+	box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08) !important;
+}
+
+.sd-checkbox-group {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.sd-checkbox-single {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.sd-checkbox-single:hover {
+	border-color: #7aa8d8;
+	background: #f0f7ff;
+}
+
+.sd-checkbox-single input[type="checkbox"]:checked ~ span {
+	color: #0055a5;
+	font-weight: 600;
+}
+
+.sd-checkbox-label,
+.sd-radio-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	cursor: pointer;
+	font-size: 0.98rem;
+	line-height: 1.5;
+	color: #284969;
+	margin: 0;
+	user-select: none;
+}
+
+.sd-checkbox-label input[type="checkbox"],
+.sd-radio-label input[type="radio"] {
+	width: 18px;
+	height: 18px;
+	margin-top: 0.18rem;
+	flex: 0 0 auto;
+	accent-color: #0055a5;
+}
+
+.sd-fee-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.sd-fee-card {
+	position: relative;
+	cursor: pointer;
+	display: block;
+}
+
+.sd-fee-card input[type="radio"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.sd-fee-card-inner {
+	position: relative;
+	display: grid;
+	gap: 0.85rem;
+	padding: 1.35rem 1.35rem 1.2rem;
+	border: 1px solid rgba(19, 44, 71, 0.12);
+	border-radius: 22px;
+	background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+	transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+	box-shadow: 0 14px 28px rgba(15, 50, 87, 0.06);
+	min-height: 210px;
+}
+
+.sd-fee-card:hover .sd-fee-card-inner {
+	transform: translateY(-2px);
+	border-color: rgba(0, 85, 165, 0.28);
+	box-shadow: 0 20px 38px rgba(15, 50, 87, 0.1);
+}
+
+.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner {
+	border-color: #0055a5;
+	background: linear-gradient(140deg, #fbfdff 0%, #ebf5ff 100%);
+	box-shadow: 0 22px 40px rgba(0, 85, 165, 0.16);
+	transform: translateY(-1px);
+}
+
+.sd-fee-card input[type="radio"]:checked + .sd-fee-card-inner::before {
+	content: '✓';
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	width: 34px;
+	height: 34px;
+	border-radius: 999px;
+	background: #0055a5;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1rem;
+	font-weight: 800;
+	box-shadow: 0 10px 20px rgba(0, 85, 165, 0.22);
+}
+
+.sd-fee-card-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.8rem;
+	padding-right: 2.3rem;
+}
+
+.sd-fee-label {
+	font-size: 1.02rem;
+	line-height: 1.4;
+	font-weight: 800;
+	color: #17324f;
+	flex: 1;
+}
+
+.sd-fee-card-price {
+	display: grid;
+	gap: 0.4rem;
+	padding: 1rem 0 0.9rem;
+	border-top: 1px solid rgba(19, 44, 71, 0.09);
+	border-bottom: 1px solid rgba(19, 44, 71, 0.09);
+}
+
+.sd-price-chf {
+	font-size: 0.95rem;
+	color: #5c7186;
+}
+
+.sd-price-chf strong {
+	font-size: clamp(1.7rem, 2vw, 2rem);
+	font-weight: 800;
+	color: #132c47;
+	margin-left: 0.15rem;
+}
+
+.sd-price-eur {
+	font-size: 1rem;
+	font-weight: 700;
+	color: #0055a5;
+}
+
+.sd-price-eur strong {
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: #0055a5;
+	margin-left: 0.1rem;
+}
+
+.sd-price-rate {
+	font-size: 0.8rem;
+	line-height: 1.4;
+	color: #6d8197;
+	font-style: normal;
+}
+
+.sd-price-rate.loading {
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 0.6; }
+	50% { opacity: 1; }
+}
+
+.sd-form-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.9rem;
+	margin-top: 0.5rem;
+	justify-content: flex-end;
+}
+
+.sd-btn {
+	padding: 0.95rem 1.45rem;
+	border: none;
+	border-radius: 999px;
+	font-size: 0.98rem;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-width: 190px;
+}
+
+.sd-btn:disabled {
+	opacity: 0.72;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.sd-btn-primary {
+	background: linear-gradient(135deg, #0055a5 0%, #0f6ec9 100%);
+	color: #fff;
+	box-shadow: 0 14px 28px rgba(0, 85, 165, 0.22);
+}
+
+.sd-btn-primary:hover:not(:disabled) {
+	transform: translateY(-2px);
+	box-shadow: 0 18px 36px rgba(0, 85, 165, 0.28);
+}
+
+.sd-btn-secondary {
+	background: #edf3f8;
+	color: #284969;
+	border: 1px solid rgba(40, 73, 105, 0.12);
+}
+
+.sd-btn-secondary:hover:not(:disabled) {
+	background: #e5eef6;
+	transform: translateY(-1px);
+}
+
+.sd-btn-lg {
+	padding: 1rem 1.55rem;
+	font-size: 1rem;
+}
+
+/* ===== IMAGE FIELD STYLES ===== */
+.sd-activity-registration-wrap .sd-field-image {
+	display: flex;
+	align-items: stretch;
+	justify-content: flex-start;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+/* Horizontal alignment */
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-left {
+	justify-content: flex-start;
+}
+
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-center {
+	justify-content: center;
+}
+
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-right {
+	justify-content: flex-end;
+}
+
+/* Vertical alignment */
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-v-top {
+	align-items: flex-start;
+}
+
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-v-middle {
+	align-items: center;
+}
+
+.sd-activity-registration-wrap .sd-field-image.sd-image-align-v-bottom {
+	align-items: flex-end;
+}
+
+.sd-activity-registration-wrap .sd-field-image .sd-field-group {
+	flex: 1;
+	width: 100%;
+}
+
+.sd-activity-registration-wrap .sd-image-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: 12px;
+	background: #f5f7fa;
+	min-height: 100px;
+}
+
+.sd-activity-registration-wrap .sd-display-image {
+	max-width: 100%;
+	height: auto;
+	display: block;
+	border-radius: 8px;
+}
+
+.sd-activity-registration-wrap .sd-image-placeholder {
+	padding: 1.5rem;
+	text-align: center;
+	color: #888;
+	font-size: 0.9rem;
+}
+
+.sd-activity-registration-wrap .sd-input-file {
+	padding: 0.75rem;
+	cursor: pointer;
+}
+
+.sd-activity-registration-wrap .sd-input-file::-webkit-file-upload-button {
+	padding: 0.5rem 1rem;
+	background: #0055a5;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: 600;
+	transition: background 0.22s ease;
+	margin-right: 0.75rem;
+}
+
+.sd-activity-registration-wrap .sd-input-file::-webkit-file-upload-button:hover {
+	background: #0f6ec9;
+}
+
+@media (max-width: 960px) {
+	.sd-activity-details {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 768px) {
+	.sd-activity-registration-wrap {
+		padding: 0 0.35rem 2rem;
+	}
+
+	.sd-activity-registration-wrap .sd-form-subtitle {
+		width: 100%;
+		justify-content: space-between;
+		padding: 0.55rem 0.75rem;
+	}
+
+	.sd-activity-registration-wrap .sd-form-header,
+	.sd-activity-registration-wrap .sd-form-section {
+		padding-left: 1.1rem;
+		padding-right: 1.1rem;
+		border-radius: 20px;
+	}
+
+	.sd-activity-registration-wrap .sd-field-half,
+	.sd-activity-registration-wrap .sd-field-third,
+	.sd-activity-registration-wrap .sd-field-quarter {
+		grid-column: span 12;
+	}
+
+	#sd-personal-fields .sd-field-row.sd-field-span-6 {
+		grid-column: span 12;
+	}
+
+	/* Image field responsive */
+	.sd-activity-registration-wrap .sd-field-image {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-left,
+	.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-center,
+	.sd-activity-registration-wrap .sd-field-image.sd-image-align-h-right {
+		justify-content: stretch;
+	}
+
+	.sd-form-actions {
+		justify-content: stretch;
+	}
+
+	.sd-btn,
+	.sd-btn-lg {
+		width: 100%;
+		min-width: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	.sd-activity-details,
+	.sd-fee-cards,
+	.sd-activity-registration-wrap .sd-field-row {
+		grid-template-columns: 1fr;
+	}
+
+	.sd-activity-registration-wrap .sd-field-group,
+	.sd-activity-registration-wrap .sd-field-full,
+	.sd-activity-registration-wrap .sd-field-half,
+	.sd-activity-registration-wrap .sd-field-third,
+	.sd-activity-registration-wrap .sd-field-quarter {
+		grid-column: span 1;
+	}
+
+	.sd-fee-card-inner {
+		min-height: auto;
+	}
+
+	.sd-price-chf strong {
+		font-size: 1.45rem;
+	}
+
+	.sd-price-eur strong {
+		font-size: 1.28rem;
+	}
+}
+
+@media print {
+	.sd-form-actions,
+	.sd-notice,
+	.sd-loading-spinner {
+		display: none;
+	}
+
+	.sd-activity-registration-wrap .sd-form-header,
+	.sd-activity-registration-wrap .sd-form-section {
+		box-shadow: none;
+	}
+}
