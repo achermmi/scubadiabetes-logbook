@@ -2513,6 +2513,10 @@
 			showMessage('success', 'Ordine sezioni Dati Attivita aggiornato.');
 			editActivity(state.selectedActivityId);
 		}).fail(function () {
+			if (metaChanged) {
+				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato (con alcuni campi non sincronizzati).');
+				return;
+			}
 			showMessage('error', 'Errore nello spostamento sezione.');
 		});
 	}
