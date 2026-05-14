@@ -2201,9 +2201,20 @@
 		var order = getActivityDataLayoutOrder();
 		var html = '<label class="sd-label">Ordine blocchi Dati Attivita</label><ul class="sd-mini-list">';
 		var activityDataFields = (state.currentFields || []).filter(function (field) {
-			return (field.section_key || 'additional') === 'activity_data';
+			var sectionKey = String(field.section_key || 'additional');
+			return sectionKey !== 'personal' && sectionKey !== 'pricing' && sectionKey !== 'consents';
 		}).sort(function (a, b) {
-			return parseInt(a.field_order || 0, 10) - parseInt(b.field_order || 0, 10);
+			var sectionOrderA = parseInt(a.section_order || 20, 10);
+			var sectionOrderB = parseInt(b.section_order || 20, 10);
+			if (sectionOrderA !== sectionOrderB) {
+				return sectionOrderA - sectionOrderB;
+			}
+			var fieldOrderA = parseInt(a.field_order || 0, 10);
+			var fieldOrderB = parseInt(b.field_order || 0, 10);
+			if (fieldOrderA !== fieldOrderB) {
+				return fieldOrderA - fieldOrderB;
+			}
+			return parseInt(a.id || 0, 10) - parseInt(b.id || 0, 10);
 		});
 
 		order.forEach(function (key) {
@@ -2215,8 +2226,10 @@
 				// Show each extra field as a row, but the ↑/↓ moves the entire
 				// extra_fields slot in the layout order (same as static blocks).
 				activityDataFields.forEach(function (field) {
+					var sectionLabel = String(field.section_label || getDefaultSectionLabel(field.section_key || 'additional'));
+					var sectionBadge = '<small style="opacity:.72; font-weight:600;">Sezione: ' + esc(sectionLabel) + '</small>';
 					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
-					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type || 'text')) + ')</span></div>';
+					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type || 'text')) + ')</span><br>' + sectionBadge + '</div>';
 					html += '<div class="sd-field-list-actions">';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="up">↑</button>';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="down">↓</button>';
