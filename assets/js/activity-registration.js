@@ -658,7 +658,7 @@
 
 		renumberSections: function () {
 			let index = 1;
-			this.$form.find('.sd-form-section[data-section-key]:visible').each(function () {
+			this.$form.find('.sd-form-section[data-section-key]').each(function () {
 				$(this).find('.sd-section-index').first().text(index + '.');
 				index += 1;
 			});

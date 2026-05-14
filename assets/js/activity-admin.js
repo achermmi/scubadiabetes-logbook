@@ -2216,20 +2216,40 @@
 			}
 			return parseInt(a.id || 0, 10) - parseInt(b.id || 0, 10);
 		});
+		var sectionMap = {};
+		activityDataFields.forEach(function (field) {
+			var sectionKey = String(field.section_key || 'additional');
+			var sectionLabel = String(field.section_label || getDefaultSectionLabelByKey(sectionKey));
+			var sectionOrder = parseInt(field.section_order || inferSectionOrder(sectionKey), 10);
+			var mapKey = String(sectionLabel).toLowerCase().trim() + '|' + String(sectionOrder);
+			if (!sectionMap[mapKey]) {
+				sectionMap[mapKey] = {
+					label: sectionLabel,
+					order: sectionOrder,
+					count: 0,
+				};
+			}
+			sectionMap[mapKey].count += 1;
+		});
+		var activityDataSections = Object.keys(sectionMap).map(function (key) {
+			return sectionMap[key];
+		}).sort(function (a, b) {
+			if (a.order !== b.order) {
+				return a.order - b.order;
+			}
+			return String(a.label).localeCompare(String(b.label));
+		});
 
 		order.forEach(function (key) {
 			if (key === 'extra_fields') {
-				if (!activityDataFields.length) {
+				if (!activityDataSections.length) {
 					return;
 				}
 
-				// Show each extra field as a row, but the ↑/↓ moves the entire
-				// extra_fields slot in the layout order (same as static blocks).
-				activityDataFields.forEach(function (field) {
-					var sectionLabel = String(field.section_label || getDefaultSectionLabelByKey(field.section_key || 'additional'));
-					var sectionBadge = '<small style="opacity:.72; font-weight:600;">Sezione: ' + esc(sectionLabel) + '</small>';
+				activityDataSections.forEach(function (section) {
+					var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' campi</small>';
 					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
-					html += '<div><strong>' + esc(field.field_label || 'Campo') + '</strong> <span>(' + esc(getFieldTypeLabel(field.field_type || 'text')) + ')</span><br>' + sectionBadge + '</div>';
+					html += '<div><strong>' + esc(section.label || 'Sezione') + '</strong><br>' + sectionMeta + '</div>';
 					html += '<div class="sd-field-list-actions">';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="up">↑</button>';
 					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="down">↓</button>';
