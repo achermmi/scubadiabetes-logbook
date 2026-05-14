@@ -1083,12 +1083,14 @@ class SD_Activity_Manager {
 			$activity['registrations_count'] = $this->get_registrations_count( $activity['id'] );
 		}
 
-		wp_send_json_success( array(
-			'activities' => $activities,
-			'total'      => $total,
-			'page'       => $page,
-			'per_page'   => $per_page,
-		) );
+		wp_send_json_success(
+			array(
+				'activities' => $activities,
+				'total'      => $total,
+				'page'       => $page,
+				'per_page'   => $per_page,
+			)
+		);
 	}
 
 	/**
@@ -1199,11 +1201,13 @@ class SD_Activity_Manager {
 				array( '%s' ),
 				array( '%d' )
 			);
-			wp_send_json_success( array(
-				'registration_id' => $registration_id,
-				'payment_required' => false,
-				'message'          => __( 'Iscrizione completata con successo.', 'sd-logbook' ),
-			) );
+			wp_send_json_success(
+				array(
+					'registration_id' => $registration_id,
+					'payment_required' => false,
+					'message'          => __( 'Iscrizione completata con successo.', 'sd-logbook' ),
+				)
+			);
 			return;
 		}
 
@@ -1230,12 +1234,14 @@ class SD_Activity_Manager {
 			$activity_flow->get_checkout_page_url()
 		);
 
-		wp_send_json_success( array(
-			'registration_id'  => $registration_id,
-			'payment_required' => true,
-			'redirect_url'     => $checkout_url,
-			'message'          => __( 'Registrazione completata. Reindirizzamento al pagamento...', 'sd-logbook' ),
-		) );
+		wp_send_json_success(
+			array(
+				'registration_id'  => $registration_id,
+				'payment_required' => true,
+				'redirect_url'     => $checkout_url,
+				'message'          => __( 'Registrazione completata. Reindirizzamento al pagamento...', 'sd-logbook' ),
+			)
+		);
 	}
 
 	/**
@@ -1262,10 +1268,12 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio', 'sd-logbook' ) ) );
 		}
 
-		wp_send_json_success( array(
-			'activity_id' => $activity_id,
-			'message'     => __( 'Attività salvata con successo', 'sd-logbook' ),
-		) );
+		wp_send_json_success(
+			array(
+				'activity_id' => $activity_id,
+				'message'     => __( 'Attività salvata con successo', 'sd-logbook' ),
+			)
+		);
 	}
 
 	/**
@@ -1316,10 +1324,12 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio del campo', 'sd-logbook' ) ) );
 		}
 
-		wp_send_json_success( array(
-			'field_id' => $field_id,
-			'message'  => $field_id && ! empty( $_POST['field_id'] ) ? __( 'Campo aggiornato', 'sd-logbook' ) : __( 'Campo salvato', 'sd-logbook' ),
-		) );
+		wp_send_json_success(
+			array(
+				'field_id' => $field_id,
+				'message'  => $field_id && ! empty( $_POST['field_id'] ) ? __( 'Campo aggiornato', 'sd-logbook' ) : __( 'Campo salvato', 'sd-logbook' ),
+			)
+		);
 	}
 
 	/**
@@ -1395,10 +1405,12 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Errore nel salvataggio della tariffa', 'sd-logbook' ) ) );
 		}
 
-		wp_send_json_success( array(
-			'price_id' => $price_id,
-			'message'  => __( 'Tariffa salvata con successo', 'sd-logbook' ),
-		) );
+		wp_send_json_success(
+			array(
+				'price_id' => $price_id,
+				'message'  => __( 'Tariffa salvata con successo', 'sd-logbook' ),
+			)
+		);
 	}
 
 	/**
@@ -1446,9 +1458,11 @@ class SD_Activity_Manager {
 
 		$registrations = $this->get_registrations( $activity_id, $args );
 
-		wp_send_json_success( array(
-			'registrations' => $registrations,
-		) );
+		wp_send_json_success(
+			array(
+				'registrations' => $registrations,
+			)
+		);
 	}
 
 	/**
@@ -1608,10 +1622,12 @@ class SD_Activity_Manager {
 		$activity['form_fields'] = $this->get_form_fields( $activity_id );
 		$activity['prices']      = $this->get_activity_prices( $activity_id );
 
-		wp_send_json_success( array(
-			'activity'     => $activity,
-			'form_fields'  => $activity['form_fields'],
-			'prices'       => $activity['prices'],
-		) );
+		wp_send_json_success(
+			array(
+				'activity'     => $activity,
+				'form_fields'  => $activity['form_fields'],
+				'prices'       => $activity['prices'],
+			)
+		);
 	}
 }

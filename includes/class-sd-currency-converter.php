@@ -301,13 +301,15 @@ class SD_Currency_Converter {
 		$today = wp_date( 'Y-m-d' );
 		$rate  = $this->get_rate( $today );
 
-		wp_send_json_success( array(
-			'price_eur'      => $price_eur,
-			'rate'           => $rate,
-			'rate_date'      => $today,
-			'formatted_chf'  => self::format_chf( $price_chf ),
-			'formatted_eur'  => self::format_eur( $price_eur ),
-		) );
+		wp_send_json_success(
+			array(
+				'price_eur'      => $price_eur,
+				'rate'           => $rate,
+				'rate_date'      => $today,
+				'formatted_chf'  => self::format_chf( $price_chf ),
+				'formatted_eur'  => self::format_eur( $price_eur ),
+			)
+		);
 	}
 
 	/**
@@ -325,11 +327,13 @@ class SD_Currency_Converter {
 		$today = wp_date( 'Y-m-d' );
 		$rate  = $this->get_rate( $today );
 
-		wp_send_json_success( array(
-			'rate'      => $rate,
-			'rate_date' => $today,
-			'message'   => __( 'Tassi di cambio aggiornati', 'sd-logbook' ),
-		) );
+		wp_send_json_success(
+			array(
+				'rate'      => $rate,
+				'rate_date' => $today,
+				'message'   => __( 'Tassi di cambio aggiornati', 'sd-logbook' ),
+			)
+		);
 	}
 
 	/**
