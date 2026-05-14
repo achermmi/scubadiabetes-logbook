@@ -2191,14 +2191,7 @@
 		return map[String(type || 'text')] || String(type || 'text');
 	}
 
-	function renderActivityDataStaticOrderControls() {
-		var $wrap = $('#sd-activity-static-order-controls');
-		if (!$wrap.length) {
-			return;
-		}
-
-		var order = getActivityDataLayoutOrder();
-		var html = '<label class="sd-label">Ordine blocchi Dati Attivita</label><ul class="sd-mini-list">';
+	function getActivityDataSectionsSummary() {
 		var activityDataFields = (state.currentFields || []).filter(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
 			return sectionKey !== 'personal';
@@ -2215,21 +2208,20 @@
 			}
 			return parseInt(a.id || 0, 10) - parseInt(b.id || 0, 10);
 		});
+
 		var sectionMap = {};
 		activityDataFields.forEach(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
-			var sectionLabel = String(field.section_label || getDefaultSectionLabelByKey(sectionKey));
-			var sectionOrder = parseInt(field.section_order || inferSectionOrder(sectionKey), 10);
-			var mapKey = String(sectionLabel).toLowerCase().trim() + '|' + String(sectionOrder);
-			if (!sectionMap[mapKey]) {
-				sectionMap[mapKey] = {
-					label: sectionLabel,
-					order: sectionOrder,
+			if (!sectionMap[sectionKey]) {
+				sectionMap[sectionKey] = {
+					key: sectionKey,
+					label: String(field.section_label || getDefaultSectionLabelByKey(sectionKey)),
+					order: parseInt(field.section_order || inferSectionOrder(sectionKey), 10),
 					count: 0,
 					metric: 'campi',
 				};
 			}
-			sectionMap[mapKey].count += 1;
+			sectionMap[sectionKey].count += 1;
 		});
 
 		var prices = (state.currentActivity && Array.isArray(state.currentActivity.prices)) ? state.currentActivity.prices : [];
@@ -2237,18 +2229,23 @@
 			var sectionMeta = getSectionMeta();
 			var pricingLabel = String((sectionMeta.tariffe && sectionMeta.tariffe.label) || getDefaultSectionLabelByKey('pricing'));
 			var pricingOrder = parseInt((sectionMeta.tariffe && sectionMeta.tariffe.order) || inferSectionOrder('pricing'), 10);
-			var pricingKey = String(pricingLabel).toLowerCase().trim() + '|' + String(pricingOrder);
-			if (!sectionMap[pricingKey]) {
-				sectionMap[pricingKey] = {
+			if (!sectionMap.pricing) {
+				sectionMap.pricing = {
+					key: 'pricing',
 					label: pricingLabel,
 					order: pricingOrder,
 					count: prices.length,
 					metric: 'tariffe',
 				};
+			} else {
+				sectionMap.pricing.label = pricingLabel;
+				sectionMap.pricing.order = pricingOrder;
+				sectionMap.pricing.count = prices.length;
+				sectionMap.pricing.metric = 'tariffe';
 			}
 		}
 
-		var activityDataSections = Object.keys(sectionMap).map(function (key) {
+		return Object.keys(sectionMap).map(function (key) {
 			return sectionMap[key];
 		}).sort(function (a, b) {
 			if (a.order !== b.order) {
@@ -2256,6 +2253,17 @@
 			}
 			return String(a.label).localeCompare(String(b.label));
 		});
+	}
+
+	function renderActivityDataStaticOrderControls() {
+		var $wrap = $('#sd-activity-static-order-controls');
+		if (!$wrap.length) {
+			return;
+		}
+
+		var order = getActivityDataLayoutOrder();
+		var html = '<label class="sd-label">Ordine blocchi Dati Attivita</label><ul class="sd-mini-list">';
+		var activityDataSections = getActivityDataSectionsSummary();
 
 		order.forEach(function (key) {
 			if (key === 'extra_fields') {
@@ -2266,11 +2274,11 @@
 				activityDataSections.forEach(function (section) {
 					var metric = String(section.metric || 'campi');
 					var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' ' + esc(metric) + '</small>';
-					html += '<li data-activity-block-key="extra_fields"><div class="sd-field-list-item sd-field-list-item-static">';
+					html += '<li data-activity-block-key="section:' + esc(section.key) + '" data-activity-section-key="' + esc(section.key) + '"><div class="sd-field-list-item sd-field-list-item-static">';
 					html += '<div><strong>' + esc(section.label || 'Sezione') + '</strong><br>' + sectionMeta + '</div>';
 					html += '<div class="sd-field-list-actions">';
-					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="up">↑</button>';
-					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="extra_fields" data-direction="down">↓</button>';
+					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="up">↑</button>';
+					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="down">↓</button>';
 					html += '</div></div></li>';
 				});
 				return;
@@ -2419,6 +2427,12 @@
 			return;
 		}
 
+		var key = String(blockKey || '');
+		if (key.indexOf('section:') === 0) {
+			moveActivityDataSection(key.replace(/^section:/, ''), direction);
+			return;
+		}
+
 		var ordered = getActivityDataLayoutOrder().slice();
 		var idx = ordered.indexOf(blockKey);
 		if (idx < 0) {
@@ -2437,6 +2451,81 @@
 		var formConfig = $.extend(true, {}, getFormConfig());
 		formConfig.activity_data_layout_order = ordered;
 		saveFormConfiguration(formConfig, 'Ordine blocchi Dati Attivita aggiornato.');
+	}
+
+	function moveActivityDataSection(sectionKey, direction) {
+		if (!state.selectedActivityId || !sectionKey) {
+			return;
+		}
+
+		var sections = getActivityDataSectionsSummary();
+		var idx = sections.findIndex(function (section) {
+			return String(section.key) === String(sectionKey);
+		});
+		if (idx < 0) {
+			return;
+		}
+
+		var targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= sections.length) {
+			return;
+		}
+
+		var current = sections[idx];
+		var target = sections[targetIdx];
+		var requests = [];
+		var meta = getSectionMeta();
+		var metaChanged = false;
+
+		var queueSectionOrderUpdate = function (section, newOrder) {
+			if (!section || !section.key) {
+				return;
+			}
+
+			if (section.key === 'pricing') {
+				meta.tariffe = meta.tariffe || {};
+				meta.tariffe.label = meta.tariffe.label || section.label || getDefaultSectionLabelByKey('pricing');
+				if (parseInt(meta.tariffe.order || 0, 10) !== parseInt(newOrder, 10)) {
+					meta.tariffe.order = parseInt(newOrder, 10);
+					metaChanged = true;
+				}
+				return;
+			}
+
+			if (section.key === 'activity_data') {
+				meta.activity_data = meta.activity_data || {};
+				meta.activity_data.label = meta.activity_data.label || section.label || getDefaultSectionLabelByKey('activity_data');
+				if (parseInt(meta.activity_data.order || 0, 10) !== parseInt(newOrder, 10)) {
+					meta.activity_data.order = parseInt(newOrder, 10);
+					metaChanged = true;
+				}
+				return;
+			}
+
+			(state.currentFields || []).forEach(function (field) {
+				if (String(field.section_key || 'additional') !== String(section.key)) {
+					return;
+				}
+				requests.push(updateFieldPartialAjax(parseInt(field.id, 10), {
+					section_order: parseInt(newOrder, 10),
+				}));
+			});
+		};
+
+		queueSectionOrderUpdate(current, target.order);
+		queueSectionOrderUpdate(target, current.order);
+
+		var fieldsPromise = requests.length ? $.when.apply($, requests) : $.Deferred().resolve().promise();
+		fieldsPromise.done(function () {
+			if (metaChanged) {
+				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato.');
+				return;
+			}
+			showMessage('success', 'Ordine sezioni Dati Attivita aggiornato.');
+			editActivity(state.selectedActivityId);
+		}).fail(function () {
+			showMessage('error', 'Errore nello spostamento sezione.');
+		});
 	}
 
 	function applyVirtualSectionMetaUI() {
