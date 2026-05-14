@@ -13,21 +13,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - default
-          - sd-suisse
-          - scubadiabetes-dev
+        include:
+          - target: default
+            remote_path: ${{ secrets.REMOTE_PATH }}
+          - target: sd-suisse
+            remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
+          - target: scubadiabetes-dev
+            remote_path: sites/scubadiabetes_dev/wp-content/plugins/scubadiabetes-logbook
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate default deploy path secret
+        if: ${{ matrix.target == 'default' }}
+        run: |
+          if [ -z "${{ secrets.REMOTE_PATH }}" ]; then
+            echo "REMOTE_PATH secret is missing or empty for target 'default'."
+            exit 1
+          fi
 
       - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz --mkpath --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./
-          remote_path: ${{ matrix.target == 'default' && secrets.REMOTE_PATH || matrix.target == 'sd-suisse' && 'sites/sds/wp-content/plugins/scubadiabetes-logbook' || 'sites/scubadiabetes_dev/wp-content/plugins/scubadiabetes-logbook' }}
+          remote_path: ${{ matrix.remote_path }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
