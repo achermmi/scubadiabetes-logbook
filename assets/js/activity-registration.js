@@ -352,8 +352,8 @@
 				$('#sd-activity-extra-content').empty().hide();
 			}
 
-			if (String(activity.event_status || '').trim()) {
-			,
+			this.syncActivityInfoBlockOrder();
+		},
 
 		// Render dynamic form fields
 		renderDynamicFields: function () {
