@@ -630,20 +630,31 @@
 			});
 
 			const orderedNodes = [];
-			const pushSectionNode = function (selector) {
-				const $node = self.$form.children(selector + ':visible').first();
-				if ($node.length) {
+			[
+				$('#sd-section-personal[data-section-key]').first(),
+				$('#sd-dynamic-fields-section[data-section-key]').first(),
+				$('#sd-pricing-section[data-section-key]').first(),
+				$('#sd-consents-section[data-section-key]').first(),
+			].forEach(function ($node) {
+				if ($node.length && $node.is(':visible')) {
 					orderedNodes.push($node.get(0));
 				}
-			};
-
-			pushSectionNode('#sd-section-personal[data-section-key]');
-			customNodes.forEach(function (node) {
-				orderedNodes.push(node);
 			});
-			pushSectionNode('#sd-dynamic-fields-section[data-section-key]');
-			pushSectionNode('#sd-pricing-section[data-section-key]');
-			pushSectionNode('#sd-consents-section[data-section-key]');
+
+			customNodes.forEach(function (node) {
+				if ($(node).is(':visible')) {
+					orderedNodes.push(node);
+				}
+			});
+
+			orderedNodes.sort(function (a, b) {
+				const orderA = parseInt($(a).attr('data-section-order') || 0, 10) || 0;
+				const orderB = parseInt($(b).attr('data-section-order') || 0, 10) || 0;
+				if (orderA !== orderB) {
+					return orderA - orderB;
+				}
+				return 0;
+			});
 
 			this.$customSections.before($(orderedNodes));
 			this.renumberSections();
