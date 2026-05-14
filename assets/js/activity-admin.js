@@ -12,7 +12,10 @@
 		currentActivity: null,
 		scrollToFieldId: null,
 		pendingMessage: null,
+		descriptionPendingValue: null,
 	};
+
+	var visualDescriptionEditorEnabled = true;
 
 	var defaultSections = [
 		{ key: 'personal', label: 'Dati Personali', order: 10 },
@@ -42,7 +45,9 @@
 			return;
 		}
 
-		initActivityDescriptionEditor();
+		if ($('.sd-admin-panel[data-panel="modifica"]').hasClass('is-active')) {
+			initActivityDescriptionEditor();
+		}
 		bindTabs();
 		bindActions();
 		loadActivities();
@@ -274,6 +279,7 @@
 			state.selectedActivityId = parseInt(a.id, 10) || 0;
 			state.currentActivity = a;
 			state.currentFields = a.form_fields || [];
+			switchTab('modifica');
 
 			$('#sd-activity-id').val(state.selectedActivityId);
 			$('#sd-activity-title').val(a.title || '');
@@ -298,7 +304,12 @@
 			applyVirtualSectionMetaUI();
 			resetFieldForm(false);
 			populateActivitySelects();
-			switchTab('modifica');
+			window.setTimeout(function () {
+				if (!getActivityDescriptionEditor()) {
+					initActivityDescriptionEditor();
+				}
+				refreshActivityDescriptionVisualEditor();
+			}, 120);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -344,10 +355,13 @@
 			}
 
 			state.selectedActivityId = parseInt(resp.data.activity_id, 10) || 0;
+			state.currentActivity = $.extend(true, {}, state.currentActivity || {}, payload, {
+				id: state.selectedActivityId,
+				form_fields: state.currentFields || [],
+			});
 			$('#sd-activity-id').val(state.selectedActivityId);
 			showMessage('success', resp.data.message || 'Attivita salvata.', 'top');
 			loadActivities();
-			editActivity(state.selectedActivityId);
 		});
 	}
 
@@ -356,8 +370,22 @@
 			return;
 		}
 
+		if (!visualDescriptionEditorEnabled) {
+			initActivityDescriptionHtmlOnlyEditor();
+			return;
+		}
+
+		$(document)
+			.off('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html')
+			.on('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html', function () {
+				var mode = this && this.id === 'sd-activity-description-html' ? 'html' : 'tmce';
+				syncActivityDescriptionMode(mode);
+				window.setTimeout(waitForActivityDescriptionEditor, 120);
+			});
+
 		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
 			if (window.tinymce && window.tinymce.get('sd-activity-description')) {
+				syncActivityDescriptionMode('tmce');
 				return;
 			}
 
@@ -369,8 +397,18 @@
 					height: 260,
 					toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,unlink,undo,redo',
 					toolbar2: 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,wp_help',
+					setup: function (editor) {
+						editor.on('init', function () {
+							syncActivityDescriptionMode('tmce');
+							waitForActivityDescriptionEditor();
+						});
+						editor.on('change keyup SetContent Undo Redo', function () {
+							editor.save();
+						});
+					},
 				},
 			});
+			waitForActivityDescriptionEditor();
 			return;
 		}
 
@@ -382,26 +420,286 @@
 				menubar: 'edit insert format table',
 				height: 260,
 			});
-		}
-	}
-
-	function getActivityDescriptionValue() {
-		if (window.tinymce && window.tinymce.get('sd-activity-description')) {
-			return window.tinymce.get('sd-activity-description').getContent();
-		}
-
-		return $('#sd-activity-description').val() || '';
-	}
-
-	function setActivityDescriptionValue(value) {
-		var text = String(value || '');
-
-		if (window.tinymce && window.tinymce.get('sd-activity-description')) {
-			window.tinymce.get('sd-activity-description').setContent(text);
+			waitForActivityDescriptionEditor();
 			return;
 		}
 
+		waitForActivityDescriptionEditor();
+	}
+
+	function initActivityDescriptionHtmlOnlyEditor() {
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return;
+		}
+
+		if (window.tinymce && typeof window.tinymce.get === 'function') {
+			var existingEditor = window.tinymce.get('sd-activity-description');
+			if (existingEditor && typeof existingEditor.remove === 'function') {
+				existingEditor.remove();
+			}
+		}
+
+		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
+			window.wp.editor.initialize('sd-activity-description', {
+				mediaButtons: true,
+				quicktags: true,
+				tinymce: false,
+			});
+		}
+
+		forceActivityDescriptionHtmlMode();
+	}
+
+	function forceActivityDescriptionHtmlMode() {
+		if (window.switchEditors && typeof window.switchEditors.go === 'function') {
+			window.switchEditors.go('sd-activity-description', 'html');
+		}
+
+		var $textarea = $('#sd-activity-description');
+		$textarea.prop('readonly', false).prop('disabled', false).show();
+		$textarea.css({
+			'pointer-events': 'auto',
+			'user-select': 'text',
+			'cursor': 'text',
+		});
+
+		// If the Visual tab is still present due to external scripts, disable it.
+		var $tmceTab = $('#sd-activity-description-tmce');
+		if ($tmceTab.length) {
+			$tmceTab.hide().attr('aria-hidden', 'true');
+		}
+	}
+
+	function getActivityDescriptionEditor() {
+		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
+			return null;
+		}
+
+		return window.tinymce.get('sd-activity-description') || null;
+	}
+
+	function syncActivityDescriptionMode(mode) {
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return;
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (!editor) {
+			return;
+		}
+
+		if (mode === 'html') {
+			try {
+				editor.save();
+			} catch (err) {
+				// Ignore and keep textarea value.
+			}
+			return;
+		}
+
+		var sourceHtml = state.descriptionPendingValue !== null
+			? String(state.descriptionPendingValue)
+			: String($textarea.val() || '');
+
+		try {
+			editor.setContent(sourceHtml || '');
+			editor.save();
+			state.descriptionPendingValue = null;
+		} catch (err2) {
+			state.descriptionPendingValue = sourceHtml;
+		}
+	}
+
+	function waitForActivityDescriptionEditor() {
+		var tries = 0;
+		var maxTries = 30;
+
+		function applyEditableState() {
+			tries += 1;
+			var ready = ensureActivityDescriptionEditable();
+			if (!ready && tries < maxTries) {
+				window.setTimeout(applyEditableState, 200);
+				return;
+			}
+
+			if (!ready && !visualDescriptionEditorEnabled) {
+				activateActivityDescriptionHtmlFallback();
+			}
+		}
+
+		window.setTimeout(applyEditableState, 120);
+	}
+
+	function ensureActivityDescriptionEditable() {
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return true;
+		}
+
+		$textarea.prop('readonly', false).prop('disabled', false);
+		$textarea.css({
+			'pointer-events': 'auto',
+			'user-select': 'text',
+			'cursor': 'text',
+		});
+
+		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
+			return true;
+		}
+
+		var editor = window.tinymce.get('sd-activity-description');
+		if (!editor) {
+			return false;
+		}
+
+		try {
+			if (typeof editor.setMode === 'function') {
+				editor.setMode('design');
+			}
+		} catch (err) {
+			// Ignore and keep fallback textarea editable.
+		}
+
+		var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+		if (body) {
+			body.setAttribute('contenteditable', 'true');
+			body.classList.remove('mce-content-readonly');
+			body.style.cursor = 'text';
+			body.style.userSelect = 'text';
+			body.style.pointerEvents = 'auto';
+			body.style.minHeight = '220px';
+			body.style.backgroundColor = '#ffffff';
+			body.style.color = '#1d2327';
+		}
+
+		if (typeof editor.getDoc === 'function' && editor.getDoc()) {
+			try {
+				editor.getDoc().designMode = 'on';
+			} catch (err2) {
+				// Ignore and continue.
+			}
+		}
+
+		var isEditable = !!(body && body.getAttribute('contenteditable') !== 'false');
+		if (!isEditable) {
+			return false;
+		}
+
+		if (typeof editor.save === 'function') {
+			editor.save();
+		}
+
+		return true;
+	}
+
+	function activateActivityDescriptionHtmlFallback() {
+		if (window.switchEditors && typeof window.switchEditors.go === 'function') {
+			window.switchEditors.go('sd-activity-description', 'html');
+		}
+
+		var $textarea = $('#sd-activity-description');
+		$textarea.prop('readonly', false).prop('disabled', false).show();
+	}
+
+	function getActivityDescriptionValue() {
+		if (!visualDescriptionEditorEnabled) {
+			return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (editor) {
+			try {
+				editor.save();
+				return normalizeActivityDescriptionHtml(editor.getContent());
+			} catch (err) {
+				return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+			}
+		}
+
+		return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+	}
+
+	function setActivityDescriptionValue(value) {
+		var text = normalizeActivityDescriptionHtml(String(value || ''));
 		$('#sd-activity-description').val(text);
+		state.descriptionPendingValue = text;
+
+		if (!visualDescriptionEditorEnabled) {
+			forceActivityDescriptionHtmlMode();
+			return;
+		}
+
+		syncActivityDescriptionMode('tmce');
+	}
+
+	function refreshActivityDescriptionVisualEditor() {
+		if (!visualDescriptionEditorEnabled) {
+			return;
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (!editor) {
+			return;
+		}
+
+		syncActivityDescriptionMode('tmce');
+
+		try {
+			if (typeof editor.show === 'function') {
+				editor.show();
+			}
+			if (typeof editor.execCommand === 'function') {
+				editor.execCommand('mceRepaint');
+			}
+		} catch (err) {
+			// Ignore repaint errors.
+		}
+
+		window.setTimeout(waitForActivityDescriptionEditor, 120);
+	}
+
+	function normalizeActivityDescriptionHtml(value) {
+		var html = String(value || '');
+		if (!html) {
+			return '';
+		}
+
+		html = html.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '<p>&nbsp;</p>');
+
+		return html;
+	}
+
+	function getFieldContentEditor() {
+		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
+			return null;
+		}
+
+		return window.tinymce.get('sd-field-content-editor') || null;
+	}
+
+	function initFieldContentEditor() {
+		if (!window.tinymce || typeof window.tinymce.init !== 'function') {
+			return;
+		}
+
+		var target = document.getElementById('sd-field-content-editor');
+		if (!target) {
+			return;
+		}
+
+		if (getFieldContentEditor()) {
+			return;
+		}
+
+		window.tinymce.init({
+			target: target,
+			plugins: 'link image media lists',
+			toolbar: 'formatselect | bold italic underline | bullist numlist | link image | alignleft aligncenter alignright',
+			menubar: 'edit insert format table',
+			height: 250,
+		});
 	}
 
 	function openMediaLibraryForActivityThumbnail(e) {
@@ -546,19 +844,9 @@
 			renderOptionsPreview();
 		}
 		
-		// Initialize or reinitialize TinyMCE when content field is shown
+		// Initialize TinyMCE for formatted-content field with explicit target.
 		if (isContent && window.tinymce) {
-			setTimeout(function() {
-				if (!window.tinymce.get('sd-field-content-editor')) {
-					window.tinymce.init({
-						selector: '#sd-field-content-editor',
-						plugins: 'link image media lists',
-						toolbar: 'formatselect | bold italic underline | bullist numlist | link image | alignleft aligncenter alignright',
-						menubar: 'edit insert format table',
-						height: 250
-					});
-				}
-			}, 100);
+			setTimeout(initFieldContentEditor, 100);
 		}
 	}
 
@@ -960,11 +1248,9 @@
 			if (typeof window.tinymce.triggerSave === 'function') {
 				window.tinymce.triggerSave();
 			}
-			var editor = window.tinymce.get('sd-field-content-editor');
+			var editor = getFieldContentEditor();
 			if (editor) {
 				contentValue = editor.getContent();
-			} else if (window.tinymce.activeEditor) {
-				contentValue = window.tinymce.activeEditor.getContent();
 			} else {
 				contentValue = $('#sd-field-content-editor').val();
 			}
@@ -1064,7 +1350,8 @@
 		// Set content in editor if it's a content field
 		if (field.field_type === 'content' && window.tinymce) {
 			setTimeout(function() {
-				var editor = window.tinymce.get('sd-field-content-editor');
+				initFieldContentEditor();
+				var editor = getFieldContentEditor();
 				if (editor) {
 					editor.setContent(field.content || '');
 				} else {
@@ -2740,6 +3027,14 @@
 
 	function switchTab(name) {
 		$('.sd-admin-tab[data-tab="' + name + '"]').trigger('click');
+		if (name === 'modifica') {
+			window.setTimeout(function () {
+				if (!getActivityDescriptionEditor()) {
+					initActivityDescriptionEditor();
+				}
+				refreshActivityDescriptionVisualEditor();
+			}, 80);
+		}
 	}
 
 	function showMessage(type, message, scrollTarget) {
@@ -2756,10 +3051,61 @@
 			}, 50);
 			return;
 		}
-		
 		setTimeout(function () {
 			$('html, body').animate({ scrollTop: $msg.offset().top - 80 }, 220);
 		}, 50);
+	}
+
+	function destroyActivityDescriptionEditor() {
+		var editor = getActivityDescriptionEditor();
+		if (editor) {
+			try {
+				if (typeof editor.save === 'function') {
+					editor.save();
+				}
+				if (typeof editor.remove === 'function') {
+					editor.remove();
+					return;
+				}
+			} catch (err) {
+				// Continue with alternate removal path.
+			}
+		}
+
+		if (window.wp && window.wp.editor && typeof window.wp.editor.remove === 'function') {
+			try {
+				window.wp.editor.remove('sd-activity-description');
+			} catch (err2) {
+				// Ignore removal errors.
+			}
+		}
+	}
+
+	function rebuildActivityDescriptionEditor() {
+		if (!visualDescriptionEditorEnabled) {
+			forceActivityDescriptionHtmlMode();
+			return;
+		}
+
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return;
+		}
+
+		var currentValue = state.descriptionPendingValue !== null
+			? String(state.descriptionPendingValue)
+			: String($textarea.val() || '');
+
+		destroyActivityDescriptionEditor();
+		$textarea.val(currentValue);
+		state.descriptionPendingValue = currentValue;
+
+		window.setTimeout(function () {
+			initActivityDescriptionEditor();
+			window.setTimeout(function () {
+				refreshActivityDescriptionVisualEditor();
+			}, 120);
+		}, 40);
 	}
 
 	function setTableLoading(selector, cols) {

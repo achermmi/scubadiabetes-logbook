@@ -593,6 +593,30 @@ body.sd-activity-media-fix-open .media-modal .media-frame-menu .media-menu-item.
 	background: #2271b1 !important;
 }
 
+/* Keep TinyMCE area interactive in frontend-managed activity admin pages. */
+#sd-activity-admin-page .wp-editor-wrap iframe,
+#sd-activity-admin-page .wp-editor-wrap .mce-edit-area,
+#sd-activity-admin-page .wp-editor-area {
+	pointer-events: auto !important;
+	user-select: text !important;
+}
+
+#wp-sd-activity-description-wrap,
+#wp-sd-activity-description-wrap .wp-editor-container,
+#wp-sd-activity-description-wrap .mce-container,
+#wp-sd-activity-description-wrap .mce-edit-area,
+#wp-sd-activity-description-wrap iframe,
+#wp-sd-activity-description-wrap .wp-editor-area {
+	pointer-events: auto !important;
+	user-select: text !important;
+}
+
+#wp-sd-activity-description-wrap iframe,
+#wp-sd-activity-description-wrap .wp-editor-area,
+#wp-sd-activity-description-wrap .mce-edit-area {
+	cursor: text !important;
+}
+
 .sd-field-list-actions {
 	display: flex;
 	gap: 0.35rem;
