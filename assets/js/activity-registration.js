@@ -576,10 +576,10 @@
 		syncSectionOrder: function (sections) {
 			const hasPriceCards = Array.isArray(this.prices) && this.prices.length > 0;
 			const orderMap = {
-				personal: sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal'),
-				additional: sections.additional ? sections.additional.order : this.getDefaultSectionOrder('additional'),
-				pricing: sections.pricing ? sections.pricing.order : this.getDefaultSectionOrder('pricing'),
-				consents: sections.consents ? sections.consents.order : this.getDefaultSectionOrder('consents'),
+				personal: this.getConfiguredSectionOrder('personal', sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal')),
+				additional: this.getConfiguredSectionOrder('additional', sections.additional ? sections.additional.order : this.getDefaultSectionOrder('additional')),
+				pricing: this.getConfiguredSectionOrder('pricing', sections.pricing ? sections.pricing.order : this.getDefaultSectionOrder('pricing')),
+				consents: this.getConfiguredSectionOrder('consents', sections.consents ? sections.consents.order : this.getDefaultSectionOrder('consents')),
 			};
 
 			// Show/hide sections based on whether they have fields
@@ -627,6 +627,28 @@
 				case 'additional':
 				default: return 20;
 			}
+		},
+
+		getSectionMeta: function () {
+			const formConfig = this.activity && this.activity.form_configuration ? this.activity.form_configuration : {};
+			if (!formConfig || typeof formConfig.section_meta !== 'object' || !formConfig.section_meta) {
+				return {};
+			}
+
+			return formConfig.section_meta;
+		},
+
+		getConfiguredSectionOrder: function (sectionKey, fallbackOrder) {
+			const meta = this.getSectionMeta();
+			const metaKey = sectionKey === 'pricing' ? 'tariffe' : sectionKey;
+			const metaEntry = meta[metaKey] && typeof meta[metaKey] === 'object' ? meta[metaKey] : null;
+			const configuredOrder = metaEntry ? parseInt(metaEntry.order || 0, 10) : 0;
+
+			if (configuredOrder > 0) {
+				return configuredOrder;
+			}
+
+			return parseInt(fallbackOrder || this.getDefaultSectionOrder(sectionKey), 10);
 		},
 
 		getFieldConditionsMap: function () {
