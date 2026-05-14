@@ -653,6 +653,14 @@
 				if (orderA !== orderB) {
 					return orderA - orderB;
 				}
+				const titleA = String($(a).attr('data-section-title') || $(a).find('.sd-section-title-text').first().text() || '').toLowerCase();
+				const titleB = String($(b).attr('data-section-title') || $(b).find('.sd-section-title-text').first().text() || '').toLowerCase();
+				if (titleA < titleB) {
+					return -1;
+				}
+				if (titleA > titleB) {
+					return 1;
+				}
 				return 0;
 			});
 
