@@ -394,7 +394,20 @@
 				sections[sectionKey].fields.push(field);
 			});
 
-			Object.keys(sections).forEach(function (sectionKey) {
+			Object.keys(sections).sort(function (a, b) {
+				const orderA = parseInt(sections[a].order || 0, 10) || 0;
+				const orderB = parseInt(sections[b].order || 0, 10) || 0;
+				if (orderA !== orderB) {
+					return orderA - orderB;
+				}
+				if (a === 'additional' && b !== 'additional') {
+					return 1;
+				}
+				if (b === 'additional' && a !== 'additional') {
+					return -1;
+				}
+				return String(a).localeCompare(String(b));
+			}).forEach(function (sectionKey) {
 				const section = sections[sectionKey];
 				let html = '';
 				section.fields.forEach(function (field) {
@@ -587,25 +600,53 @@
 
 		syncSectionOrder: function (sections) {
 			const hasPriceCards = Array.isArray(this.prices) && this.prices.length > 0;
-			const orderMap = {
+			const fixedOrders = {
 				personal: this.getConfiguredSectionOrder('personal', sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal')),
 				additional: this.getConfiguredSectionOrder('additional', sections.additional ? sections.additional.order : this.getDefaultSectionOrder('additional')),
 				pricing: this.getConfiguredSectionOrder('pricing', sections.pricing ? sections.pricing.order : this.getDefaultSectionOrder('pricing')),
 				consents: this.getConfiguredSectionOrder('consents', sections.consents ? sections.consents.order : this.getDefaultSectionOrder('consents')),
 			};
 
-			// Show/hide sections based on whether they have fields
-			$('#sd-section-personal').attr('data-section-order', orderMap.personal).toggle(!!sections.personal);
-			$('#sd-dynamic-fields-section').attr('data-section-order', orderMap.additional).toggle(!!sections.additional);
-			$('#sd-pricing-section').attr('data-section-order', orderMap.pricing).toggle(!!sections.pricing || hasPriceCards);
-			$('#sd-consents-section').attr('data-section-order', orderMap.consents).toggle(!!sections.consents);
+			$('#sd-section-personal').attr('data-section-order', fixedOrders.personal).toggle(!!sections.personal);
+			if ($.trim(this.$customSections.html()).length) {
+				this.$customSections.insertBefore('#sd-dynamic-fields-section');
+			}
+			$('#sd-dynamic-fields-section').attr('data-section-order', fixedOrders.additional).toggle(!!sections.additional);
+			$('#sd-pricing-section').attr('data-section-order', fixedOrders.pricing).toggle(!!sections.pricing || hasPriceCards);
+			$('#sd-consents-section').attr('data-section-order', fixedOrders.consents).toggle(!!sections.consents);
 
-			const sectionNodes = this.$form.children('.sd-form-section[data-section-key]:visible').get().concat(this.$customSections.children('.sd-form-section[data-section-key]').get());
-			sectionNodes.sort(function (a, b) {
+			const customNodes = [];
+			Object.keys(sections).forEach(function (key) {
+				if (key === 'personal' || key === 'additional' || key === 'pricing' || key === 'consents') {
+					return;
+				}
+				const $node = self.$customSections.children('.sd-form-section[data-section-key="' + key + '"]');
+				if ($node.length) {
+					$node.attr('data-section-order', parseInt(sections[key].order || 0, 10) || 0);
+					customNodes.push($node.get(0));
+				}
+			});
+			customNodes.sort(function (a, b) {
 				return parseInt($(a).attr('data-section-order'), 10) - parseInt($(b).attr('data-section-order'), 10);
 			});
 
-			this.$customSections.before($(sectionNodes));
+			const orderedNodes = [];
+			const pushSectionNode = function (selector) {
+				const $node = self.$form.children(selector + ':visible').first();
+				if ($node.length) {
+					orderedNodes.push($node.get(0));
+				}
+			};
+
+			pushSectionNode('#sd-section-personal[data-section-key]');
+			customNodes.forEach(function (node) {
+				orderedNodes.push(node);
+			});
+			pushSectionNode('#sd-dynamic-fields-section[data-section-key]');
+			pushSectionNode('#sd-pricing-section[data-section-key]');
+			pushSectionNode('#sd-consents-section[data-section-key]');
+
+			this.$customSections.before($(orderedNodes));
 			this.renumberSections();
 		},
 
