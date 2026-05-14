@@ -2194,7 +2194,7 @@
 	function getActivityDataSectionsSummary() {
 		var activityDataFields = (state.currentFields || []).filter(function (field) {
 			var sectionKey = String(field.section_key || 'additional');
-			return sectionKey !== 'personal';
+			return sectionKey !== 'personal' && sectionKey !== 'activity_data';
 		}).sort(function (a, b) {
 			var sectionOrderA = parseInt(a.section_order || 20, 10);
 			var sectionOrderB = parseInt(b.section_order || 20, 10);
@@ -2261,38 +2261,22 @@
 			return;
 		}
 
-		var order = getActivityDataLayoutOrder();
 		var html = '<label class="sd-label">Ordine blocchi Dati Attivita</label><ul class="sd-mini-list">';
 		var activityDataSections = getActivityDataSectionsSummary();
 
-		order.forEach(function (key) {
-			if (key === 'extra_fields') {
-				if (!activityDataSections.length) {
-					return;
-				}
+		html += '<li class="sd-activity-fixed-top-block"><div class="sd-field-list-item sd-field-list-item-static">';
+		html += '<div><strong>Titolo, Luogo, Date e Max Partecipanti</strong><br><small style="opacity:.72; font-weight:600;">Immagine URL, Descrizione</small></div>';
+		html += '<div class="sd-field-list-actions"><small style="opacity:.72; font-weight:700;">Fisso</small></div>';
+		html += '</div></li>';
 
-				activityDataSections.forEach(function (section) {
-					var metric = String(section.metric || 'campi');
-					var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' ' + esc(metric) + '</small>';
-					html += '<li data-activity-block-key="section:' + esc(section.key) + '" data-activity-section-key="' + esc(section.key) + '"><div class="sd-field-list-item sd-field-list-item-static">';
-					html += '<div><strong>' + esc(section.label || 'Sezione') + '</strong><br>' + sectionMeta + '</div>';
-					html += '<div class="sd-field-list-actions">';
-					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="up">↑</button>';
-					html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="down">↓</button>';
-					html += '</div></div></li>';
-				});
-				return;
-			}
-
-			var item = activityDataBaseBlocksMap[key];
-			if (!item) {
-				return;
-			}
-			html += '<li data-activity-block-key="' + esc(item.key) + '"><div class="sd-field-list-item sd-field-list-item-static">';
-			html += '<div><strong>' + esc(item.label) + '</strong></div>';
+		activityDataSections.forEach(function (section) {
+			var metric = String(section.metric || 'campi');
+			var sectionMeta = '<small style="opacity:.72; font-weight:600;">' + esc(section.count) + ' ' + esc(metric) + '</small>';
+			html += '<li data-activity-block-key="section:' + esc(section.key) + '" data-activity-section-key="' + esc(section.key) + '"><div class="sd-field-list-item sd-field-list-item-static">';
+			html += '<div><strong>' + esc(section.label || 'Sezione') + '</strong><br>' + sectionMeta + '</div>';
 			html += '<div class="sd-field-list-actions">';
-			html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="' + esc(item.key) + '" data-direction="up">↑</button>';
-			html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="' + esc(item.key) + '" data-direction="down">↓</button>';
+			html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="up">↑</button>';
+			html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-static-activity-block-move" data-key="section:' + esc(section.key) + '" data-direction="down">↓</button>';
 			html += '</div></div></li>';
 		});
 
@@ -2430,6 +2414,10 @@
 		var key = String(blockKey || '');
 		if (key.indexOf('section:') === 0) {
 			moveActivityDataSection(key.replace(/^section:/, ''), direction);
+			return;
+		}
+
+		if (key === 'core' || key === 'thumbnail' || key === 'description') {
 			return;
 		}
 

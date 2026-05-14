@@ -658,24 +658,8 @@
 		},
 
 		getActivityDataLayoutOrder: function () {
-			const defaults = ['core', 'thumbnail', 'description', 'extra_fields'];
-			const formConfig = this.activity && this.activity.form_configuration ? this.activity.form_configuration : {};
-			const configured = Array.isArray(formConfig.activity_data_layout_order) ? formConfig.activity_data_layout_order : [];
-			const merged = [];
-
-			configured.forEach(function (key) {
-				if (defaults.indexOf(key) !== -1 && merged.indexOf(key) === -1) {
-					merged.push(key);
-				}
-			});
-
-			defaults.forEach(function (key) {
-				if (merged.indexOf(key) === -1) {
-					merged.push(key);
-				}
-			});
-
-			return merged;
+			// Base activity info is always fixed at the top in this order.
+			return ['core', 'thumbnail', 'description', 'extra_fields'];
 		},
 
 		ensureActivityInfoBlocks: function () {
