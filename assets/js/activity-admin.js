@@ -493,6 +493,26 @@
 		}
 	}
 
+	function forceActivityDescriptionVisualMode() {
+		if (window.switchEditors && typeof window.switchEditors.go === 'function') {
+			window.switchEditors.go('sd-activity-description', 'tmce');
+		}
+
+		var $wrap = $('#wp-sd-activity-description-wrap');
+		if ($wrap.length) {
+			$wrap.removeClass('html-active').addClass('tmce-active');
+		}
+
+		var $tmceTab = $('#sd-activity-description-tmce');
+		var $htmlTab = $('#sd-activity-description-html');
+		if ($tmceTab.length) {
+			$tmceTab.addClass('wp-switch-editor switch-tmce').attr('aria-pressed', 'true').show();
+		}
+		if ($htmlTab.length) {
+			$htmlTab.removeClass('switch-tmce').addClass('wp-switch-editor switch-html').attr('aria-pressed', 'false').show();
+		}
+	}
+
 	function getActivityDescriptionEditor() {
 		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
 			return null;
@@ -517,24 +537,6 @@
 		}
 
 		return true;
-	}
-
-	function destroyActivityDescriptionEditor() {
-		var editor = getActivityDescriptionEditor();
-		if (editor) {
-			try {
-				if (typeof editor.save === 'function') {
-					editor.save();
-				}
-				if (typeof editor.remove === 'function') {
-					editor.remove();
-				}
-			} catch (err) {
-				// Ignore removal errors and fallback to textarea state.
-			}
-		}
-
-		$('#sd-activity-description').prop('readonly', false).prop('disabled', false).show();
 	}
 
 	function syncActivityDescriptionMode(mode) {
@@ -697,6 +699,8 @@
 			return;
 		}
 
+		forceActivityDescriptionVisualMode();
+
 		var editor = getActivityDescriptionEditor();
 		if (!editor) {
 			return;
@@ -736,6 +740,7 @@
 			if (enforceContent) {
 				ensureActivityDescriptionContent(expectedHtml || '');
 			}
+			forceActivityDescriptionVisualMode();
 			cleanupActivityDescriptionEditorUi();
 		}, delay);
 	}
@@ -3735,7 +3740,7 @@
 			$container.find('.mce-tinymce').not(':first').remove();
 		}
 
-		$('#sd-activity-description').prop('readonly', false).prop('disabled', false).show();
+		$('#sd-activity-description').prop('readonly', false).prop('disabled', false);
 	}
 
 	function setTableLoading(selector, cols) {
