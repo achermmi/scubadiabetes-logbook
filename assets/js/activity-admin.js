@@ -321,11 +321,11 @@
 			resetFieldForm(false);
 			populateActivitySelects();
 			window.setTimeout(function () {
-				if (!getActivityDescriptionEditor()) {
-					initActivityDescriptionEditor();
-				}
-				refreshActivityDescriptionVisualEditor();
-				ensureActivityDescriptionContent(activityDescription);
+				state.descriptionPendingValue = activityDescription;
+				rebuildActivityDescriptionEditor();
+				window.setTimeout(function () {
+					ensureActivityDescriptionContent(activityDescription);
+				}, 220);
 			}, 120);
 
 			// Se è stato salvato un campo, resetta il flag
@@ -1735,6 +1735,7 @@
 				return;
 			}
 
+			state.pendingMessage = { type: 'success', text: 'Posizione campo aggiornata.', scrollTarget: 'top' };
 			editActivity(state.selectedActivityId);
 		});
 	}
@@ -1767,10 +1768,10 @@
 		});
 
 		$.when.apply($, requests).done(function () {
-			showMessage('success', 'Ordine campi aggiornato.');
+			state.pendingMessage = { type: 'success', text: 'Ordine campi aggiornato.', scrollTarget: 'top' };
 			editActivity(state.selectedActivityId);
 		}).fail(function () {
-			showMessage('error', 'Errore nello spostamento campi.');
+			showMessage('error', 'Errore nello spostamento campi.', 'top');
 		});
 	}
 
@@ -2946,9 +2947,10 @@
 		});
 
 		$.when.apply($, ajaxCalls).done(function () {
+			state.pendingMessage = { type: 'success', text: 'Posizione campo aggiornata.', scrollTarget: 'top' };
 			editActivity(state.selectedActivityId);
 		}).fail(function () {
-			showMessage('error', 'Impossibile spostare il campo');
+			showMessage('error', 'Impossibile spostare il campo', 'top');
 		});
 	}
 
