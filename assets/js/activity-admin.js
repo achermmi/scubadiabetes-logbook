@@ -323,6 +323,10 @@
 			resetFieldForm(false);
 			populateActivitySelects();
 			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
+			window.setTimeout(function () {
+				applyActivityDescriptionContentToNativeEditor(activityDescription, true);
+				refreshActivityDescriptionVisualEditor();
+			}, 700);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
