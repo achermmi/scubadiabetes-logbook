@@ -3673,9 +3673,20 @@
 	}
 
 	function destroyActivityDescriptionEditor() {
+		var $textarea = $('#sd-activity-description');
+		var preservedValue = state.descriptionPendingValue !== null
+			? String(state.descriptionPendingValue)
+			: String($textarea.val() || '');
+
 		var editor = getActivityDescriptionEditor();
 		if (editor) {
 			try {
+				if (typeof editor.getContent === 'function') {
+					var editorContent = normalizeActivityDescriptionHtml(editor.getContent() || '');
+					if (editorContent) {
+						preservedValue = editorContent;
+					}
+				}
 				if (typeof editor.save === 'function') {
 					editor.save();
 				}
@@ -3694,6 +3705,12 @@
 				// Ignore removal errors.
 			}
 		}
+
+		$textarea = $('#sd-activity-description');
+		if ($textarea.length) {
+			$textarea.val(preservedValue);
+		}
+		state.descriptionPendingValue = preservedValue;
 
 		cleanupActivityDescriptionEditorUi();
 	}
