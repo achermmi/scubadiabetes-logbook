@@ -648,16 +648,39 @@
 			});
 
 			const orderedNodes = [];
-			this.getSectionLayoutOrder(sections).forEach(function (key) {
+			const explicitOrder = this.getSectionLayoutOrder(sections);
+			explicitOrder.forEach(function (key) {
 				if (nodesByKey[key]) {
 					orderedNodes.push(nodesByKey[key]);
 				}
 			});
 
+			const remainingNodes = [];
 			Object.keys(nodesByKey).forEach(function (key) {
 				if (orderedNodes.indexOf(nodesByKey[key]) === -1) {
-					orderedNodes.push(nodesByKey[key]);
+					remainingNodes.push(nodesByKey[key]);
 				}
+			});
+
+			remainingNodes.sort(function (a, b) {
+				const orderA = parseInt($(a).attr('data-section-order') || 0, 10) || 0;
+				const orderB = parseInt($(b).attr('data-section-order') || 0, 10) || 0;
+				if (orderA !== orderB) {
+					return orderA - orderB;
+				}
+				const titleA = String($(a).attr('data-section-title') || $(a).find('.sd-section-title-text').first().text() || '').toLowerCase();
+				const titleB = String($(b).attr('data-section-title') || $(b).find('.sd-section-title-text').first().text() || '').toLowerCase();
+				if (titleA < titleB) {
+					return -1;
+				}
+				if (titleA > titleB) {
+					return 1;
+				}
+				return 0;
+			});
+
+			remainingNodes.forEach(function (node) {
+				orderedNodes.push(node);
 			});
 
 			this.$customSections.before($(orderedNodes));
@@ -764,16 +787,7 @@
 			const saved = Array.isArray(meta.layout_order) ? meta.layout_order.filter(function (key) {
 				return String(key || '').trim().length > 0;
 			}) : [];
-			const knownKeys = Object.keys(sections || {});
-			const merged = saved.slice();
-
-			knownKeys.forEach(function (key) {
-				if (merged.indexOf(key) === -1) {
-					merged.push(key);
-				}
-			});
-
-			return merged;
+			return saved;
 		},
 
 		getConfiguredSectionOrder: function (sectionKey, fallbackOrder) {

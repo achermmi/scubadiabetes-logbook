@@ -559,29 +559,14 @@ class SD_Activity_Manager {
 	 * @return array
 	 */
 	private function get_section_layout_order( $activity ) {
+		if ( empty( $activity['form_configuration']['section_meta']['layout_order'] ) || ! is_array( $activity['form_configuration']['section_meta']['layout_order'] ) ) {
+			return array();
+		}
+
 		$layout_order = array();
-
-		if ( ! empty( $activity['form_configuration']['section_meta']['layout_order'] ) && is_array( $activity['form_configuration']['section_meta']['layout_order'] ) ) {
-			foreach ( $activity['form_configuration']['section_meta']['layout_order'] as $section_key ) {
-				$section_key = sanitize_key( $section_key );
-				if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
-					$layout_order[] = $section_key;
-				}
-			}
-		}
-
-		$default_keys = array( 'personal', 'additional', 'pricing', 'consents' );
-		if ( ! empty( $activity['form_fields'] ) && is_array( $activity['form_fields'] ) ) {
-			foreach ( $activity['form_fields'] as $field ) {
-				$section_key = sanitize_key( $field['section_key'] ?? 'additional' );
-				if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
-					$layout_order[] = $section_key;
-				}
-			}
-		}
-
-		foreach ( $default_keys as $section_key ) {
-			if ( ! in_array( $section_key, $layout_order, true ) ) {
+		foreach ( $activity['form_configuration']['section_meta']['layout_order'] as $section_key ) {
+			$section_key = sanitize_key( $section_key );
+			if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
 				$layout_order[] = $section_key;
 			}
 		}
