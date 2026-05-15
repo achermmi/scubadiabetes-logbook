@@ -1746,6 +1746,26 @@
 			byKey[section.key] = section;
 		});
 
+		var layoutOrder = [];
+		sectionKeys.forEach(function (rawKey) {
+			var normalizedKey = String(rawKey || '').trim();
+			if (!normalizedKey) {
+				return;
+			}
+			if (normalizedKey === 'tariffe') {
+				normalizedKey = 'pricing';
+			}
+			if (layoutOrder.indexOf(normalizedKey) === -1) {
+				layoutOrder.push(normalizedKey);
+			}
+		});
+
+		var currentLayoutOrder = Array.isArray(meta.layout_order) ? meta.layout_order.slice() : [];
+		if (JSON.stringify(currentLayoutOrder) !== JSON.stringify(layoutOrder)) {
+			meta.layout_order = layoutOrder;
+			metaChanged = true;
+		}
+
 		sectionKeys.forEach(function (key, index) {
 			var section = byKey[key];
 			var newOrder = (index + 1) * 10;

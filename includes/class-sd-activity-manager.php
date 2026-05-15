@@ -566,6 +566,9 @@ class SD_Activity_Manager {
 		$layout_order = array();
 		foreach ( $activity['form_configuration']['section_meta']['layout_order'] as $section_key ) {
 			$section_key = sanitize_key( $section_key );
+			if ( 'tariffe' === $section_key ) {
+				$section_key = 'pricing';
+			}
 			if ( '' !== $section_key && ! in_array( $section_key, $layout_order, true ) ) {
 				$layout_order[] = $section_key;
 			}

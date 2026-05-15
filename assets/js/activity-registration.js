@@ -777,17 +777,30 @@
 		},
 
 		getSectionLayoutOrder: function (sections) {
-			if (this.activity && Array.isArray(this.activity.section_layout_order) && this.activity.section_layout_order.length) {
-				return this.activity.section_layout_order.filter(function (key) {
-					return String(key || '').trim().length > 0;
+			const normalizeLayout = function (keys) {
+				const normalized = [];
+				(keys || []).forEach(function (key) {
+					let sectionKey = String(key || '').trim();
+					if (!sectionKey) {
+						return;
+					}
+					if (sectionKey === 'tariffe') {
+						sectionKey = 'pricing';
+					}
+					if (normalized.indexOf(sectionKey) === -1) {
+						normalized.push(sectionKey);
+					}
 				});
+				return normalized;
+			};
+
+			if (this.activity && Array.isArray(this.activity.section_layout_order) && this.activity.section_layout_order.length) {
+				return normalizeLayout(this.activity.section_layout_order);
 			}
 
 			const meta = this.getSectionMeta();
-			const saved = Array.isArray(meta.layout_order) ? meta.layout_order.filter(function (key) {
-				return String(key || '').trim().length > 0;
-			}) : [];
-			return saved;
+			const saved = Array.isArray(meta.layout_order) ? meta.layout_order : [];
+			return normalizeLayout(saved);
 		},
 
 		getConfiguredSectionOrder: function (sectionKey, fallbackOrder) {
