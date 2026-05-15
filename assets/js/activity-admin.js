@@ -1794,13 +1794,13 @@
 
 		fieldsPromise.done(function () {
 			if (metaChanged) {
-				saveSectionMeta(meta, 'Ordine sezioni aggiornato.');
+				saveSectionMeta(meta, 'Ordine sezioni aggiornato.', 'top');
 				return;
 			}
-			showMessage('success', 'Ordine sezioni aggiornato.');
+			showMessage('success', 'Ordine sezioni aggiornato.', 'top');
 			editActivity(state.selectedActivityId);
 		}).fail(function () {
-			showMessage('error', 'Errore nello spostamento sezioni.');
+			showMessage('error', 'Errore nello spostamento sezioni.', 'top');
 		});
 	}
 
@@ -2527,17 +2527,17 @@
 		var fieldsPromise = requests.length ? $.when.apply($, requests) : $.Deferred().resolve().promise();
 		fieldsPromise.done(function () {
 			if (metaChanged) {
-				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato.');
+				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato.', 'top');
 				return;
 			}
-			showMessage('success', 'Ordine sezioni Dati Attivita aggiornato.');
+			showMessage('success', 'Ordine sezioni Dati Attivita aggiornato.', 'top');
 			editActivity(state.selectedActivityId);
 		}).fail(function () {
 			if (metaChanged) {
-				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato (con alcuni campi non sincronizzati).');
+				saveSectionMeta(meta, 'Ordine sezioni Dati Attivita aggiornato (con alcuni campi non sincronizzati).', 'top');
 				return;
 			}
-			showMessage('error', 'Errore nello spostamento sezione.');
+			showMessage('error', 'Errore nello spostamento sezione.', 'top');
 		});
 	}
 
@@ -2562,7 +2562,7 @@
 		}
 	}
 
-	function saveSectionMeta(meta, successMessage) {
+	function saveSectionMeta(meta, successMessage, scrollTarget) {
 		if (!state.selectedActivityId) {
 			return $.Deferred().reject().promise();
 		}
@@ -2584,11 +2584,11 @@
 			},
 		}).done(function (resp) {
 			if (!resp || !resp.success) {
-				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : 'Errore nel salvataggio sezione.');
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : 'Errore nel salvataggio sezione.', scrollTarget);
 				return;
 			}
 			if (successMessage) {
-				showMessage('success', successMessage);
+				showMessage('success', successMessage, scrollTarget);
 			}
 			editActivity(state.selectedActivityId);
 		});
@@ -3109,12 +3109,13 @@
 		var fieldsPromise = requests.length ? $.when.apply($, requests) : $.Deferred().resolve().promise();
 		fieldsPromise.done(function () {
 			if (metaChanged) {
-				saveSectionMeta(meta);
+				saveSectionMeta(meta, 'Ordine sezioni aggiornato.', 'top');
 			} else {
+				showMessage('success', 'Ordine sezioni aggiornato.', 'top');
 				editActivity(state.selectedActivityId);
 			}
 		}).fail(function () {
-			showMessage('error', 'Errore nello spostamento sezione.');
+			showMessage('error', 'Errore nello spostamento sezione.', 'top');
 		});
 	}
 
