@@ -404,6 +404,12 @@
 				return;
 			}
 
+			if ($('#wp-sd-activity-description-wrap').length) {
+				// Editor markup already rendered by wp_editor(); avoid double initialize.
+				window.setTimeout(waitForActivityDescriptionEditor, 120);
+				return;
+			}
+
 			window.wp.editor.initialize('sd-activity-description', {
 				mediaButtons: true,
 				quicktags: true,
@@ -3834,14 +3840,6 @@
 		var $wrap = $('#wp-sd-activity-description-wrap');
 		if (!$wrap.length) {
 			return;
-		}
-
-		$wrap.children('.wp-editor-tools').not(':first').remove();
-		$wrap.find('.quicktags-toolbar').not(':first').remove();
-
-		var $container = $wrap.children('.wp-editor-container');
-		if ($container.length) {
-			$container.find('.mce-tinymce').not(':first').remove();
 		}
 
 		$('#sd-activity-description').prop('readonly', false).prop('disabled', false);
