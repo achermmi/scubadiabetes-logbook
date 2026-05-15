@@ -493,7 +493,56 @@
 			return null;
 		}
 
-		return window.tinymce.get('sd-activity-description') || null;
+		var preferred = window.tinymce.get('sd-activity-description') || null;
+		if (preferred && typeof preferred.getContainer === 'function') {
+			var container = preferred.getContainer();
+			if (container && document.body.contains(container)) {
+				return preferred;
+			}
+		}
+
+		var editors = Array.isArray(window.tinymce.editors) ? window.tinymce.editors : [];
+		for (var i = 0; i < editors.length; i += 1) {
+			var ed = editors[i];
+			if (!ed || String(ed.id || '') !== 'sd-activity-description') {
+				continue;
+			}
+			if (typeof ed.getContainer === 'function') {
+				var edContainer = ed.getContainer();
+				if (edContainer && document.body.contains(edContainer)) {
+					return ed;
+				}
+			}
+		}
+
+		return preferred;
+	}
+
+	function getActivityDescriptionContentFromEditor() {
+		var editor = getActivityDescriptionEditor();
+		if (!editor) {
+			return '';
+		}
+
+		try {
+			var content = normalizeActivityDescriptionHtml(editor.getContent() || '');
+			if (content) {
+				return content;
+			}
+		} catch (err) {
+			// Fallback to body HTML below.
+		}
+
+		try {
+			var body = typeof editor.getBody === 'function' ? editor.getBody() : null;
+			if (body && body.innerHTML) {
+				return normalizeActivityDescriptionHtml(body.innerHTML);
+			}
+		} catch (err2) {
+			// Ignore and fallback to empty string.
+		}
+
+		return '';
 	}
 
 	function isActivityDescriptionEditorMounted(editor) {
@@ -522,6 +571,14 @@
 
 		var editor = getActivityDescriptionEditor();
 		if (mode === 'html') {
+			if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+				try {
+					window.tinymce.triggerSave();
+				} catch (err) {
+					// Continue with manual sync fallback.
+				}
+			}
+
 			syncActivityDescriptionHtmlTextareaFromEditor();
 			if (editor) {
 				try {
@@ -555,16 +612,7 @@
 	}
 
 	function syncActivityDescriptionHtmlTextareaFromEditor() {
-		var content = '';
-		var editor = getActivityDescriptionEditor();
-
-		if (editor) {
-			try {
-				content = normalizeActivityDescriptionHtml(editor.getContent() || '');
-			} catch (err) {
-				content = '';
-			}
-		}
+		var content = getActivityDescriptionContentFromEditor();
 
 		if (!content && state.descriptionPendingValue !== null) {
 			content = normalizeActivityDescriptionHtml(String(state.descriptionPendingValue || ''));
