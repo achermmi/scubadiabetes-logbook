@@ -412,9 +412,14 @@
 			destroyActivityDescriptionEditor();
 			existingEditor = null;
 		}
+		if (existingEditor && !isActivityDescriptionEditorHealthy(existingEditor)) {
+			destroyActivityDescriptionEditor();
+			existingEditor = null;
+		}
 
 		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
 			if (existingEditor) {
+				ensureActivityDescriptionVisualTabActive();
 				syncActivityDescriptionMode('tmce');
 				syncActivityDescriptionVisualFromTextareaWithRetry(8, 80);
 				window.setTimeout(waitForActivityDescriptionEditor, 120);
@@ -424,6 +429,7 @@
 
 			if ($('#wp-sd-activity-description-wrap').length) {
 				// Editor markup already rendered by wp_editor(); avoid double initialize.
+				ensureActivityDescriptionVisualTabActive();
 				syncActivityDescriptionVisualFromTextareaWithRetry(12, 90);
 				window.setTimeout(waitForActivityDescriptionEditor, 120);
 				return;
@@ -439,6 +445,7 @@
 					toolbar2: 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,wp_help',
 					setup: function (editor) {
 						editor.on('init', function () {
+							ensureActivityDescriptionVisualTabActive();
 							syncActivityDescriptionMode('tmce');
 							syncActivityDescriptionHtmlTextareaFromEditor();
 							syncActivityDescriptionVisualFromTextareaWithRetry(6, 80);
@@ -589,10 +596,38 @@
 		return true;
 	}
 
+	function isActivityDescriptionEditorHealthy(editor) {
+		if (!editor || !isActivityDescriptionEditorMounted(editor)) {
+			return false;
+		}
+
+		try {
+			var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+			var doc = (typeof editor.getDoc === 'function') ? editor.getDoc() : null;
+			return !!(body && doc);
+		} catch (err) {
+			return false;
+		}
+	}
+
+	function ensureActivityDescriptionVisualTabActive() {
+		if (window.switchEditors && typeof window.switchEditors.go === 'function') {
+			try {
+				window.switchEditors.go('sd-activity-description', 'tmce');
+			} catch (err) {
+				// Keep current mode if switch fails.
+			}
+		}
+	}
+
 	function syncActivityDescriptionMode(mode) {
 		var $textarea = $('#sd-activity-description');
 		if (!$textarea.length) {
 			return;
+		}
+
+		if (mode === 'tmce') {
+			ensureActivityDescriptionVisualTabActive();
 		}
 
 		var editor = getActivityDescriptionEditor();
@@ -719,6 +754,11 @@
 				return;
 			}
 
+			if (!ready && visualDescriptionEditorEnabled) {
+				rebuildActivityDescriptionEditor();
+				return;
+			}
+
 			if (!ready && !visualDescriptionEditorEnabled) {
 				activateActivityDescriptionHtmlFallback();
 			}
@@ -744,7 +784,7 @@
 			return true;
 		}
 
-		var editor = window.tinymce.get('sd-activity-description');
+		var editor = getActivityDescriptionEditor();
 		if (!editor) {
 			return false;
 		}
@@ -880,11 +920,13 @@
 
 		state.descriptionRefreshTimer = window.setTimeout(function () {
 			state.descriptionRefreshTimer = null;
+			ensureActivityDescriptionVisualTabActive();
 			initActivityDescriptionEditor();
 			refreshActivityDescriptionVisualEditor();
 			if (enforceContent) {
 				ensureActivityDescriptionContent(expectedHtml || '');
 			}
+			syncActivityDescriptionVisualFromTextareaWithRetry(10, 80);
 			syncActivityDescriptionHtmlTextareaFromEditor();
 			cleanupActivityDescriptionEditorUi();
 		}, delay);
