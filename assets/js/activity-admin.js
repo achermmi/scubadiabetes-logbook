@@ -3985,6 +3985,23 @@
 			try {
 				editor.setContent(normalized || '');
 				editor.save();
+				if (typeof editor.setMode === 'function') {
+					editor.setMode('design');
+				}
+				if (typeof editor.show === 'function') {
+					editor.show();
+				}
+				if (typeof editor.execCommand === 'function') {
+					editor.execCommand('mceRepaint');
+				}
+
+				var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+				if (body) {
+					body.setAttribute('contenteditable', 'true');
+					body.style.pointerEvents = 'auto';
+					body.style.userSelect = 'text';
+					body.style.cursor = 'text';
+				}
 
 				var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
 				if (current !== normalized && tries < maxTries) {
@@ -4095,6 +4112,12 @@
 		try {
 			if (typeof editor.setMode === 'function') {
 				editor.setMode('design');
+			}
+			if (typeof editor.show === 'function') {
+				editor.show();
+			}
+			if (typeof editor.execCommand === 'function') {
+				editor.execCommand('mceRepaint');
 			}
 		} catch (err) {
 			// Keep going.
