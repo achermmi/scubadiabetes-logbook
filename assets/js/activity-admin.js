@@ -321,11 +321,12 @@
 			resetFieldForm(false);
 			populateActivitySelects();
 			window.setTimeout(function () {
-				state.descriptionPendingValue = activityDescription;
-				rebuildActivityDescriptionEditor();
-				window.setTimeout(function () {
-					ensureActivityDescriptionContent(activityDescription);
-				}, 220);
+				if (!getActivityDescriptionEditor()) {
+					initActivityDescriptionEditor();
+				}
+				refreshActivityDescriptionVisualEditor();
+				ensureActivityDescriptionContent(activityDescription);
+				cleanupActivityDescriptionEditorUi();
 			}, 120);
 
 			// Se è stato salvato un campo, resetta il flag
@@ -387,6 +388,8 @@
 			return;
 		}
 
+		cleanupActivityDescriptionEditorUi();
+
 		if (!visualDescriptionEditorEnabled) {
 			initActivityDescriptionHtmlOnlyEditor();
 			return;
@@ -403,6 +406,7 @@
 		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
 			if (window.tinymce && window.tinymce.get('sd-activity-description')) {
 				syncActivityDescriptionMode('tmce');
+				cleanupActivityDescriptionEditorUi();
 				return;
 			}
 
@@ -3589,7 +3593,6 @@
 				}
 				if (typeof editor.remove === 'function') {
 					editor.remove();
-					return;
 				}
 			} catch (err) {
 				// Continue with alternate removal path.
@@ -3603,6 +3606,8 @@
 				// Ignore removal errors.
 			}
 		}
+
+		cleanupActivityDescriptionEditorUi();
 	}
 
 	function rebuildActivityDescriptionEditor() {
@@ -3628,8 +3633,26 @@
 			initActivityDescriptionEditor();
 			window.setTimeout(function () {
 				refreshActivityDescriptionVisualEditor();
+				cleanupActivityDescriptionEditorUi();
 			}, 120);
 		}, 40);
+	}
+
+	function cleanupActivityDescriptionEditorUi() {
+		var $wrap = $('#wp-sd-activity-description-wrap');
+		if (!$wrap.length) {
+			return;
+		}
+
+		$wrap.children('.wp-editor-tools').not(':first').remove();
+		$wrap.find('.quicktags-toolbar').not(':first').remove();
+
+		var $container = $wrap.children('.wp-editor-container');
+		if ($container.length) {
+			$container.find('.mce-tinymce').not(':first').remove();
+		}
+
+		$('#sd-activity-description').prop('readonly', false).prop('disabled', false).show();
 	}
 
 	function setTableLoading(selector, cols) {
