@@ -321,9 +321,7 @@
 			resetFieldForm(false);
 			populateActivitySelects();
 			window.setTimeout(function () {
-				if (!getActivityDescriptionEditor()) {
-					initActivityDescriptionEditor();
-				}
+				initActivityDescriptionEditor();
 				refreshActivityDescriptionVisualEditor();
 				ensureActivityDescriptionContent(activityDescription);
 				cleanupActivityDescriptionEditorUi();
@@ -403,9 +401,16 @@
 				window.setTimeout(waitForActivityDescriptionEditor, 120);
 			});
 
+		var existingEditor = getActivityDescriptionEditor();
+		if (existingEditor && !isActivityDescriptionEditorMounted(existingEditor)) {
+			destroyActivityDescriptionEditor();
+			existingEditor = null;
+		}
+
 		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
-			if (window.tinymce && window.tinymce.get('sd-activity-description')) {
+			if (existingEditor) {
 				syncActivityDescriptionMode('tmce');
+				window.setTimeout(waitForActivityDescriptionEditor, 120);
 				cleanupActivityDescriptionEditorUi();
 				return;
 			}
@@ -498,6 +503,42 @@
 		}
 
 		return window.tinymce.get('sd-activity-description') || null;
+	}
+
+	function isActivityDescriptionEditorMounted(editor) {
+		if (!editor || typeof editor.getContainer !== 'function') {
+			return false;
+		}
+
+		var container = editor.getContainer();
+		if (!container || !container.parentNode || !document.body.contains(container)) {
+			return false;
+		}
+
+		var wrap = document.getElementById('wp-sd-activity-description-wrap');
+		if (wrap && !wrap.contains(container)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	function destroyActivityDescriptionEditor() {
+		var editor = getActivityDescriptionEditor();
+		if (editor) {
+			try {
+				if (typeof editor.save === 'function') {
+					editor.save();
+				}
+				if (typeof editor.remove === 'function') {
+					editor.remove();
+				}
+			} catch (err) {
+				// Ignore removal errors and fallback to textarea state.
+			}
+		}
+
+		$('#sd-activity-description').prop('readonly', false).prop('disabled', false).show();
 	}
 
 	function syncActivityDescriptionMode(mode) {
@@ -686,7 +727,7 @@
 		var $textarea = $('#sd-activity-description');
 		if ($textarea.length) {
 			var textareaValue = normalizeActivityDescriptionHtml($textarea.val() || '');
-			if (desired && !textareaValue) {
+			if (desired && textareaValue !== desired) {
 				$textarea.val(desired);
 			}
 		}
@@ -708,9 +749,20 @@
 
 		try {
 			var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
-			if (desired && !current) {
+			if (desired && current !== desired) {
 				editor.setContent(desired);
 				editor.save();
+
+				var updated = normalizeActivityDescriptionHtml(editor.getContent() || '');
+				if (updated !== desired) {
+					state.descriptionPendingValue = desired;
+					destroyActivityDescriptionEditor();
+					window.setTimeout(function () {
+						initActivityDescriptionEditor();
+						refreshActivityDescriptionVisualEditor();
+					}, 80);
+					return;
+				}
 			}
 			state.descriptionPendingValue = null;
 		} catch (err) {
@@ -3569,9 +3621,7 @@
 		$('.sd-admin-tab[data-tab="' + name + '"]').trigger('click');
 		if (name === 'modifica') {
 			window.setTimeout(function () {
-				if (!getActivityDescriptionEditor()) {
-					initActivityDescriptionEditor();
-				}
+				initActivityDescriptionEditor();
 				refreshActivityDescriptionVisualEditor();
 			}, 80);
 		}
