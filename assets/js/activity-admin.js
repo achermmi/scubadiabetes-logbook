@@ -15,7 +15,6 @@
 		descriptionPendingValue: null,
 		descriptionLastKnownHtml: '',
 		descriptionRefreshTimer: null,
-		descriptionSwitchHookInstalled: false,
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -384,28 +383,12 @@
 			return;
 		}
 
-		installActivityDescriptionSwitchHook();
-
 		cleanupActivityDescriptionEditorUi();
 
 		if (!visualDescriptionEditorEnabled) {
 			initActivityDescriptionHtmlOnlyEditor();
 			return;
 		}
-
-		$(document)
-			.off('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html')
-			.on('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html', function () {
-				var mode = this && this.id === 'sd-activity-description-html' ? 'html' : 'tmce';
-				syncActivityDescriptionMode(mode);
-				if (mode === 'html') {
-					syncActivityDescriptionHtmlTextareaFromEditor();
-					window.setTimeout(syncActivityDescriptionHtmlTextareaFromEditor, 80);
-				}
-				if (mode === 'tmce') {
-					window.setTimeout(waitForActivityDescriptionEditor, 120);
-				}
-			});
 
 		var existingEditor = getActivityDescriptionEditor();
 		if (existingEditor && !isActivityDescriptionEditorMounted(existingEditor)) {
@@ -502,26 +485,6 @@
 		var $tmceTab = $('#sd-activity-description-tmce');
 		if ($tmceTab.length) {
 			$tmceTab.hide().attr('aria-hidden', 'true');
-		}
-	}
-
-	function forceActivityDescriptionVisualMode() {
-		if (window.switchEditors && typeof window.switchEditors.go === 'function') {
-			window.switchEditors.go('sd-activity-description', 'tmce');
-		}
-
-		var $wrap = $('#wp-sd-activity-description-wrap');
-		if ($wrap.length) {
-			$wrap.removeClass('html-active').addClass('tmce-active');
-		}
-
-		var $tmceTab = $('#sd-activity-description-tmce');
-		var $htmlTab = $('#sd-activity-description-html');
-		if ($tmceTab.length) {
-			$tmceTab.addClass('wp-switch-editor switch-tmce').attr('aria-pressed', 'true').show();
-		}
-		if ($htmlTab.length) {
-			$htmlTab.removeClass('switch-tmce').addClass('wp-switch-editor switch-html').attr('aria-pressed', 'false').show();
 		}
 	}
 
@@ -628,37 +591,6 @@
 
 		state.descriptionLastKnownHtml = content;
 		state.descriptionPendingValue = content;
-	}
-
-	function installActivityDescriptionSwitchHook() {
-		if (state.descriptionSwitchHookInstalled) {
-			return;
-		}
-
-		if (!window.switchEditors || typeof window.switchEditors.go !== 'function') {
-			return;
-		}
-
-		var originalGo = window.switchEditors.go;
-		window.switchEditors.go = function (id, mode) {
-			var editorId = String(id || '');
-			var editorMode = String(mode || '');
-
-			if (editorId === 'sd-activity-description' && editorMode === 'html') {
-				syncActivityDescriptionHtmlTextareaFromEditor();
-			}
-
-			var result = originalGo.apply(this, arguments);
-
-			if (editorId === 'sd-activity-description' && editorMode === 'html') {
-				syncActivityDescriptionHtmlTextareaFromEditor();
-				window.setTimeout(syncActivityDescriptionHtmlTextareaFromEditor, 80);
-			}
-
-			return result;
-		};
-
-		state.descriptionSwitchHookInstalled = true;
 	}
 
 	function waitForActivityDescriptionEditor() {
@@ -800,8 +732,6 @@
 			return;
 		}
 
-		forceActivityDescriptionVisualMode();
-
 		var editor = getActivityDescriptionEditor();
 		if (!editor) {
 			return;
@@ -842,7 +772,6 @@
 				ensureActivityDescriptionContent(expectedHtml || '');
 			}
 			syncActivityDescriptionHtmlTextareaFromEditor();
-			forceActivityDescriptionVisualMode();
 			cleanupActivityDescriptionEditorUi();
 		}, delay);
 	}
