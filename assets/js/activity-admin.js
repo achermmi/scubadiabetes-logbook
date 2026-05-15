@@ -383,6 +383,23 @@
 			return;
 		}
 
+		$(document)
+			.off('click.sdDescriptionNativeTabs', '#sd-activity-description-tmce, #sd-activity-description-html')
+			.on('click.sdDescriptionNativeTabs', '#sd-activity-description-tmce, #sd-activity-description-html', function () {
+				if (this && this.id === 'sd-activity-description-tmce') {
+					syncActivityDescriptionVisualFromTextareaWithRetry(10, 80);
+					return;
+				}
+				if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+					try {
+						window.tinymce.triggerSave();
+					} catch (err) {
+						// Keep current textarea value.
+					}
+				}
+				syncActivityDescriptionHtmlTextareaFromEditor();
+			});
+
 		cleanupActivityDescriptionEditorUi();
 
 		if (!visualDescriptionEditorEnabled) {
@@ -399,6 +416,7 @@
 		if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
 			if (existingEditor) {
 				syncActivityDescriptionMode('tmce');
+				syncActivityDescriptionVisualFromTextareaWithRetry(8, 80);
 				window.setTimeout(waitForActivityDescriptionEditor, 120);
 				cleanupActivityDescriptionEditorUi();
 				return;
@@ -406,6 +424,7 @@
 
 			if ($('#wp-sd-activity-description-wrap').length) {
 				// Editor markup already rendered by wp_editor(); avoid double initialize.
+				syncActivityDescriptionVisualFromTextareaWithRetry(12, 90);
 				window.setTimeout(waitForActivityDescriptionEditor, 120);
 				return;
 			}
@@ -422,6 +441,7 @@
 						editor.on('init', function () {
 							syncActivityDescriptionMode('tmce');
 							syncActivityDescriptionHtmlTextareaFromEditor();
+							syncActivityDescriptionVisualFromTextareaWithRetry(6, 80);
 							waitForActivityDescriptionEditor();
 						});
 						editor.on('change keyup SetContent Undo Redo', function () {
@@ -645,6 +665,46 @@
 
 		state.descriptionLastKnownHtml = content;
 		state.descriptionPendingValue = content;
+	}
+
+	function syncActivityDescriptionVisualFromTextareaWithRetry(maxTries, delayMs) {
+		var tries = 0;
+		var max = parseInt(maxTries, 10);
+		if (!max || max < 1) {
+			max = 8;
+		}
+		var delay = parseInt(delayMs, 10);
+		if (!delay || delay < 20) {
+			delay = 80;
+		}
+
+		function applySync() {
+			tries += 1;
+			var editor = getActivityDescriptionEditor();
+			if (!editor) {
+				if (tries < max) {
+					window.setTimeout(applySync, delay);
+				}
+				return;
+			}
+
+			var html = normalizeActivityDescriptionHtml(
+				String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '')
+			);
+
+			try {
+				editor.setContent(html || '');
+				editor.save();
+				state.descriptionLastKnownHtml = html;
+				state.descriptionPendingValue = null;
+			} catch (err) {
+				if (tries < max) {
+					window.setTimeout(applySync, delay);
+				}
+			}
+		}
+
+		window.setTimeout(applySync, delay);
 	}
 
 	function waitForActivityDescriptionEditor() {
