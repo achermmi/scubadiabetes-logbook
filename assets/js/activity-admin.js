@@ -3947,6 +3947,138 @@
 		$('#sd-activity-description').prop('readonly', false).prop('disabled', false);
 	}
 
+	function applyActivityDescriptionContentToNativeEditor(html, preferVisual) {
+		var normalized = normalizeActivityDescriptionHtml(String(html || ''));
+		var $textarea = $('#sd-activity-description');
+
+		if ($textarea.length) {
+			$textarea.val(normalized).prop('readonly', false).prop('disabled', false);
+		}
+
+		state.descriptionPendingValue = normalized;
+		state.descriptionLastKnownHtml = normalized;
+		if (state.currentActivity && typeof state.currentActivity === 'object') {
+			state.currentActivity.description = normalized;
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (editor) {
+			try {
+				editor.setContent(normalized || '');
+				editor.save();
+			} catch (err) {
+				// Keep textarea content as source of truth.
+			}
+		}
+
+		if (preferVisual && window.switchEditors && typeof window.switchEditors.go === 'function') {
+			try {
+				window.switchEditors.go('sd-activity-description', 'tmce');
+			} catch (err2) {
+				// Ignore mode-switch errors.
+			}
+		}
+	}
+
+	// Stable native lifecycle override for Description editor.
+	function initActivityDescriptionEditor() {
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return;
+		}
+
+		if (!$(document).data('sdDescriptionNativeTabsBound')) {
+			$(document)
+				.on('click.sdDescriptionNativeTabsStable', '#sd-activity-description-html', function () {
+					if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+						try {
+							window.tinymce.triggerSave();
+						} catch (err) {
+							// Keep textarea value.
+						}
+					}
+					syncActivityDescriptionHtmlTextareaFromEditor();
+				})
+				.on('click.sdDescriptionNativeTabsStable', '#sd-activity-description-tmce', function () {
+					var source = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+					applyActivityDescriptionContentToNativeEditor(source, true);
+				});
+			$(document).data('sdDescriptionNativeTabsBound', true);
+		}
+
+		var initial = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || (state.currentActivity && state.currentActivity.description) || '');
+		applyActivityDescriptionContentToNativeEditor(initial, true);
+	}
+
+	function syncActivityDescriptionMode(mode) {
+		if (mode === 'html') {
+			if (window.tinymce && typeof window.tinymce.triggerSave === 'function') {
+				try {
+					window.tinymce.triggerSave();
+				} catch (err) {
+					// Keep fallback behavior.
+				}
+			}
+			syncActivityDescriptionHtmlTextareaFromEditor();
+			return;
+		}
+
+		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+		applyActivityDescriptionContentToNativeEditor(source, true);
+	}
+
+	function refreshActivityDescriptionVisualEditor() {
+		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+		applyActivityDescriptionContentToNativeEditor(source, true);
+	}
+
+	function scheduleActivityDescriptionRefresh(expectedHtml, delayMs, enforceContent) {
+		if (state.descriptionRefreshTimer) {
+			window.clearTimeout(state.descriptionRefreshTimer);
+			state.descriptionRefreshTimer = null;
+		}
+
+		var delay = parseInt(delayMs, 10);
+		if (!delay || delay < 0) {
+			delay = 80;
+		}
+
+		state.descriptionRefreshTimer = window.setTimeout(function () {
+			state.descriptionRefreshTimer = null;
+			var source = enforceContent ? String(expectedHtml || '') : String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+			applyActivityDescriptionContentToNativeEditor(source, true);
+			syncActivityDescriptionHtmlTextareaFromEditor();
+		}, delay);
+	}
+
+	function waitForActivityDescriptionEditor() {
+		window.setTimeout(function () {
+			ensureActivityDescriptionEditable();
+		}, 60);
+	}
+
+	function ensureActivityDescriptionEditable() {
+		var $textarea = $('#sd-activity-description');
+		if ($textarea.length) {
+			$textarea.prop('readonly', false).prop('disabled', false);
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (!editor) {
+			return true;
+		}
+
+		try {
+			if (typeof editor.setMode === 'function') {
+				editor.setMode('design');
+			}
+		} catch (err) {
+			// Keep going.
+		}
+
+		return true;
+	}
+
 	function setTableLoading(selector, cols) {
 		$(selector).html('<tr><td colspan="' + cols + '" class="sd-table-empty">' + esc(sdActivityAdmin.strings.loading) + '</td></tr>');
 	}
