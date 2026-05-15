@@ -394,6 +394,10 @@
 			.on('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html', function () {
 				var mode = this && this.id === 'sd-activity-description-html' ? 'html' : 'tmce';
 				syncActivityDescriptionMode(mode);
+				if (mode === 'html') {
+					syncActivityDescriptionHtmlTextareaFromEditor();
+					window.setTimeout(syncActivityDescriptionHtmlTextareaFromEditor, 80);
+				}
 				if (mode === 'tmce') {
 					window.setTimeout(waitForActivityDescriptionEditor, 120);
 				}
@@ -554,13 +558,10 @@
 
 		if (mode === 'html') {
 			try {
-				var htmlContent = normalizeActivityDescriptionHtml(editor.getContent() || '');
-				$textarea.val(htmlContent);
-				state.descriptionPendingValue = htmlContent;
+				syncActivityDescriptionHtmlTextareaFromEditor();
 				editor.save();
 			} catch (err) {
-				var fallbackContent = normalizeActivityDescriptionHtml($textarea.val() || '');
-				state.descriptionPendingValue = fallbackContent;
+				syncActivityDescriptionHtmlTextareaFromEditor();
 			}
 			return;
 		}
@@ -576,6 +577,36 @@
 		} catch (err2) {
 			state.descriptionPendingValue = sourceHtml;
 		}
+	}
+
+	function syncActivityDescriptionHtmlTextareaFromEditor() {
+		var content = '';
+		var editor = getActivityDescriptionEditor();
+
+		if (editor) {
+			try {
+				content = normalizeActivityDescriptionHtml(editor.getContent() || '');
+			} catch (err) {
+				content = '';
+			}
+		}
+
+		if (!content && state.descriptionPendingValue !== null) {
+			content = normalizeActivityDescriptionHtml(String(state.descriptionPendingValue || ''));
+		}
+
+		if (!content && state.currentActivity && state.currentActivity.description) {
+			content = normalizeActivityDescriptionHtml(String(state.currentActivity.description || ''));
+		}
+
+		var $targets = $('#wp-sd-activity-description-wrap textarea.wp-editor-area, #sd-activity-description');
+		if ($targets.length) {
+			$targets.each(function () {
+				$(this).val(content);
+			});
+		}
+
+		state.descriptionPendingValue = content;
 	}
 
 	function waitForActivityDescriptionEditor() {
@@ -746,6 +777,7 @@
 			if (enforceContent) {
 				ensureActivityDescriptionContent(expectedHtml || '');
 			}
+			syncActivityDescriptionHtmlTextareaFromEditor();
 			forceActivityDescriptionVisualMode();
 			cleanupActivityDescriptionEditorUi();
 		}, delay);
