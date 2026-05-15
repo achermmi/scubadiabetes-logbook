@@ -3980,7 +3980,7 @@
 		function syncVisual() {
 			tries += 1;
 			var editor = getActivityDescriptionEditor();
-			if (!editor) {
+			if (!isActivityDescriptionEditorHealthy(editor)) {
 				if (tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
@@ -4008,8 +4008,9 @@
 					body.style.cursor = 'text';
 				}
 
+				var bodyHtml = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
 				var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
-				if (current !== normalized && tries < maxTries) {
+				if ((current !== normalized || bodyHtml !== normalized) && tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
 			} catch (err3) {
@@ -4053,6 +4054,9 @@
 		var initial = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || (state.currentActivity && state.currentActivity.description) || '');
 		window.setTimeout(function () {
 			applyActivityDescriptionContentToNativeEditor(initial, true);
+			window.setTimeout(function () {
+				refreshActivityDescriptionVisualEditor();
+			}, 120);
 		}, 30);
 	}
 
@@ -4093,6 +4097,9 @@
 			state.descriptionRefreshTimer = null;
 			var source = enforceContent ? String(expectedHtml || '') : String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
 			applyActivityDescriptionContentToNativeEditor(source, true);
+			window.setTimeout(function () {
+				refreshActivityDescriptionVisualEditor();
+			}, 120);
 			syncActivityDescriptionHtmlTextareaFromEditor();
 		}, delay);
 	}
