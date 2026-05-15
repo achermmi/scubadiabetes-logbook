@@ -124,7 +124,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="sd-field-row">
 						<div class="sd-field-group sd-field-full">
 							<label for="sd-activity-description" class="sd-label"><?php esc_html_e( 'Descrizione', 'sd-logbook' ); ?></label>
-							<textarea id="sd-activity-description" class="sd-textarea" rows="5"></textarea>
+							<div id="wp-sd-activity-description-wrap" class="wp-core-ui wp-editor-wrap tmce-active">
+								<textarea id="sd-activity-description" class="sd-textarea wp-editor-area" rows="5"></textarea>
+							</div>
 						</div>
 					</div>
 				</div>
