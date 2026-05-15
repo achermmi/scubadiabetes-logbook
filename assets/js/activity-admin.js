@@ -2361,11 +2361,23 @@
 		}
 
 		var order = getActivityDataLayoutOrder();
+		var $cursor = null;
+
 		order.forEach(function (key) {
 			var $block = $container.children('.sd-activity-static-block[data-static-block="' + key + '"]');
-			if ($block.length) {
-				$container.append($block);
+			if (!$block.length) {
+				return;
 			}
+
+			if ($cursor === null) {
+				if (!$block.is($container.children('.sd-activity-static-block').first())) {
+					$container.prepend($block);
+				}
+			} else if (!$block.prev().is($cursor)) {
+				$block.insertAfter($cursor);
+			}
+
+			$cursor = $block;
 		});
 	}
 
