@@ -647,22 +647,25 @@
 				}
 			});
 
-			const orderedNodes = [];
 			const explicitOrder = this.getSectionLayoutOrder(sections);
-			explicitOrder.forEach(function (key) {
-				if (nodesByKey[key]) {
-					orderedNodes.push(nodesByKey[key]);
-				}
+			const explicitRank = {};
+			explicitOrder.forEach(function (key, index) {
+				explicitRank[String(key || '')] = index + 1;
 			});
 
-			const remainingNodes = [];
-			Object.keys(nodesByKey).forEach(function (key) {
-				if (orderedNodes.indexOf(nodesByKey[key]) === -1) {
-					remainingNodes.push(nodesByKey[key]);
-				}
+			const orderedNodes = Object.keys(nodesByKey).map(function (key) {
+				return nodesByKey[key];
 			});
 
-			remainingNodes.sort(function (a, b) {
+			orderedNodes.sort(function (a, b) {
+				const keyA = String($(a).attr('data-section-key') || '');
+				const keyB = String($(b).attr('data-section-key') || '');
+				const rankA = explicitRank[keyA] || 0;
+				const rankB = explicitRank[keyB] || 0;
+				if (rankA > 0 && rankB > 0 && rankA !== rankB) {
+					return rankA - rankB;
+				}
+
 				const orderA = parseInt($(a).attr('data-section-order') || 0, 10) || 0;
 				const orderB = parseInt($(b).attr('data-section-order') || 0, 10) || 0;
 				if (orderA !== orderB) {
@@ -677,10 +680,6 @@
 					return 1;
 				}
 				return 0;
-			});
-
-			remainingNodes.forEach(function (node) {
-				orderedNodes.push(node);
 			});
 
 			this.$customSections.before($(orderedNodes));
