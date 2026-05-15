@@ -3961,16 +3961,6 @@
 			state.currentActivity.description = normalized;
 		}
 
-		var editor = getActivityDescriptionEditor();
-		if (editor) {
-			try {
-				editor.setContent(normalized || '');
-				editor.save();
-			} catch (err) {
-				// Keep textarea content as source of truth.
-			}
-		}
-
 		if (preferVisual && window.switchEditors && typeof window.switchEditors.go === 'function') {
 			try {
 				window.switchEditors.go('sd-activity-description', 'tmce');
@@ -3978,6 +3968,36 @@
 				// Ignore mode-switch errors.
 			}
 		}
+
+		var tries = 0;
+		var maxTries = 14;
+
+		function syncVisual() {
+			tries += 1;
+			var editor = getActivityDescriptionEditor();
+			if (!editor) {
+				if (tries < maxTries) {
+					window.setTimeout(syncVisual, 80);
+				}
+				return;
+			}
+
+			try {
+				editor.setContent(normalized || '');
+				editor.save();
+
+				var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
+				if (current !== normalized && tries < maxTries) {
+					window.setTimeout(syncVisual, 80);
+				}
+			} catch (err3) {
+				if (tries < maxTries) {
+					window.setTimeout(syncVisual, 80);
+				}
+			}
+		}
+
+		window.setTimeout(syncVisual, 40);
 	}
 
 	// Stable native lifecycle override for Description editor.
@@ -4000,14 +4020,18 @@
 					syncActivityDescriptionHtmlTextareaFromEditor();
 				})
 				.on('click.sdDescriptionNativeTabsStable', '#sd-activity-description-tmce', function () {
-					var source = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
-					applyActivityDescriptionContentToNativeEditor(source, true);
+					var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+					window.setTimeout(function () {
+						applyActivityDescriptionContentToNativeEditor(source, true);
+					}, 30);
 				});
 			$(document).data('sdDescriptionNativeTabsBound', true);
 		}
 
 		var initial = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || (state.currentActivity && state.currentActivity.description) || '');
-		applyActivityDescriptionContentToNativeEditor(initial, true);
+		window.setTimeout(function () {
+			applyActivityDescriptionContentToNativeEditor(initial, true);
+		}, 30);
 	}
 
 	function syncActivityDescriptionMode(mode) {
