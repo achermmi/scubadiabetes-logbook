@@ -1913,11 +1913,16 @@ class SD_Activity_Manager {
 		}
 
 		// Enqueue CSS e JS
-		wp_enqueue_style( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-registration.css', array(), SD_LOGBOOK_VERSION );
+		$registration_css_version = SD_LOGBOOK_VERSION;
+		$registration_css_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/css/activity-registration.css';
+		if ( file_exists( $registration_css_file ) ) {
+			$registration_css_version .= '.' . md5_file( $registration_css_file );
+		}
+		wp_enqueue_style( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-registration.css', array(), $registration_css_version );
 		$registration_js_version = SD_LOGBOOK_VERSION;
 		$registration_js_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/activity-registration.js';
 		if ( file_exists( $registration_js_file ) ) {
-			$registration_js_version .= '.' . filemtime( $registration_js_file );
+			$registration_js_version .= '.' . md5_file( $registration_js_file );
 		}
 		wp_enqueue_script( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-registration.js', array( 'jquery' ), $registration_js_version, true );
 

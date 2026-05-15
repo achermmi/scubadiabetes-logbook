@@ -648,6 +648,12 @@
 		syncSectionOrder: function (sections) {
 			const self = this;
 			const hasPriceCards = Array.isArray(this.prices) && this.prices.length > 0;
+			const activeFixedSections = {
+				personal: !!sections.personal,
+				additional: !!sections.additional,
+				pricing: !!sections.pricing || hasPriceCards,
+				consents: !!sections.consents,
+			};
 			const fixedOrders = {
 				personal: this.getConfiguredSectionOrder('personal', sections.personal ? sections.personal.order : this.getDefaultSectionOrder('personal')),
 				additional: this.getConfiguredSectionOrder('additional', sections.additional ? sections.additional.order : this.getDefaultSectionOrder('additional')),
@@ -680,20 +686,18 @@
 
 			const nodesByKey = {};
 			[
-				$('#sd-section-personal[data-section-key]').first(),
-				$('#sd-dynamic-fields-section[data-section-key]').first(),
-				$('#sd-pricing-section[data-section-key]').first(),
-				$('#sd-consents-section[data-section-key]').first(),
-			].forEach(function ($node) {
-				if ($node.length && $node.is(':visible')) {
-					nodesByKey[String($node.attr('data-section-key') || '')] = $node.get(0);
+				{ key: 'personal', node: $('#sd-section-personal[data-section-key]').first() },
+				{ key: 'additional', node: $('#sd-dynamic-fields-section[data-section-key]').first() },
+				{ key: 'pricing', node: $('#sd-pricing-section[data-section-key]').first() },
+				{ key: 'consents', node: $('#sd-consents-section[data-section-key]').first() },
+			].forEach(function (entry) {
+				if (entry.node.length && activeFixedSections[entry.key]) {
+					nodesByKey[String(entry.node.attr('data-section-key') || '')] = entry.node.get(0);
 				}
 			});
 
 			customNodes.forEach(function (node) {
-				if ($(node).is(':visible')) {
-					nodesByKey[String($(node).attr('data-section-key') || '')] = node;
-				}
+				nodesByKey[String($(node).attr('data-section-key') || '')] = node;
 			});
 
 			const explicitOrder = this.getSectionLayoutOrder(sections);
@@ -734,6 +738,7 @@
 			this.logSectionOrderDebug('syncSectionOrder', {
 				explicitOrder: explicitOrder.slice(),
 				explicitRank: $.extend({}, explicitRank),
+				activeFixedSections: $.extend({}, activeFixedSections),
 				fixedOrders: $.extend({}, fixedOrders),
 				nodesByKey: Object.keys(nodesByKey),
 				orderedKeys: orderedNodes.map(function (node) {
@@ -751,7 +756,10 @@
 			this.$customSections.before($(orderedNodes));
 
 			this.logSectionOrderDebug('domAfterReorder', {
-				domKeys: this.$form.find('.sd-form-section[data-section-key]:visible').map(function () {
+				domKeys: this.$form.find('.sd-form-section[data-section-key]').map(function () {
+					return String($(this).attr('data-section-key') || '');
+				}).get(),
+				domVisibleKeys: this.$form.find('.sd-form-section[data-section-key]:visible').map(function () {
 					return String($(this).attr('data-section-key') || '');
 				}).get(),
 			});
