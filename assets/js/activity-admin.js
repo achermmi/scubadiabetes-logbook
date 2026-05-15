@@ -3045,15 +3045,44 @@
 			return;
 		}
 
+		var reorderedSections = sections.slice();
+		var swap = reorderedSections[idx];
+		reorderedSections[idx] = reorderedSections[targetIdx];
+		reorderedSections[targetIdx] = swap;
+
 		var current = sections[idx];
 		var target = sections[targetIdx];
 		var requests = [];
 		var meta = getSectionMeta();
+		var metaChanged = false;
+		var nextLayoutOrder = [];
+
+		reorderedSections.forEach(function (section) {
+			var normalizedKey = String(section && section.key ? section.key : '').trim();
+			if (!normalizedKey) {
+				return;
+			}
+			if (normalizedKey === 'tariffe') {
+				normalizedKey = 'pricing';
+			}
+			if (nextLayoutOrder.indexOf(normalizedKey) === -1) {
+				nextLayoutOrder.push(normalizedKey);
+			}
+		});
+
+		var currentLayoutOrder = Array.isArray(meta.layout_order) ? meta.layout_order.slice() : [];
+		if (JSON.stringify(currentLayoutOrder) !== JSON.stringify(nextLayoutOrder)) {
+			meta.layout_order = nextLayoutOrder;
+			metaChanged = true;
+		}
 
 		if (current.virtual) {
 			meta[current.key] = meta[current.key] || {};
 			meta[current.key].label = meta[current.key].label || current.label;
-			meta[current.key].order = target.order;
+			if (parseInt(meta[current.key].order || 0, 10) !== parseInt(target.order, 10)) {
+				meta[current.key].order = target.order;
+				metaChanged = true;
+			}
 		} else {
 			current.fields.forEach(function (field) {
 				requests.push(updateFieldAjax(field.id, buildFieldPayload(field, {
@@ -3065,7 +3094,10 @@
 		if (target.virtual) {
 			meta[target.key] = meta[target.key] || {};
 			meta[target.key].label = meta[target.key].label || target.label;
-			meta[target.key].order = current.order;
+			if (parseInt(meta[target.key].order || 0, 10) !== parseInt(current.order, 10)) {
+				meta[target.key].order = current.order;
+				metaChanged = true;
+			}
 		} else {
 			target.fields.forEach(function (field) {
 				requests.push(updateFieldAjax(field.id, buildFieldPayload(field, {
@@ -3076,7 +3108,7 @@
 
 		var fieldsPromise = requests.length ? $.when.apply($, requests) : $.Deferred().resolve().promise();
 		fieldsPromise.done(function () {
-			if (current.virtual || target.virtual) {
+			if (metaChanged) {
 				saveSectionMeta(meta);
 			} else {
 				editActivity(state.selectedActivityId);
