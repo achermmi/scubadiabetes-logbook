@@ -301,7 +301,8 @@
 			$('#sd-activity-status').val(a.event_status || 'draft');
 			$('#sd-activity-thumbnail').val(a.thumbnail_url || '');
 			updateActivityThumbnailPreview();
-			setActivityDescriptionValue(a.description || '');
+			var activityDescription = normalizeActivityDescriptionHtml(a.description || '');
+			setActivityDescriptionValue(activityDescription);
 			$('#sd-activity-max').val(a.max_participants || '');
 			$('#sd-activity-start').val(toDateTimeLocal(a.start_date));
 			$('#sd-activity-end').val(toDateTimeLocal(a.end_date));
@@ -324,6 +325,7 @@
 					initActivityDescriptionEditor();
 				}
 				refreshActivityDescriptionVisualEditor();
+				ensureActivityDescriptionContent(activityDescription);
 			}, 120);
 
 			// Se è stato salvato un campo, resetta il flag
@@ -670,6 +672,47 @@
 			}
 		} catch (err) {
 			// Ignore repaint errors.
+		}
+
+		window.setTimeout(waitForActivityDescriptionEditor, 120);
+	}
+
+	function ensureActivityDescriptionContent(expectedHtml) {
+		var desired = normalizeActivityDescriptionHtml(expectedHtml || '');
+		var $textarea = $('#sd-activity-description');
+		if ($textarea.length) {
+			var textareaValue = normalizeActivityDescriptionHtml($textarea.val() || '');
+			if (desired && !textareaValue) {
+				$textarea.val(desired);
+			}
+		}
+
+		if (!visualDescriptionEditorEnabled) {
+			if (desired) {
+				state.descriptionPendingValue = desired;
+			}
+			return;
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (!editor) {
+			if (desired) {
+				state.descriptionPendingValue = desired;
+			}
+			return;
+		}
+
+		try {
+			var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
+			if (desired && !current) {
+				editor.setContent(desired);
+				editor.save();
+			}
+			state.descriptionPendingValue = null;
+		} catch (err) {
+			if (desired) {
+				state.descriptionPendingValue = desired;
+			}
 		}
 
 		window.setTimeout(waitForActivityDescriptionEditor, 120);
