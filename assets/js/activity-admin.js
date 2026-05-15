@@ -13,6 +13,7 @@
 		scrollToFieldId: null,
 		pendingMessage: null,
 		descriptionPendingValue: null,
+		descriptionLastKnownHtml: '',
 		descriptionRefreshTimer: null,
 		descriptionSwitchHookInstalled: false,
 	};
@@ -557,27 +558,33 @@
 		}
 
 		var editor = getActivityDescriptionEditor();
-		if (!editor) {
+		if (mode === 'html') {
+			syncActivityDescriptionHtmlTextareaFromEditor();
+			if (editor) {
+				try {
+					editor.save();
+				} catch (err) {
+					// Keep textarea sync fallback only.
+				}
+			}
 			return;
 		}
 
-		if (mode === 'html') {
-			try {
-				syncActivityDescriptionHtmlTextareaFromEditor();
-				editor.save();
-			} catch (err) {
-				syncActivityDescriptionHtmlTextareaFromEditor();
-			}
+		if (!editor) {
+			var textareaOnly = normalizeActivityDescriptionHtml($textarea.val() || state.descriptionLastKnownHtml || '');
+			state.descriptionPendingValue = textareaOnly;
+			state.descriptionLastKnownHtml = textareaOnly;
 			return;
 		}
 
 		var sourceHtml = state.descriptionPendingValue !== null
 			? String(state.descriptionPendingValue)
-			: String($textarea.val() || '');
+			: String($textarea.val() || state.descriptionLastKnownHtml || '');
 
 		try {
 			editor.setContent(sourceHtml || '');
 			editor.save();
+			state.descriptionLastKnownHtml = normalizeActivityDescriptionHtml(sourceHtml || '');
 			state.descriptionPendingValue = null;
 		} catch (err2) {
 			state.descriptionPendingValue = sourceHtml;
@@ -600,6 +607,14 @@
 			content = normalizeActivityDescriptionHtml(String(state.descriptionPendingValue || ''));
 		}
 
+		if (!content) {
+			content = normalizeActivityDescriptionHtml(String($('#sd-activity-description').val() || ''));
+		}
+
+		if (!content && state.descriptionLastKnownHtml) {
+			content = normalizeActivityDescriptionHtml(String(state.descriptionLastKnownHtml || ''));
+		}
+
 		if (!content && state.currentActivity && state.currentActivity.description) {
 			content = normalizeActivityDescriptionHtml(String(state.currentActivity.description || ''));
 		}
@@ -611,6 +626,7 @@
 			});
 		}
 
+		state.descriptionLastKnownHtml = content;
 		state.descriptionPendingValue = content;
 	}
 
@@ -738,26 +754,38 @@
 
 	function getActivityDescriptionValue() {
 		if (!visualDescriptionEditorEnabled) {
-			return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+			var htmlOnly = normalizeActivityDescriptionHtml($('#sd-activity-description').val() || state.descriptionLastKnownHtml || '');
+			state.descriptionLastKnownHtml = htmlOnly;
+			return htmlOnly;
 		}
 
 		var editor = getActivityDescriptionEditor();
 		if (editor) {
 			try {
 				editor.save();
-				return normalizeActivityDescriptionHtml(editor.getContent());
+				var fromEditor = normalizeActivityDescriptionHtml(editor.getContent());
+				state.descriptionLastKnownHtml = fromEditor;
+				return fromEditor;
 			} catch (err) {
-				return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+				var fromTextarea = normalizeActivityDescriptionHtml($('#sd-activity-description').val() || state.descriptionLastKnownHtml || '');
+				state.descriptionLastKnownHtml = fromTextarea;
+				return fromTextarea;
 			}
 		}
 
-		return normalizeActivityDescriptionHtml($('#sd-activity-description').val() || '');
+		var fallback = normalizeActivityDescriptionHtml($('#sd-activity-description').val() || state.descriptionLastKnownHtml || '');
+		state.descriptionLastKnownHtml = fallback;
+		return fallback;
 	}
 
 	function setActivityDescriptionValue(value) {
 		var text = normalizeActivityDescriptionHtml(String(value || ''));
 		$('#sd-activity-description').val(text);
 		state.descriptionPendingValue = text;
+		state.descriptionLastKnownHtml = text;
+		if (state.currentActivity && typeof state.currentActivity === 'object') {
+			state.currentActivity.description = text;
+		}
 
 		if (!visualDescriptionEditorEnabled) {
 			forceActivityDescriptionHtmlMode();
@@ -829,9 +857,14 @@
 			}
 		}
 
+		if (desired) {
+			state.descriptionLastKnownHtml = desired;
+		}
+
 		if (!visualDescriptionEditorEnabled) {
 			if (desired) {
 				state.descriptionPendingValue = desired;
+				state.descriptionLastKnownHtml = desired;
 			}
 			return;
 		}
@@ -840,6 +873,7 @@
 		if (!editor) {
 			if (desired) {
 				state.descriptionPendingValue = desired;
+				state.descriptionLastKnownHtml = desired;
 			}
 			return;
 		}
@@ -849,6 +883,7 @@
 			if (desired && current !== desired) {
 				editor.setContent(desired);
 				editor.save();
+				state.descriptionLastKnownHtml = desired;
 
 				var updated = normalizeActivityDescriptionHtml(editor.getContent() || '');
 				if (updated !== desired) {
@@ -865,6 +900,7 @@
 		} catch (err) {
 			if (desired) {
 				state.descriptionPendingValue = desired;
+				state.descriptionLastKnownHtml = desired;
 			}
 		}
 
