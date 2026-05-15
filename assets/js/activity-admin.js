@@ -13,6 +13,7 @@
 		scrollToFieldId: null,
 		pendingMessage: null,
 		descriptionPendingValue: null,
+		descriptionRefreshTimer: null,
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -293,7 +294,7 @@
 			state.selectedActivityId = parseInt(a.id, 10) || 0;
 			state.currentActivity = a;
 			state.currentFields = a.form_fields || [];
-			switchTab('modifica');
+			switchTab('modifica', { skipDescriptionRefresh: true });
 
 			$('#sd-activity-id').val(state.selectedActivityId);
 			$('#sd-activity-title').val(a.title || '');
@@ -320,12 +321,7 @@
 			applyVirtualSectionMetaUI();
 			resetFieldForm(false);
 			populateActivitySelects();
-			window.setTimeout(function () {
-				initActivityDescriptionEditor();
-				refreshActivityDescriptionVisualEditor();
-				ensureActivityDescriptionContent(activityDescription);
-				cleanupActivityDescriptionEditorUi();
-			}, 120);
+			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -720,6 +716,28 @@
 		}
 
 		window.setTimeout(waitForActivityDescriptionEditor, 120);
+	}
+
+	function scheduleActivityDescriptionRefresh(expectedHtml, delayMs, enforceContent) {
+		if (state.descriptionRefreshTimer) {
+			window.clearTimeout(state.descriptionRefreshTimer);
+			state.descriptionRefreshTimer = null;
+		}
+
+		var delay = parseInt(delayMs, 10);
+		if (!delay || delay < 0) {
+			delay = 80;
+		}
+
+		state.descriptionRefreshTimer = window.setTimeout(function () {
+			state.descriptionRefreshTimer = null;
+			initActivityDescriptionEditor();
+			refreshActivityDescriptionVisualEditor();
+			if (enforceContent) {
+				ensureActivityDescriptionContent(expectedHtml || '');
+			}
+			cleanupActivityDescriptionEditorUi();
+		}, delay);
 	}
 
 	function ensureActivityDescriptionContent(expectedHtml) {
@@ -3566,6 +3584,11 @@
 	}
 
 	function resetActivityForm() {
+		if (state.descriptionRefreshTimer) {
+			window.clearTimeout(state.descriptionRefreshTimer);
+			state.descriptionRefreshTimer = null;
+		}
+
 		state.selectedActivityId = 0;
 		state.currentFields = [];
 		state.currentActivity = null;
@@ -3618,12 +3641,10 @@
 	}
 
 	function switchTab(name) {
+		var options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
 		$('.sd-admin-tab[data-tab="' + name + '"]').trigger('click');
-		if (name === 'modifica') {
-			window.setTimeout(function () {
-				initActivityDescriptionEditor();
-				refreshActivityDescriptionVisualEditor();
-			}, 80);
+		if (name === 'modifica' && !options.skipDescriptionRefresh) {
+			scheduleActivityDescriptionRefresh('', 80, false);
 		}
 	}
 
