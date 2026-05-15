@@ -34,24 +34,24 @@
 		var $textarea = $('#sd-activity-description');
 		var textareaVal = $textarea.length ? String($textarea.val() || '') : '';
 		var editor = getActivityDescriptionEditor();
-		var editorContent = '';
-		var bodyHtml = '';
 		var mounted = false;
 		var healthy = false;
+		var initialized = false;
+		var editorMode = '';
+		var bodyContentEditable = '';
 
 		if (editor) {
 			mounted = isActivityDescriptionEditorMounted(editor);
 			healthy = isActivityDescriptionEditorHealthy(editor);
-			try {
-				editorContent = String(editor.getContent() || '');
-			} catch (errGetContent) {
-				editorContent = '[getContent-error]';
-			}
-			try {
-				var body = typeof editor.getBody === 'function' ? editor.getBody() : null;
-				bodyHtml = body ? String(body.innerHTML || '') : '';
-			} catch (errGetBody) {
-				bodyHtml = '[getBody-error]';
+			initialized = !!editor.initialized;
+			editorMode = String(editor.mode && editor.mode.get ? editor.mode.get() : '');
+			if (healthy && typeof editor.getBody === 'function') {
+				try {
+					var body = editor.getBody();
+					bodyContentEditable = body ? String(body.getAttribute('contenteditable') || '') : '';
+				} catch (errGetBodyAttr) {
+					bodyContentEditable = '[getBodyAttr-error]';
+				}
 			}
 		}
 
@@ -65,8 +65,9 @@
 			editorPresent: !!editor,
 			editorMounted: !!mounted,
 			editorHealthy: !!healthy,
-			editorContentLen: editorContent.length,
-			bodyHtmlLen: bodyHtml.length,
+			editorInitialized: initialized,
+			editorMode: editorMode,
+			bodyContentEditable: bodyContentEditable,
 		};
 
 		if (extra && typeof extra === 'object') {
