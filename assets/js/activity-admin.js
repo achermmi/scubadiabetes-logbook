@@ -14,6 +14,7 @@
 		pendingMessage: null,
 		descriptionPendingValue: null,
 		descriptionRefreshTimer: null,
+		descriptionSwitchHookInstalled: false,
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -382,6 +383,8 @@
 			return;
 		}
 
+		installActivityDescriptionSwitchHook();
+
 		cleanupActivityDescriptionEditorUi();
 
 		if (!visualDescriptionEditorEnabled) {
@@ -428,9 +431,11 @@
 					setup: function (editor) {
 						editor.on('init', function () {
 							syncActivityDescriptionMode('tmce');
+							syncActivityDescriptionHtmlTextareaFromEditor();
 							waitForActivityDescriptionEditor();
 						});
 						editor.on('change keyup SetContent Undo Redo', function () {
+							syncActivityDescriptionHtmlTextareaFromEditor();
 							editor.save();
 						});
 					},
@@ -607,6 +612,37 @@
 		}
 
 		state.descriptionPendingValue = content;
+	}
+
+	function installActivityDescriptionSwitchHook() {
+		if (state.descriptionSwitchHookInstalled) {
+			return;
+		}
+
+		if (!window.switchEditors || typeof window.switchEditors.go !== 'function') {
+			return;
+		}
+
+		var originalGo = window.switchEditors.go;
+		window.switchEditors.go = function (id, mode) {
+			var editorId = String(id || '');
+			var editorMode = String(mode || '');
+
+			if (editorId === 'sd-activity-description' && editorMode === 'html') {
+				syncActivityDescriptionHtmlTextareaFromEditor();
+			}
+
+			var result = originalGo.apply(this, arguments);
+
+			if (editorId === 'sd-activity-description' && editorMode === 'html') {
+				syncActivityDescriptionHtmlTextareaFromEditor();
+				window.setTimeout(syncActivityDescriptionHtmlTextareaFromEditor, 80);
+			}
+
+			return result;
+		};
+
+		state.descriptionSwitchHookInstalled = true;
 	}
 
 	function waitForActivityDescriptionEditor() {
