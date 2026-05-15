@@ -19,7 +19,7 @@ jobs:
           - target: sd-suisse
             remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
           - target: scubadiabetes-dev
-            remote_path: sites/scubadiabetes_dev/wp-content/plugins/scubadiabetes-logbook
+            remote_path: sites/scubadiabetes-dev/wp-content/plugins/scubadiabetes-logbook
 
     steps:
       - name: Checkout repository
