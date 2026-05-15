@@ -3843,6 +3843,11 @@
 	function switchTab(name) {
 		var options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
 		$('.sd-admin-tab[data-tab="' + name + '"]').trigger('click');
+		if (name === 'modifica') {
+			window.setTimeout(function () {
+				initActivityDescriptionEditor();
+			}, 0);
+		}
 		if (name === 'modifica' && !options.skipDescriptionRefresh) {
 			scheduleActivityDescriptionRefresh('', 80, false);
 		}
