@@ -75,6 +75,38 @@
 			});
 		},
 
+		isSectionOrderDebugEnabled: function () {
+			try {
+				const search = new URLSearchParams(window.location.search || '');
+				if (search.get('sd_debug_section_order') === '1') {
+					return true;
+				}
+				if (window.localStorage && window.localStorage.getItem('sd_debug_section_order') === '1') {
+					return true;
+				}
+			} catch (e) {
+				return false;
+			}
+
+			return false;
+		},
+
+		logSectionOrderDebug: function (stage, payload) {
+			if (!this.isSectionOrderDebugEnabled() || !window.console) {
+				return;
+			}
+
+			const label = 'SD Section Order Debug: ' + String(stage || 'unknown');
+			if (typeof console.groupCollapsed === 'function') {
+				console.groupCollapsed(label);
+				console.log(payload || {});
+				console.groupEnd();
+				return;
+			}
+
+			console.log(label, payload || {});
+		},
+
 		getPersonalFieldSpans: function () {
 			const formConfig = this.activity && this.activity.form_configuration ? this.activity.form_configuration : {};
 			return (formConfig.personal_field_spans && typeof formConfig.personal_field_spans === 'object') ? formConfig.personal_field_spans : {};
@@ -189,6 +221,23 @@
 						self.activity = response.data.activity;
 						self.fields = response.data.form_fields || [];
 						self.prices = response.data.prices || [];
+
+						self.logSectionOrderDebug('payload', {
+							activityId: activityId,
+							sectionLayoutOrder: Array.isArray(self.activity && self.activity.section_layout_order) ? self.activity.section_layout_order.slice() : [],
+							metaLayoutOrder: Array.isArray(self.activity && self.activity.form_configuration && self.activity.form_configuration.section_meta && self.activity.form_configuration.section_meta.layout_order)
+								? self.activity.form_configuration.section_meta.layout_order.slice()
+								: [],
+							sectionMeta: (self.activity && self.activity.form_configuration && self.activity.form_configuration.section_meta) || {},
+							fieldSections: (self.fields || []).map(function (field) {
+								return {
+									id: parseInt(field.id, 10) || 0,
+									section_key: String(field.section_key || 'additional'),
+									section_order: parseInt(field.section_order || 0, 10) || 0,
+									label: String(field.section_label || ''),
+								};
+							}),
+						});
 
 						// Ensure all field options are objects, not strings
 						self.fields.forEach(function (field) {
@@ -682,7 +731,31 @@
 				return 0;
 			});
 
+			this.logSectionOrderDebug('syncSectionOrder', {
+				explicitOrder: explicitOrder.slice(),
+				explicitRank: $.extend({}, explicitRank),
+				fixedOrders: $.extend({}, fixedOrders),
+				nodesByKey: Object.keys(nodesByKey),
+				orderedKeys: orderedNodes.map(function (node) {
+					return String($(node).attr('data-section-key') || '');
+				}),
+				orderedWithOrder: orderedNodes.map(function (node) {
+					return {
+						key: String($(node).attr('data-section-key') || ''),
+						order: parseInt($(node).attr('data-section-order') || 0, 10) || 0,
+						title: String($(node).attr('data-section-title') || $(node).find('.sd-section-title-text').first().text() || ''),
+					};
+				}),
+			});
+
 			this.$customSections.before($(orderedNodes));
+
+			this.logSectionOrderDebug('domAfterReorder', {
+				domKeys: this.$form.find('.sd-form-section[data-section-key]:visible').map(function () {
+					return String($(this).attr('data-section-key') || '');
+				}).get(),
+			});
+
 			this.renumberSections();
 		},
 
