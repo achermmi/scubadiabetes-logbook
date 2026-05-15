@@ -394,7 +394,9 @@
 			.on('click.sdDescriptionEditorMode', '#sd-activity-description-tmce, #sd-activity-description-html', function () {
 				var mode = this && this.id === 'sd-activity-description-html' ? 'html' : 'tmce';
 				syncActivityDescriptionMode(mode);
-				window.setTimeout(waitForActivityDescriptionEditor, 120);
+				if (mode === 'tmce') {
+					window.setTimeout(waitForActivityDescriptionEditor, 120);
+				}
 			});
 
 		var existingEditor = getActivityDescriptionEditor();
@@ -552,9 +554,13 @@
 
 		if (mode === 'html') {
 			try {
+				var htmlContent = normalizeActivityDescriptionHtml(editor.getContent() || '');
+				$textarea.val(htmlContent);
+				state.descriptionPendingValue = htmlContent;
 				editor.save();
 			} catch (err) {
-				// Ignore and keep textarea value.
+				var fallbackContent = normalizeActivityDescriptionHtml($textarea.val() || '');
+				state.descriptionPendingValue = fallbackContent;
 			}
 			return;
 		}
