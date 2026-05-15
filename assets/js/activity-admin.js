@@ -18,7 +18,63 @@
 	};
 
 	var visualDescriptionEditorEnabled = true;
+	var descriptionDebugSeq = 0;
 	var priceRateNoteDefault = 'Salva prima l\'attivita per poter aggiungere tariffe.';
+
+	function debugDescriptionLog(eventName, extra) {
+		var debugEnabled = true;
+		if (window.sdActivityAdmin && typeof window.sdActivityAdmin.debugDescriptionEditor !== 'undefined') {
+			debugEnabled = !!window.sdActivityAdmin.debugDescriptionEditor;
+		}
+		if (!debugEnabled || !window.console || typeof window.console.log !== 'function') {
+			return;
+		}
+
+		descriptionDebugSeq += 1;
+		var $textarea = $('#sd-activity-description');
+		var textareaVal = $textarea.length ? String($textarea.val() || '') : '';
+		var editor = getActivityDescriptionEditor();
+		var editorContent = '';
+		var bodyHtml = '';
+		var mounted = false;
+		var healthy = false;
+
+		if (editor) {
+			mounted = isActivityDescriptionEditorMounted(editor);
+			healthy = isActivityDescriptionEditorHealthy(editor);
+			try {
+				editorContent = String(editor.getContent() || '');
+			} catch (errGetContent) {
+				editorContent = '[getContent-error]';
+			}
+			try {
+				var body = typeof editor.getBody === 'function' ? editor.getBody() : null;
+				bodyHtml = body ? String(body.innerHTML || '') : '';
+			} catch (errGetBody) {
+				bodyHtml = '[getBody-error]';
+			}
+		}
+
+		var snapshot = {
+			seq: descriptionDebugSeq,
+			event: eventName,
+			selectedActivityId: parseInt(state.selectedActivityId, 10) || 0,
+			textareaLen: textareaVal.length,
+			pendingLen: String(state.descriptionPendingValue || '').length,
+			lastKnownLen: String(state.descriptionLastKnownHtml || '').length,
+			editorPresent: !!editor,
+			editorMounted: !!mounted,
+			editorHealthy: !!healthy,
+			editorContentLen: editorContent.length,
+			bodyHtmlLen: bodyHtml.length,
+		};
+
+		if (extra && typeof extra === 'object') {
+			snapshot.extra = extra;
+		}
+
+		console.log('[SD Description Debug]', snapshot);
+	}
 
 	var defaultSections = [
 		{ key: 'personal', label: 'Dati Personali', order: 10 },
@@ -281,6 +337,8 @@
 			return;
 		}
 
+		debugDescriptionLog('editActivity:start', { activityId: activityId });
+
 		$.post(sdActivityAdmin.ajaxUrl, {
 			action: 'sd_activity_get',
 			activity_id: activityId,
@@ -304,6 +362,10 @@
 			$('#sd-activity-thumbnail').val(a.thumbnail_url || '');
 			updateActivityThumbnailPreview();
 			var activityDescription = normalizeActivityDescriptionHtml(a.description || '');
+			debugDescriptionLog('editActivity:data-loaded', {
+				activityId: parseInt(a.id, 10) || 0,
+				descriptionLen: String(activityDescription || '').length,
+			});
 			setActivityDescriptionValue(activityDescription);
 			$('#sd-activity-max').val(a.max_participants || '');
 			$('#sd-activity-start').val(toDateTimeLocal(a.start_date));
@@ -323,7 +385,9 @@
 			resetFieldForm(false);
 			populateActivitySelects();
 			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
+			debugDescriptionLog('editActivity:after-schedule-refresh', { delayMs: 140, enforceContent: true });
 			window.setTimeout(function () {
+				debugDescriptionLog('editActivity:700ms-refresh-fired', { delayMs: 700 });
 				applyActivityDescriptionContentToNativeEditor(activityDescription, true);
 				refreshActivityDescriptionVisualEditor();
 			}, 700);
@@ -3960,6 +4024,12 @@
 		var normalized = normalizeActivityDescriptionHtml(String(html || ''));
 		var $textarea = $('#sd-activity-description');
 		var textareaValue = normalizeActivityDescriptionHtml(String($textarea.val() || ''));
+		debugDescriptionLog('apply:start', {
+			inputLen: String(html || '').length,
+			normalizedLen: normalized.length,
+			preferVisual: !!preferVisual,
+			textareaLenBefore: textareaValue.length,
+		});
 
 		if (!normalized && textareaValue) {
 			normalized = textareaValue;
@@ -3990,6 +4060,12 @@
 			tries += 1;
 			var editor = getActivityDescriptionEditor();
 			if (!isActivityDescriptionEditorHealthy(editor)) {
+				if (tries === 1 || tries % 5 === 0 || tries === maxTries) {
+					debugDescriptionLog('apply:wait-editor-healthy', {
+						tryIndex: tries,
+						maxTries: maxTries,
+					});
+				}
 				if (tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
@@ -4019,10 +4095,25 @@
 
 				var bodyHtml = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
 				var current = normalizeActivityDescriptionHtml(editor.getContent() || '');
+				if (tries === 1 || tries % 5 === 0 || current === normalized || bodyHtml === normalized || tries === maxTries) {
+					debugDescriptionLog('apply:sync-try', {
+						tryIndex: tries,
+						maxTries: maxTries,
+						targetLen: normalized.length,
+						currentLen: current.length,
+						bodyLen: bodyHtml.length,
+						contentMatch: current === normalized,
+						bodyMatch: bodyHtml === normalized,
+					});
+				}
 				if ((current !== normalized || bodyHtml !== normalized) && tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
 			} catch (err3) {
+				debugDescriptionLog('apply:sync-error', {
+					tryIndex: tries,
+					error: String((err3 && err3.message) ? err3.message : err3),
+				});
 				if (tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
@@ -4039,11 +4130,20 @@
 			return;
 		}
 
+		debugDescriptionLog('init:start', {
+			textareaLen: String($textarea.val() || '').length,
+			hasCurrentActivity: !!state.currentActivity,
+		});
+
 		if (!$(document).data('sdDescriptionNativeEditorInitBound')) {
 			$(document).on('tinymce-editor-init.sdDescriptionNativeInit', function (event, editor) {
 				if (!editor || String(editor.id || '') !== 'sd-activity-description') {
 					return;
 				}
+
+				debugDescriptionLog('init:tinymce-editor-init', {
+					editorId: String(editor.id || ''),
+				});
 
 				var sourceOnInit = String(
 					$('#sd-activity-description').val()
@@ -4055,9 +4155,11 @@
 
 				applyActivityDescriptionContentToNativeEditor(sourceOnInit, true);
 				window.setTimeout(function () {
+					debugDescriptionLog('init:post-init-refresh-140ms', { delayMs: 140 });
 					refreshActivityDescriptionVisualEditor();
 				}, 140);
 				window.setTimeout(function () {
+					debugDescriptionLog('init:post-init-refresh-420ms', { delayMs: 420 });
 					refreshActivityDescriptionVisualEditor();
 				}, 420);
 			});
@@ -4086,12 +4188,16 @@
 		}
 
 		var initial = String($textarea.val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || (state.currentActivity && state.currentActivity.description) || '');
+		debugDescriptionLog('init:initial-source', { initialLen: initial.length });
 		window.setTimeout(function () {
+			debugDescriptionLog('init:apply-initial-30ms', { delayMs: 30 });
 			applyActivityDescriptionContentToNativeEditor(initial, true);
 			window.setTimeout(function () {
+				debugDescriptionLog('init:refresh-120ms', { delayMs: 120 });
 				refreshActivityDescriptionVisualEditor();
 			}, 120);
 			window.setTimeout(function () {
+				debugDescriptionLog('init:refresh-420ms', { delayMs: 420 });
 				refreshActivityDescriptionVisualEditor();
 			}, 420);
 		}, 30);
@@ -4133,8 +4239,14 @@
 		state.descriptionRefreshTimer = window.setTimeout(function () {
 			state.descriptionRefreshTimer = null;
 			var source = enforceContent ? String(expectedHtml || '') : String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+			debugDescriptionLog('schedule:run', {
+				delayMs: delay,
+				enforceContent: !!enforceContent,
+				sourceLen: source.length,
+			});
 			applyActivityDescriptionContentToNativeEditor(source, true);
 			window.setTimeout(function () {
+				debugDescriptionLog('schedule:refresh-120ms', { delayMs: 120 });
 				refreshActivityDescriptionVisualEditor();
 			}, 120);
 			syncActivityDescriptionHtmlTextareaFromEditor();
