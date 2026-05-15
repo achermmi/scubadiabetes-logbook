@@ -3959,6 +3959,11 @@
 	function applyActivityDescriptionContentToNativeEditor(html, preferVisual) {
 		var normalized = normalizeActivityDescriptionHtml(String(html || ''));
 		var $textarea = $('#sd-activity-description');
+		var textareaValue = normalizeActivityDescriptionHtml(String($textarea.val() || ''));
+
+		if (!normalized && textareaValue) {
+			normalized = textareaValue;
+		}
 
 		if ($textarea.length) {
 			$textarea.val(normalized).prop('readonly', false).prop('disabled', false);
@@ -3979,7 +3984,7 @@
 		}
 
 		var tries = 0;
-		var maxTries = 14;
+		var maxTries = 40;
 
 		function syncVisual() {
 			tries += 1;
@@ -4034,6 +4039,31 @@
 			return;
 		}
 
+		if (!$(document).data('sdDescriptionNativeEditorInitBound')) {
+			$(document).on('tinymce-editor-init.sdDescriptionNativeInit', function (event, editor) {
+				if (!editor || String(editor.id || '') !== 'sd-activity-description') {
+					return;
+				}
+
+				var sourceOnInit = String(
+					$('#sd-activity-description').val()
+					|| state.descriptionPendingValue
+					|| state.descriptionLastKnownHtml
+					|| (state.currentActivity && state.currentActivity.description)
+					|| ''
+				);
+
+				applyActivityDescriptionContentToNativeEditor(sourceOnInit, true);
+				window.setTimeout(function () {
+					refreshActivityDescriptionVisualEditor();
+				}, 140);
+				window.setTimeout(function () {
+					refreshActivityDescriptionVisualEditor();
+				}, 420);
+			});
+			$(document).data('sdDescriptionNativeEditorInitBound', true);
+		}
+
 		if (!$(document).data('sdDescriptionNativeTabsBound')) {
 			$(document)
 				.on('click.sdDescriptionNativeTabsStable', '#sd-activity-description-html', function () {
@@ -4061,6 +4091,9 @@
 			window.setTimeout(function () {
 				refreshActivityDescriptionVisualEditor();
 			}, 120);
+			window.setTimeout(function () {
+				refreshActivityDescriptionVisualEditor();
+			}, 420);
 		}, 30);
 	}
 
