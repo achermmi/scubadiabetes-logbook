@@ -17,6 +17,7 @@
 		descriptionRefreshTimer: null,
 		descriptionHardRecoveryKey: '',
 		descriptionModeFlipKey: '',
+		descriptionModeFlipDone: false,
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -365,6 +366,7 @@
 
 		state.descriptionHardRecoveryKey = '';
 		state.descriptionModeFlipKey = '';
+		state.descriptionModeFlipDone = false;
 		debugDescriptionLog('editActivity:start', { activityId: activityId });
 
 		$.post(sdActivityAdmin.ajaxUrl, {
@@ -414,11 +416,6 @@
 			populateActivitySelects();
 			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
 			debugDescriptionLog('editActivity:after-schedule-refresh', { delayMs: 140, enforceContent: true });
-			window.setTimeout(function () {
-				debugDescriptionLog('editActivity:700ms-refresh-fired', { delayMs: 700 });
-				applyActivityDescriptionContentToNativeEditor(activityDescription, true);
-				refreshActivityDescriptionVisualEditor();
-			}, 700);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -3898,6 +3895,7 @@
 		state.selectedActivityId = 0;
 		state.descriptionHardRecoveryKey = '';
 		state.descriptionModeFlipKey = '';
+		state.descriptionModeFlipDone = false;
 		state.currentFields = [];
 		state.currentActivity = null;
 		$('#sd-activity-id').val('0');
@@ -4094,7 +4092,7 @@
 		}
 
 		var tries = 0;
-		var maxTries = 40;
+		var maxTries = 12;
 
 		function syncVisual() {
 			tries += 1;
@@ -4200,15 +4198,14 @@
 						bodyMatch: bodyHtml === normalized,
 					});
 				}
-				if (!compareActivityDescriptionHtml(current, normalized) && !compareActivityDescriptionHtml(bodyHtml, normalized) && tries < maxTries) {
-					window.setTimeout(syncVisual, 80);
-				}
+				// Do not retry on content mismatch here: TinyMCE may normalize HTML differently.
+				// Additional refresh paths (schedule/init/mode-flip) handle visual stabilization.
 			} catch (err3) {
 				debugDescriptionLog('apply:sync-error', {
 					tryIndex: tries,
 					error: String((err3 && err3.message) ? err3.message : err3),
 				});
-				if (tries < maxTries) {
+				if (tries < 3) {
 					window.setTimeout(syncVisual, 80);
 				}
 			}
@@ -4386,11 +4383,12 @@
 		}
 
 		var activityId = parseInt(state.selectedActivityId, 10) || 0;
-		var guardKey = String(activityId) + ':' + String(normalizedSource.length);
-		if (state.descriptionModeFlipKey === guardKey) {
+		var guardKey = String(activityId);
+		if (state.descriptionModeFlipDone || state.descriptionModeFlipKey === guardKey) {
 			debugDescriptionLog('mode-flip:guard-hit', {
 				reason: reason,
 				guardKey: guardKey,
+				alreadyDone: !!state.descriptionModeFlipDone,
 			});
 			return false;
 		}
@@ -4404,6 +4402,7 @@
 		}
 
 		state.descriptionModeFlipKey = guardKey;
+		state.descriptionModeFlipDone = true;
 		debugDescriptionLog('mode-flip:start', {
 			reason: reason,
 			guardKey: guardKey,
@@ -4424,7 +4423,25 @@
 			}
 
 			window.setTimeout(function () {
-				applyActivityDescriptionContentToNativeEditor(normalizedSource, true);
+				var editor = getActivityDescriptionEditor();
+				if (editor) {
+					try {
+						if (typeof editor.load === 'function') {
+							editor.load();
+						}
+						if (typeof editor.setMode === 'function') {
+							editor.setMode('design');
+						}
+						if (typeof editor.show === 'function') {
+							editor.show();
+						}
+						if (typeof editor.execCommand === 'function') {
+							editor.execCommand('mceRepaint');
+						}
+					} catch (editorModeFlipErr) {
+						// Keep editable fallback below.
+					}
+				}
 				ensureActivityDescriptionEditable();
 				debugDescriptionLog('mode-flip:applied', {
 					reason: reason,
