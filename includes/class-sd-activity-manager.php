@@ -2134,7 +2134,12 @@ class SD_Activity_Manager {
 
 		$activity_id = intval( $_POST['activity_id'] ?? 0 );
 		if ( $activity_id <= 0 ) {
-			wp_send_json_success( array( 'rows' => array(), 'activity_id' => 0 ) );
+			wp_send_json_success(
+				array(
+					'rows'        => array(),
+					'activity_id' => 0,
+				)
+			);
 			return;
 		}
 
@@ -2154,7 +2159,7 @@ class SD_Activity_Manager {
 			) al ON al.record_id = r.id";
 		}
 
-		$select_extra = $audit_exists ? ', al.last_email_at' : ", NULL AS last_email_at";
+		$select_extra = $audit_exists ? ', al.last_email_at' : ', NULL AS last_email_at';
 
 		$sql = $wpdb->prepare(
 			"SELECT r.id, r.first_name, r.last_name, r.email, r.payment_status,
