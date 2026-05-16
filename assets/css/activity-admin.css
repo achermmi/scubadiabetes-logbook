@@ -1040,9 +1040,27 @@ padding: 1rem;
 	justify-content: flex-end;
 	flex-wrap: wrap;
 }
-.sd-modal-footer .sd-btn { flex: 0 0 auto; white-space: nowrap; }
+.sd-modal-footer .sd-btn,
+.sd-modal-footer button.sd-btn {
+	flex: 0 0 auto !important;
+	width: auto !important;
+	min-width: 0 !important;
+	max-width: none !important;
+	white-space: nowrap !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+	padding: 0.5rem 1rem !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	line-height: 1.2 !important;
+	transform: none !important;
+	position: static !important;
+	float: none !important;
+}
 .sd-form-row-2col > label { flex: 1; }
 .sd-form-row label, .sd-form-row-stacked { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: #475569; }
 .sd-form-row-stacked > span { font-weight: 500; }
 .sd-reg-edit-checks { display: flex; flex-direction: column; gap: 0.25rem; }
 .sd-reg-edit-check { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: normal; }
+.sd-input-readonly { background: #f1f5f9 !important; color: #64748b !important; cursor: not-allowed; }

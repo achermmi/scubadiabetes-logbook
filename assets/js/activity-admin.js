@@ -4231,6 +4231,42 @@
 		$('#sd-reg-edit-save').off('click');
 	}
 
+	// Etichette amichevoli per chiavi interne / di sistema usate in registration_data.
+	var REG_FIELD_LABELS = {
+		birth_date: 'Data di nascita',
+		is_minor: 'Minorenne',
+		luogo_di_nascita: 'Luogo di nascita',
+		diabete_tipo: 'Tipo di diabete',
+		celiachia: 'Celiachia',
+		telefono_cellulare: 'Telefono cellulare',
+		selected_price_ids: 'Tariffa selezionata (ID)',
+		selected_price_names: 'Tariffa selezionata (nome)',
+		selected_price_count: 'Numero tariffe selezionate'
+	};
+	// Chiavi calcolate/di sistema: mostrate in sola lettura (gestite dal select Tariffa).
+	var REG_FIELD_READONLY = {
+		selected_price_ids: true,
+		selected_price_names: true,
+		selected_price_count: true
+	};
+
+	function regFieldLabel(key, def) {
+		if (def && def.field_label) { return def.field_label; }
+		if (REG_FIELD_LABELS[key]) { return REG_FIELD_LABELS[key]; }
+		// Fallback: snake_case → "Snake Case"
+		return String(key).replace(/[_\-]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+	}
+
+	function regFieldDisplayValue(key, value) {
+		if (key === 'is_minor') {
+			var v = String(value);
+			if (v === '1' || v === 'true' || v === 'yes') { return 'Si'; }
+			if (v === '0' || v === 'false' || v === 'no' || v === '') { return 'No'; }
+		}
+		if (Array.isArray(value)) { return value.join(', '); }
+		return value == null ? '' : String(value);
+	}
+
 	function renderRegistrationEditFields(reg, ctx) {
 		var prices = (ctx && Array.isArray(ctx.prices)) ? ctx.prices : [];
 		var formFields = (ctx && Array.isArray(ctx.form_fields)) ? ctx.form_fields : [];
@@ -4279,10 +4315,16 @@
 		} else {
 			allKeys.forEach(function (key) {
 				var def = fieldsByName[key] || null;
-				var label = def ? (def.field_label || key) : key;
+				var label = regFieldLabel(key, def);
 				var type = def ? String(def.field_type || 'text') : 'text';
+				// Forza tipo specifico per chiavi note senza definizione
+				if (!def) {
+					if (key === 'birth_date') { type = 'date'; }
+					else if (key === 'is_minor') { type = 'minor_yesno'; }
+				}
 				var value = regData.hasOwnProperty(key) ? regData[key] : '';
-				dynHtml += renderRegistrationEditField(key, label, type, value, def);
+				var readonly = !!REG_FIELD_READONLY[key];
+				dynHtml += renderRegistrationEditField(key, label, type, value, def, readonly);
 			});
 		}
 		$('.sd-reg-edit-modal .sd-reg-edit-dynamic').html(dynHtml);
@@ -4294,14 +4336,31 @@
 		});
 	}
 
-	function renderRegistrationEditField(key, label, type, value, def) {
+	function renderRegistrationEditField(key, label, type, value, def, readonly) {
 		var name = 'rd[' + key + ']';
-		var safeLabel = esc(label) + ' <small style="color:#94a3b8;">(' + esc(key) + ')</small>';
+		var safeLabel = esc(label);
 		var inputHtml = '';
-		if (type === 'textarea' || type === 'content') {
-			inputHtml = '<textarea name="' + esc(name) + '" class="sd-input" rows="3">' + esc(String(value == null ? '' : value)) + '</textarea>';
+		var ro = readonly ? ' readonly disabled' : '';
+		var roClass = readonly ? ' sd-input-readonly' : '';
+		if (readonly) {
+			var displayVal = regFieldDisplayValue(key, value);
+			inputHtml = '<input type="text" class="sd-input' + roClass + '" value="' + esc(displayVal) + '" readonly disabled>';
+			// Manteniamo il valore originale in un hidden per non perderlo nel salvataggio
+			var hiddenVal = Array.isArray(value) ? value.join(',') : String(value == null ? '' : value);
+			inputHtml += '<input type="hidden" name="' + esc(name) + '" value="' + esc(hiddenVal) + '">';
+			return '<label class="sd-form-row-stacked"><span>' + safeLabel + '</span>' + inputHtml + '</label>';
+		}
+		if (type === 'minor_yesno') {
+			var v = String(value);
+			var isYes = (v === '1' || v === 'true' || v === 'yes');
+			inputHtml = '<select name="' + esc(name) + '" class="sd-select">' +
+				'<option value="0"' + (!isYes ? ' selected' : '') + '>No</option>' +
+				'<option value="1"' + (isYes ? ' selected' : '') + '>Si</option>' +
+				'</select>';
+		} else if (type === 'textarea' || type === 'content') {
+			inputHtml = '<textarea name="' + esc(name) + '" class="sd-input" rows="3"' + ro + '>' + esc(String(value == null ? '' : value)) + '</textarea>';
 		} else if ((type === 'select' || type === 'radio') && def && Array.isArray(def.options)) {
-			inputHtml = '<select name="' + esc(name) + '" class="sd-select">';
+			inputHtml = '<select name="' + esc(name) + '" class="sd-select"' + ro + '>';
 			inputHtml += '<option value="">--</option>';
 			def.options.forEach(function (opt) {
 				var ov = String(opt.value || '');
@@ -4319,14 +4378,14 @@
 			});
 			inputHtml += '</div>';
 		} else if (type === 'date') {
-			inputHtml = '<input type="date" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+			inputHtml = '<input type="date" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '"' + ro + '>';
 		} else if (type === 'number') {
-			inputHtml = '<input type="number" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+			inputHtml = '<input type="number" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '"' + ro + '>';
 		} else if (type === 'email') {
-			inputHtml = '<input type="email" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+			inputHtml = '<input type="email" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '"' + ro + '>';
 		} else {
-			var displayVal = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
-			inputHtml = '<input type="text" name="' + esc(name) + '" class="sd-input" value="' + esc(displayVal) + '">';
+			var displayValTxt = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
+			inputHtml = '<input type="text" name="' + esc(name) + '" class="sd-input" value="' + esc(displayValTxt) + '"' + ro + '>';
 		}
 		return '<label class="sd-form-row-stacked"><span>' + safeLabel + '</span>' + inputHtml + '</label>';
 	}
