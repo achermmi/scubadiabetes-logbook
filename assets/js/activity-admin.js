@@ -4173,6 +4173,11 @@
 				}
 
 				if (bodyMatches || (contentMatches && bodyBefore)) {
+					var $iframeProbe = $('#wp-sd-activity-description-wrap .wp-editor-container iframe');
+					var iframeEl = $iframeProbe.get(0) || null;
+					var iframeRect = iframeEl && typeof iframeEl.getBoundingClientRect === 'function'
+						? iframeEl.getBoundingClientRect()
+						: null;
 					debugDescriptionLog('apply:already-matched', {
 						tryIndex: tries,
 						targetLen: normalized.length,
@@ -4180,6 +4185,11 @@
 						bodyLen: bodyBefore.length,
 						contentMatches: contentMatches,
 						bodyMatches: bodyMatches,
+						iframeCount: $iframeProbe.length,
+						iframeWidth: iframeRect ? Math.round(iframeRect.width) : -1,
+						iframeHeight: iframeRect ? Math.round(iframeRect.height) : -1,
+						iframeVisible: iframeEl ? !!(iframeEl.offsetWidth || iframeEl.offsetHeight) : false,
+						bodySnippet: body ? String(body.innerHTML || '').slice(0, 60) : '',
 					});
 					if (typeof editor.setMode === 'function') {
 						editor.setMode('design');
@@ -4187,10 +4197,17 @@
 					if (typeof editor.show === 'function') {
 						editor.show();
 					}
-					if (typeof editor.execCommand === 'function') {
-						editor.execCommand('mceRepaint');
-					}
 					forceActivityDescriptionTmceUiState();
+					try {
+						editor.setContent(normalized || '');
+						editor.save();
+					} catch (reapplyErr) {
+						// Ignore - editor may still be initializing.
+					}
+					if (typeof editor.execCommand === 'function') {
+						try { editor.execCommand('mceRepaint'); } catch (repaintErr) {}
+					}
+					body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
 					if (body) {
 						body.setAttribute('contenteditable', 'true');
 						body.style.pointerEvents = 'auto';
@@ -4356,7 +4373,13 @@
 		$wrap.removeClass('html-active').addClass('tmce-active');
 		$wrap.find('.wp-editor-area').hide();
 		$wrap.find('.quicktags-toolbar').hide();
-		$wrap.find('.mce-tinymce, .wp-editor-container iframe').show();
+		$wrap.find('.mce-tinymce').css({ display: '', visibility: 'visible' }).show();
+		$wrap.find('.mce-edit-area').css({ display: '', visibility: 'visible' }).show();
+		$wrap.find('.wp-editor-container iframe').css({
+			display: 'block',
+			visibility: 'visible',
+			opacity: '1'
+		});
 
 		$('#sd-activity-description-html').addClass('wp-switch-editor switch-html');
 		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
