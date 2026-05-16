@@ -100,7 +100,29 @@
 			snapshot.extra = extra;
 		}
 
-		console.log('[SD Description Debug]', snapshot);
+		var headline = '[SD Desc #' + snapshot.seq + '] ' + eventName
+			+ ' | mode=' + (editorMode || '?')
+			+ ' init=' + (initialized ? 'Y' : 'N')
+			+ ' healthy=' + (healthy ? 'Y' : 'N')
+			+ ' ce=' + (bodyContentEditable || '?')
+			+ ' cont=' + (containerDisplay || 'def') + '/' + (containerVisibility || 'def')
+			+ ' size=' + (iframeWidth || '?') + 'x' + (iframeHeight || '?')
+			+ ' txt=' + snapshot.textareaLen + ' pend=' + snapshot.pendingLen;
+		if (extra && typeof extra === 'object') {
+			try {
+				var extraKeys = Object.keys(extra);
+				for (var ei = 0; ei < extraKeys.length; ei++) {
+					var ek = extraKeys[ei];
+					var ev = extra[ek];
+					if (ev === null || typeof ev === 'undefined') { continue; }
+					if (typeof ev === 'object') { ev = JSON.stringify(ev).slice(0, 80); }
+					headline += ' ' + ek + '=' + String(ev).slice(0, 80);
+				}
+			} catch (extraStrErr) {
+				// Ignore stringify errors.
+			}
+		}
+		console.log(headline, snapshot);
 	}
 
 	var defaultSections = [
