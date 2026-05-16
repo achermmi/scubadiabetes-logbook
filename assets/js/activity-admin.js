@@ -39,6 +39,10 @@
 		var initialized = false;
 		var editorMode = '';
 		var bodyContentEditable = '';
+		var containerDisplay = '';
+		var containerVisibility = '';
+		var iframeWidth = '';
+		var iframeHeight = '';
 
 		if (editor) {
 			mounted = isActivityDescriptionEditorMounted(editor);
@@ -51,6 +55,21 @@
 					bodyContentEditable = body ? String(body.getAttribute('contenteditable') || '') : '';
 				} catch (errGetBodyAttr) {
 					bodyContentEditable = '[getBodyAttr-error]';
+				}
+
+				try {
+					var container = typeof editor.getContainer === 'function' ? editor.getContainer() : null;
+					if (container) {
+						containerDisplay = String(container.style && container.style.display ? container.style.display : '');
+						containerVisibility = String(container.style && container.style.visibility ? container.style.visibility : '');
+						if (typeof container.getBoundingClientRect === 'function') {
+							var rect = container.getBoundingClientRect();
+							iframeWidth = String(Math.round(rect.width || 0));
+							iframeHeight = String(Math.round(rect.height || 0));
+						}
+					}
+				} catch (errContainer) {
+					containerDisplay = '[container-error]';
 				}
 			}
 		}
@@ -68,6 +87,10 @@
 			editorInitialized: initialized,
 			editorMode: editorMode,
 			bodyContentEditable: bodyContentEditable,
+			containerDisplay: containerDisplay,
+			containerVisibility: containerVisibility,
+			containerWidth: iframeWidth,
+			containerHeight: iframeHeight,
 		};
 
 		if (extra && typeof extra === 'object') {
