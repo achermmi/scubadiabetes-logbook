@@ -489,6 +489,23 @@
 					debugDescriptionLog('editor-reinit:start', { sourceLen: srcLen });
 					state.descriptionPendingValue = String(activityDescription || '');
 					state.descriptionLastKnownHtml = String(activityDescription || '');
+
+					// Hide wrap during destroy+reinit to avoid the visible "empty editor" flash.
+					// Preserve height to prevent layout jump.
+					var $wrap = $('#wp-sd-activity-description-wrap');
+					var lockedHeight = 0;
+					if ($wrap.length) {
+						lockedHeight = $wrap.outerHeight() || 0;
+						$wrap.css({
+							'min-height': lockedHeight ? (lockedHeight + 'px') : '',
+							'visibility': 'hidden'
+						});
+					}
+					var restoreWrap = function () {
+						if (!$wrap.length) { return; }
+						$wrap.css({ 'visibility': '', 'min-height': '' });
+					};
+
 					if (typeof destroyActivityDescriptionEditor === 'function') {
 						destroyActivityDescriptionEditor();
 					}
@@ -513,10 +530,14 @@
 							} catch (applyErr) {
 								debugDescriptionLog('editor-reinit:apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
 							}
+							// Reveal the wrap after content has been pushed into the freshly inited editor.
+							restoreWrap();
 						}, 160);
 					}, 60);
 				} catch (reinitErr) {
 					debugDescriptionLog('editor-reinit:outer-error', { error: String(reinitErr && reinitErr.message ? reinitErr.message : reinitErr) });
+					// Safety: if anything blew up, make sure the wrap isn't left hidden.
+					try { $('#wp-sd-activity-description-wrap').css({ 'visibility': '', 'min-height': '' }); } catch (e) {}
 				}
 			}, 150);
 
