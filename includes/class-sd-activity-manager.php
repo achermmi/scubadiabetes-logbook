@@ -2488,11 +2488,11 @@ class SD_Activity_Manager {
 			$wpdb->insert(
 				$wpdb->prefix . 'sd_audit_log',
 				array(
-					'user_id'    => get_current_user_id(),
+					'member_id'  => get_current_user_id(),
 					'action'     => 'registration_broadcast',
 					'table_name' => 'sd_activity_registrations',
 					'record_id'  => (int) $row->id,
-					'new_values' => wp_json_encode(
+					'new_data'   => wp_json_encode(
 						array(
 							'activity_id' => (int) $row->activity_id,
 							'template_id' => $template_id,
