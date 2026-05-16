@@ -4156,6 +4156,7 @@
 					if (typeof editor.execCommand === 'function') {
 						editor.execCommand('mceRepaint');
 					}
+					forceActivityDescriptionTmceUiState();
 					if (body) {
 						body.setAttribute('contenteditable', 'true');
 						body.style.pointerEvents = 'auto';
@@ -4176,6 +4177,7 @@
 				if (typeof editor.execCommand === 'function') {
 					editor.execCommand('mceRepaint');
 				}
+				forceActivityDescriptionTmceUiState();
 
 				body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
 				if (body) {
@@ -4309,6 +4311,21 @@
 
 		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
 		applyActivityDescriptionContentToNativeEditor(source, true);
+	}
+
+	function forceActivityDescriptionTmceUiState() {
+		var $wrap = $('#wp-sd-activity-description-wrap');
+		if (!$wrap.length) {
+			return;
+		}
+
+		$wrap.removeClass('html-active').addClass('tmce-active');
+		$wrap.find('.wp-editor-area').hide();
+		$wrap.find('.quicktags-toolbar').hide();
+		$wrap.find('.mce-tinymce, .wp-editor-container iframe').show();
+
+		$('#sd-activity-description-html').removeClass('wp-switch-editor switch-html');
+		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
 	}
 
 	function maybeForceActivityDescriptionHardRecovery(reason) {
@@ -4458,8 +4475,10 @@
 			sourceLen: String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '').length,
 		});
 		ensureActivityDescriptionVisualTabActive();
+		forceActivityDescriptionTmceUiState();
 		ensureActivityDescriptionEditable();
 		window.setTimeout(function () {
+			forceActivityDescriptionTmceUiState();
 			var editor = getActivityDescriptionEditor();
 			if (editor && typeof editor.execCommand === 'function') {
 				try {
