@@ -5484,6 +5484,7 @@
 	var regDashboardState = {
 		rows: [],
 		quickFilter: 'all',
+		searchTerm: '',
 		activityId: 0
 	};
 
@@ -5524,6 +5525,17 @@
 
 		$('#sd-reg-bulk-email').on('click', sendRegEmailsBulk);
 		$('#sd-reg-email-all-paid').on('click', sendRegEmailsAllPaid);
+
+		var searchTimer = null;
+		$(document).on('input', '#sd-reg-search', function () {
+			var val = String($(this).val() || '').trim().toLowerCase();
+			regDashboardState.searchTerm = val;
+			if (searchTimer) { clearTimeout(searchTimer); }
+			searchTimer = setTimeout(function () {
+				renderRegDashboardRows(getFilteredRegRows());
+				updateRegBulkButton();
+			}, 150);
+		});
 	}
 
 	function loadRegDashboard() {
@@ -5535,7 +5547,7 @@
 		regDashboardState.activityId = activityId;
 
 		if (!activityId) {
-			$tbody.html('<tr><td colspan="7" class="sd-table-empty">' + esc(regStrings().regSelectActivity || 'Seleziona un\'attività per vedere il cruscotto.') + '</td></tr>');
+			$tbody.html('<tr><td colspan="8" class="sd-table-empty">' + esc(regStrings().regSelectActivity || 'Seleziona un\'attività per vedere il cruscotto.') + '</td></tr>');
 			regDashboardState.rows = [];
 			updateRegBulkButton();
 			return;
@@ -5543,7 +5555,7 @@
 
 		$loading.show();
 		$('#sd-reg-dashboard-message').hide();
-		$tbody.html('<tr><td colspan="7" class="sd-table-empty">' + esc(regStrings().loading || 'Caricamento...') + '</td></tr>');
+		$tbody.html('<tr><td colspan="8" class="sd-table-empty">' + esc(regStrings().loading || 'Caricamento...') + '</td></tr>');
 
 		$.ajax({
 			url: sdActivityAdmin.ajaxUrl,
@@ -5558,7 +5570,7 @@
 				$loading.hide();
 				if (!resp || !resp.success || !resp.data || !Array.isArray(resp.data.rows)) {
 					showRegDashboardMessage('error', regStrings().regDashboardLoadError || 'Errore nel caricamento del cruscotto registrazioni.');
-					$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore caricamento.</td></tr>');
+					$tbody.html('<tr><td colspan="8" class="sd-table-empty">Errore caricamento.</td></tr>');
 					updateRegBulkButton();
 					return;
 				}
@@ -5569,7 +5581,7 @@
 			error: function () {
 				$loading.hide();
 				showRegDashboardMessage('error', regStrings().regDashboardLoadError || 'Errore di rete.');
-				$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore di rete.</td></tr>');
+				$tbody.html('<tr><td colspan="8" class="sd-table-empty">Errore di rete.</td></tr>');
 				updateRegBulkButton();
 			}
 		});
@@ -5579,16 +5591,20 @@
 		var mode = regDashboardState.quickFilter || 'all';
 		var rows = Array.isArray(regDashboardState.rows) ? regDashboardState.rows : [];
 		if (mode === 'pending') {
-			return rows.filter(function (r) { return r.payment_status === 'pending'; });
+			rows = rows.filter(function (r) { return r.payment_status === 'pending'; });
+		} else if (mode === 'paid') {
+			rows = rows.filter(function (r) { return r.payment_status === 'paid'; });
+		} else if (mode === 'invoice_requested') {
+			rows = rows.filter(function (r) { return r.payment_status === 'invoice_requested'; });
+		} else if (mode === 'valid_email') {
+			rows = rows.filter(function (r) { return !!r.can_remind; });
 		}
-		if (mode === 'paid') {
-			return rows.filter(function (r) { return r.payment_status === 'paid'; });
-		}
-		if (mode === 'invoice_requested') {
-			return rows.filter(function (r) { return r.payment_status === 'invoice_requested'; });
-		}
-		if (mode === 'valid_email') {
-			return rows.filter(function (r) { return !!r.can_remind; });
+		var term = String(regDashboardState.searchTerm || '').toLowerCase();
+		if (term) {
+			rows = rows.filter(function (r) {
+				var hay = ((r.first_name || '') + ' ' + (r.last_name || '') + ' ' + (r.email || '') + ' ' + (r.name || '')).toLowerCase();
+				return hay.indexOf(term) !== -1;
+			});
 		}
 		return rows;
 	}
@@ -5597,11 +5613,11 @@
 		var $tbody = $('#sd-reg-dashboard-tbody');
 		if (!$tbody.length) { return; }
 		if (!rows.length) {
-			$tbody.html('<tr><td colspan="7" class="sd-table-empty">Nessuna iscrizione trovata per questo filtro.</td></tr>');
+			$tbody.html('<tr><td colspan="8" class="sd-table-empty">Nessuna iscrizione trovata per questo filtro.</td></tr>');
 			return;
 		}
 
-		var statusMap = {
+		var payStatusMap = {
 			'pending': { cls: 'sd-renewal-status-soon', label: 'In attesa' },
 			'paid': { cls: 'sd-renewal-status-valid', label: 'Pagato' },
 			'invoice_requested': { cls: 'sd-renewal-status-soon', label: 'Fattura richiesta' },
@@ -5610,34 +5626,52 @@
 			'cancelled': { cls: 'sd-renewal-status-expired', label: 'Annullato' },
 			'free': { cls: 'sd-renewal-status-valid', label: 'Gratuito' }
 		};
+		var regStatusMap = {
+			'registered': { cls: 'sd-renewal-status-valid', label: 'Iscritto' },
+			'waitlist': { cls: 'sd-renewal-status-soon', label: 'Lista d\'attesa' },
+			'cancelled': { cls: 'sd-renewal-status-expired', label: 'Annullato' },
+			'refunded': { cls: 'sd-renewal-status-expired', label: 'Rimborsato' }
+		};
 
 		var html = '';
 		rows.forEach(function (r) {
-			var rawStatus = String(r.payment_status || '').trim();
-			var st;
-			if (rawStatus && statusMap[rawStatus]) {
-				st = statusMap[rawStatus];
-			} else if (!rawStatus || rawStatus === '0') {
-				st = { cls: 'sd-renewal-status-pending', label: 'In attesa' };
+			var rawPay = String(r.payment_status || '').trim();
+			var payInfo;
+			if (rawPay && payStatusMap[rawPay]) {
+				payInfo = payStatusMap[rawPay];
+			} else if (!rawPay || rawPay === '0') {
+				payInfo = { cls: 'sd-renewal-status-pending', label: 'In attesa' };
 			} else {
-				st = { cls: 'sd-renewal-status-pending', label: rawStatus };
+				payInfo = { cls: 'sd-renewal-status-pending', label: rawPay };
 			}
+
+			var rawReg = String(r.status || '').trim().toLowerCase();
+			var regInfo = regStatusMap[rawReg] || { cls: 'sd-renewal-status-pending', label: rawReg || '—' };
+
 			var chf = parseFloat(r.price_chf || 0);
 			var eur = parseFloat(r.price_eur || 0);
 			var amount = 'CHF ' + chf.toFixed(2) + (eur > 0 ? ' / EUR ' + eur.toFixed(2) : '');
-			var actionHtml = '<span class="sd-renewal-disabled" title="E-mail non valida">—</span>';
+
+			var actions = [];
 			if (r.can_remind) {
-				actionHtml = '<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
-					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>';
+				actions.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
+					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>');
 			}
+			if (rawPay === 'invoice_requested' || rawPay === 'invoice_error') {
+				actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + esc(r.id) + '" title="Reinvia fattura">Reinvia fattura</button>');
+			}
+			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-edit" data-id="' + esc(r.id) + '" title="Modifica iscrizione">Modifica</button>');
+			actions.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + esc(r.id) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
+
 			html += '<tr>' +
 				'<td><strong>' + esc(r.name || '') + '</strong></td>' +
 				'<td>' + esc(r.email || '—') + '</td>' +
-				'<td><span class="sd-renewal-status ' + st.cls + '">' + esc(st.label) + '</span></td>' +
+				'<td><span class="sd-renewal-status ' + regInfo.cls + '">' + esc(regInfo.label) + '</span></td>' +
+				'<td><span class="sd-renewal-status ' + payInfo.cls + '">' + esc(payInfo.label) + '</span></td>' +
 				'<td>' + formatRegDate(r.created_at) + '</td>' +
 				'<td>' + esc(amount) + '</td>' +
 				'<td>' + formatRegDateTime(r.last_email_at) + '</td>' +
-				'<td class="sd-renewals-action-cell">' + actionHtml + '</td>' +
+				'<td class="sd-renewals-action-cell">' + actions.join(' ') + '</td>' +
 				'</tr>';
 		});
 		$tbody.html(html);

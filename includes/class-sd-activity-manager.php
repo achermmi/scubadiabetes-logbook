@@ -1032,7 +1032,7 @@ class SD_Activity_Manager {
 				'created_by'            => get_current_user_id(),
 				'created_at'            => current_time( 'mysql' ),
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%f', '%f', '%d', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%f', '%f', '%d', '%s' )
 		) ? $wpdb->insert_id : false;
 	}
 
@@ -2162,8 +2162,9 @@ class SD_Activity_Manager {
 		$select_extra = $audit_exists ? ', al.last_email_at' : ', NULL AS last_email_at';
 
 		$sql = $wpdb->prepare(
-			"SELECT r.id, r.first_name, r.last_name, r.email, r.payment_status,
-			        r.price_chf, r.price_eur, r.created_at, r.activity_id
+			"SELECT r.id, r.first_name, r.last_name, r.email, r.status, r.payment_status,
+			        r.price_chf, r.price_eur, r.created_at, r.payment_date, r.updated_at,
+			        r.activity_id
 			        {$select_extra}
 			 FROM {$table} r
 			 {$last_email_sql}
@@ -2177,14 +2178,29 @@ class SD_Activity_Manager {
 		$result = array();
 		foreach ( (array) $rows as $row ) {
 			$email = (string) $row->email;
+
+			// Data iscrizione: usa created_at; fallback a payment_date o updated_at per record legacy.
+			$registration_date = '';
+			$candidates        = array( $row->created_at, $row->payment_date, $row->updated_at );
+			foreach ( $candidates as $candidate ) {
+				$candidate = (string) $candidate;
+				if ( '' !== $candidate && '0000-00-00 00:00:00' !== $candidate ) {
+					$registration_date = $candidate;
+					break;
+				}
+			}
+
 			$result[] = array(
 				'id'             => (int) $row->id,
+				'first_name'     => (string) $row->first_name,
+				'last_name'      => (string) $row->last_name,
 				'name'           => trim( (string) $row->last_name . ', ' . (string) $row->first_name ),
 				'email'          => $email,
+				'status'         => (string) $row->status,
 				'payment_status' => (string) $row->payment_status,
 				'price_chf'      => (float) $row->price_chf,
 				'price_eur'      => (float) $row->price_eur,
-				'created_at'     => (string) $row->created_at,
+				'created_at'     => $registration_date,
 				'can_remind'     => ( ! empty( $email ) && is_email( $email ) ),
 				'last_email_at'  => ! empty( $row->last_email_at ) ? (string) $row->last_email_at : '',
 			);

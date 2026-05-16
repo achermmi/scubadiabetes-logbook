@@ -393,6 +393,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 				<!-- Selezione modello email -->
 				<div class="sd-renewals-template-row">
+					<label class="sd-renewals-template-label" for="sd-reg-activity-id">
+						<?php esc_html_e( 'Attività:', 'sd-logbook' ); ?>
+					</label>
+					<select id="sd-reg-activity-id" class="sd-field-input sd-renewals-template-select"></select>
+
 					<label class="sd-renewals-template-label" for="sd-reg-template-id">
 						<?php esc_html_e( 'Modello e-mail:', 'sd-logbook' ); ?>
 					</label>
@@ -406,6 +411,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 						}
 						?>
 					</select>
+
+					<input type="text" id="sd-reg-search" class="sd-field-input sd-renewals-template-select" placeholder="<?php esc_attr_e( 'Cerca nome, cognome, email...', 'sd-logbook' ); ?>">
 				</div>
 
 				<div class="sd-renewals-tools">
@@ -427,55 +434,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Iscritto', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Stato Pagamento', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Data iscrizione', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Importo', 'sd-logbook' ); ?></th>
 								<th><?php esc_html_e( 'Ultima e-mail', 'sd-logbook' ); ?></th>
-								<th><?php esc_html_e( 'Azione', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
 							</tr>
 						</thead>
 						<tbody id="sd-reg-dashboard-tbody">
 							<tr>
-								<td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Seleziona un\'attività per vedere il cruscotto.', 'sd-logbook' ); ?></td>
+								<td colspan="8" class="sd-table-empty"><?php esc_html_e( 'Seleziona un\'attività per vedere il cruscotto.', 'sd-logbook' ); ?></td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
 			</div>
 
-			<div class="sd-admin-filter-row">
-				<select id="sd-reg-activity-id" class="sd-select"></select>
-				<select id="sd-reg-payment-filter" class="sd-select">
-					<option value=""><?php esc_html_e( 'Tutti i pagamenti', 'sd-logbook' ); ?></option>
-					<option value="pending"><?php esc_html_e( 'In attesa', 'sd-logbook' ); ?></option>
-					<option value="paid"><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
-					<option value="invoice_requested"><?php esc_html_e( 'Fattura richiesta', 'sd-logbook' ); ?></option>
-					<option value="invoice_sent"><?php esc_html_e( 'Fattura inviata', 'sd-logbook' ); ?></option>
-					<option value="invoice_error"><?php esc_html_e( 'Errore invio fattura', 'sd-logbook' ); ?></option>
-					<option value="cancelled"><?php esc_html_e( 'Annullato', 'sd-logbook' ); ?></option>
-				</select>
-				<input type="text" id="sd-reg-search" class="sd-input" placeholder="<?php esc_attr_e( 'Cerca nome, cognome, email...', 'sd-logbook' ); ?>">
-				<button type="button" id="sd-reg-filter-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Applica', 'sd-logbook' ); ?></button>
-			</div>
-
-			<div class="sd-table-wrap">
-				<table class="sd-admin-table" id="sd-reg-table">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'Nome', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Stato', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Pagamento', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Tariffa', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Data', 'sd-logbook' ); ?></th>
-							<th><?php esc_html_e( 'Azioni', 'sd-logbook' ); ?></th>
-						</tr>
-					</thead>
-					<tbody id="sd-reg-tbody">
-						<tr><td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Seleziona una attivita per vedere le registrazioni.', 'sd-logbook' ); ?></td></tr>
-					</tbody>
-				</table>
-			</div>
 		</div>
 	</section>
 
