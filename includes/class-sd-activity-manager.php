@@ -70,6 +70,12 @@ class SD_Activity_Manager {
 		add_action( 'wp_ajax_sd_activity_registration_update_payment', array( $this, 'ajax_update_registration_payment' ) );
 		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_delete_registration' ) );
 		add_action( 'wp_ajax_sd_activity_registration_update', array( $this, 'ajax_update_registration' ) );
+
+		// Cruscotto Registrazioni (email broadcasting)
+		add_action( 'wp_ajax_sd_activity_registrations_dashboard', array( $this, 'ajax_registrations_dashboard' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_email_single', array( $this, 'ajax_send_registration_email_single' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_emails_bulk', array( $this, 'ajax_send_registration_emails_bulk' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_emails_all_paid', array( $this, 'ajax_send_registration_emails_all_paid' ) );
 	}
 
 	// ======================================================================
@@ -2093,5 +2099,391 @@ class SD_Activity_Manager {
 				'prices'       => $activity['prices'],
 			)
 		);
+	}
+
+	// ======================================================================
+	// CRUSCOTTO REGISTRAZIONI - EMAIL BROADCASTING
+	// Parallelo del Cruscotto Rinnovi Soci, ma per le iscrizioni alle attività.
+	// ======================================================================
+
+	/**
+	 * Ultimo errore registrato da wp_mail per il cruscotto registrazioni.
+	 *
+	 * @var string
+	 */
+	private $reg_last_mail_error = '';
+
+	/**
+	 * Cattura errore SMTP per messaggistica utente.
+	 */
+	public function capture_reg_wp_mail_failed( $wp_error ) {
+		if ( is_wp_error( $wp_error ) ) {
+			$this->reg_last_mail_error = (string) $wp_error->get_error_message();
+		}
+	}
+
+	/**
+	 * AJAX: dati per cruscotto registrazioni di una specifica attività.
+	 */
+	public function ajax_registrations_dashboard() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		if ( $activity_id <= 0 ) {
+			wp_send_json_success( array( 'rows' => array(), 'activity_id' => 0 ) );
+			return;
+		}
+
+		global $wpdb;
+		$table  = $wpdb->prefix . 'sd_activity_registrations';
+		$audit  = $wpdb->prefix . 'sd_audit_log';
+
+		// Verifica tabella audit_log per "ultima e-mail"
+		$audit_exists  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $audit ) );
+		$last_email_sql = '';
+		if ( $audit_exists ) {
+			$last_email_sql = "LEFT JOIN (
+				SELECT record_id, MAX(created_at) AS last_email_at
+				FROM {$audit}
+				WHERE action = 'registration_broadcast' AND table_name = 'sd_activity_registrations'
+				GROUP BY record_id
+			) al ON al.record_id = r.id";
+		}
+
+		$select_extra = $audit_exists ? ', al.last_email_at' : ", NULL AS last_email_at";
+
+		$sql = $wpdb->prepare(
+			"SELECT r.id, r.first_name, r.last_name, r.email, r.payment_status,
+			        r.price_chf, r.price_eur, r.created_at, r.activity_id
+			        {$select_extra}
+			 FROM {$table} r
+			 {$last_email_sql}
+			 WHERE r.activity_id = %d
+			 ORDER BY r.last_name ASC, r.first_name ASC, r.id ASC",
+			$activity_id
+		);
+
+		$rows = $wpdb->get_results( $sql );
+
+		$result = array();
+		foreach ( (array) $rows as $row ) {
+			$email = (string) $row->email;
+			$result[] = array(
+				'id'             => (int) $row->id,
+				'name'           => trim( (string) $row->last_name . ', ' . (string) $row->first_name ),
+				'email'          => $email,
+				'payment_status' => (string) $row->payment_status,
+				'price_chf'      => (float) $row->price_chf,
+				'price_eur'      => (float) $row->price_eur,
+				'created_at'     => (string) $row->created_at,
+				'can_remind'     => ( ! empty( $email ) && is_email( $email ) ),
+				'last_email_at'  => ! empty( $row->last_email_at ) ? (string) $row->last_email_at : '',
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'rows'        => $result,
+				'activity_id' => $activity_id,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: invio email a una singola registrazione.
+	 */
+	public function ajax_send_registration_email_single() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		$template_id     = intval( $_POST['template_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non valida.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . $wpdb->prefix . 'sd_activity_registrations WHERE id = %d',
+				$registration_id
+			)
+		);
+
+		if ( ! $row ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non trovata.', 'sd-logbook' ) ) );
+		}
+		if ( empty( $row->email ) || ! is_email( $row->email ) ) {
+			wp_send_json_error( array( 'message' => __( 'E-mail non valida.', 'sd-logbook' ) ) );
+		}
+
+		$sent = $this->send_registration_broadcast_email( $row, $template_id );
+		if ( ! $sent ) {
+			$msg = $this->reg_last_mail_error
+				? sprintf( __( 'Invio e-mail non riuscito (%s).', 'sd-logbook' ), $this->reg_last_mail_error )
+				: __( 'Invio e-mail non riuscito.', 'sd-logbook' );
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'E-mail inviata con successo.', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX: invio massivo email alle registrazioni di una attività in base al filtro.
+	 */
+	public function ajax_send_registration_emails_bulk() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		$template_id = intval( $_POST['template_id'] ?? 0 );
+		$filter_type = sanitize_text_field( wp_unslash( $_POST['filter_type'] ?? 'all' ) );
+		$allowed     = array( 'all', 'pending', 'paid', 'invoice_requested', 'valid_email' );
+		if ( ! in_array( $filter_type, $allowed, true ) ) {
+			$filter_type = 'all';
+		}
+		if ( $activity_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Seleziona un\'attività.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'sd_activity_registrations';
+		$where = 'activity_id = %d';
+		$params = array( $activity_id );
+
+		if ( in_array( $filter_type, array( 'pending', 'paid', 'invoice_requested' ), true ) ) {
+			$where .= ' AND payment_status = %s';
+			$params[] = $filter_type;
+		}
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE {$where} ORDER BY id ASC", $params )
+		);
+
+		$sent = 0;
+		$failed = 0;
+		$skipped = 0;
+		foreach ( (array) $rows as $row ) {
+			if ( empty( $row->email ) || ! is_email( $row->email ) ) {
+				$skipped++;
+				continue;
+			}
+			if ( $this->send_registration_broadcast_email( $row, $template_id ) ) {
+				$sent++;
+			} else {
+				$failed++;
+			}
+		}
+
+		if ( 0 === $sent && 0 === $failed ) {
+			wp_send_json_error( array( 'message' => __( 'Nessuna registrazione idonea trovata.', 'sd-logbook' ) ) );
+		}
+
+		$message = sprintf(
+			/* translators: 1: sent emails, 2: failed emails, 3: skipped registrations */
+			__( 'Invio massivo completato. Inviate: %1$d, fallite: %2$d, saltate: %3$d.', 'sd-logbook' ),
+			$sent,
+			$failed,
+			$skipped
+		);
+		if ( $failed > 0 && $this->reg_last_mail_error ) {
+			$message .= ' (' . $this->reg_last_mail_error . ')';
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'sent'    => $sent,
+				'failed'  => $failed,
+				'skipped' => $skipped,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: invio email a tutte le iscrizioni pagate di un'attività.
+	 */
+	public function ajax_send_registration_emails_all_paid() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		$template_id = intval( $_POST['template_id'] ?? 0 );
+		if ( $activity_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Seleziona un\'attività.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'sd_activity_registrations';
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE activity_id = %d AND payment_status = 'paid' ORDER BY id ASC",
+				$activity_id
+			)
+		);
+
+		$sent = 0;
+		$failed = 0;
+		$skipped = 0;
+		foreach ( (array) $rows as $row ) {
+			if ( empty( $row->email ) || ! is_email( $row->email ) ) {
+				$skipped++;
+				continue;
+			}
+			if ( $this->send_registration_broadcast_email( $row, $template_id ) ) {
+				$sent++;
+			} else {
+				$failed++;
+			}
+		}
+
+		if ( 0 === $sent && 0 === $failed ) {
+			wp_send_json_error( array( 'message' => __( 'Nessuna iscrizione pagata con e-mail valida trovata.', 'sd-logbook' ) ) );
+		}
+
+		$message = sprintf(
+			/* translators: 1: sent emails, 2: failed emails, 3: skipped registrations */
+			__( 'Invio e-mail alle iscrizioni pagate completato. Inviate: %1$d, fallite: %2$d, saltate: %3$d.', 'sd-logbook' ),
+			$sent,
+			$failed,
+			$skipped
+		);
+		if ( $failed > 0 && $this->reg_last_mail_error ) {
+			$message .= ' (' . $this->reg_last_mail_error . ')';
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => $message,
+				'sent'    => $sent,
+				'failed'  => $failed,
+				'skipped' => $skipped,
+			)
+		);
+	}
+
+	/**
+	 * Invia un'email "broadcast" a una registrazione attività, opzionalmente da un template.
+	 *
+	 * @param object $row         Riga registrazione (campo email obbligatorio).
+	 * @param int    $template_id 0 = testo predefinito.
+	 * @return bool
+	 */
+	private function send_registration_broadcast_email( $row, int $template_id = 0 ): bool {
+		$this->reg_last_mail_error = '';
+
+		if ( empty( $row ) || empty( $row->email ) || ! is_email( (string) $row->email ) ) {
+			return false;
+		}
+
+		// Costruisce oggetto compatibile con SD_Email_Templates::resolve (che usa member->* properties).
+		$ctx               = new \stdClass();
+		$ctx->id           = (int) $row->id;
+		$ctx->first_name   = (string) $row->first_name;
+		$ctx->last_name    = (string) $row->last_name;
+		$ctx->email        = (string) $row->email;
+		$ctx->member_number = (string) $row->id;
+		$ctx->fee_amount   = (float) $row->price_chf;
+		$ctx->member_type  = 'attivo';
+		$ctx->membership_expiry = '';
+
+		// Carica titolo attività per fallback subject/body.
+		global $wpdb;
+		$activity_title = (string) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT title FROM ' . $wpdb->prefix . 'sd_activities WHERE id = %d',
+				(int) $row->activity_id
+			)
+		);
+
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		$subject   = '';
+		$html_body = '';
+
+		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
+			$built = SD_Email_Templates::build( $template_id, $ctx );
+			if ( $built ) {
+				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );
+				if ( '' === trim( $subject ) ) {
+					$subject = sprintf(
+						/* translators: %s: activity title */
+						__( '[ScubaDiabetes] Comunicazione iscrizione: %s', 'sd-logbook' ),
+						$activity_title
+					);
+				}
+				$html_body = '<html><body>' . $built['body'];
+				if ( ! empty( $built['signature'] ) ) {
+					$html_body .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0">' . $built['signature'];
+				}
+				$html_body .= '</body></html>';
+			}
+		}
+
+		// Fallback: testo predefinito.
+		if ( '' === $html_body ) {
+			$subject = sprintf(
+				/* translators: %s: activity title */
+				__( '[ScubaDiabetes] Comunicazione iscrizione: %s', 'sd-logbook' ),
+				$activity_title
+			);
+
+			$body  = '<html><body>';
+			$body .= '<p>' . sprintf(
+				/* translators: full name */
+				esc_html__( 'Caro/a %s,', 'sd-logbook' ),
+				esc_html( trim( $ctx->first_name . ' ' . $ctx->last_name ) )
+			) . '</p>';
+			$body .= '<p>' . sprintf(
+				/* translators: activity title */
+				esc_html__( 'ti scriviamo in merito alla tua iscrizione all\'attività "%s".', 'sd-logbook' ),
+				esc_html( $activity_title )
+			) . '</p>';
+			$body .= '<p>' . esc_html__( 'Cordiali saluti,', 'sd-logbook' ) . '<br>';
+			$body .= esc_html__( 'Associazione ScubaDiabetes', 'sd-logbook' ) . '</p>';
+			$body .= '</body></html>';
+			$html_body = $body;
+		}
+
+		add_action( 'wp_mail_failed', array( $this, 'capture_reg_wp_mail_failed' ) );
+		$sent = wp_mail( (string) $row->email, $subject, $html_body, $headers );
+		remove_action( 'wp_mail_failed', array( $this, 'capture_reg_wp_mail_failed' ) );
+
+		if ( $sent ) {
+			// Audit log (best-effort).
+			$wpdb->insert(
+				$wpdb->prefix . 'sd_audit_log',
+				array(
+					'user_id'    => get_current_user_id(),
+					'action'     => 'registration_broadcast',
+					'table_name' => 'sd_activity_registrations',
+					'record_id'  => (int) $row->id,
+					'new_values' => wp_json_encode(
+						array(
+							'activity_id' => (int) $row->activity_id,
+							'template_id' => $template_id,
+							'email'       => (string) $row->email,
+						)
+					),
+					'created_at' => current_time( 'mysql' ),
+				),
+				array( '%d', '%s', '%s', '%d', '%s', '%s' )
+			);
+		}
+
+		return (bool) $sent;
 	}
 }

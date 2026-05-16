@@ -448,9 +448,10 @@ class SD_Activity_Payment_Flow {
 	}
 
 	/**
-	 * Invia notifica richiesta fattura al partecipante e all'admin.
+	 * Invia notifica richiesta fattura al partecipante (con PDF allegato) e al segretariato.
 	 *
 	 * @param object $ctx
+	 * @return array{sent:bool,error:string}
 	 */
 	private function send_invoice_request_email( $ctx ) {
 		if ( empty( $ctx->email ) ) {
@@ -460,24 +461,85 @@ class SD_Activity_Payment_Flow {
 			);
 		}
 
+		$activity_title   = (string) ( $ctx->activity_title ?? '' );
+		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
+		$activity_date    = ! empty( $ctx->activity_start_date )
+			? date_i18n( 'd.m.Y', strtotime( (string) $ctx->activity_start_date ) )
+			: '';
+		$amount_chf       = number_format( (float) $ctx->price_chf, 2, '.', '' );
+		$amount_eur       = number_format( (float) $ctx->price_eur, 2, '.', '' );
+		$price_name       = (string) ( $ctx->price_name ?? '' );
+
+		// --- Genera PDF fattura ---
+		$attachments = array();
+		$pdf_path    = '';
+		if ( class_exists( 'SD_Payment_Documents' ) ) {
+			$generated = ( new SD_Payment_Documents() )->generate_activity_invoice_document( $ctx );
+			if ( ! is_wp_error( $generated ) && file_exists( (string) $generated ) ) {
+				$pdf_path      = (string) $generated;
+				$attachments[] = $pdf_path;
+			} else {
+				$err = is_wp_error( $generated ) ? $generated->get_error_message() : 'unknown';
+				error_log( '[SD Activity Payment] PDF fattura non generato reg=' . (int) $ctx->registration_id . ' err=' . $err ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+		}
+
+		// --- Dati banca/associazione per email ---
+		$association_name = (string) get_option(
+			'sd_payment_invoice_association_name',
+			get_option( 'sd_payment_association_title', get_bloginfo( 'name' ) )
+		);
+		$bank_iban  = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
+		$bank_swift = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
+		$bank_bic   = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
+		$qr_payload = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
+
+		// --- Subject ---
 		$subject = sprintf(
-			/* translators: %s: titolo attività */
-			__( 'Iscrizione ricevuta – fattura in arrivo: %s', 'sd-logbook' ),
-			$ctx->activity_title ?? ''
+			/* translators: 1: site name, 2: titolo attività */
+			__( '[%1$s] Iscrizione ricevuta e fattura: %2$s', 'sd-logbook' ),
+			get_bloginfo( 'name' ),
+			$activity_title
 		);
 
-		$body = sprintf(
-			/* translators: 1: nome, 2: titolo attività, 3: importo */
-			__(
-				"Ciao %1\$s,\n\nAbbiamo ricevuto la tua richiesta di iscrizione a \"%2\$s\".\nRiceverai presto una fattura di CHF %3\$s.\n\nGrazie!\nScubaDiabetes",
-				'sd-logbook'
-			),
-			trim( $ctx->first_name . ' ' . $ctx->last_name ),
-			$ctx->activity_title ?? '',
-			number_format( (float) $ctx->price_chf, 2, '.', '' )
-		);
+		// --- Corpo HTML partecipante ---
+		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$body .= '<div style="margin-bottom:16px"><img src="https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png" alt="ScubaDiabetes" style="height:80px;width:auto"></div>';
+		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Conferma ricezione iscrizione', 'sd-logbook' ) . '</h2>';
+		$body .= '<p>' . sprintf(
+			esc_html__( 'Caro/a %1$s, abbiamo ricevuto la tua iscrizione all\'attività "%2$s".', 'sd-logbook' ),
+			esc_html( $participant_name ),
+			esc_html( $activity_title )
+		) . '</p>';
+		$body .= '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:12px 16px;margin:16px 0">';
+		$body .= '<strong>' . esc_html__( 'La tua partecipazione verrà confermata alla ricezione del pagamento della fattura allegata.', 'sd-logbook' ) . '</strong>';
+		$body .= '</div>';
 
-		$mail_error = '';
+		// Riepilogo iscrizione
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Riepilogo iscrizione', 'sd-logbook' ) . '</h3>';
+		$body .= $this->build_registration_data_html( $ctx );
+
+		// Pagamento
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Come effettuare il pagamento (Bonifico IBAN)', 'sd-logbook' ) . '</h3>';
+		$body .= '<p>' . esc_html__( 'In allegato trovi la fattura PDF. Effettua un bonifico bancario con i seguenti dati:', 'sd-logbook' ) . '</p>';
+		$body .= '<ul>';
+		$body .= '<li><strong>' . esc_html__( 'Associazione:', 'sd-logbook' ) . '</strong> ' . esc_html( $association_name ) . '</li>';
+		$body .= '<li><strong>' . esc_html__( 'IBAN:', 'sd-logbook' ) . '</strong> ' . esc_html( $bank_iban ) . '</li>';
+		if ( '' !== trim( $bank_swift . $bank_bic ) ) {
+			$body .= '<li><strong>' . esc_html__( 'SWIFT/BIC:', 'sd-logbook' ) . '</strong> ' . esc_html( trim( $bank_swift . ' ' . $bank_bic ) ) . '</li>';
+		}
+		$body .= '<li><strong>' . esc_html__( 'Importo:', 'sd-logbook' ) . '</strong> CHF ' . esc_html( $amount_chf ) . ' (EUR ' . esc_html( $amount_eur ) . ')</li>';
+		$body .= '<li><strong>' . esc_html__( 'Causale:', 'sd-logbook' ) . '</strong> ' . esc_html( 'Iscrizione ' . $activity_title . ' - ' . $participant_name ) . '</li>';
+		if ( '' !== trim( $qr_payload ) ) {
+			$body .= '<li><strong>' . esc_html__( 'QR pagamento:', 'sd-logbook' ) . '</strong><br>' . nl2br( esc_html( $qr_payload ) ) . '</li>';
+		}
+		$body .= '</ul>';
+		$body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'Per qualsiasi domanda contatta il segretariato dell\'associazione.', 'sd-logbook' ) . '</p>';
+		$body .= '</body></html>';
+
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		$mail_error          = '';
 		$mail_error_listener = static function ( $wp_error ) use ( &$mail_error ) {
 			if ( is_wp_error( $wp_error ) ) {
 				$mail_error = $wp_error->get_error_message();
@@ -485,22 +547,46 @@ class SD_Activity_Payment_Flow {
 		};
 
 		add_action( 'wp_mail_failed', $mail_error_listener, 10, 1 );
-		$participant_sent = wp_mail( sanitize_email( $ctx->email ), $subject, $body );
+		$participant_sent = wp_mail( sanitize_email( (string) $ctx->email ), $subject, $body, $headers, $attachments );
 		remove_action( 'wp_mail_failed', $mail_error_listener, 10 );
 
-		// Notifica admin
-		$admin_email = get_option( 'admin_email' );
+		// --- Notifica segretariato ---
+		$admin_email = (string) get_option(
+			'sd_payment_invoice_association_email',
+			get_option( 'admin_email' )
+		);
+		$admin_subject = sprintf(
+			'[%s] Nuova iscrizione con richiesta fattura: %s',
+			get_bloginfo( 'name' ),
+			$activity_title
+		);
+
+		$admin_body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$admin_body .= '<h2 style="color:#0055a5">' . esc_html__( 'Nuova iscrizione con richiesta fattura', 'sd-logbook' ) . '</h2>';
+		$admin_body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>ID registrazione</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Attività</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . ( $activity_date ? ' (' . esc_html( $activity_date ) . ')' : '' ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Partecipante</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Email</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
+		if ( '' !== $price_name ) {
+			$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Tariffa</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $price_name ) . '</td></tr>';
+		}
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Importo</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Metodo pagamento</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">Fattura</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Stato pagamento</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $this->payment_status_label( (string) ( $ctx->payment_status ?? 'invoice_requested' ) ) ) . '</td></tr>';
+		$admin_body .= '</table>';
+
+		$admin_body .= '<h3 style="color:#0055a5">' . esc_html__( 'Dati modulo di iscrizione', 'sd-logbook' ) . '</h3>';
+		$admin_body .= $this->build_registration_data_html( $ctx );
+		$admin_body .= '<p style="color:#666;font-size:12px">In allegato la stessa fattura PDF inviata al partecipante.</p>';
+		$admin_body .= '</body></html>';
+
 		$admin_sent = wp_mail(
-			$admin_email,
-			sprintf( '[ScubaDiabetes] Nuova richiesta fattura attività: %s', $ctx->activity_title ?? '' ),
-			sprintf(
-				"Nuova iscrizione con richiesta fattura:\n\nNome: %s %s\nEmail: %s\nAttività: %s\nImporto: CHF %s\n",
-				$ctx->first_name,
-				$ctx->last_name,
-				$ctx->email,
-				$ctx->activity_title ?? '',
-				number_format( (float) $ctx->price_chf, 2, '.', '' )
-			)
+			sanitize_email( $admin_email ),
+			$admin_subject,
+			$admin_body,
+			$headers,
+			$attachments
 		);
 
 		if ( ! $admin_sent ) {
@@ -515,6 +601,79 @@ class SD_Activity_Payment_Flow {
 			'sent'  => (bool) $participant_sent,
 			'error' => (string) $mail_error,
 		);
+	}
+
+	/**
+	 * Costruisce tabella HTML con i dati del modulo di iscrizione.
+	 *
+	 * @param object $ctx
+	 * @return string
+	 */
+	private function build_registration_data_html( $ctx ) {
+		$raw = isset( $ctx->registration_data ) ? (string) $ctx->registration_data : '';
+		if ( '' === $raw ) {
+			return '<p style="color:#64748b;font-size:13px">' . esc_html__( 'Nessun dato modulo registrato.', 'sd-logbook' ) . '</p>';
+		}
+
+		$data = json_decode( $raw, true );
+		if ( ! is_array( $data ) || empty( $data ) ) {
+			return '<p style="color:#64748b;font-size:13px">' . esc_html__( 'Nessun dato modulo registrato.', 'sd-logbook' ) . '</p>';
+		}
+
+		// Etichette amichevoli per chiavi note.
+		$labels = array(
+			'birth_date'            => __( 'Data di nascita', 'sd-logbook' ),
+			'is_minor'              => __( 'Minorenne', 'sd-logbook' ),
+			'luogo_di_nascita'      => __( 'Luogo di nascita', 'sd-logbook' ),
+			'diabete_tipo'          => __( 'Tipo di diabete', 'sd-logbook' ),
+			'celiachia'             => __( 'Celiachia', 'sd-logbook' ),
+			'telefono_cellulare'    => __( 'Telefono cellulare', 'sd-logbook' ),
+			'selected_price_names'  => __( 'Tariffe selezionate', 'sd-logbook' ),
+			'selected_price_ids'    => __( 'ID tariffe', 'sd-logbook' ),
+			'selected_price_count'  => __( 'Numero tariffe', 'sd-logbook' ),
+		);
+		// Chiavi da nascondere (rumore tecnico).
+		$skip = array( 'selected_price_ids', 'selected_price_count' );
+
+		$html  = '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
+		foreach ( $data as $key => $value ) {
+			if ( in_array( $key, $skip, true ) ) {
+				continue;
+			}
+			$label = isset( $labels[ $key ] )
+				? $labels[ $key ]
+				: ucfirst( str_replace( array( '_', '-' ), ' ', (string) $key ) );
+
+			if ( 'is_minor' === $key ) {
+				$display = in_array( (string) $value, array( '1', 'true', 'yes' ), true ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+			} elseif ( is_array( $value ) ) {
+				$display = implode( ', ', array_map( 'strval', $value ) );
+			} else {
+				$display = (string) $value;
+			}
+			$html .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc;width:38%"><strong>' . esc_html( $label ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . nl2br( esc_html( $display ) ) . '</td></tr>';
+		}
+		$html .= '</table>';
+		return $html;
+	}
+
+	/**
+	 * Restituisce un'etichetta leggibile per uno stato pagamento.
+	 *
+	 * @param string $status
+	 * @return string
+	 */
+	private function payment_status_label( $status ) {
+		$map = array(
+			'in_attesa'         => __( 'In attesa', 'sd-logbook' ),
+			'invoice_requested' => __( 'Fattura richiesta', 'sd-logbook' ),
+			'invoice_sent'      => __( 'Fattura inviata', 'sd-logbook' ),
+			'invoice_error'     => __( 'Errore invio fattura', 'sd-logbook' ),
+			'paid'              => __( 'Pagato', 'sd-logbook' ),
+			'completato'        => __( 'Completato', 'sd-logbook' ),
+			'failed'            => __( 'Fallito', 'sd-logbook' ),
+		);
+		return isset( $map[ $status ] ) ? $map[ $status ] : ucfirst( str_replace( '_', ' ', (string) $status ) );
 	}
 
 	/**

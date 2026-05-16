@@ -603,6 +603,171 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Genera PDF fattura per una registrazione attività.
+	 *
+	 * @param object $ctx Context registrazione (vedi SD_Activity_Payment_Flow::get_context_by_token).
+	 * @return string|WP_Error Percorso del PDF generato.
+	 */
+	public function generate_activity_invoice_document( $ctx ) {
+		if ( ! is_object( $ctx ) || empty( $ctx->registration_id ) ) {
+			return new WP_Error( 'sd_act_inv_bad_ctx', __( 'Contesto registrazione non valido.', 'sd-logbook' ) );
+		}
+
+		$upload = wp_upload_dir();
+		if ( empty( $upload['basedir'] ) || ! is_dir( $upload['basedir'] ) ) {
+			return new WP_Error( 'sd_upload_dir_missing', __( 'Directory upload non disponibile.', 'sd-logbook' ) );
+		}
+
+		$dir = trailingslashit( $upload['basedir'] ) . 'sd-documents/' . gmdate( 'Y' ) . '/activity-' . (int) $ctx->activity_id . '/';
+		if ( ! wp_mkdir_p( $dir ) ) {
+			return new WP_Error( 'sd_docs_dir_failed', __( 'Impossibile creare la cartella documenti.', 'sd-logbook' ) );
+		}
+
+		$file = $dir . 'fattura-attivita-' . (int) $ctx->registration_id . '-' . gmdate( 'Ymd-His' ) . '.pdf';
+		$page = $this->build_activity_invoice_page( $ctx );
+		$this->write_styled_pdf( $file, array( $page ) );
+
+		return $file;
+	}
+
+	/**
+	 * Costruisce la pagina PDF della fattura attività.
+	 *
+	 * @param object $ctx Context registrazione.
+	 * @return array
+	 */
+	private function build_activity_invoice_page( $ctx ) {
+		$width              = 595.0;
+		$height             = 842.0;
+		$primary            = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
+		$secondary          = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
+		$association_name   = (string) get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' ) );
+		$association_addr   = (string) get_option( 'sd_payment_invoice_association_address', '' );
+		$association_postal = (string) get_option( 'sd_payment_invoice_association_postal_code', '' );
+		$association_city   = (string) get_option( 'sd_payment_invoice_association_city', '' );
+		$association_email  = (string) get_option( 'sd_payment_invoice_association_email', get_bloginfo( 'admin_email' ) );
+		$association_phone  = (string) get_option( 'sd_payment_invoice_association_phone', '' );
+
+		$bank_name    = (string) get_option( 'sd_payment_invoice_bank_name', '' );
+		$bank_addr    = (string) get_option( 'sd_payment_invoice_bank_address', '' );
+		$bank_postal  = (string) get_option( 'sd_payment_invoice_bank_postal_code', '' );
+		$bank_city    = (string) get_option( 'sd_payment_invoice_bank_city', '' );
+		$bank_iban    = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
+		$bank_swift   = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
+		$bank_bic     = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
+		$qr_payload   = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
+		$qr_image_url = (string) get_option( 'sd_payment_invoice_qr_image_url', '' );
+		$qr_image     = $this->resolve_qr_image_for_pdf( $qr_image_url );
+
+		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
+		$activity_title   = (string) ( $ctx->activity_title ?? '' );
+		$activity_date    = ! empty( $ctx->activity_start_date ) ? date_i18n( 'd.m.Y', strtotime( (string) $ctx->activity_start_date ) ) : '';
+		$price_name       = (string) ( $ctx->price_name ?? '' );
+		$invoice_no       = sprintf( 'INV-ACT-%s-%06d-%04d', gmdate( 'Y' ), (int) $ctx->activity_id, (int) $ctx->registration_id );
+		$amount_chf       = 'CHF ' . number_format( (float) $ctx->price_chf, 2, '.', '' );
+		$amount_eur       = 'EUR ' . number_format( (float) $ctx->price_eur, 2, '.', '' );
+
+		// Logo.
+		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_bg    = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
+
+		$logo_h = 76;
+		$logo_w = 76;
+		$logo_x = 28;
+		$logo_y = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+		$text_x = 120;
+		if ( ! empty( $logo_image['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_image['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_w = (int) round( 76 * (int) $logo_meta[0] / (int) $logo_meta[1] );
+				$text_x = $logo_x + $logo_w + 12;
+			}
+		}
+
+		$ops  = '';
+		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
+		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
+		$ops .= $this->text( $text_x, $height - 42, 17, $association_name, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 66, 11, 'Fattura iscrizione attività', false, array( 1, 1, 1 ) );
+
+		$ops .= $this->text( 28, $height - 124, 10, 'Numero fattura: ' . $invoice_no, true );
+		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y' ), false );
+
+		// Box intestatario + attività.
+		$ops .= $this->rect_stroke( 28, $height - 262, 539, 104, array( 0.82, 0.84, 0.88 ) );
+		$ops .= $this->text( 40, $height - 176, 11, 'Intestatario fattura', true );
+		$ops .= $this->text( 40, $height - 196, 10, 'Partecipante: ' . $participant_name );
+		$ops .= $this->text( 40, $height - 212, 10, 'Email: ' . (string) $ctx->email );
+		$ops .= $this->text( 40, $height - 228, 10, 'Attività: ' . $activity_title );
+		if ( '' !== $activity_date ) {
+			$ops .= $this->text( 40, $height - 244, 10, 'Data attività: ' . $activity_date );
+		}
+		if ( '' !== $price_name ) {
+			$ops .= $this->text( 320, $height - 212, 10, 'Tariffa: ' . $price_name );
+		}
+		$ops .= $this->text( 320, $height - 196, 10, 'Importo dovuto: ' . $amount_chf, true );
+		$ops .= $this->text( 320, $height - 228, 10, '(' . $amount_eur . ')' );
+
+		$ops .= $this->text( 28, $height - 288, 11, 'Dati associazione', true );
+		$ops .= $this->text( 28, $height - 308, 9.5, $association_name );
+		$ops .= $this->text( 28, $height - 324, 9.5, trim( $association_addr . ' - ' . $association_postal . ' ' . $association_city, ' -' ) );
+		$ops .= $this->text( 28, $height - 340, 9.5, 'Email: ' . $association_email . ' | Tel: ' . $association_phone );
+
+		$ops .= $this->rect_fill( 28, $height - 576, 539, 210, array( 0.96, 0.97, 0.99 ) );
+		$ops .= $this->rect_stroke( 28, $height - 576, 539, 210, array( 0.82, 0.84, 0.88 ) );
+		$ops .= $this->text( 40, $height - 392, 11, 'Coordinate bancarie per pagamento fattura', true );
+		$ops .= $this->text( 40, $height - 414, 10, 'Banca: ' . $bank_name );
+		$ops .= $this->text( 40, $height - 432, 10, 'Indirizzo banca: ' . trim( $bank_addr . ' - ' . $bank_postal . ' ' . $bank_city, ' -' ) );
+		$ops .= $this->text( 40, $height - 450, 10, 'IBAN: ' . $bank_iban, true );
+		$ops .= $this->text( 40, $height - 468, 10, 'SWIFT: ' . $bank_swift . ' | BIC: ' . $bank_bic );
+		$ops .= $this->text( 40, $height - 486, 10, 'Causale: Iscrizione ' . $activity_title . ' - ' . $participant_name );
+
+		$ops .= $this->text( 40, $height - 516, 10, 'QR pagamento', true );
+		if ( '' !== trim( $qr_payload ) ) {
+			foreach ( $this->wrap_text_lines( 'Payload QR: ' . $qr_payload, 88 ) as $idx => $line ) {
+				$ops .= $this->text( 40, $height - 534 - ( $idx * 13 ), 8.5, $line );
+			}
+		} else {
+			$ops .= $this->text( 40, $height - 534, 8.5, 'Payload QR non configurato nelle impostazioni.' );
+		}
+
+		$images = array();
+		if ( ! empty( $logo_image['path'] ) ) {
+			$images[] = array(
+				'path' => (string) $logo_image['path'],
+				'x'    => $logo_x,
+				'y'    => $logo_y,
+				'w'    => $logo_w,
+				'h'    => $logo_h,
+			);
+		}
+		if ( ! empty( $qr_image['path'] ) ) {
+			$ops      .= $this->rect_stroke( 430, $height - 560, 120, 120, array( 0.82, 0.84, 0.88 ) );
+			$images[] = array(
+				'path' => (string) $qr_image['path'],
+				'x'    => 430,
+				'y'    => $height - 560,
+				'w'    => 120,
+				'h'    => 120,
+			);
+		}
+
+		$ops .= $this->text( 40, 56, 8, 'Stato fattura: IN ATTESA DI PAGAMENTO. Iscrizione confermata al ricevimento accredito.', false, array( 0.36, 0.40, 0.46 ) );
+
+		return array(
+			'width'    => $width,
+			'height'   => $height,
+			'commands' => $ops,
+			'images'   => $images,
+		);
+	}
+
+	/**
 	 * Generatore PDF minimale con testo e forme (no dipendenze esterne).
 	 *
 	 * @param string $file_path Percorso output.

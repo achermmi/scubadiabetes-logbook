@@ -379,6 +379,68 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<section class="sd-admin-panel" data-panel="registrazioni">
 		<div class="sd-form-section">
 			<div id="sd-reg-minor-alert" class="sd-notice sd-notice-error" style="display:none;"></div>
+
+			<!-- Cruscotto Registrazioni (parallelo a Cruscotto Rinnovi Soci) -->
+			<div class="sd-renewals-dashboard" id="sd-reg-dashboard">
+				<div class="sd-renewals-header">
+					<h3><?php esc_html_e( 'Cruscotto Registrazioni', 'sd-logbook' ); ?></h3>
+					<p><?php esc_html_e( 'Stato pagamento e invio e-mail rapido alle persone iscritte all\'attività selezionata.', 'sd-logbook' ); ?></p>
+				</div>
+				<div class="sd-renewals-loading" id="sd-reg-dashboard-loading" style="display:none;">
+					<?php esc_html_e( 'Caricamento cruscotto registrazioni...', 'sd-logbook' ); ?>
+				</div>
+				<div class="sd-renewals-message sd-notice" id="sd-reg-dashboard-message" style="display:none;"></div>
+
+				<!-- Selezione modello email -->
+				<div class="sd-renewals-template-row">
+					<label class="sd-renewals-template-label" for="sd-reg-template-id">
+						<?php esc_html_e( 'Modello e-mail:', 'sd-logbook' ); ?>
+					</label>
+					<select id="sd-reg-template-id" class="sd-field-input sd-renewals-template-select">
+						<option value="0"><?php esc_html_e( '— Testo predefinito —', 'sd-logbook' ); ?></option>
+						<?php
+						if ( class_exists( 'SD_Email_Templates' ) ) {
+							foreach ( SD_Email_Templates::get_all_as_options() as $tpl_id => $tpl_name ) {
+								echo '<option value="' . esc_attr( $tpl_id ) . '">' . esc_html( $tpl_name ) . '</option>';
+							}
+						}
+						?>
+					</select>
+				</div>
+
+				<div class="sd-renewals-tools">
+					<div class="sd-renewals-quick-filters" id="sd-reg-quick-filters" role="group" aria-label="<?php esc_attr_e( 'Filtro rapido registrazioni', 'sd-logbook' ); ?>">
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter is-active" data-reg-filter="all"><?php esc_html_e( 'Tutti', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="pending"><?php esc_html_e( 'Solo in attesa', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="paid"><?php esc_html_e( 'Solo pagati', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="invoice_requested"><?php esc_html_e( 'Solo fattura richiesta', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="valid_email"><?php esc_html_e( 'Solo con e-mail valida', 'sd-logbook' ); ?></button>
+					</div>
+					<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-reg-bulk-email"><?php esc_html_e( 'Invia e-mail massivo', 'sd-logbook' ); ?></button>
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
+				</div>
+				<div class="sd-renewals-table-wrap">
+					<table class="sd-renewals-table" id="sd-reg-dashboard-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Iscritto', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Email', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Stato Pagamento', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Data iscrizione', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Importo', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Ultima e-mail', 'sd-logbook' ); ?></th>
+								<th><?php esc_html_e( 'Azione', 'sd-logbook' ); ?></th>
+							</tr>
+						</thead>
+						<tbody id="sd-reg-dashboard-tbody">
+							<tr>
+								<td colspan="7" class="sd-table-empty"><?php esc_html_e( 'Seleziona un\'attività per vedere il cruscotto.', 'sd-logbook' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
 			<div class="sd-admin-filter-row">
 				<select id="sd-reg-activity-id" class="sd-select"></select>
 				<select id="sd-reg-payment-filter" class="sd-select">
@@ -442,7 +504,18 @@ window.sdActivityAdmin = {
 		confirmDelete: '<?php esc_attr_e( 'Eliminare questa attivita?', 'sd-logbook' ); ?>',
 		saveFirst: '<?php esc_attr_e( 'Salva prima l\'attivita.', 'sd-logbook' ); ?>',
 		error: '<?php esc_attr_e( 'Si e verificato un errore.', 'sd-logbook' ); ?>',
-		loading: '<?php esc_attr_e( 'Caricamento...', 'sd-logbook' ); ?>'
+		loading: '<?php esc_attr_e( 'Caricamento...', 'sd-logbook' ); ?>',
+		regDashboardLoadError: '<?php esc_attr_e( 'Errore nel caricamento del cruscotto registrazioni.', 'sd-logbook' ); ?>',
+		regSelectActivity: '<?php esc_attr_e( 'Seleziona un\'attività per vedere il cruscotto.', 'sd-logbook' ); ?>',
+		regEmailSent: '<?php esc_attr_e( 'E-mail inviata con successo.', 'sd-logbook' ); ?>',
+		regEmailError: '<?php esc_attr_e( 'Invio e-mail non riuscito.', 'sd-logbook' ); ?>',
+		regSendEmailLabel: '<?php esc_attr_e( 'Invia e-mail', 'sd-logbook' ); ?>',
+		regSendingLabel: '<?php esc_attr_e( 'Invio...', 'sd-logbook' ); ?>',
+		regBulkSendingLabel: '<?php esc_attr_e( 'Invio massivo...', 'sd-logbook' ); ?>',
+		regBulkDone: '<?php esc_attr_e( 'Invio massivo completato.', 'sd-logbook' ); ?>',
+		regAllPaidLabel: '<?php esc_attr_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?>',
+		regAllPaidSendingLabel: '<?php esc_attr_e( 'Invio a tutti i pagati...', 'sd-logbook' ); ?>',
+		regAllPaidConfirm: '<?php esc_attr_e( 'Inviare l\'e-mail a tutte le iscrizioni pagate dell\'attività selezionata?', 'sd-logbook' ); ?>'
 	}
 };
 

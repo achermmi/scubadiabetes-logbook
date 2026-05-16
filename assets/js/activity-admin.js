@@ -5478,4 +5478,325 @@
 			.replace(/'/g, '&#039;');
 	}
 
+	// =========================================================================
+	// CRUSCOTTO REGISTRAZIONI (parallelo a Cruscotto Rinnovi Soci)
+	// =========================================================================
+	var regDashboardState = {
+		rows: [],
+		quickFilter: 'all',
+		activityId: 0
+	};
+
+	function regStrings() {
+		return (window.sdActivityAdmin && window.sdActivityAdmin.strings) || {};
+	}
+
+	$(document).ready(function () {
+		if (!$('#sd-reg-dashboard').length) {
+			return;
+		}
+		bindRegDashboardEvents();
+		// Carica una volta all'avvio se c'è già un'attività selezionata
+		setTimeout(loadRegDashboard, 300);
+	});
+
+	function bindRegDashboardEvents() {
+		$('#sd-reg-activity-id').on('change.regDashboard', function () {
+			loadRegDashboard();
+		});
+
+		$(document).on('click', '.sd-reg-filter', function () {
+			var $btn = $(this);
+			var mode = String($btn.data('reg-filter') || 'all');
+			regDashboardState.quickFilter = mode;
+			$('.sd-reg-filter').removeClass('is-active');
+			$btn.addClass('is-active');
+			renderRegDashboardRows(getFilteredRegRows());
+			updateRegBulkButton();
+		});
+
+		$(document).on('click', '.sd-send-reg-email', function () {
+			var $btn = $(this);
+			var regId = parseInt($btn.data('reg-id'), 10) || 0;
+			if (!regId) { return; }
+			sendRegEmailSingle($btn, regId);
+		});
+
+		$('#sd-reg-bulk-email').on('click', sendRegEmailsBulk);
+		$('#sd-reg-email-all-paid').on('click', sendRegEmailsAllPaid);
+	}
+
+	function loadRegDashboard() {
+		var $tbody = $('#sd-reg-dashboard-tbody');
+		var $loading = $('#sd-reg-dashboard-loading');
+		if (!$tbody.length) { return; }
+
+		var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+		regDashboardState.activityId = activityId;
+
+		if (!activityId) {
+			$tbody.html('<tr><td colspan="7" class="sd-table-empty">' + esc(regStrings().regSelectActivity || 'Seleziona un\'attività per vedere il cruscotto.') + '</td></tr>');
+			regDashboardState.rows = [];
+			updateRegBulkButton();
+			return;
+		}
+
+		$loading.show();
+		$('#sd-reg-dashboard-message').hide();
+		$tbody.html('<tr><td colspan="7" class="sd-table-empty">' + esc(regStrings().loading || 'Caricamento...') + '</td></tr>');
+
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'sd_activity_registrations_dashboard',
+				nonce: sdActivityAdmin.nonce,
+				activity_id: activityId
+			},
+			success: function (resp) {
+				$loading.hide();
+				if (!resp || !resp.success || !resp.data || !Array.isArray(resp.data.rows)) {
+					showRegDashboardMessage('error', regStrings().regDashboardLoadError || 'Errore nel caricamento del cruscotto registrazioni.');
+					$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore caricamento.</td></tr>');
+					updateRegBulkButton();
+					return;
+				}
+				regDashboardState.rows = resp.data.rows;
+				renderRegDashboardRows(getFilteredRegRows());
+				updateRegBulkButton();
+			},
+			error: function () {
+				$loading.hide();
+				showRegDashboardMessage('error', regStrings().regDashboardLoadError || 'Errore di rete.');
+				$tbody.html('<tr><td colspan="7" class="sd-table-empty">Errore di rete.</td></tr>');
+				updateRegBulkButton();
+			}
+		});
+	}
+
+	function getFilteredRegRows() {
+		var mode = regDashboardState.quickFilter || 'all';
+		var rows = Array.isArray(regDashboardState.rows) ? regDashboardState.rows : [];
+		if (mode === 'pending') {
+			return rows.filter(function (r) { return r.payment_status === 'pending'; });
+		}
+		if (mode === 'paid') {
+			return rows.filter(function (r) { return r.payment_status === 'paid'; });
+		}
+		if (mode === 'invoice_requested') {
+			return rows.filter(function (r) { return r.payment_status === 'invoice_requested'; });
+		}
+		if (mode === 'valid_email') {
+			return rows.filter(function (r) { return !!r.can_remind; });
+		}
+		return rows;
+	}
+
+	function renderRegDashboardRows(rows) {
+		var $tbody = $('#sd-reg-dashboard-tbody');
+		if (!$tbody.length) { return; }
+		if (!rows.length) {
+			$tbody.html('<tr><td colspan="7" class="sd-table-empty">Nessuna iscrizione trovata per questo filtro.</td></tr>');
+			return;
+		}
+
+		var statusMap = {
+			'pending': { cls: 'sd-renewal-status-soon', label: 'In attesa' },
+			'paid': { cls: 'sd-renewal-status-valid', label: 'Pagato' },
+			'invoice_requested': { cls: 'sd-renewal-status-soon', label: 'Fattura richiesta' },
+			'invoice_sent': { cls: 'sd-renewal-status-soon', label: 'Fattura inviata' },
+			'invoice_error': { cls: 'sd-renewal-status-expired', label: 'Errore fattura' },
+			'cancelled': { cls: 'sd-renewal-status-expired', label: 'Annullato' },
+			'free': { cls: 'sd-renewal-status-valid', label: 'Gratuito' }
+		};
+
+		var html = '';
+		rows.forEach(function (r) {
+			var st = statusMap[r.payment_status] || { cls: 'sd-renewal-status-pending', label: r.payment_status || '—' };
+			var chf = parseFloat(r.price_chf || 0);
+			var eur = parseFloat(r.price_eur || 0);
+			var amount = 'CHF ' + chf.toFixed(2) + (eur > 0 ? ' / EUR ' + eur.toFixed(2) : '');
+			var actionHtml = '<span class="sd-renewal-disabled">—</span>';
+			if (r.can_remind) {
+				actionHtml = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
+					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>';
+			}
+			html += '<tr>' +
+				'<td><strong>' + esc(r.name || '') + '</strong></td>' +
+				'<td>' + esc(r.email || '—') + '</td>' +
+				'<td><span class="sd-renewal-status ' + st.cls + '">' + esc(st.label) + '</span></td>' +
+				'<td>' + formatRegDate(r.created_at) + '</td>' +
+				'<td>' + esc(amount) + '</td>' +
+				'<td>' + formatRegDateTime(r.last_email_at) + '</td>' +
+				'<td>' + actionHtml + '</td>' +
+				'</tr>';
+		});
+		$tbody.html(html);
+	}
+
+	function updateRegBulkButton() {
+		var $btn = $('#sd-reg-bulk-email');
+		var $all = $('#sd-reg-email-all-paid');
+		if (!$btn.length) { return; }
+
+		var eligible = getFilteredRegRows().filter(function (r) { return !!r.can_remind; }).length;
+		var mode = regDashboardState.quickFilter || 'all';
+		var labelMap = {
+			'all': 'Invia e-mail massivo a tutti',
+			'pending': 'Invia e-mail massivo (in attesa)',
+			'paid': 'Invia e-mail massivo (pagati)',
+			'invoice_requested': 'Invia e-mail massivo (fattura richiesta)',
+			'valid_email': 'Invia e-mail massivo (con e-mail valida)'
+		};
+		$btn.text((labelMap[mode] || 'Invia e-mail massivo') + ' [' + eligible + ']');
+		$btn.prop('disabled', eligible < 1 || !regDashboardState.activityId);
+
+		var paidEligible = (regDashboardState.rows || []).filter(function (r) {
+			return r.payment_status === 'paid' && r.can_remind;
+		}).length;
+		$all.text((regStrings().regAllPaidLabel || 'Invia e-mail a tutte le iscrizioni pagate') + ' [' + paidEligible + ']');
+		$all.prop('disabled', paidEligible < 1 || !regDashboardState.activityId);
+	}
+
+	function sendRegEmailSingle($btn, regId) {
+		var origLabel = $btn.text();
+		$btn.prop('disabled', true).text(regStrings().regSendingLabel || 'Invio...');
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'sd_activity_send_registration_email_single',
+				nonce: sdActivityAdmin.nonce,
+				registration_id: regId,
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+			},
+			success: function (resp) {
+				if (!resp.success) {
+					$btn.prop('disabled', false).text(origLabel);
+					showRegDashboardMessage('error', (resp.data && resp.data.message) || regStrings().regEmailError || 'Invio e-mail non riuscito.');
+					return;
+				}
+				showRegDashboardMessage('success', (resp.data && resp.data.message) || regStrings().regEmailSent || 'E-mail inviata.');
+				loadRegDashboard();
+			},
+			error: function () {
+				$btn.prop('disabled', false).text(origLabel);
+				showRegDashboardMessage('error', regStrings().regEmailError || 'Invio e-mail non riuscito.');
+			}
+		});
+	}
+
+	function sendRegEmailsBulk() {
+		var $btn = $(this);
+		if ($btn.prop('disabled')) { return; }
+
+		var mode = regDashboardState.quickFilter || 'all';
+		var confirmTextMap = {
+			'all': 'Inviare l\'e-mail a tutti gli iscritti dell\'attività selezionata?',
+			'pending': 'Inviare l\'e-mail a tutti gli iscritti in attesa di pagamento?',
+			'paid': 'Inviare l\'e-mail a tutti gli iscritti pagati?',
+			'invoice_requested': 'Inviare l\'e-mail a tutti gli iscritti con fattura richiesta?',
+			'valid_email': 'Inviare l\'e-mail a tutti gli iscritti con e-mail valida?'
+		};
+		if (!window.confirm(confirmTextMap[mode] || 'Inviare l\'e-mail massiva?')) { return; }
+
+		var origLabel = $btn.text();
+		$btn.prop('disabled', true).text(regStrings().regBulkSendingLabel || 'Invio massivo...');
+
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'sd_activity_send_registration_emails_bulk',
+				nonce: sdActivityAdmin.nonce,
+				activity_id: regDashboardState.activityId,
+				filter_type: mode,
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+			},
+			success: function (resp) {
+				$btn.prop('disabled', false).text(origLabel);
+				if (!resp.success) {
+					showRegDashboardMessage('error', (resp.data && resp.data.message) || regStrings().regEmailError || 'Invio non riuscito.');
+					return;
+				}
+				showRegDashboardMessage('success', (resp.data && resp.data.message) || regStrings().regBulkDone || 'Invio massivo completato.');
+				loadRegDashboard();
+			},
+			error: function () {
+				$btn.prop('disabled', false).text(origLabel);
+				showRegDashboardMessage('error', regStrings().regEmailError || 'Invio non riuscito.');
+			}
+		});
+	}
+
+	function sendRegEmailsAllPaid() {
+		var $btn = $(this);
+		if ($btn.prop('disabled')) { return; }
+
+		if (!window.confirm(regStrings().regAllPaidConfirm || 'Inviare l\'e-mail a tutte le iscrizioni pagate?')) { return; }
+
+		var origLabel = $btn.text();
+		$btn.prop('disabled', true).text(regStrings().regAllPaidSendingLabel || 'Invio in corso...');
+
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'sd_activity_send_registration_emails_all_paid',
+				nonce: sdActivityAdmin.nonce,
+				activity_id: regDashboardState.activityId,
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+			},
+			success: function (resp) {
+				$btn.prop('disabled', false).text(origLabel);
+				if (!resp.success) {
+					showRegDashboardMessage('error', (resp.data && resp.data.message) || regStrings().regEmailError || 'Invio non riuscito.');
+					return;
+				}
+				showRegDashboardMessage('success', (resp.data && resp.data.message) || 'Invio completato.');
+				loadRegDashboard();
+			},
+			error: function () {
+				$btn.prop('disabled', false).text(origLabel);
+				showRegDashboardMessage('error', regStrings().regEmailError || 'Invio non riuscito.');
+			}
+		});
+	}
+
+	function showRegDashboardMessage(type, text) {
+		var $msg = $('#sd-reg-dashboard-message');
+		if (!$msg.length) { return; }
+		$msg
+			.removeClass('sd-notice-error sd-notice-success sd-notice-warning')
+			.addClass(type === 'success' ? 'sd-notice-success' : 'sd-notice-error')
+			.text(text)
+			.show();
+	}
+
+	function formatRegDate(value) {
+		if (!value) { return '—'; }
+		var dt = new Date(String(value).replace(' ', 'T'));
+		if (isNaN(dt.getTime())) { return esc(String(value)); }
+		var d = String(dt.getDate()).padStart(2, '0');
+		var m = String(dt.getMonth() + 1).padStart(2, '0');
+		var y = dt.getFullYear();
+		return d + '.' + m + '.' + y;
+	}
+
+	function formatRegDateTime(value) {
+		if (!value) { return '—'; }
+		var dt = new Date(String(value).replace(' ', 'T'));
+		if (isNaN(dt.getTime())) { return esc(String(value)); }
+		var d = String(dt.getDate()).padStart(2, '0');
+		var m = String(dt.getMonth() + 1).padStart(2, '0');
+		var y = dt.getFullYear();
+		var hh = String(dt.getHours()).padStart(2, '0');
+		var mm = String(dt.getMinutes()).padStart(2, '0');
+		return d + '.' + m + '.' + y + ' ' + hh + ':' + mm;
+	}
+
 })(jQuery);
