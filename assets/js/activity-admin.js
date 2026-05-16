@@ -473,76 +473,52 @@
 				preventActivityDescriptionAutoFocusAndScrollTop();
 			}, 300);
 
-			// Workaround: at first open the TinyMCE model body is detached from the visible iframe.
-			// Force the same html->tmce switch the user would do manually to rebind editor <-> live iframe.
-			window.setTimeout(function () {
-				forceActivityDescriptionEditorRebind(activityDescription);
-			}, 350);
-			// Second rebind attempt for cases where the editor is re-rendered later (e.g. after
-			// section move reloads the activity) and the first rebind happens too early.
+			// Pragmatic fix: TinyMCE's internal body can become detached from the visible iframe
+			// when the wrap is re-rendered between activity edits or after section moves.
+			// Always destroy and reinit the editor at activity open if it already exists — this
+			// guarantees a clean editor <-> iframe binding without relying on soft rebind heuristics.
 			window.setTimeout(function () {
 				try {
-					var ed = (typeof getActivityDescriptionEditor === 'function') ? getActivityDescriptionEditor() : null;
-					var $ifr = $('#wp-sd-activity-description-wrap .wp-editor-container iframe');
-					var liveChildCount = 0;
-					if ($ifr.length && $ifr[0] && $ifr[0].contentDocument && $ifr[0].contentDocument.body) {
-						liveChildCount = $ifr[0].contentDocument.body.children.length;
+					var existingEditor = (typeof getActivityDescriptionEditor === 'function') ? getActivityDescriptionEditor() : null;
+					if (!existingEditor) {
+						// No editor yet: the regular init flow will create it.
+						debugDescriptionLog('editor-reinit:skip-no-editor', {});
+						return;
 					}
-					var modelLen = (ed && typeof ed.getContent === 'function') ? String(ed.getContent({ format: 'html' }) || '').length : 0;
 					var srcLen = String(activityDescription || '').length;
-					debugDescriptionLog('rebind:retry-check', { liveChildCount: liveChildCount, modelLen: modelLen, sourceLen: srcLen });
-					if (!liveChildCount && srcLen > 0) {
-						// Orphan body: model has content but visible iframe is empty.
-						// First try a soft rebind; if still empty after, force destroy+reinit.
-						forceActivityDescriptionEditorRebind(activityDescription);
+					debugDescriptionLog('editor-reinit:start', { sourceLen: srcLen });
+					state.descriptionPendingValue = String(activityDescription || '');
+					state.descriptionLastKnownHtml = String(activityDescription || '');
+					if (typeof destroyActivityDescriptionEditor === 'function') {
+						destroyActivityDescriptionEditor();
+					}
+					window.setTimeout(function () {
+						try {
+							if (typeof initActivityDescriptionEditor === 'function') {
+								initActivityDescriptionEditor();
+							}
+						} catch (initErr) {
+							debugDescriptionLog('editor-reinit:init-error', { error: String(initErr && initErr.message ? initErr.message : initErr) });
+						}
 						window.setTimeout(function () {
 							try {
-								var $ifr2 = $('#wp-sd-activity-description-wrap .wp-editor-container iframe');
-								var live2 = 0;
-								if ($ifr2.length && $ifr2[0] && $ifr2[0].contentDocument && $ifr2[0].contentDocument.body) {
-									live2 = $ifr2[0].contentDocument.body.children.length;
+								applyActivityDescriptionContentToNativeEditor(String(activityDescription || ''), true);
+								if (typeof ensureActivityDescriptionEditable === 'function') {
+									ensureActivityDescriptionEditable();
 								}
-								debugDescriptionLog('rebind:post-soft-check', { liveChildCount: live2 });
-								if (!live2) {
-									debugDescriptionLog('rebind:hard-reinit-start', { sourceLen: srcLen });
-									state.descriptionPendingValue = String(activityDescription || '');
-									state.descriptionLastKnownHtml = String(activityDescription || '');
-									if (typeof destroyActivityDescriptionEditor === 'function') {
-										destroyActivityDescriptionEditor();
-									}
-									window.setTimeout(function () {
-										try {
-											if (typeof initActivityDescriptionEditor === 'function') {
-												initActivityDescriptionEditor();
-											}
-										} catch (initErr) {
-											debugDescriptionLog('rebind:hard-reinit-init-error', { error: String(initErr && initErr.message ? initErr.message : initErr) });
-										}
-										window.setTimeout(function () {
-											try {
-												applyActivityDescriptionContentToNativeEditor(String(activityDescription || ''), true);
-												if (typeof ensureActivityDescriptionEditable === 'function') {
-													ensureActivityDescriptionEditable();
-												}
-												if (typeof preventActivityDescriptionAutoFocusAndScrollTop === 'function') {
-													preventActivityDescriptionAutoFocusAndScrollTop();
-												}
-												debugDescriptionLog('rebind:hard-reinit-done', { sourceLen: srcLen });
-											} catch (applyErr) {
-												debugDescriptionLog('rebind:hard-reinit-apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
-											}
-										}, 180);
-									}, 80);
+								if (typeof preventActivityDescriptionAutoFocusAndScrollTop === 'function') {
+									preventActivityDescriptionAutoFocusAndScrollTop();
 								}
-							} catch (postErr) {
-								debugDescriptionLog('rebind:post-soft-error', { error: String(postErr && postErr.message ? postErr.message : postErr) });
+								debugDescriptionLog('editor-reinit:done', { sourceLen: srcLen });
+							} catch (applyErr) {
+								debugDescriptionLog('editor-reinit:apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
 							}
-						}, 250);
-					}
-				} catch (retryErr) {
-					debugDescriptionLog('rebind:retry-error', { error: String(retryErr && retryErr.message ? retryErr.message : retryErr) });
+						}, 160);
+					}, 60);
+				} catch (reinitErr) {
+					debugDescriptionLog('editor-reinit:outer-error', { error: String(reinitErr && reinitErr.message ? reinitErr.message : reinitErr) });
 				}
-			}, 900);
+			}, 150);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -4542,22 +4518,6 @@
 			visibility: 'visible',
 			opacity: '1'
 		});
-
-		// DEBUG: inject a high-contrast stylesheet inside the TinyMCE iframe to verify if the iframe is actually visible.
-		try {
-			var iframe = $wrap.find('.wp-editor-container iframe').get(0);
-			if (iframe) {
-				var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-				if (doc && doc.head && !doc.getElementById('sd-desc-debug-style')) {
-					var styleEl = doc.createElement('style');
-					styleEl.id = 'sd-desc-debug-style';
-					styleEl.textContent = 'html,body{background:#ffff00 !important;color:#cc0000 !important;font-size:18px !important;line-height:1.5 !important;margin:0 !important;padding:8px !important;overflow:visible !important;}*{visibility:visible !important;opacity:1 !important;color:#cc0000 !important;font-size:18px !important;text-indent:0 !important;position:static !important;clip:auto !important;clip-path:none !important;transform:none !important;}p,div,span,h1,h2,h3,h4,li{display:block !important;height:auto !important;width:auto !important;}';
-					doc.head.appendChild(styleEl);
-				}
-			}
-		} catch (debugStyleErr) {
-			// Ignore cross-origin or doc-not-ready errors.
-		}
 
 		$('#sd-activity-description-html').addClass('wp-switch-editor switch-html');
 		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
