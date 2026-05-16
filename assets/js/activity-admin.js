@@ -489,9 +489,55 @@
 						liveChildCount = $ifr[0].contentDocument.body.children.length;
 					}
 					var modelLen = (ed && typeof ed.getContent === 'function') ? String(ed.getContent({ format: 'html' }) || '').length : 0;
-					debugDescriptionLog('rebind:retry-check', { liveChildCount: liveChildCount, modelLen: modelLen, sourceLen: String(activityDescription || '').length });
-					if (!liveChildCount && String(activityDescription || '').length > 0) {
+					var srcLen = String(activityDescription || '').length;
+					debugDescriptionLog('rebind:retry-check', { liveChildCount: liveChildCount, modelLen: modelLen, sourceLen: srcLen });
+					if (!liveChildCount && srcLen > 0) {
+						// Orphan body: model has content but visible iframe is empty.
+						// First try a soft rebind; if still empty after, force destroy+reinit.
 						forceActivityDescriptionEditorRebind(activityDescription);
+						window.setTimeout(function () {
+							try {
+								var $ifr2 = $('#wp-sd-activity-description-wrap .wp-editor-container iframe');
+								var live2 = 0;
+								if ($ifr2.length && $ifr2[0] && $ifr2[0].contentDocument && $ifr2[0].contentDocument.body) {
+									live2 = $ifr2[0].contentDocument.body.children.length;
+								}
+								debugDescriptionLog('rebind:post-soft-check', { liveChildCount: live2 });
+								if (!live2) {
+									debugDescriptionLog('rebind:hard-reinit-start', { sourceLen: srcLen });
+									state.descriptionPendingValue = String(activityDescription || '');
+									state.descriptionLastKnownHtml = String(activityDescription || '');
+									if (typeof destroyActivityDescriptionEditor === 'function') {
+										destroyActivityDescriptionEditor();
+									}
+									window.setTimeout(function () {
+										try {
+											if (typeof initActivityDescriptionEditor === 'function') {
+												initActivityDescriptionEditor();
+											}
+										} catch (initErr) {
+											debugDescriptionLog('rebind:hard-reinit-init-error', { error: String(initErr && initErr.message ? initErr.message : initErr) });
+										}
+										window.setTimeout(function () {
+											try {
+												applyActivityDescriptionContentToNativeEditor(String(activityDescription || ''), true);
+												if (typeof ensureActivityDescriptionEditable === 'function') {
+													ensureActivityDescriptionEditable();
+												}
+												if (typeof preventActivityDescriptionAutoFocusAndScrollTop === 'function') {
+													preventActivityDescriptionAutoFocusAndScrollTop();
+												}
+												debugDescriptionLog('rebind:hard-reinit-done', { sourceLen: srcLen });
+											} catch (applyErr) {
+												debugDescriptionLog('rebind:hard-reinit-apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
+											}
+										}, 180);
+									}, 80);
+								}
+							} catch (postErr) {
+								debugDescriptionLog('rebind:post-soft-error', { error: String(postErr && postErr.message ? postErr.message : postErr) });
+							}
+						}, 250);
 					}
 				} catch (retryErr) {
 					debugDescriptionLog('rebind:retry-error', { error: String(retryErr && retryErr.message ? retryErr.message : retryErr) });
