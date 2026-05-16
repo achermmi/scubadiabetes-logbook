@@ -5613,13 +5613,21 @@
 
 		var html = '';
 		rows.forEach(function (r) {
-			var st = statusMap[r.payment_status] || { cls: 'sd-renewal-status-pending', label: r.payment_status || '—' };
+			var rawStatus = String(r.payment_status || '').trim();
+			var st;
+			if (rawStatus && statusMap[rawStatus]) {
+				st = statusMap[rawStatus];
+			} else if (!rawStatus || rawStatus === '0') {
+				st = { cls: 'sd-renewal-status-pending', label: 'In attesa' };
+			} else {
+				st = { cls: 'sd-renewal-status-pending', label: rawStatus };
+			}
 			var chf = parseFloat(r.price_chf || 0);
 			var eur = parseFloat(r.price_eur || 0);
 			var amount = 'CHF ' + chf.toFixed(2) + (eur > 0 ? ' / EUR ' + eur.toFixed(2) : '');
-			var actionHtml = '<span class="sd-renewal-disabled">—</span>';
+			var actionHtml = '<span class="sd-renewal-disabled" title="E-mail non valida">—</span>';
 			if (r.can_remind) {
-				actionHtml = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
+				actionHtml = '<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
 					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>';
 			}
 			html += '<tr>' +
@@ -5629,7 +5637,7 @@
 				'<td>' + formatRegDate(r.created_at) + '</td>' +
 				'<td>' + esc(amount) + '</td>' +
 				'<td>' + formatRegDateTime(r.last_email_at) + '</td>' +
-				'<td>' + actionHtml + '</td>' +
+				'<td class="sd-renewals-action-cell">' + actionHtml + '</td>' +
 				'</tr>';
 		});
 		$tbody.html(html);
@@ -5779,8 +5787,10 @@
 
 	function formatRegDate(value) {
 		if (!value) { return '—'; }
-		var dt = new Date(String(value).replace(' ', 'T'));
-		if (isNaN(dt.getTime())) { return esc(String(value)); }
+		var str = String(value);
+		if (str.indexOf('0000-00-00') === 0) { return '—'; }
+		var dt = new Date(str.replace(' ', 'T'));
+		if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) { return '—'; }
 		var d = String(dt.getDate()).padStart(2, '0');
 		var m = String(dt.getMonth() + 1).padStart(2, '0');
 		var y = dt.getFullYear();
@@ -5789,8 +5799,10 @@
 
 	function formatRegDateTime(value) {
 		if (!value) { return '—'; }
-		var dt = new Date(String(value).replace(' ', 'T'));
-		if (isNaN(dt.getTime())) { return esc(String(value)); }
+		var str = String(value);
+		if (str.indexOf('0000-00-00') === 0) { return '—'; }
+		var dt = new Date(str.replace(' ', 'T'));
+		if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) { return '—'; }
 		var d = String(dt.getDate()).padStart(2, '0');
 		var m = String(dt.getMonth() + 1).padStart(2, '0');
 		var y = dt.getFullYear();

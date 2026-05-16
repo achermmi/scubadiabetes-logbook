@@ -416,8 +416,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="invoice_requested"><?php esc_html_e( 'Solo fattura richiesta', 'sd-logbook' ); ?></button>
 						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-filter" data-reg-filter="valid_email"><?php esc_html_e( 'Solo con e-mail valida', 'sd-logbook' ); ?></button>
 					</div>
-					<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-reg-bulk-email"><?php esc_html_e( 'Invia e-mail massivo', 'sd-logbook' ); ?></button>
-					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
+					<div class="sd-renewals-bulk-group">
+						<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-reg-bulk-email"><?php esc_html_e( 'Invia e-mail massivo', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
+					</div>
 				</div>
 				<div class="sd-renewals-table-wrap">
 					<table class="sd-renewals-table" id="sd-reg-dashboard-table">
