@@ -305,6 +305,19 @@
 			resendInvoiceEmail(registrationId);
 		});
 
+		$(document).on('click', '.sd-reg-delete', function () {
+			var registrationId = parseInt($(this).data('id'), 10) || 0;
+			if (!registrationId) {
+				return;
+			}
+			var name = String($(this).data('name') || '').trim();
+			var msg = 'Eliminare definitivamente l\'iscrizione' + (name ? ' di ' + name : '') + '?\nL\'azione non puo essere annullata.';
+			if (!window.confirm(msg)) {
+				return;
+			}
+			deleteRegistration(registrationId);
+		});
+
 		$(document).on('click', '#sd-copy-shortcode-btn', copyShortcodeToClipboard);
 		$(document).on('click', '.sd-copy-shortcode-inline', copyInlineShortcodeToClipboard);
 	}
@@ -3999,6 +4012,7 @@
 			if (canResendInvoice) {
 				actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + parseInt(r.id, 10) + '">Reinvia fattura</button>');
 			}
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + parseInt(r.id, 10) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
 			if (minorInfo.isMinor) {
 				minorCount += 1;
 			}
@@ -4108,6 +4122,21 @@
 			}
 
 			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Pagamento aggiornato.');
+			loadRegistrations();
+		});
+	}
+
+	function deleteRegistration(registrationId) {
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_activity_registration_delete',
+			nonce: sdActivityAdmin.nonce,
+			registration_id: registrationId,
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				return;
+			}
+			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Registrazione eliminata.');
 			loadRegistrations();
 		});
 	}

@@ -68,6 +68,7 @@ class SD_Activity_Manager {
 		add_action( 'wp_ajax_sd_activity_registration_list', array( $this, 'ajax_get_registrations_list' ) );
 		add_action( 'wp_ajax_sd_activity_registration_update_status', array( $this, 'ajax_update_registration_status' ) );
 		add_action( 'wp_ajax_sd_activity_registration_update_payment', array( $this, 'ajax_update_registration_payment' ) );
+		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_delete_registration' ) );
 	}
 
 	// ======================================================================
@@ -1817,6 +1818,35 @@ class SD_Activity_Manager {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Pagamento aggiornato', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX (Admin): Elimina una singola registrazione.
+	 */
+	public function ajax_delete_registration() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID registrazione non valido', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$deleted = $wpdb->delete(
+			$wpdb->prefix . 'sd_activity_registrations',
+			array( 'id' => $registration_id ),
+			array( '%d' )
+		);
+
+		if ( false === $deleted ) {
+			wp_send_json_error( array( 'message' => __( 'Errore nell\'eliminazione', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Registrazione eliminata', 'sd-logbook' ) ) );
 	}
 
 	// ======================================================================
