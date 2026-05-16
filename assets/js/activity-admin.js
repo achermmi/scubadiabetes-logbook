@@ -432,6 +432,23 @@
 			state.selectedActivityId = parseInt(a.id, 10) || 0;
 			state.currentActivity = a;
 			state.currentFields = a.form_fields || [];
+
+			// Hide the description wrap immediately to avoid any flash of the previous/empty editor
+			// during switchTab + setContent + destroy+reinit. Lock height to prevent layout jump.
+			var $descWrap = $('#wp-sd-activity-description-wrap');
+			var lockedDescHeight = 0;
+			if ($descWrap.length) {
+				lockedDescHeight = $descWrap.outerHeight() || 0;
+				$descWrap.css({
+					'min-height': lockedDescHeight ? (lockedDescHeight + 'px') : '',
+					'visibility': 'hidden'
+				});
+			}
+			var revealDescWrap = function () {
+				if (!$descWrap.length) { return; }
+				$descWrap.css({ 'visibility': '', 'min-height': '' });
+			};
+
 			switchTab('modifica', { skipDescriptionRefresh: true });
 
 			$('#sd-activity-id').val(state.selectedActivityId);
@@ -481,30 +498,15 @@
 				try {
 					var existingEditor = (typeof getActivityDescriptionEditor === 'function') ? getActivityDescriptionEditor() : null;
 					if (!existingEditor) {
-						// No editor yet: the regular init flow will create it.
+						// No editor yet: the regular init flow will create it. Reveal so the user can see it.
 						debugDescriptionLog('editor-reinit:skip-no-editor', {});
+						revealDescWrap();
 						return;
 					}
 					var srcLen = String(activityDescription || '').length;
 					debugDescriptionLog('editor-reinit:start', { sourceLen: srcLen });
 					state.descriptionPendingValue = String(activityDescription || '');
 					state.descriptionLastKnownHtml = String(activityDescription || '');
-
-					// Hide wrap during destroy+reinit to avoid the visible "empty editor" flash.
-					// Preserve height to prevent layout jump.
-					var $wrap = $('#wp-sd-activity-description-wrap');
-					var lockedHeight = 0;
-					if ($wrap.length) {
-						lockedHeight = $wrap.outerHeight() || 0;
-						$wrap.css({
-							'min-height': lockedHeight ? (lockedHeight + 'px') : '',
-							'visibility': 'hidden'
-						});
-					}
-					var restoreWrap = function () {
-						if (!$wrap.length) { return; }
-						$wrap.css({ 'visibility': '', 'min-height': '' });
-					};
 
 					if (typeof destroyActivityDescriptionEditor === 'function') {
 						destroyActivityDescriptionEditor();
@@ -531,13 +533,13 @@
 								debugDescriptionLog('editor-reinit:apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
 							}
 							// Reveal the wrap after content has been pushed into the freshly inited editor.
-							restoreWrap();
+							revealDescWrap();
 						}, 160);
 					}, 60);
 				} catch (reinitErr) {
 					debugDescriptionLog('editor-reinit:outer-error', { error: String(reinitErr && reinitErr.message ? reinitErr.message : reinitErr) });
 					// Safety: if anything blew up, make sure the wrap isn't left hidden.
-					try { $('#wp-sd-activity-description-wrap').css({ 'visibility': '', 'min-height': '' }); } catch (e) {}
+					revealDescWrap();
 				}
 			}, 150);
 
