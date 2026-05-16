@@ -1886,6 +1886,11 @@ class SD_Activity_Manager {
 		$last_name  = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : null;
 		$email      = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : null;
 		$price_id   = isset( $_POST['price_id'] ) ? intval( $_POST['price_id'] ) : null;
+		$status_raw         = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : null;
+		$payment_status_raw = isset( $_POST['payment_status'] ) ? sanitize_text_field( wp_unslash( $_POST['payment_status'] ) ) : null;
+
+		$allowed_statuses         = array( 'registered', 'waitlist', 'cancelled', 'refunded' );
+		$allowed_payment_statuses = array( 'pending', 'paid', 'invoice_requested', 'invoice_sent', 'invoice_error', 'cancelled', 'free' );
 
 		$data    = array();
 		$formats = array();
@@ -1904,6 +1909,19 @@ class SD_Activity_Manager {
 			}
 			$data['email'] = $email;
 			$formats[]     = '%s';
+		}
+
+		if ( null !== $status_raw && '' !== $status_raw && in_array( $status_raw, $allowed_statuses, true ) ) {
+			$data['status'] = $status_raw;
+			$formats[]      = '%s';
+		}
+		if ( null !== $payment_status_raw && '' !== $payment_status_raw && in_array( $payment_status_raw, $allowed_payment_statuses, true ) ) {
+			$data['payment_status'] = $payment_status_raw;
+			$formats[]              = '%s';
+			if ( 'paid' === $payment_status_raw && empty( $existing['payment_date'] ) ) {
+				$data['payment_date'] = current_time( 'mysql' );
+				$formats[]            = '%s';
+			}
 		}
 
 		if ( null !== $price_id && $price_id > 0 && (int) $existing['price_id'] !== $price_id ) {

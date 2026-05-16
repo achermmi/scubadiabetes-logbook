@@ -4280,6 +4280,36 @@
 				+ esc(p.price_name || ('Tariffa #' + p.id))
 				+ ' (CHF ' + num(p.price_chf) + ' / EUR ' + num(p.price_eur) + ')</option>';
 		});
+		var regStatusOptions = [
+			{ v: 'registered', l: 'Iscritto' },
+			{ v: 'waitlist', l: 'Lista d\'attesa' },
+			{ v: 'cancelled', l: 'Annullato' },
+			{ v: 'refunded', l: 'Rimborsato' }
+		];
+		var payStatusOptions = [
+			{ v: 'pending', l: 'In attesa' },
+			{ v: 'paid', l: 'Pagato' },
+			{ v: 'invoice_requested', l: 'Fattura richiesta' },
+			{ v: 'invoice_sent', l: 'Fattura inviata' },
+			{ v: 'invoice_error', l: 'Errore invio fattura' },
+			{ v: 'cancelled', l: 'Annullato' },
+			{ v: 'free', l: 'Gratuito' }
+		];
+		var currentRegStatus = String(reg.status || 'registered');
+		var currentPayStatus = String(reg.payment_status || 'pending');
+		var regStatusOpts = regStatusOptions.map(function (o) {
+			return '<option value="' + esc(o.v) + '"' + (o.v === currentRegStatus ? ' selected' : '') + '>' + esc(o.l) + '</option>';
+		}).join('');
+		var payStatusOpts = payStatusOptions.map(function (o) {
+			return '<option value="' + esc(o.v) + '"' + (o.v === currentPayStatus ? ' selected' : '') + '>' + esc(o.l) + '</option>';
+		}).join('');
+		// Includi anche il valore corrente se non standard, per non perderlo.
+		if (currentPayStatus && !payStatusOptions.some(function (o) { return o.v === currentPayStatus; })) {
+			payStatusOpts = '<option value="' + esc(currentPayStatus) + '" selected>' + esc(currentPayStatus) + '</option>' + payStatusOpts;
+		}
+		if (currentRegStatus && !regStatusOptions.some(function (o) { return o.v === currentRegStatus; })) {
+			regStatusOpts = '<option value="' + esc(currentRegStatus) + '" selected>' + esc(currentRegStatus) + '</option>' + regStatusOpts;
+		}
 		var baseHtml = '' +
 			'<div class="sd-form-row sd-form-row-2col">' +
 				'<label><span>Nome</span><input type="text" name="first_name" class="sd-input" value="' + esc(reg.first_name || '') + '"></label>' +
@@ -4288,6 +4318,10 @@
 			'<div class="sd-form-row sd-form-row-2col">' +
 				'<label><span>Email</span><input type="email" name="email" class="sd-input" value="' + esc(reg.email || '') + '"></label>' +
 				'<label><span>Tariffa</span><select name="price_id" class="sd-select">' + priceOptions + '</select></label>' +
+			'</div>' +
+			'<div class="sd-form-row sd-form-row-2col">' +
+				'<label><span>Stato iscrizione</span><select name="status" class="sd-select">' + regStatusOpts + '</select></label>' +
+				'<label><span>Stato pagamento</span><select name="payment_status" class="sd-select">' + payStatusOpts + '</select></label>' +
 			'</div>';
 		$('.sd-reg-edit-modal .sd-reg-edit-base').html(baseHtml);
 
@@ -4406,6 +4440,8 @@
 			last_name: $form.find('input[name="last_name"]').val() || '',
 			email: $form.find('input[name="email"]').val() || '',
 			price_id: parseInt($form.find('select[name="price_id"]').val() || 0, 10),
+			status: $form.find('select[name="status"]').val() || '',
+			payment_status: $form.find('select[name="payment_status"]').val() || '',
 		};
 
 		var rd = {};
@@ -4438,7 +4474,8 @@
 			}
 			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Registrazione aggiornata.');
 			closeRegistrationEditModal();
-			loadRegistrations();
+			if (typeof loadRegistrations === 'function') { loadRegistrations(); }
+			if (typeof loadRegDashboard === 'function') { loadRegDashboard(); }
 		}).fail(function () {
 			$save.prop('disabled', false).text('Salva');
 			showMessage('error', sdActivityAdmin.strings.error);
