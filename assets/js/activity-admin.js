@@ -4200,6 +4200,36 @@
 					var iframeRect = iframeEl && typeof iframeEl.getBoundingClientRect === 'function'
 						? iframeEl.getBoundingClientRect()
 						: null;
+					var iframeDoc = null;
+					var iframeBodyDisplay = '';
+					var iframeBodyVisibility = '';
+					var iframeBodyColor = '';
+					var iframeBodyFontSize = '';
+					var iframeBodyOffsetH = -1;
+					var iframeHeadLinks = -1;
+					var iframeReadyState = '';
+					try {
+						iframeDoc = iframeEl ? (iframeEl.contentDocument || (iframeEl.contentWindow && iframeEl.contentWindow.document)) : null;
+						if (iframeDoc) {
+							iframeReadyState = String(iframeDoc.readyState || '');
+							var headLinks = iframeDoc.head ? iframeDoc.head.querySelectorAll('link[rel="stylesheet"], style') : null;
+							iframeHeadLinks = headLinks ? headLinks.length : 0;
+							var ifBody = iframeDoc.body;
+							if (ifBody) {
+								iframeBodyOffsetH = ifBody.offsetHeight || 0;
+								var win = iframeEl.contentWindow;
+								if (win && typeof win.getComputedStyle === 'function') {
+									var cs = win.getComputedStyle(ifBody);
+									iframeBodyDisplay = String(cs.display || '');
+									iframeBodyVisibility = String(cs.visibility || '');
+									iframeBodyColor = String(cs.color || '');
+									iframeBodyFontSize = String(cs.fontSize || '');
+								}
+							}
+						}
+					} catch (probeErr) {
+						iframeBodyDisplay = '[probe-error]';
+					}
 					debugDescriptionLog('apply:already-matched', {
 						tryIndex: tries,
 						targetLen: normalized.length,
@@ -4211,6 +4241,13 @@
 						iframeWidth: iframeRect ? Math.round(iframeRect.width) : -1,
 						iframeHeight: iframeRect ? Math.round(iframeRect.height) : -1,
 						iframeVisible: iframeEl ? !!(iframeEl.offsetWidth || iframeEl.offsetHeight) : false,
+						ifReady: iframeReadyState,
+						ifHeadCss: iframeHeadLinks,
+						ifBodyDisp: iframeBodyDisplay,
+						ifBodyVis: iframeBodyVisibility,
+						ifBodyColor: iframeBodyColor,
+						ifBodyFont: iframeBodyFontSize,
+						ifBodyOffH: iframeBodyOffsetH,
 						bodySnippet: body ? String(body.innerHTML || '').slice(0, 60) : '',
 					});
 					if (typeof editor.setMode === 'function') {
