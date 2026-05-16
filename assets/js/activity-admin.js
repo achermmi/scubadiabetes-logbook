@@ -473,6 +473,12 @@
 				preventActivityDescriptionAutoFocusAndScrollTop();
 			}, 300);
 
+			// Workaround: at first open the TinyMCE model body is detached from the visible iframe.
+			// Force the same html->tmce switch the user would do manually to rebind editor <-> live iframe.
+			window.setTimeout(function () {
+				forceActivityDescriptionEditorRebind(activityDescription);
+			}, 350);
+
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
 
@@ -4490,6 +4496,47 @@
 
 		$('#sd-activity-description-html').addClass('wp-switch-editor switch-html');
 		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
+	}
+
+	function forceActivityDescriptionEditorRebind(htmlContent) {
+		var sw = window.switchEditors;
+		if (!sw || typeof sw.go !== 'function') {
+			debugDescriptionLog('rebind:no-switchEditors', {});
+			return;
+		}
+		var $textarea = $('#sd-activity-description');
+		if (!$textarea.length) {
+			return;
+		}
+		var sourceHtml = String(
+			(typeof htmlContent === 'string' && htmlContent)
+			|| state.descriptionPendingValue
+			|| state.descriptionLastKnownHtml
+			|| $textarea.val()
+			|| ''
+		);
+		debugDescriptionLog('rebind:start', { sourceLen: sourceHtml.length });
+		try {
+			// Push the source HTML into the textarea so html->tmce conversion uses the right content.
+			$textarea.val(sourceHtml);
+			sw.go('sd-activity-description', 'html');
+		} catch (toHtmlErr) {
+			debugDescriptionLog('rebind:to-html-error', { error: String(toHtmlErr && toHtmlErr.message ? toHtmlErr.message : toHtmlErr) });
+		}
+		window.setTimeout(function () {
+			try {
+				$('#sd-activity-description').val(sourceHtml);
+				sw.go('sd-activity-description', 'tmce');
+				var ed = getActivityDescriptionEditor();
+				if (ed && typeof ed.setContent === 'function') {
+					try { ed.setContent(sourceHtml); ed.save(); } catch (setErr) {}
+				}
+				forceActivityDescriptionTmceUiState();
+				debugDescriptionLog('rebind:to-tmce-done', { sourceLen: sourceHtml.length });
+			} catch (toTmceErr) {
+				debugDescriptionLog('rebind:to-tmce-error', { error: String(toTmceErr && toTmceErr.message ? toTmceErr.message : toTmceErr) });
+			}
+		}, 60);
 	}
 
 	function maybeForceActivityDescriptionHardRecovery(reason) {
