@@ -478,6 +478,25 @@
 			window.setTimeout(function () {
 				forceActivityDescriptionEditorRebind(activityDescription);
 			}, 350);
+			// Second rebind attempt for cases where the editor is re-rendered later (e.g. after
+			// section move reloads the activity) and the first rebind happens too early.
+			window.setTimeout(function () {
+				try {
+					var ed = (typeof getActivityDescriptionEditor === 'function') ? getActivityDescriptionEditor() : null;
+					var $ifr = $('#wp-sd-activity-description-wrap .wp-editor-container iframe');
+					var liveChildCount = 0;
+					if ($ifr.length && $ifr[0] && $ifr[0].contentDocument && $ifr[0].contentDocument.body) {
+						liveChildCount = $ifr[0].contentDocument.body.children.length;
+					}
+					var modelLen = (ed && typeof ed.getContent === 'function') ? String(ed.getContent({ format: 'html' }) || '').length : 0;
+					debugDescriptionLog('rebind:retry-check', { liveChildCount: liveChildCount, modelLen: modelLen, sourceLen: String(activityDescription || '').length });
+					if (!liveChildCount && String(activityDescription || '').length > 0) {
+						forceActivityDescriptionEditorRebind(activityDescription);
+					}
+				} catch (retryErr) {
+					debugDescriptionLog('rebind:retry-error', { error: String(retryErr && retryErr.message ? retryErr.message : retryErr) });
+				}
+			}, 900);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -4557,6 +4576,30 @@
 					}
 				}
 				try { forceActivityDescriptionTmceUiState(); } catch (uiErr) {}
+				// Defocus the editor so the page does not jump to the Descrizione field, then bring
+				// the user back to the top of the page.
+				try {
+					if (ed) {
+						if (typeof ed.getWin === 'function') {
+							var win = ed.getWin();
+							if (win && typeof win.blur === 'function') { win.blur(); }
+						}
+						if (typeof ed.getContainer === 'function') {
+							var $iframe = $(ed.getContainer()).find('iframe');
+							if ($iframe.length && $iframe[0] && typeof $iframe[0].blur === 'function') {
+								$iframe[0].blur();
+							}
+						}
+					}
+					if (document.activeElement && typeof document.activeElement.blur === 'function') {
+						document.activeElement.blur();
+					}
+				} catch (blurAfterErr) {}
+				try {
+					if (typeof preventActivityDescriptionAutoFocusAndScrollTop === 'function') {
+						preventActivityDescriptionAutoFocusAndScrollTop();
+					}
+				} catch (scrollErr) {}
 				debugDescriptionLog('rebind:to-tmce-done', {
 					sourceLen: sourceHtml.length,
 					switchThrew: !!switchErr,
