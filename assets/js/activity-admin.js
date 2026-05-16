@@ -15,6 +15,7 @@
 		descriptionPendingValue: null,
 		descriptionLastKnownHtml: '',
 		descriptionRefreshTimer: null,
+		descriptionHardRecoveryKey: '',
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -361,6 +362,7 @@
 			return;
 		}
 
+		state.descriptionHardRecoveryKey = '';
 		debugDescriptionLog('editActivity:start', { activityId: activityId });
 
 		$.post(sdActivityAdmin.ajaxUrl, {
@@ -3892,6 +3894,7 @@
 		}
 
 		state.selectedActivityId = 0;
+		state.descriptionHardRecoveryKey = '';
 		state.currentFields = [];
 		state.currentActivity = null;
 		$('#sd-activity-id').val('0');
@@ -4308,6 +4311,57 @@
 		applyActivityDescriptionContentToNativeEditor(source, true);
 	}
 
+	function maybeForceActivityDescriptionHardRecovery(reason) {
+		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+		var normalizedSource = normalizeActivityDescriptionHtml(source);
+		if (!normalizedSource) {
+			return false;
+		}
+
+		var editor = getActivityDescriptionEditor();
+		if (!isActivityDescriptionEditorHealthy(editor)) {
+			return false;
+		}
+
+		var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+		var bodyHtml = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
+		if (bodyHtml && bodyHtml.length > 0) {
+			return false;
+		}
+
+		var activityId = parseInt(state.selectedActivityId, 10) || 0;
+		var guardKey = String(activityId) + ':' + String(normalizedSource.length);
+		if (state.descriptionHardRecoveryKey === guardKey) {
+			debugDescriptionLog('hard-recovery:guard-hit', {
+				reason: reason,
+				guardKey: guardKey,
+			});
+			return false;
+		}
+
+		state.descriptionHardRecoveryKey = guardKey;
+		debugDescriptionLog('hard-recovery:start', {
+			reason: reason,
+			guardKey: guardKey,
+			sourceLen: normalizedSource.length,
+		});
+
+		destroyActivityDescriptionEditor();
+		window.setTimeout(function () {
+			initActivityDescriptionEditor();
+			window.setTimeout(function () {
+				applyActivityDescriptionContentToNativeEditor(normalizedSource, true);
+				ensureActivityDescriptionEditable();
+				debugDescriptionLog('hard-recovery:applied', {
+					reason: reason,
+					guardKey: guardKey,
+				});
+			}, 140);
+		}, 80);
+
+		return true;
+	}
+
 	function refreshActivityDescriptionVisualEditor() {
 		debugDescriptionLog('refresh:visual-only', {
 			sourceLen: String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '').length,
@@ -4324,6 +4378,9 @@
 			} catch (err) {
 				// Ignore repaint errors.
 			}
+			window.setTimeout(function () {
+				maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
+			}, 120);
 		}, 40);
 	}
 
