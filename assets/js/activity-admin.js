@@ -359,6 +359,28 @@
 		}
 	}
 
+	function preventActivityDescriptionAutoFocusAndScrollTop() {
+		var active = document.activeElement;
+		if (active) {
+			var $active = $(active);
+			if (
+				$active.is('#sd-activity-description')
+				|| $active.closest('#wp-sd-activity-description-wrap').length
+			) {
+				try {
+					active.blur();
+				} catch (blurErr) {
+					// Ignore blur errors.
+				}
+			}
+		}
+
+		var $target = $('#sd-activity-form');
+		if ($target.length) {
+			$('html, body').stop(true).animate({ scrollTop: Math.max(0, $target.offset().top - 24) }, 180);
+		}
+	}
+
 	function editActivity(activityId) {
 		if (!activityId) {
 			return;
@@ -416,6 +438,9 @@
 			populateActivitySelects();
 			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
 			debugDescriptionLog('editActivity:after-schedule-refresh', { delayMs: 140, enforceContent: true });
+			window.setTimeout(function () {
+				preventActivityDescriptionAutoFocusAndScrollTop();
+			}, 90);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -4324,7 +4349,7 @@
 		$wrap.find('.quicktags-toolbar').hide();
 		$wrap.find('.mce-tinymce, .wp-editor-container iframe').show();
 
-		$('#sd-activity-description-html').removeClass('wp-switch-editor switch-html');
+		$('#sd-activity-description-html').addClass('wp-switch-editor switch-html');
 		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
 	}
 
@@ -4492,6 +4517,7 @@
 				if (!hardRecovered) {
 					maybeForceActivityDescriptionModeFlip('refresh-visual-only');
 				}
+				preventActivityDescriptionAutoFocusAndScrollTop();
 			}, 120);
 		}, 40);
 	}
