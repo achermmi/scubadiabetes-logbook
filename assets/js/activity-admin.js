@@ -1072,6 +1072,16 @@
 		return html;
 	}
 
+	function compareActivityDescriptionHtml(left, right) {
+		var normalizedLeft = normalizeActivityDescriptionHtml(left || '');
+		var normalizedRight = normalizeActivityDescriptionHtml(right || '');
+
+		normalizedLeft = normalizedLeft.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+		normalizedRight = normalizedRight.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+
+		return normalizedLeft === normalizedRight;
+	}
+
 	function getFieldContentEditor() {
 		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
 			return null;
@@ -4074,6 +4084,32 @@
 			}
 
 			try {
+				var currentBefore = '';
+				var bodyBefore = '';
+				var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+				try {
+					currentBefore = normalizeActivityDescriptionHtml(editor.getContent() || '');
+				} catch (readContentErr) {
+					currentBefore = '';
+				}
+				bodyBefore = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
+
+				if (compareActivityDescriptionHtml(currentBefore, normalized) || compareActivityDescriptionHtml(bodyBefore, normalized)) {
+					debugDescriptionLog('apply:already-matched', {
+						tryIndex: tries,
+						targetLen: normalized.length,
+						currentLen: currentBefore.length,
+						bodyLen: bodyBefore.length,
+					});
+					if (body) {
+						body.setAttribute('contenteditable', 'true');
+						body.style.pointerEvents = 'auto';
+						body.style.userSelect = 'text';
+						body.style.cursor = 'text';
+					}
+					return;
+				}
+
 				editor.setContent(normalized || '');
 				editor.save();
 				if (typeof editor.setMode === 'function') {
@@ -4086,7 +4122,7 @@
 					editor.execCommand('mceRepaint');
 				}
 
-				var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+				body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
 				if (body) {
 					body.setAttribute('contenteditable', 'true');
 					body.style.pointerEvents = 'auto';
@@ -4107,7 +4143,7 @@
 						bodyMatch: bodyHtml === normalized,
 					});
 				}
-				if ((current !== normalized || bodyHtml !== normalized) && tries < maxTries) {
+				if (!compareActivityDescriptionHtml(current, normalized) && !compareActivityDescriptionHtml(bodyHtml, normalized) && tries < maxTries) {
 					window.setTimeout(syncVisual, 80);
 				}
 			} catch (err3) {
@@ -4222,8 +4258,22 @@
 	}
 
 	function refreshActivityDescriptionVisualEditor() {
-		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
-		applyActivityDescriptionContentToNativeEditor(source, true);
+		debugDescriptionLog('refresh:visual-only', {
+			sourceLen: String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '').length,
+		});
+		ensureActivityDescriptionVisualTabActive();
+		ensureActivityDescriptionEditable();
+		window.setTimeout(function () {
+			var editor = getActivityDescriptionEditor();
+			if (!editor || typeof editor.execCommand !== 'function') {
+				return;
+			}
+			try {
+				editor.execCommand('mceRepaint');
+			} catch (err) {
+				// Ignore repaint errors.
+			}
+		}, 40);
 	}
 
 	function scheduleActivityDescriptionRefresh(expectedHtml, delayMs, enforceContent) {
