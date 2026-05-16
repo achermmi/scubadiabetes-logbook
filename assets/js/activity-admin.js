@@ -4440,6 +4440,22 @@
 			opacity: '1'
 		});
 
+		// DEBUG: inject a high-contrast stylesheet inside the TinyMCE iframe to verify if the iframe is actually visible.
+		try {
+			var iframe = $wrap.find('.wp-editor-container iframe').get(0);
+			if (iframe) {
+				var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+				if (doc && doc.head && !doc.getElementById('sd-desc-debug-style')) {
+					var styleEl = doc.createElement('style');
+					styleEl.id = 'sd-desc-debug-style';
+					styleEl.textContent = 'html,body{background:#ffff00 !important;color:#cc0000 !important;font-size:18px !important;line-height:1.5 !important;margin:0 !important;padding:8px !important;}p{margin:0 0 8px 0 !important;}';
+					doc.head.appendChild(styleEl);
+				}
+			}
+		} catch (debugStyleErr) {
+			// Ignore cross-origin or doc-not-ready errors.
+		}
+
 		$('#sd-activity-description-html').addClass('wp-switch-editor switch-html');
 		$('#sd-activity-description-tmce').addClass('wp-switch-editor switch-tmce');
 	}
