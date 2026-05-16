@@ -4315,26 +4315,33 @@
 		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
 		var normalizedSource = normalizeActivityDescriptionHtml(source);
 		if (!normalizedSource) {
+			debugDescriptionLog('hard-recovery:skip-empty-source', {
+				reason: reason,
+			});
 			return false;
 		}
 
 		var editor = getActivityDescriptionEditor();
-		if (!isActivityDescriptionEditorHealthy(editor)) {
-			return false;
-		}
-
-		var body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+		var healthy = isActivityDescriptionEditorHealthy(editor);
+		var body = healthy && typeof editor.getBody === 'function' ? editor.getBody() : null;
 		var bodyHtml = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
-		if (bodyHtml && bodyHtml.length > 0) {
-			return false;
-		}
 
 		var activityId = parseInt(state.selectedActivityId, 10) || 0;
-		var guardKey = String(activityId) + ':' + String(normalizedSource.length);
+		var recoveryMode = healthy ? 'empty-body' : 'missing-editor';
+		if (healthy && bodyHtml && bodyHtml.length > 0) {
+			debugDescriptionLog('hard-recovery:skip-body-not-empty', {
+				reason: reason,
+				bodyLen: bodyHtml.length,
+			});
+			return false;
+		}
+
+		var guardKey = String(activityId) + ':' + String(normalizedSource.length) + ':' + recoveryMode;
 		if (state.descriptionHardRecoveryKey === guardKey) {
 			debugDescriptionLog('hard-recovery:guard-hit', {
 				reason: reason,
 				guardKey: guardKey,
+				recoveryMode: recoveryMode,
 			});
 			return false;
 		}
@@ -4344,9 +4351,12 @@
 			reason: reason,
 			guardKey: guardKey,
 			sourceLen: normalizedSource.length,
+			recoveryMode: recoveryMode,
 		});
 
-		destroyActivityDescriptionEditor();
+		if (editor) {
+			destroyActivityDescriptionEditor();
+		}
 		window.setTimeout(function () {
 			initActivityDescriptionEditor();
 			window.setTimeout(function () {
@@ -4370,13 +4380,12 @@
 		ensureActivityDescriptionEditable();
 		window.setTimeout(function () {
 			var editor = getActivityDescriptionEditor();
-			if (!editor || typeof editor.execCommand !== 'function') {
-				return;
-			}
-			try {
-				editor.execCommand('mceRepaint');
-			} catch (err) {
-				// Ignore repaint errors.
+			if (editor && typeof editor.execCommand === 'function') {
+				try {
+					editor.execCommand('mceRepaint');
+				} catch (err) {
+					// Ignore repaint errors.
+				}
 			}
 			window.setTimeout(function () {
 				maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
