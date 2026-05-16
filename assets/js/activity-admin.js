@@ -375,9 +375,14 @@
 			}
 		}
 
-		var $target = $('#sd-activity-form');
-		if ($target.length) {
-			$('html, body').stop(true).animate({ scrollTop: Math.max(0, $target.offset().top - 24) }, 180);
+		try {
+			if (typeof window.scrollTo === 'function') {
+				window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+			} else {
+				window.scrollTo(0, 0);
+			}
+		} catch (scrollErr) {
+			$('html, body').stop(true).animate({ scrollTop: 0 }, 0);
 		}
 	}
 
@@ -436,11 +441,15 @@
 			applyVirtualSectionMetaUI();
 			resetFieldForm(false);
 			populateActivitySelects();
+			preventActivityDescriptionAutoFocusAndScrollTop();
 			scheduleActivityDescriptionRefresh(activityDescription, 140, true);
 			debugDescriptionLog('editActivity:after-schedule-refresh', { delayMs: 140, enforceContent: true });
 			window.setTimeout(function () {
 				preventActivityDescriptionAutoFocusAndScrollTop();
 			}, 90);
+			window.setTimeout(function () {
+				preventActivityDescriptionAutoFocusAndScrollTop();
+			}, 300);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -4513,11 +4522,7 @@
 				}
 			}
 			window.setTimeout(function () {
-				var hardRecovered = maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
-				if (!hardRecovered) {
-					maybeForceActivityDescriptionModeFlip('refresh-visual-only');
-				}
-				preventActivityDescriptionAutoFocusAndScrollTop();
+				maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
 			}, 120);
 		}, 40);
 	}
