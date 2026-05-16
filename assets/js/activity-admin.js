@@ -4524,18 +4524,44 @@
 			debugDescriptionLog('rebind:to-html-error', { error: String(toHtmlErr && toHtmlErr.message ? toHtmlErr.message : toHtmlErr) });
 		}
 		window.setTimeout(function () {
+			// Defocus any active element to avoid TinyMCE selection restore on null range (setBaseAndExtent).
+			try {
+				if (document.activeElement && typeof document.activeElement.blur === 'function') {
+					document.activeElement.blur();
+				}
+			} catch (blurErr) {}
 			try {
 				$('#sd-activity-description').val(sourceHtml);
+			} catch (valErr) {}
+			var switchErr = null;
+			try {
 				sw.go('sd-activity-description', 'tmce');
+			} catch (toTmceErr) {
+				switchErr = toTmceErr;
+				debugDescriptionLog('rebind:to-tmce-switch-error', {
+					error: String(toTmceErr && toTmceErr.message ? toTmceErr.message : toTmceErr),
+				});
+			}
+			// Even if the switch threw (e.g. selection restore failed), the editor is usually now bound
+			// to the live iframe — push content directly.
+			window.setTimeout(function () {
 				var ed = getActivityDescriptionEditor();
 				if (ed && typeof ed.setContent === 'function') {
-					try { ed.setContent(sourceHtml); ed.save(); } catch (setErr) {}
+					try {
+						ed.setContent(sourceHtml);
+						if (typeof ed.save === 'function') { ed.save(); }
+					} catch (setErr) {
+						debugDescriptionLog('rebind:setContent-error', {
+							error: String(setErr && setErr.message ? setErr.message : setErr),
+						});
+					}
 				}
-				forceActivityDescriptionTmceUiState();
-				debugDescriptionLog('rebind:to-tmce-done', { sourceLen: sourceHtml.length });
-			} catch (toTmceErr) {
-				debugDescriptionLog('rebind:to-tmce-error', { error: String(toTmceErr && toTmceErr.message ? toTmceErr.message : toTmceErr) });
-			}
+				try { forceActivityDescriptionTmceUiState(); } catch (uiErr) {}
+				debugDescriptionLog('rebind:to-tmce-done', {
+					sourceLen: sourceHtml.length,
+					switchThrew: !!switchErr,
+				});
+			}, 30);
 		}, 60);
 	}
 
