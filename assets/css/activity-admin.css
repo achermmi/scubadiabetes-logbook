@@ -66,27 +66,36 @@
 }
 
 .sd-admin-tab {
-	border: 1px solid #cbd5e1;
-	background: #fff;
-	color: #1f2937;
-	padding: 0.65rem 1rem;
-	border-radius: 10px;
-	font-size: 0.92rem;
-	font-weight: 700;
+	border: 1px solid #cbd5e1 !important;
+	background: #fff !important;
+	color: #1f2937 !important;
+	padding: 0.65rem 1rem !important;
+	border-radius: 10px !important;
+	font-size: 0.92rem !important;
+	font-weight: 700 !important;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.sd-admin-tab:hover {
-	border-color: #7aa8d8;
-	background: #f7fbff;
+.sd-admin-tab:hover:not(.is-active),
+.sd-admin-tab:focus:not(.is-active) {
+	border-color: #0055a5 !important;
+	background: #e0edfa !important;
+	color: #0055a5 !important;
+	box-shadow: 0 4px 12px rgba(0, 85, 165, 0.18) !important;
 }
 
 .sd-admin-tab.is-active {
-	background: #0055a5;
-	border-color: #0055a5;
-	color: #fff;
-	box-shadow: 0 8px 20px rgba(0, 85, 165, 0.25);
+	background: #0055a5 !important;
+	border-color: #0055a5 !important;
+	color: #fff !important;
+	box-shadow: 0 8px 20px rgba(0, 85, 165, 0.25) !important;
+}
+
+.sd-admin-tab.is-active:hover {
+	background: #00407e !important;
+	border-color: #00407e !important;
+	color: #fff !important;
 }
 
 .sd-admin-panel {
@@ -1046,22 +1055,30 @@ padding: 1rem;
 	width: auto !important;
 	min-width: 110px !important;
 	max-width: none !important;
+	height: 42px !important;
+	min-height: 42px !important;
 	white-space: nowrap !important;
 	overflow: visible !important;
 	text-overflow: clip !important;
-	padding: 0.6rem 1.1rem !important;
+	padding: 0 1.1rem !important;
+	margin: 0 !important;
 	font-size: 0.86rem !important;
 	font-weight: 700 !important;
-	line-height: 1.2 !important;
+	line-height: 1 !important;
 	border-radius: 8px !important;
 	border: 1.5px solid transparent !important;
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
+	vertical-align: middle !important;
 	transform: none !important;
 	position: static !important;
 	float: none !important;
 	box-sizing: border-box !important;
+}
+.sd-modal-footer .sd-btn:hover,
+.sd-modal-footer button.sd-btn:hover {
+	transform: none !important;
 }
 .sd-modal-footer .sd-btn-primary {
 	background: #0055a5 !important;
