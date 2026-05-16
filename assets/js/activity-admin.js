@@ -16,6 +16,7 @@
 		descriptionLastKnownHtml: '',
 		descriptionRefreshTimer: null,
 		descriptionHardRecoveryKey: '',
+		descriptionModeFlipKey: '',
 	};
 
 	var visualDescriptionEditorEnabled = true;
@@ -363,6 +364,7 @@
 		}
 
 		state.descriptionHardRecoveryKey = '';
+		state.descriptionModeFlipKey = '';
 		debugDescriptionLog('editActivity:start', { activityId: activityId });
 
 		$.post(sdActivityAdmin.ajaxUrl, {
@@ -3895,6 +3897,7 @@
 
 		state.selectedActivityId = 0;
 		state.descriptionHardRecoveryKey = '';
+		state.descriptionModeFlipKey = '';
 		state.currentFields = [];
 		state.currentActivity = null;
 		$('#sd-activity-id').val('0');
@@ -4372,6 +4375,67 @@
 		return true;
 	}
 
+	function maybeForceActivityDescriptionModeFlip(reason) {
+		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+		var normalizedSource = normalizeActivityDescriptionHtml(source);
+		if (!normalizedSource) {
+			debugDescriptionLog('mode-flip:skip-empty-source', {
+				reason: reason,
+			});
+			return false;
+		}
+
+		var activityId = parseInt(state.selectedActivityId, 10) || 0;
+		var guardKey = String(activityId) + ':' + String(normalizedSource.length);
+		if (state.descriptionModeFlipKey === guardKey) {
+			debugDescriptionLog('mode-flip:guard-hit', {
+				reason: reason,
+				guardKey: guardKey,
+			});
+			return false;
+		}
+
+		if (!window.switchEditors || typeof window.switchEditors.go !== 'function') {
+			debugDescriptionLog('mode-flip:skip-no-switch-editors', {
+				reason: reason,
+				guardKey: guardKey,
+			});
+			return false;
+		}
+
+		state.descriptionModeFlipKey = guardKey;
+		debugDescriptionLog('mode-flip:start', {
+			reason: reason,
+			guardKey: guardKey,
+			sourceLen: normalizedSource.length,
+		});
+
+		try {
+			window.switchEditors.go('sd-activity-description', 'html');
+		} catch (errHtml) {
+			// Continue to tmce switch attempt.
+		}
+
+		window.setTimeout(function () {
+			try {
+				window.switchEditors.go('sd-activity-description', 'tmce');
+			} catch (errTmce) {
+				// Continue with content/apply fallback.
+			}
+
+			window.setTimeout(function () {
+				applyActivityDescriptionContentToNativeEditor(normalizedSource, true);
+				ensureActivityDescriptionEditable();
+				debugDescriptionLog('mode-flip:applied', {
+					reason: reason,
+					guardKey: guardKey,
+				});
+			}, 120);
+		}, 90);
+
+		return true;
+	}
+
 	function refreshActivityDescriptionVisualEditor() {
 		debugDescriptionLog('refresh:visual-only', {
 			sourceLen: String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '').length,
@@ -4388,7 +4452,10 @@
 				}
 			}
 			window.setTimeout(function () {
-				maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
+				var hardRecovered = maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
+				if (!hardRecovered) {
+					maybeForceActivityDescriptionModeFlip('refresh-visual-only');
+				}
 			}, 120);
 		}, 40);
 	}
