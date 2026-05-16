@@ -4116,14 +4116,42 @@
 					currentBefore = '';
 				}
 				bodyBefore = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
+				var contentMatches = compareActivityDescriptionHtml(currentBefore, normalized);
+				var bodyMatches = compareActivityDescriptionHtml(bodyBefore, normalized);
 
-				if (compareActivityDescriptionHtml(currentBefore, normalized) || compareActivityDescriptionHtml(bodyBefore, normalized)) {
+				// TinyMCE can report content in the model while iframe body is still empty on first open.
+				// In that case, do not exit early: force a load/setContent pass.
+				if (contentMatches && !bodyMatches && normalized) {
+					try {
+						if (typeof editor.load === 'function') {
+							editor.load();
+						}
+					} catch (loadErr) {
+						// Ignore and continue with setContent path below.
+					}
+					body = (typeof editor.getBody === 'function') ? editor.getBody() : null;
+					bodyBefore = body ? normalizeActivityDescriptionHtml(body.innerHTML || '') : '';
+					bodyMatches = compareActivityDescriptionHtml(bodyBefore, normalized);
+				}
+
+				if (bodyMatches || (contentMatches && bodyBefore)) {
 					debugDescriptionLog('apply:already-matched', {
 						tryIndex: tries,
 						targetLen: normalized.length,
 						currentLen: currentBefore.length,
 						bodyLen: bodyBefore.length,
+						contentMatches: contentMatches,
+						bodyMatches: bodyMatches,
 					});
+					if (typeof editor.setMode === 'function') {
+						editor.setMode('design');
+					}
+					if (typeof editor.show === 'function') {
+						editor.show();
+					}
+					if (typeof editor.execCommand === 'function') {
+						editor.execCommand('mceRepaint');
+					}
 					if (body) {
 						body.setAttribute('contenteditable', 'true');
 						body.style.pointerEvents = 'auto';
