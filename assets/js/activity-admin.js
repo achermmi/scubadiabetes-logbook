@@ -2376,14 +2376,22 @@
 					ui.placeholder.height(ui.item.outerHeight());
 				},
 				update: function () {
-					var keys = [];
+					var baseKeys = [];
+					var sectionKeys = [];
 					$activityBlocksList.children('li[data-activity-block-key]').each(function () {
 						var key = String($(this).data('activityBlockKey') || '');
-						if (key) {
-							keys.push(key);
+						if (!key) { return; }
+						if (key.indexOf('section:') === 0) {
+							sectionKeys.push(key.replace(/^section:/, ''));
+						} else {
+							baseKeys.push(key);
 						}
 					});
-					saveActivityBlocksOrderByKeys(keys);
+					if (sectionKeys.length) {
+						saveActivityDataSectionsOrderByKeys(sectionKeys);
+					} else if (baseKeys.length) {
+						saveActivityBlocksOrderByKeys(baseKeys);
+					}
 				},
 			});
 		}
@@ -3071,11 +3079,20 @@
 		reordered[idx] = reordered[targetIdx];
 		reordered[targetIdx] = temp;
 
+		persistActivityDataSectionsOrder(reordered);
+	}
+
+	// Persist the reordered activity-data sections (used by both move-arrow buttons and DnD).
+	function persistActivityDataSectionsOrder(reordered) {
+		if (!Array.isArray(reordered) || !reordered.length) {
+			return;
+		}
+
 		var requests = [];
 		var meta = getSectionMeta();
 		var metaChanged = false;
 		meta.layout_order = reordered.map(function (section) {
-			return String(section.key || '').trim();
+			return String((section && section.key) || '').trim();
 		}).filter(function (key) {
 			return !!key;
 		});
@@ -3124,6 +3141,36 @@
 			}
 			showMessage('error', 'Errore nello spostamento sezione.', 'top');
 		});
+	}
+
+	// Save activity-data sections order from a list of section keys (used by DnD).
+	function saveActivityDataSectionsOrderByKeys(sectionKeys) {
+		if (!state.selectedActivityId || !Array.isArray(sectionKeys) || !sectionKeys.length) {
+			return;
+		}
+
+		var current = getActivityDataSectionsSummary();
+		var byKey = {};
+		current.forEach(function (section) {
+			byKey[String(section.key)] = section;
+		});
+
+		var reordered = [];
+		var seen = {};
+		sectionKeys.forEach(function (key) {
+			var k = String(key || '').trim();
+			if (!k || seen[k] || !byKey[k]) { return; }
+			seen[k] = true;
+			reordered.push(byKey[k]);
+		});
+		// Append any sections missing from the DnD payload to keep them stable at the end.
+		current.forEach(function (section) {
+			if (!seen[String(section.key)]) {
+				reordered.push(section);
+			}
+		});
+
+		persistActivityDataSectionsOrder(reordered);
 	}
 
 	function applyVirtualSectionMetaUI() {
