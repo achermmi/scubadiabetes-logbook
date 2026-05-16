@@ -1300,7 +1300,13 @@ white-space: normal;
 
 .sd-renewals-action-cell {
 text-align: right;
-white-space: nowrap;
+white-space: normal;
+}
+
+.sd-renewals-action-cell .sd-btn {
+display: inline-block;
+margin: 2px 0 2px 4px;
+vertical-align: middle;
 }
 
 .sd-renewal-status {
