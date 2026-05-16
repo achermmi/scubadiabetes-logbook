@@ -4313,10 +4313,14 @@
 		if (!allKeys.length) {
 			dynHtml = '<p class="sd-field-note">Nessun campo dinamico.</p>';
 		} else {
+			// Tipi di campo solo-informativi (non input): non hanno senso nella modifica
+			var INFO_TYPES = { content: 1, paragraph: 1, html: 1, heading: 1, info: 1, separator: 1, divider: 1 };
 			allKeys.forEach(function (key) {
 				var def = fieldsByName[key] || null;
-				var label = regFieldLabel(key, def);
 				var type = def ? String(def.field_type || 'text') : 'text';
+				// Salta campi puramente informativi
+				if (INFO_TYPES[type]) { return; }
+				var label = regFieldLabel(key, def);
 				// Forza tipo specifico per chiavi note senza definizione
 				if (!def) {
 					if (key === 'birth_date') { type = 'date'; }

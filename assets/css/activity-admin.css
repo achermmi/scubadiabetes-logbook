@@ -1044,19 +1044,38 @@ padding: 1rem;
 .sd-modal-footer button.sd-btn {
 	flex: 0 0 auto !important;
 	width: auto !important;
-	min-width: 0 !important;
+	min-width: 110px !important;
 	max-width: none !important;
 	white-space: nowrap !important;
 	overflow: visible !important;
 	text-overflow: clip !important;
-	padding: 0.5rem 1rem !important;
+	padding: 0.6rem 1.1rem !important;
+	font-size: 0.86rem !important;
+	font-weight: 700 !important;
+	line-height: 1.2 !important;
+	border-radius: 8px !important;
+	border: 1.5px solid transparent !important;
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	line-height: 1.2 !important;
 	transform: none !important;
 	position: static !important;
 	float: none !important;
+	box-sizing: border-box !important;
+}
+.sd-modal-footer .sd-btn-primary {
+	background: #0055a5 !important;
+	color: #fff !important;
+	border-color: #0055a5 !important;
+}
+.sd-modal-footer .sd-btn-outline {
+	background: #fff !important;
+	color: #0055a5 !important;
+	border-color: #0055a5 !important;
+}
+.sd-modal-footer .sd-btn-outline:hover {
+	background: #0055a5 !important;
+	color: #fff !important;
 }
 .sd-form-row-2col > label { flex: 1; }
 .sd-form-row label, .sd-form-row-stacked { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: #475569; }
