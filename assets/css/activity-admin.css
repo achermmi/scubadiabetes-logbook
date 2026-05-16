@@ -1013,3 +1013,29 @@ body.sd-activity-media-fix-open .media-modal .media-frame-menu .media-menu-item.
 		flex-direction: column;
 	}
 }
+
+/* === Registration Edit Modal === */
+.sd-modal-backdrop {
+position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+z-index: 99999; display: flex; align-items: center; justify-content: center;
+padding: 1rem;
+}
+.sd-modal {
+background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+max-width: 720px; width: 100%; max-height: 90vh; display: flex; flex-direction: column;
+}
+.sd-modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+.sd-modal-header h3 { margin: 0; font-size: 1.1rem; }
+.sd-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; line-height: 1; padding: 0 0.25rem; }
+.sd-modal-close:hover { color: #0f172a; }
+.sd-modal-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.sd-modal-footer { padding: 0.75rem 1.25rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+.sd-reg-edit-loading { text-align: center; padding: 2rem; color: #64748b; }
+.sd-reg-edit-section-title { margin: 1.5rem 0 0.75rem; font-size: 0.95rem; color: #475569; border-top: 1px solid #e2e8f0; padding-top: 1rem; }
+.sd-form-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
+.sd-form-row-2col > label { flex: 1; }
+.sd-form-row label, .sd-form-row-stacked { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: #475569; }
+.sd-form-row-stacked > span { font-weight: 500; }
+.sd-reg-edit-checks { display: flex; flex-direction: column; gap: 0.25rem; }
+.sd-reg-edit-check { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: normal; }

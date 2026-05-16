@@ -318,6 +318,14 @@
 			deleteRegistration(registrationId);
 		});
 
+		$(document).on('click', '.sd-reg-edit', function () {
+			var registrationId = parseInt($(this).data('id'), 10) || 0;
+			if (!registrationId) {
+				return;
+			}
+			openRegistrationEditModal(registrationId);
+		});
+
 		$(document).on('click', '#sd-copy-shortcode-btn', copyShortcodeToClipboard);
 		$(document).on('click', '.sd-copy-shortcode-inline', copyInlineShortcodeToClipboard);
 	}
@@ -4012,6 +4020,7 @@
 			if (canResendInvoice) {
 				actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + parseInt(r.id, 10) + '">Reinvia fattura</button>');
 			}
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-edit" data-id="' + parseInt(r.id, 10) + '" title="Modifica iscrizione">Modifica</button>');
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + parseInt(r.id, 10) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
 			if (minorInfo.isMinor) {
 				minorCount += 1;
@@ -4138,6 +4147,238 @@
 			}
 			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Registrazione eliminata.');
 			loadRegistrations();
+		});
+	}
+
+	// =====================================================================
+	// EDIT REGISTRATION MODAL
+	// =====================================================================
+	var registrationEditCache = {};
+
+	function openRegistrationEditModal(registrationId) {
+		var reg = null;
+		(state.registrations || []).some(function (r) {
+			if (parseInt(r.id, 10) === parseInt(registrationId, 10)) { reg = r; return true; }
+			return false;
+		});
+		if (!reg) { return; }
+
+		buildRegistrationEditModal(reg, null);
+
+		var activityId = parseInt(reg.activity_id, 10) || 0;
+		if (activityId && registrationEditCache[activityId]) {
+			renderRegistrationEditFields(reg, registrationEditCache[activityId]);
+			return;
+		}
+		if (!activityId) {
+			renderRegistrationEditFields(reg, { prices: [], form_fields: [] });
+			return;
+		}
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_activity_get',
+			activity_id: activityId,
+			nonce: sdActivityAdmin.nonce,
+		}, function (resp) {
+			if (resp && resp.success) {
+				registrationEditCache[activityId] = {
+					prices: resp.data.prices || [],
+					form_fields: resp.data.form_fields || [],
+				};
+				renderRegistrationEditFields(reg, registrationEditCache[activityId]);
+			} else {
+				renderRegistrationEditFields(reg, { prices: [], form_fields: [] });
+			}
+		});
+	}
+
+	function buildRegistrationEditModal(reg, activityCtx) {
+		closeRegistrationEditModal();
+		var html = '' +
+			'<div class="sd-modal-backdrop sd-reg-edit-backdrop">' +
+				'<div class="sd-modal sd-reg-edit-modal" role="dialog" aria-modal="true">' +
+					'<div class="sd-modal-header">' +
+						'<h3>Modifica iscrizione #' + parseInt(reg.id, 10) + '</h3>' +
+						'<button type="button" class="sd-modal-close" aria-label="Chiudi">&times;</button>' +
+					'</div>' +
+					'<div class="sd-modal-body">' +
+						'<div class="sd-reg-edit-loading">Caricamento dati attivita\u2026</div>' +
+						'<form id="sd-reg-edit-form" style="display:none;">' +
+							'<input type="hidden" name="registration_id" value="' + parseInt(reg.id, 10) + '">' +
+							'<div class="sd-reg-edit-base"></div>' +
+							'<h4 class="sd-reg-edit-section-title">Dati modulo</h4>' +
+							'<div class="sd-reg-edit-dynamic"></div>' +
+						'</form>' +
+					'</div>' +
+					'<div class="sd-modal-footer">' +
+						'<button type="button" class="sd-btn sd-btn-outline sd-modal-close">Annulla</button>' +
+						'<button type="button" class="sd-btn sd-btn-primary" id="sd-reg-edit-save" disabled>Salva</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+		$('body').append(html);
+		$('.sd-reg-edit-backdrop').on('click', function (e) {
+			if (e.target === this) { closeRegistrationEditModal(); }
+		});
+		$('.sd-reg-edit-backdrop .sd-modal-close').on('click', closeRegistrationEditModal);
+		$(document).on('keydown.sdRegEdit', function (e) {
+			if (e.key === 'Escape') { closeRegistrationEditModal(); }
+		});
+	}
+
+	function closeRegistrationEditModal() {
+		$('.sd-reg-edit-backdrop').remove();
+		$(document).off('keydown.sdRegEdit');
+		$('#sd-reg-edit-save').off('click');
+	}
+
+	function renderRegistrationEditFields(reg, ctx) {
+		var prices = (ctx && Array.isArray(ctx.prices)) ? ctx.prices : [];
+		var formFields = (ctx && Array.isArray(ctx.form_fields)) ? ctx.form_fields : [];
+		var regData = (reg.registration_data && typeof reg.registration_data === 'object') ? reg.registration_data : {};
+
+		// --- Base fields ---
+		var priceOptions = '<option value="0">-- Nessuna --</option>';
+		prices.forEach(function (p) {
+			var sel = (parseInt(p.id, 10) === parseInt(reg.price_id, 10)) ? ' selected' : '';
+			priceOptions += '<option value="' + parseInt(p.id, 10) + '"' + sel + '>'
+				+ esc(p.price_name || ('Tariffa #' + p.id))
+				+ ' (CHF ' + num(p.price_chf) + ' / EUR ' + num(p.price_eur) + ')</option>';
+		});
+		var baseHtml = '' +
+			'<div class="sd-form-row sd-form-row-2col">' +
+				'<label><span>Nome</span><input type="text" name="first_name" class="sd-input" value="' + esc(reg.first_name || '') + '"></label>' +
+				'<label><span>Cognome</span><input type="text" name="last_name" class="sd-input" value="' + esc(reg.last_name || '') + '"></label>' +
+			'</div>' +
+			'<div class="sd-form-row sd-form-row-2col">' +
+				'<label><span>Email</span><input type="email" name="email" class="sd-input" value="' + esc(reg.email || '') + '"></label>' +
+				'<label><span>Tariffa</span><select name="price_id" class="sd-select">' + priceOptions + '</select></label>' +
+			'</div>';
+		$('.sd-reg-edit-modal .sd-reg-edit-base').html(baseHtml);
+
+		// --- Dynamic registration_data fields ---
+		var fieldsByName = {};
+		formFields.forEach(function (f) {
+			var key = String(f.field_name || f.field_key || '').trim();
+			if (key) { fieldsByName[key] = f; }
+		});
+
+		// Union of keys: form_fields + registration_data
+		var allKeys = [];
+		var seen = {};
+		formFields.forEach(function (f) {
+			var key = String(f.field_name || f.field_key || '').trim();
+			if (key && !seen[key]) { seen[key] = true; allKeys.push(key); }
+		});
+		Object.keys(regData).forEach(function (k) {
+			if (!seen[k]) { seen[k] = true; allKeys.push(k); }
+		});
+
+		var dynHtml = '';
+		if (!allKeys.length) {
+			dynHtml = '<p class="sd-field-note">Nessun campo dinamico.</p>';
+		} else {
+			allKeys.forEach(function (key) {
+				var def = fieldsByName[key] || null;
+				var label = def ? (def.field_label || key) : key;
+				var type = def ? String(def.field_type || 'text') : 'text';
+				var value = regData.hasOwnProperty(key) ? regData[key] : '';
+				dynHtml += renderRegistrationEditField(key, label, type, value, def);
+			});
+		}
+		$('.sd-reg-edit-modal .sd-reg-edit-dynamic').html(dynHtml);
+
+		$('.sd-reg-edit-loading').hide();
+		$('#sd-reg-edit-form').show();
+		$('#sd-reg-edit-save').prop('disabled', false).on('click', function () {
+			submitRegistrationEdit(reg.id);
+		});
+	}
+
+	function renderRegistrationEditField(key, label, type, value, def) {
+		var name = 'rd[' + key + ']';
+		var safeLabel = esc(label) + ' <small style="color:#94a3b8;">(' + esc(key) + ')</small>';
+		var inputHtml = '';
+		if (type === 'textarea' || type === 'content') {
+			inputHtml = '<textarea name="' + esc(name) + '" class="sd-input" rows="3">' + esc(String(value == null ? '' : value)) + '</textarea>';
+		} else if ((type === 'select' || type === 'radio') && def && Array.isArray(def.options)) {
+			inputHtml = '<select name="' + esc(name) + '" class="sd-select">';
+			inputHtml += '<option value="">--</option>';
+			def.options.forEach(function (opt) {
+				var ov = String(opt.value || '');
+				var sel = (String(value) === ov) ? ' selected' : '';
+				inputHtml += '<option value="' + esc(ov) + '"' + sel + '>' + esc(opt.label || ov) + '</option>';
+			});
+			inputHtml += '</select>';
+		} else if (type === 'checkbox' && def && Array.isArray(def.options)) {
+			var arrVals = Array.isArray(value) ? value.map(String) : (value ? String(value).split(',').map(function (s) { return s.trim(); }) : []);
+			inputHtml = '<div class="sd-reg-edit-checks">';
+			def.options.forEach(function (opt) {
+				var ov = String(opt.value || '');
+				var chk = (arrVals.indexOf(ov) !== -1) ? ' checked' : '';
+				inputHtml += '<label class="sd-reg-edit-check"><input type="checkbox" name="' + esc(name) + '[]" value="' + esc(ov) + '"' + chk + '> ' + esc(opt.label || ov) + '</label>';
+			});
+			inputHtml += '</div>';
+		} else if (type === 'date') {
+			inputHtml = '<input type="date" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+		} else if (type === 'number') {
+			inputHtml = '<input type="number" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+		} else if (type === 'email') {
+			inputHtml = '<input type="email" name="' + esc(name) + '" class="sd-input" value="' + esc(String(value == null ? '' : value)) + '">';
+		} else {
+			var displayVal = Array.isArray(value) ? value.join(', ') : String(value == null ? '' : value);
+			inputHtml = '<input type="text" name="' + esc(name) + '" class="sd-input" value="' + esc(displayVal) + '">';
+		}
+		return '<label class="sd-form-row-stacked"><span>' + safeLabel + '</span>' + inputHtml + '</label>';
+	}
+
+	function submitRegistrationEdit(registrationId) {
+		var $form = $('#sd-reg-edit-form');
+		if (!$form.length) { return; }
+
+		var payload = {
+			action: 'sd_activity_registration_update',
+			nonce: sdActivityAdmin.nonce,
+			registration_id: parseInt(registrationId, 10),
+			first_name: $form.find('input[name="first_name"]').val() || '',
+			last_name: $form.find('input[name="last_name"]').val() || '',
+			email: $form.find('input[name="email"]').val() || '',
+			price_id: parseInt($form.find('select[name="price_id"]').val() || 0, 10),
+		};
+
+		var rd = {};
+		// scalar inputs (input/textarea/select non-multiple)
+		$form.find('[name^="rd["]').each(function () {
+			var $el = $(this);
+			var name = String($el.attr('name') || '');
+			var m = name.match(/^rd\[([^\]]+)\](\[\])?$/);
+			if (!m) { return; }
+			var key = m[1];
+			var isMulti = !!m[2];
+			if (isMulti) {
+				if ($el.is(':checkbox')) {
+					if (!Array.isArray(rd[key])) { rd[key] = []; }
+					if ($el.is(':checked')) { rd[key].push(String($el.val())); }
+				}
+			} else {
+				rd[key] = $el.val();
+			}
+		});
+		payload.registration_data = JSON.stringify(rd);
+
+		var $save = $('#sd-reg-edit-save');
+		$save.prop('disabled', true).text('Salvataggio\u2026');
+		$.post(sdActivityAdmin.ajaxUrl, payload, function (resp) {
+			if (!resp || !resp.success) {
+				$save.prop('disabled', false).text('Salva');
+				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				return;
+			}
+			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Registrazione aggiornata.');
+			closeRegistrationEditModal();
+			loadRegistrations();
+		}).fail(function () {
+			$save.prop('disabled', false).text('Salva');
+			showMessage('error', sdActivityAdmin.strings.error);
 		});
 	}
 

@@ -69,6 +69,7 @@ class SD_Activity_Manager {
 		add_action( 'wp_ajax_sd_activity_registration_update_status', array( $this, 'ajax_update_registration_status' ) );
 		add_action( 'wp_ajax_sd_activity_registration_update_payment', array( $this, 'ajax_update_registration_payment' ) );
 		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_delete_registration' ) );
+		add_action( 'wp_ajax_sd_activity_registration_update', array( $this, 'ajax_update_registration' ) );
 	}
 
 	// ======================================================================
@@ -1847,6 +1848,103 @@ class SD_Activity_Manager {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Registrazione eliminata', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX (Admin): Aggiorna i campi di una registrazione (nome, email, tariffa, registration_data).
+	 */
+	public function ajax_update_registration() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID registrazione non valido', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'sd_activity_registrations';
+
+		$existing = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $registration_id ),
+			ARRAY_A
+		);
+		if ( ! $existing ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non trovata', 'sd-logbook' ) ) );
+		}
+
+		$first_name = isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : null;
+		$last_name  = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : null;
+		$email      = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : null;
+		$price_id   = isset( $_POST['price_id'] ) ? intval( $_POST['price_id'] ) : null;
+
+		$data    = array();
+		$formats = array();
+
+		if ( null !== $first_name ) {
+			$data['first_name'] = $first_name;
+			$formats[]          = '%s';
+		}
+		if ( null !== $last_name ) {
+			$data['last_name'] = $last_name;
+			$formats[]         = '%s';
+		}
+		if ( null !== $email ) {
+			if ( '' !== $email && ! is_email( $email ) ) {
+				wp_send_json_error( array( 'message' => __( 'Email non valida', 'sd-logbook' ) ) );
+			}
+			$data['email'] = $email;
+			$formats[]     = '%s';
+		}
+
+		if ( null !== $price_id && $price_id > 0 && (int) $existing['price_id'] !== $price_id ) {
+			$price = $this->get_price( $price_id );
+			if ( ! $price || (int) $price['activity_id'] !== (int) $existing['activity_id'] ) {
+				wp_send_json_error( array( 'message' => __( 'Tariffa non valida per questa attività', 'sd-logbook' ) ) );
+			}
+			$data['price_id']  = $price_id;
+			$formats[]         = '%d';
+			$data['price_chf'] = floatval( $price['price_chf'] );
+			$formats[]         = '%f';
+			$data['price_eur'] = floatval( $price['price_eur'] );
+			$formats[]         = '%f';
+		}
+
+		if ( isset( $_POST['registration_data'] ) ) {
+			$raw = wp_unslash( $_POST['registration_data'] );
+			$arr = is_string( $raw ) ? json_decode( $raw, true ) : ( is_array( $raw ) ? $raw : null );
+			if ( ! is_array( $arr ) ) {
+				wp_send_json_error( array( 'message' => __( 'Dati modulo non validi (JSON malformato)', 'sd-logbook' ) ) );
+			}
+			$clean = array();
+			foreach ( $arr as $k => $v ) {
+				$key = sanitize_key( $k );
+				if ( '' === $key ) {
+					continue;
+				}
+				if ( is_array( $v ) ) {
+					$clean[ $key ] = array_map( 'sanitize_text_field', array_map( 'wp_unslash', array_map( 'strval', $v ) ) );
+				} else {
+					$clean[ $key ] = sanitize_textarea_field( (string) $v );
+				}
+			}
+			$data['registration_data'] = wp_json_encode( $clean );
+			$formats[]                 = '%s';
+		}
+
+		if ( empty( $data ) ) {
+			wp_send_json_success( array( 'message' => __( 'Nessuna modifica', 'sd-logbook' ) ) );
+		}
+
+		$updated = $wpdb->update( $table, $data, array( 'id' => $registration_id ), $formats, array( '%d' ) );
+		if ( false === $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Errore nell\'aggiornamento registrazione', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Registrazione aggiornata', 'sd-logbook' ) ) );
 	}
 
 	// ======================================================================
