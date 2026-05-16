@@ -4208,6 +4208,15 @@
 					var iframeBodyOffsetH = -1;
 					var iframeHeadLinks = -1;
 					var iframeReadyState = '';
+					var bodyChildCount = -1;
+					var firstChildTag = '';
+					var firstChildDisp = '';
+					var firstChildVis = '';
+					var firstChildFont = '';
+					var firstChildColor = '';
+					var firstChildOffH = -1;
+					var firstChildOffW = -1;
+					var firstChildText = '';
 					try {
 						iframeDoc = iframeEl ? (iframeEl.contentDocument || (iframeEl.contentWindow && iframeEl.contentWindow.document)) : null;
 						if (iframeDoc) {
@@ -4217,6 +4226,7 @@
 							var ifBody = iframeDoc.body;
 							if (ifBody) {
 								iframeBodyOffsetH = ifBody.offsetHeight || 0;
+								bodyChildCount = ifBody.children ? ifBody.children.length : 0;
 								var win = iframeEl.contentWindow;
 								if (win && typeof win.getComputedStyle === 'function') {
 									var cs = win.getComputedStyle(ifBody);
@@ -4224,6 +4234,20 @@
 									iframeBodyVisibility = String(cs.visibility || '');
 									iframeBodyColor = String(cs.color || '');
 									iframeBodyFontSize = String(cs.fontSize || '');
+								}
+								var firstEl = ifBody.firstElementChild;
+								if (firstEl) {
+									firstChildTag = String(firstEl.tagName || '');
+									firstChildOffH = firstEl.offsetHeight || 0;
+									firstChildOffW = firstEl.offsetWidth || 0;
+									firstChildText = String((firstEl.textContent || '').trim()).slice(0, 40);
+									if (win && typeof win.getComputedStyle === 'function') {
+										var cs2 = win.getComputedStyle(firstEl);
+										firstChildDisp = String(cs2.display || '');
+										firstChildVis = String(cs2.visibility || '');
+										firstChildFont = String(cs2.fontSize || '');
+										firstChildColor = String(cs2.color || '');
+									}
 								}
 							}
 						}
@@ -4249,6 +4273,14 @@
 						ifBodyFont: iframeBodyFontSize,
 						ifBodyOffH: iframeBodyOffsetH,
 						bodySnippet: body ? String(body.innerHTML || '').slice(0, 60) : '',
+						childCount: bodyChildCount,
+						ch1Tag: firstChildTag,
+						ch1Disp: firstChildDisp,
+						ch1Vis: firstChildVis,
+						ch1Font: firstChildFont,
+						ch1Color: firstChildColor,
+						ch1Size: firstChildOffW + 'x' + firstChildOffH,
+						ch1Text: firstChildText,
 					});
 					if (typeof editor.setMode === 'function') {
 						editor.setMode('design');
@@ -4448,7 +4480,7 @@
 				if (doc && doc.head && !doc.getElementById('sd-desc-debug-style')) {
 					var styleEl = doc.createElement('style');
 					styleEl.id = 'sd-desc-debug-style';
-					styleEl.textContent = 'html,body{background:#ffff00 !important;color:#cc0000 !important;font-size:18px !important;line-height:1.5 !important;margin:0 !important;padding:8px !important;}p{margin:0 0 8px 0 !important;}';
+					styleEl.textContent = 'html,body{background:#ffff00 !important;color:#cc0000 !important;font-size:18px !important;line-height:1.5 !important;margin:0 !important;padding:8px !important;overflow:visible !important;}*{visibility:visible !important;opacity:1 !important;color:#cc0000 !important;font-size:18px !important;text-indent:0 !important;position:static !important;clip:auto !important;clip-path:none !important;transform:none !important;}p,div,span,h1,h2,h3,h4,li{display:block !important;height:auto !important;width:auto !important;}';
 					doc.head.appendChild(styleEl);
 				}
 			}
