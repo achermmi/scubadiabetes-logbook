@@ -914,6 +914,31 @@ body.sd-activity-media-fix-open .media-modal .media-frame-menu .media-menu-item.
 	color: #991b1b;
 }
 
+.sd-option-actions {
+	display: inline-flex;
+	gap: 0.25rem;
+	align-items: center;
+}
+
+.sd-btn-edit-option {
+	background: none;
+	border: none;
+	color: #2563eb;
+	cursor: pointer;
+	font-size: 0.95rem;
+	padding: 0 0.25rem;
+	line-height: 1;
+}
+
+.sd-btn-edit-option:hover {
+	color: #1d4ed8;
+}
+
+.sd-option-item-editing {
+	background: #fef9c3;
+	border-left: 3px solid #eab308;
+}
+
 .sd-admin-stats {
 	display: flex;
 	gap: 0.8rem;

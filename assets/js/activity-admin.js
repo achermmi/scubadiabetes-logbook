@@ -1625,6 +1625,47 @@
 	}
 
 	var fieldOptions = [];
+	var editingOptionIdx = -1;
+
+	function resetOptionEditing() {
+		editingOptionIdx = -1;
+		$('#sd-option-label').val('');
+		$('#sd-option-value').val('');
+		var $btn = $('#sd-add-option-btn');
+		if ($btn.length) {
+			if (!$btn.data('sdDefaultLabel')) {
+				$btn.data('sdDefaultLabel', $btn.text());
+			}
+			$btn.text($btn.data('sdDefaultLabel'));
+		}
+		$('#sd-cancel-option-edit-btn').remove();
+	}
+
+	function startOptionEdit(idx) {
+		if (idx < 0 || idx >= fieldOptions.length) {
+			return;
+		}
+		editingOptionIdx = idx;
+		var opt = fieldOptions[idx];
+		$('#sd-option-label').val(opt.label || '').focus();
+		$('#sd-option-value').val(opt.value || '');
+		var $btn = $('#sd-add-option-btn');
+		if ($btn.length) {
+			if (!$btn.data('sdDefaultLabel')) {
+				$btn.data('sdDefaultLabel', $btn.text());
+			}
+			$btn.text('Salva modifica');
+			if (!$('#sd-cancel-option-edit-btn').length) {
+				$('<button type="button" id="sd-cancel-option-edit-btn" class="sd-btn sd-btn-link" style="margin-left:6px;">Annulla</button>')
+					.insertAfter($btn)
+					.on('click', function () {
+						resetOptionEditing();
+						renderOptionsPreview();
+					});
+			}
+		}
+		renderOptionsPreview();
+	}
 
 	function toggleFieldOptions() {
 		var type = $('#sd-field-type').val();
@@ -1638,6 +1679,7 @@
 		
 		if (!needsOptions) {
 			fieldOptions = [];
+			resetOptionEditing();
 			renderOptionsPreview();
 		}
 		
@@ -1955,9 +1997,14 @@
 		if (!label) {
 			return;
 		}
-		fieldOptions.push({ label: label, value: value });
-		$('#sd-option-label').val('');
-		$('#sd-option-value').val('');
+		if (editingOptionIdx >= 0 && editingOptionIdx < fieldOptions.length) {
+			fieldOptions[editingOptionIdx] = { label: label, value: value };
+			resetOptionEditing();
+		} else {
+			fieldOptions.push({ label: label, value: value });
+			$('#sd-option-label').val('');
+			$('#sd-option-value').val('');
+		}
 		renderOptionsPreview();
 	}
 
@@ -1967,16 +2014,30 @@
 			html = '<li class="sd-mini-list-empty">Nessuna opzione aggiunta.</li>';
 		} else {
 			fieldOptions.forEach(function (opt, idx) {
-				html += '<li class="sd-option-item">';
+				var isEditing = (idx === editingOptionIdx);
+				html += '<li class="sd-option-item' + (isEditing ? ' sd-option-item-editing' : '') + '">';
 				html += '<span>' + esc(opt.label) + ' <small>(' + esc(opt.value) + ')</small></span>';
-				html += '<button type="button" class="sd-btn-remove-option" data-idx="' + idx + '">&#x2715;</button>';
+				html += '<span class="sd-option-actions">';
+				html += '<button type="button" class="sd-btn-edit-option" data-idx="' + idx + '" title="Modifica">&#9998;</button>';
+				html += '<button type="button" class="sd-btn-remove-option" data-idx="' + idx + '" title="Rimuovi">&#x2715;</button>';
+				html += '</span>';
 				html += '</li>';
 			});
 		}
-		$('#sd-options-preview').html(html);
-		$('#sd-options-preview').off('click', '.sd-btn-remove-option').on('click', '.sd-btn-remove-option', function () {
-			fieldOptions.splice(parseInt($(this).data('idx'), 10), 1);
+		var $preview = $('#sd-options-preview');
+		$preview.html(html);
+		$preview.off('click', '.sd-btn-remove-option').on('click', '.sd-btn-remove-option', function () {
+			var idx = parseInt($(this).data('idx'), 10);
+			fieldOptions.splice(idx, 1);
+			if (editingOptionIdx === idx) {
+				resetOptionEditing();
+			} else if (editingOptionIdx > idx) {
+				editingOptionIdx--;
+			}
 			renderOptionsPreview();
+		});
+		$preview.off('click', '.sd-btn-edit-option').on('click', '.sd-btn-edit-option', function () {
+			startOptionEdit(parseInt($(this).data('idx'), 10));
 		});
 	}
 
@@ -2132,6 +2193,7 @@
 		$('#sd-field-required').prop('checked', !!field.is_required);
 		$('#sd-field-section-order').val(parseInt(field.section_order || inferSectionOrder(field.section_key), 10));
 		fieldOptions = Array.isArray(field.options) ? field.options.slice() : [];
+		resetOptionEditing();
 		renderOptionsPreview();
 		populateFieldSectionSelect(state.currentFields);
 		populateConditionSourceFieldSelect(field.id);
@@ -4123,6 +4185,7 @@
 		$('#sd-condition-mode').val('and');
 		$('#sd-condition-rules').empty();
 		fieldOptions = [];
+		resetOptionEditing();
 		renderOptionsPreview();
 		$('#sd-custom-section-label').val('');
 		$('#sd-custom-section-key').val('');
