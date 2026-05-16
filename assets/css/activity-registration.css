@@ -291,6 +291,12 @@
 	margin-bottom: 1rem;
 }
 
+.sd-activity-registration-wrap .sd-fields-grid {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 1rem 1.2rem;
+}
+
 .sd-activity-registration-wrap .sd-field-row {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));

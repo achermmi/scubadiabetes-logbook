@@ -257,6 +257,10 @@
 			togglePersonalFieldSpan(String($(this).data('token') || ''));
 		});
 
+		$(document).on('click', '.sd-field-span-toggle', function () {
+			toggleCustomFieldSpan(parseInt($(this).data('id'), 10) || 0);
+		});
+
 		$(document).on('click', '.sd-static-activity-block-move', function () {
 			moveActivityDataBlock($(this).data('key'), $(this).data('direction'));
 		});
@@ -2718,6 +2722,28 @@
 		saveFormConfiguration(formConfig, 'Layout campo personale aggiornato.', { scrollTarget: 'top' });
 	}
 
+	function getCustomFieldSpan(fieldId) {
+		var id = parseInt(fieldId, 10) || 0;
+		if (!id) { return 12; }
+		var map = getPersonalFieldSpanMap();
+		return parseInt(map['field:' + id] || 12, 10) === 6 ? 6 : 12;
+	}
+
+	function toggleCustomFieldSpan(fieldId) {
+		var id = parseInt(fieldId, 10) || 0;
+		if (!state.selectedActivityId || !id) {
+			return;
+		}
+
+		var formConfig = $.extend(true, {}, getFormConfig());
+		var spans = (formConfig.personal_field_spans && typeof formConfig.personal_field_spans === 'object') ? formConfig.personal_field_spans : {};
+		var token = 'field:' + id;
+		var current = parseInt(spans[token] || 12, 10) === 6 ? 6 : 12;
+		spans[token] = current === 6 ? 12 : 6;
+		formConfig.personal_field_spans = spans;
+		saveFormConfiguration(formConfig, 'Layout campo aggiornato.', { scrollTarget: 'top' });
+	}
+
 	function getActivityDataLayoutOrder() {
 		var config = getFormConfig();
 		var defaultOrder = Object.keys(activityDataBaseBlocksMap);
@@ -3329,6 +3355,7 @@
 							imgPreviewHtml = '<div class="sd-image-preview"><img src="' + esc(field.options.image_url) + '" alt="' + esc(field.field_label) + '"></div>';
 						}
 						
+						var customSpan = getCustomFieldSpan(field.id);
 						html += '<li data-field-id="' + parseInt(field.id, 10) + '"><div class="sd-field-list-item" data-field-id="' + parseInt(field.id, 10) + '" data-field-type="' + esc(fieldType) + '">';
 						if (imgPreviewHtml) {
 							html += imgPreviewHtml;
@@ -3341,11 +3368,13 @@
 							html += '<span>Opzioni: ' + optionsCount + '</span>';
 						}
 						html += field.is_required ? '<span>Obbligatorio</span>' : '';
+						html += '<span>' + (customSpan === 6 ? 'Metà riga' : 'Intera riga') + '</span>';
 						html += '</div>';
 						html += '</div>';
 						html += '<div class="sd-field-list-actions">';
 						html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-field-move" data-id="' + parseInt(field.id, 10) + '" data-direction="up">↑</button>';
 						html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-field-move" data-id="' + parseInt(field.id, 10) + '" data-direction="down">↓</button>';
+						html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-field-span-toggle" data-id="' + parseInt(field.id, 10) + '">' + (customSpan === 6 ? 'Intero' : 'Affianca') + '</button>';
 						html += '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-field-edit" data-id="' + parseInt(field.id, 10) + '">Modifica</button>';
 						html += '<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-field-delete" data-id="' + parseInt(field.id, 10) + '">Elimina</button>';
 						html += '</div>';

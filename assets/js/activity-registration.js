@@ -453,34 +453,39 @@
 				return String(a).localeCompare(String(b));
 			}).forEach(function (sectionKey) {
 				const section = sections[sectionKey];
+				const spans = self.getPersonalFieldSpans();
 				let html = '';
 				section.fields.forEach(function (field) {
-					html += self.renderFieldMarkup(field);
+					const span = parseInt(spans['field:' + parseInt(field.id, 10)] || 12, 10) === 6 ? 6 : 12;
+					html += self.renderFieldMarkup(field, { span: span });
 				});
+
+				// Wrap non-personal sections in a 12-col grid so .sd-field-span-6 rows can sit side by side.
+				const gridHtml = '<div class="sd-fields-grid">' + html + '</div>';
 
 				switch (sectionKey) {
 					case 'personal':
 						break;
 					case 'pricing':
-						self.$pricingFields.html(html);
+						self.$pricingFields.html(gridHtml);
 						break;
 					case 'consents':
-						self.$consentsFields.html(html);
+						self.$consentsFields.html(gridHtml);
 						break;
 					case 'additional':
-						self.$dynamicFields.html(html);
+						self.$dynamicFields.html(gridHtml);
 						break;
 					case 'activity_data':
 							// Render all activity_data fields (not only content) in the activity info card.
 							if ($.trim(html).length) {
-								self.$activityExtraContent.html(html).show();
+								self.$activityExtraContent.html(gridHtml).show();
 							}
 						break;
 					default:
 						self.$customSections.append(
 							'<div class="sd-form-section" data-section-key="' + self.escapeHtml(section.key) + '" data-section-order="' + parseInt(section.order, 10) + '" data-section-title="' + self.escapeHtml(section.label) + '">' +
 								'<h3 class="sd-section-title"><span class="sd-section-index"></span> <span class="sd-section-title-text">' + self.escapeHtml(section.label) + '</span></h3>' +
-								html +
+								gridHtml +
 							'</div>'
 						);
 				}
