@@ -767,24 +767,40 @@ class SD_Payment_Documents {
 
 		$ops .= $this->rect_stroke( 28, $height - 332, 539, 188, array( 0.82, 0.84, 0.88 ) );
 		$ops .= $this->text( 40, $height - 164, 11, 'Riepilogo iscrizione e pagamento', true );
-		$ops .= $this->text( 40, $height - 184, 10, 'ID registrazione: #' . (int) $ctx->registration_id );
-		$ops .= $this->text( 40, $height - 202, 10, 'Partecipante: ' . $participant_name );
-		$ops .= $this->text( 40, $height - 220, 10, 'Email: ' . (string) $ctx->email );
-		$ops .= $this->text( 40, $height - 238, 10, 'Attivita: ' . $activity_title );
+
+		// Colonna sinistra: dettaglio iscrizione (con wrap automatico).
+		$left_y     = $height - 184;
+		$left_lh    = 16;
+		$left_width = 52;
+		$render_left_field = function ( $text ) use ( &$left_y, &$ops, $left_lh, $left_width ) {
+			$lines = $this->wrap_text_lines( (string) $text, $left_width );
+			if ( empty( $lines ) ) {
+				$lines = array( '' );
+			}
+			foreach ( $lines as $line ) {
+				$ops    .= $this->text( 40, $left_y, 10, (string) $line );
+				$left_y -= $left_lh;
+			}
+		};
+		$render_left_field( 'ID registrazione: #' . (int) $ctx->registration_id );
+		$render_left_field( 'Partecipante: ' . $participant_name );
+		$render_left_field( 'Email: ' . (string) $ctx->email );
+		$render_left_field( 'Attivita: ' . $activity_title );
 		if ( '' !== $activity_date ) {
-			$ops .= $this->text( 40, $height - 256, 10, 'Data attivita: ' . $activity_date );
+			$render_left_field( 'Data attivita: ' . $activity_date );
 		}
 		if ( ! empty( $ctx->price_name ) ) {
-			$ops .= $this->text( 40, $height - 274, 10, 'Tariffa: ' . (string) $ctx->price_name );
+			$render_left_field( 'Tariffa: ' . (string) $ctx->price_name );
 		}
+
+		// Colonna destra: dettaglio pagamento.
 		$ops .= $this->text( 320, $height - 184, 10, 'Stato pagamento: PAGATO', true );
 		$ops .= $this->text( 320, $height - 202, 10, 'Metodo: ' . $method );
-		$ops .= $this->text( 320, $height - 220, 10, 'Importo: ' . $amount_chf );
-		$ops .= $this->text( 320, $height - 238, 10, '(' . $amount_eur . ')' );
-		$ops .= $this->text( 320, $height - 256, 10, 'Data pagamento: ' . $paid_at );
+		$ops .= $this->text( 320, $height - 220, 10, 'Importo: ' . $amount_chf . ' (' . $amount_eur . ')' );
+		$ops .= $this->text( 320, $height - 238, 10, 'Data pagamento: ' . $paid_at );
 		if ( '' !== trim( $provider_id ) ) {
-			$ops .= $this->text( 320, $height - 274, 9, 'Transazione:' );
-			$ops .= $this->text( 320, $height - 288, 9, $provider_id );
+			$ops .= $this->text( 320, $height - 256, 9, 'Transazione:' );
+			$ops .= $this->text( 320, $height - 270, 9, $provider_id );
 		}
 
 		$ops .= $this->text( 28, $height - 360, 11, 'Dati registrati nel modulo iscrizione', true );
