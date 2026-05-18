@@ -152,7 +152,7 @@ class SD_Email_Templates {
 			self::make_variable( 'tipo_socio', __( 'Tipo socio', 'sd-logbook' ), __( 'Tipo socio leggibile (es. Attivo Capo Famiglia).', 'sd-logbook' ), 'Attivo' ),
 			self::make_variable( 'tipo_iscrizione', __( 'Tipo iscrizione', 'sd-logbook' ), __( 'Tipo iscrizione/membership (es. individuale, famiglia).', 'sd-logbook' ), 'individuale' ),
 			self::make_variable( 'tassa_sociale', __( 'Tassa/importo', 'sd-logbook' ), __( 'Importo formattato in CHF.', 'sd-logbook' ), 'CHF 50.00' ),
-			self::make_variable( 'tassa_sociale_numero', __( 'Numero socio', 'sd-logbook' ), __( 'Numero o ID socio/registrazione.', 'sd-logbook' ), '1024' )
+			self::make_variable( 'tassa_sociale_numero', __( 'Numero socio', 'sd-logbook' ), __( 'Numero o ID socio/registrazione.', 'sd-logbook' ), '1024' ),
 		);
 	}
 
@@ -201,7 +201,7 @@ class SD_Email_Templates {
 			self::make_variable( 'height', __( 'Altezza', 'sd-logbook' ), __( 'Altezza inserita nel modulo.', 'sd-logbook' ), '170' ),
 			self::make_variable( 'blood_type', __( 'Gruppo sanguigno', 'sd-logbook' ), __( 'Gruppo sanguigno dichiarato.', 'sd-logbook' ), 'A+' ),
 			self::make_variable( 'default_shared_for_research', __( 'Consenso ricerca', 'sd-logbook' ), __( 'Consenso predefinito alla condivisione per ricerca.', 'sd-logbook' ), 'Sì' ),
-			self::make_variable( 'privacy_consent', __( 'Consenso privacy', 'sd-logbook' ), __( 'Consenso privacy fornito nel modulo.', 'sd-logbook' ), 'Sì' )
+			self::make_variable( 'privacy_consent', __( 'Consenso privacy', 'sd-logbook' ), __( 'Consenso privacy fornito nel modulo.', 'sd-logbook' ), 'Sì' ),
 		);
 	}
 
@@ -225,7 +225,7 @@ class SD_Email_Templates {
 			self::make_variable( 'selected_price_names', __( 'Tariffe selezionate', 'sd-logbook' ), __( 'Elenco delle tariffe selezionate nel modulo attività.', 'sd-logbook' ), 'Adulto, Noleggio' ),
 			self::make_variable( 'selected_price_count', __( 'Numero tariffe selezionate', 'sd-logbook' ), __( 'Numero di tariffe selezionate.', 'sd-logbook' ), '2' ),
 			self::make_variable( 'price_chf', __( 'Prezzo CHF', 'sd-logbook' ), __( 'Totale o prezzo registrato in CHF.', 'sd-logbook' ), '75.00' ),
-			self::make_variable( 'price_eur', __( 'Prezzo EUR', 'sd-logbook' ), __( 'Totale o prezzo registrato in EUR.', 'sd-logbook' ), '77.50' )
+			self::make_variable( 'price_eur', __( 'Prezzo EUR', 'sd-logbook' ), __( 'Totale o prezzo registrato in EUR.', 'sd-logbook' ), '77.50' ),
 		);
 	}
 
@@ -1016,7 +1016,7 @@ class SD_Email_Templates {
 		);
 		$out = array();
 		foreach ( (array) $rows as $r ) {
-			if ( '' !== $template_type && $template_type !== sanitize_key( (string) $r->template_type ) ) {
+			if ( '' !== $template_type && sanitize_key( (string) $r->template_type ) !== $template_type ) {
 				continue;
 			}
 			if ( '' !== $form_key && ! self::is_template_compatible_with_form( $r, $form_key ) ) {
