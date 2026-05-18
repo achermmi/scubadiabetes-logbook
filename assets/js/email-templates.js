@@ -99,35 +99,56 @@
 			return;
 		}
 
-		wp.editor.initialize(textareaId, {
-			tinymce: {
-				wpautop: false,
-				height: height,
-				menubar: true,
-				branding: false,
-				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
-				toolbar2: 'bullist numlist outdent indent | blockquote hr | link unlink image media | removeformat',
-				toolbar3: 'undo redo | pastetext charmap | fullscreen',
-				plugins: 'lists link image media hr charmap paste fullscreen',
-				fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
-				setup: function (editor) {
-					editor.on('init', function () {
-						editor.save();
-					});
-
-					editor.on('focus', function () {
-						state.activeField = fieldName;
-					});
-
-					editor.on('change keyup input undo redo SetContent', function () {
-						editor.save();
-						state.dirty = true;
-						if (state.previewOpen) {
-							updatePreview();
-						}
-					});
+		var defaultSettings = (typeof wp.editor.getDefaultSettings === 'function') ? wp.editor.getDefaultSettings() : {};
+		var defaultTinymce = (defaultSettings && defaultSettings.tinymce) ? defaultSettings.tinymce : {};
+		var inheritedSetup = (defaultTinymce && typeof defaultTinymce.setup === 'function') ? defaultTinymce.setup : null;
+		var tinymceConfig = $.extend(true, {}, defaultTinymce, {
+			wpautop: false,
+			height: height,
+			menubar: true,
+			branding: false,
+			fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
+			setup: function (editor) {
+				if (inheritedSetup) {
+					inheritedSetup(editor);
 				}
-			},
+
+				editor.on('init', function () {
+					editor.save();
+				});
+
+				editor.on('focus', function () {
+					state.activeField = fieldName;
+				});
+
+				editor.on('change keyup input undo redo SetContent', function () {
+					editor.save();
+					state.dirty = true;
+					if (state.previewOpen) {
+						updatePreview();
+					}
+				});
+			}
+		});
+
+		if (!tinymceConfig.toolbar1) {
+			tinymceConfig.toolbar1 = 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify';
+		}
+
+		if (!tinymceConfig.toolbar2) {
+			tinymceConfig.toolbar2 = 'bullist numlist outdent indent | blockquote hr | link unlink image media table code | removeformat';
+		}
+
+		if (!tinymceConfig.toolbar3) {
+			tinymceConfig.toolbar3 = 'undo redo | pastetext charmap | fullscreen';
+		}
+
+		if (!tinymceConfig.plugins) {
+			tinymceConfig.plugins = 'lists link image media hr charmap paste fullscreen table code';
+		}
+
+		wp.editor.initialize(textareaId, {
+			tinymce: tinymceConfig,
 			quicktags: true,
 			mediaButtons: true
 		});
