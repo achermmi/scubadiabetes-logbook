@@ -718,20 +718,20 @@ class SD_Payment_Documents {
 		$amount_chf = 'CHF ' . number_format( (float) ( $payment_data['amount_chf'] ?? $ctx->price_chf ?? 0 ), 2, '.', '' );
 		$amount_eur = 'EUR ' . number_format( (float) ( $payment_data['amount_eur'] ?? $ctx->price_eur ?? 0 ), 2, '.', '' );
 
-		$registration_lines = $this->build_activity_registration_data_lines( $ctx );
-		if ( empty( $registration_lines ) ) {
-			$registration_lines = array( 'Nessun dato modulo registrato.' );
+		$registration_items = $this->build_activity_registration_data_lines( $ctx );
+		if ( empty( $registration_items ) ) {
+			$registration_items = array(
+				array(
+					't'      => 'r',
+					'label'  => __( 'Nota', 'sd-logbook' ),
+					'values' => array( __( 'Nessun dato modulo registrato.', 'sd-logbook' ) ),
+				),
+			);
 		}
 
-		$first_chunk_size = 22;
-		$next_chunk_size  = 42;
-		$chunks           = array();
-		$offset           = 0;
-		while ( $offset < count( $registration_lines ) ) {
-			$size     = 0 === $offset ? $first_chunk_size : $next_chunk_size;
-			$chunks[] = array_slice( $registration_lines, $offset, $size );
-			$offset  += $size;
-		}
+		$first_page_capacity = 352;
+		$next_page_capacity  = 590;
+		$chunks              = $this->paginate_activity_registration_items( $registration_items, $first_page_capacity, $next_page_capacity );
 
 		$pages = array();
 
@@ -790,19 +790,7 @@ class SD_Payment_Documents {
 
 		$y = $height - 382;
 		foreach ( (array) ( $chunks[0] ?? array() ) as $item ) {
-			$t = $item['t'] ?? 'v';
-			if ( 's' === $t ) {
-				$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ), true );
-				$y   -= 14;
-			} elseif ( 'l' === $t ) {
-				$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ), true );
-				$y   -= 12;
-			} elseif ( 'v' === $t ) {
-				$ops .= $this->text( 52, $y, 8.5, (string) ( $item['text'] ?? '' ) );
-				$y   -= 12;
-			} else {
-				$y -= 6;
-			}
+			$ops .= $this->render_activity_registration_item( $item, $y );
 		}
 
 		$ops .= $this->text( 28, 56, 8, 'Documento riepilogativo del pagamento elettronico/PayPal per iscrizione attivita.', false, array( 0.36, 0.40, 0.46 ) );
@@ -835,19 +823,7 @@ class SD_Payment_Documents {
 
 				$page_y = $height - 156;
 				foreach ( $chunks[ $i ] as $item ) {
-					$t = $item['t'] ?? 'v';
-					if ( 's' === $t ) {
-						$page_ops .= $this->text( 40, $page_y, 8.5, (string) ( $item['text'] ?? '' ), true );
-						$page_y   -= 14;
-					} elseif ( 'l' === $t ) {
-						$page_ops .= $this->text( 40, $page_y, 8.5, (string) ( $item['text'] ?? '' ), true );
-						$page_y   -= 12;
-					} elseif ( 'v' === $t ) {
-						$page_ops .= $this->text( 52, $page_y, 8.5, (string) ( $item['text'] ?? '' ) );
-						$page_y   -= 12;
-					} else {
-						$page_y -= 6;
-					}
+					$page_ops .= $this->render_activity_registration_item( $item, $page_y );
 				}
 
 				$page_ops .= $this->text( 28, 56, 8, 'Pagina aggiuntiva dati registrazione.', false, array( 0.36, 0.40, 0.46 ) );
@@ -873,15 +849,10 @@ class SD_Payment_Documents {
 	}
 
 	/**
-	 * Estrae i dati di registrazione in righe testuali per il PDF.
+	 * Restituisce item strutturati per il rendering PDF del modulo.
 	 *
 	 * @param object $ctx Context registrazione.
-	 * @return array
-	 */
-	/**
-	 * Restituisce item strutturati per il rendering PDF del modulo:
-	 * ['t'=>'s'] sezione (grassetto), ['t'=>'l'] etichetta (grassetto),
-	 * ['t'=>'v'] valore, ['t'=>'e'] spaziatura.
+	 * @return array<int,array<string,mixed>>
 	 */
 	private function build_activity_registration_data_lines( $ctx ) {
 		$items    = array();
@@ -897,21 +868,128 @@ class SD_Payment_Documents {
 				'text' => strtoupper( remove_accents( (string) $section['label'] ) ),
 			);
 			foreach ( $section['rows'] as $row ) {
-				$items[] = array(
-					't'    => 'l',
-					'text' => (string) $row['label'] . ':',
-				);
-				foreach ( $this->wrap_text_lines( (string) $row['value'], 88 ) as $wrapped ) {
-					$items[] = array(
-						't'    => 'v',
-						'text' => $wrapped,
-					);
+				$value_lines = $this->wrap_text_lines( (string) $row['value'], 88 );
+				if ( empty( $value_lines ) ) {
+					$value_lines = array( '' );
 				}
+
+				$items[] = array(
+					't'      => 'r',
+					'label'  => (string) $row['label'] . ':',
+					'values' => array_values( $value_lines ),
+				);
 			}
 			$items[] = array( 't' => 'e' );
 		}
 
 		return array_values( array_filter( $items ) );
+	}
+
+	/**
+	 * Renderizza un item del riepilogo modulo e aggiorna la coordinata Y.
+	 *
+	 * @param array<string,mixed> $item Item da renderizzare.
+	 * @param float               $y    Coordinata verticale corrente.
+	 * @return string
+	 */
+	private function render_activity_registration_item( array $item, &$y ) {
+		$ops  = '';
+		$type = isset( $item['t'] ) ? (string) $item['t'] : 'r';
+
+		if ( 's' === $type ) {
+			$ops .= $this->text( 40, $y, 8.8, (string) ( $item['text'] ?? '' ), true );
+			$y   -= 14;
+			return $ops;
+		}
+
+		if ( 'r' === $type ) {
+			$ops .= $this->text( 40, $y, 8.5, (string) ( $item['label'] ?? '' ), true );
+			$y   -= 12;
+
+			$values = isset( $item['values'] ) && is_array( $item['values'] ) ? $item['values'] : array( '' );
+			foreach ( $values as $value_line ) {
+				$ops .= $this->text( 56, $y, 8.4, (string) $value_line );
+				$y   -= 12;
+			}
+
+			return $ops;
+		}
+
+		if ( 'e' === $type ) {
+			$y -= 8;
+			return $ops;
+		}
+
+		$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ) );
+		$y   -= 12;
+		return $ops;
+	}
+
+	/**
+	 * Suddivide gli item in pagine rispettando la capienza disponibile.
+	 *
+	 * @param array<int,array<string,mixed>> $items Item del riepilogo.
+	 * @param int                             $first_page_capacity Capienza prima pagina.
+	 * @param int                             $next_page_capacity Capienza pagine successive.
+	 * @return array<int,array<int,array<string,mixed>>>
+	 */
+	private function paginate_activity_registration_items( array $items, $first_page_capacity, $next_page_capacity ) {
+		$pages    = array();
+		$current  = array();
+		$used     = 0;
+		$capacity = (int) $first_page_capacity;
+
+		foreach ( $items as $item ) {
+			$item_height = $this->get_activity_registration_item_height( $item );
+			if ( ! empty( $current ) && ( $used + $item_height ) > $capacity ) {
+				$pages[]  = $current;
+				$current  = array();
+				$used     = 0;
+				$capacity = (int) $next_page_capacity;
+			}
+
+			$current[] = $item;
+			$used     += $item_height;
+		}
+
+		if ( ! empty( $current ) ) {
+			$pages[] = $current;
+		}
+
+		if ( empty( $pages ) ) {
+			$pages[] = array();
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * Restituisce l'altezza verticale usata da un item nel PDF.
+	 *
+	 * @param array<string,mixed> $item Item del riepilogo.
+	 * @return int
+	 */
+	private function get_activity_registration_item_height( array $item ) {
+		$type = isset( $item['t'] ) ? (string) $item['t'] : 'r';
+
+		if ( 's' === $type ) {
+			return 14;
+		}
+
+		if ( 'r' === $type ) {
+			$values_count = 1;
+			if ( isset( $item['values'] ) && is_array( $item['values'] ) ) {
+				$values_count = max( 1, count( $item['values'] ) );
+			}
+
+			return 12 + ( 12 * $values_count );
+		}
+
+		if ( 'e' === $type ) {
+			return 8;
+		}
+
+		return 12;
 	}
 
 	/**
