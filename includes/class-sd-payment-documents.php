@@ -1063,7 +1063,7 @@ class SD_Payment_Documents {
 			'telefono_cellulare'  => __( 'Telefono cellulare', 'sd-logbook' ),
 			'localita'            => __( 'Località', 'sd-logbook' ),
 			'localit'             => __( 'Località', 'sd-logbook' ),
-			'selected_price_names'=> __( 'Tariffe selezionate', 'sd-logbook' ),
+			'selected_price_names' => __( 'Tariffe selezionate', 'sd-logbook' ),
 		);
 
 		if ( isset( $map[ $normalized_key ] ) ) {
@@ -1148,7 +1148,7 @@ class SD_Payment_Documents {
 			'tipo_2' => __( 'Tipo 2', 'sd-logbook' ),
 			'tipo2'  => __( 'Tipo 2', 'sd-logbook' ),
 			't3c'    => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
-			'tipo_3c'=> __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo_3c' => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
 			'tipo3c' => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
 		);
 
