@@ -35,6 +35,14 @@ switch ( $ctx->payment_status ) {
 		$payment_label = __( 'In attesa di pagamento', 'sd-logbook' );
 		break;
 }
+
+$has_start_date = ! empty( $ctx->activity_start_date );
+$has_end_date   = ! empty( $ctx->activity_end_date );
+
+$start_date_label = $has_start_date ? date_i18n( 'd.m.Y', strtotime( $ctx->activity_start_date ) ) : '';
+$end_date_label   = $has_end_date ? date_i18n( 'd.m.Y', strtotime( $ctx->activity_end_date ) ) : '';
+
+$show_period = $has_start_date && $has_end_date && ( $start_date_label !== $end_date_label );
 ?>
 <div class="sd-membership-wrap" style="max-width:640px;margin:0 auto;">
 
@@ -58,10 +66,26 @@ switch ( $ctx->payment_status ) {
 			<th style="text-align:left;border-bottom:1px solid #eee;width:40%;"><?php esc_html_e( 'Attività', 'sd-logbook' ); ?></th>
 			<td style="border-bottom:1px solid #eee;"><?php echo esc_html( $ctx->activity_title ?? '' ); ?></td>
 		</tr>
-		<?php if ( ! empty( $ctx->activity_start_date ) ) : ?>
+		<?php if ( $show_period ) : ?>
+		<tr>
+			<th style="text-align:left;border-bottom:1px solid #eee;"><?php esc_html_e( 'Periodo', 'sd-logbook' ); ?></th>
+			<td style="border-bottom:1px solid #eee;">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: data inizio, 2: data fine */
+						__( 'dal %1$s al %2$s', 'sd-logbook' ),
+						$start_date_label,
+						$end_date_label
+					)
+				);
+				?>
+			</td>
+		</tr>
+		<?php elseif ( $has_start_date ) : ?>
 		<tr>
 			<th style="text-align:left;border-bottom:1px solid #eee;"><?php esc_html_e( 'Data', 'sd-logbook' ); ?></th>
-			<td style="border-bottom:1px solid #eee;"><?php echo esc_html( date_i18n( 'd.m.Y', strtotime( $ctx->activity_start_date ) ) ); ?></td>
+			<td style="border-bottom:1px solid #eee;"><?php echo esc_html( $start_date_label ); ?></td>
 		</tr>
 		<?php endif; ?>
 		<?php if ( ! empty( $ctx->price_name ) ) : ?>

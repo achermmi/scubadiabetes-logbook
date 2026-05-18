@@ -2029,6 +2029,34 @@
 		renderOptionsPreview();
 	}
 
+	function commitPendingOptionEditIfAny() {
+		if (editingOptionIdx < 0) {
+			return true;
+		}
+
+		var label = $('#sd-option-label').val().trim();
+		var value = $('#sd-option-value').val().trim() || slugify(label);
+
+		if (!label) {
+			showMessage('error', 'Completa l\'etichetta dell\'opzione in modifica prima di salvare il campo.');
+			return false;
+		}
+
+		if (editingOptionIdx >= fieldOptions.length) {
+			editingOptionIdx = fieldOptions.length - 1;
+		}
+
+		if (editingOptionIdx < 0) {
+			fieldOptions.push({ label: label, value: value });
+		} else {
+			fieldOptions[editingOptionIdx] = { label: label, value: value };
+		}
+
+		resetOptionEditing();
+		renderOptionsPreview();
+		return true;
+	}
+
 	function renderOptionsPreview() {
 		var html = '';
 		if (!fieldOptions.length) {
@@ -2081,6 +2109,10 @@
 		var needsOptions = (type === 'radio' || type === 'select' || type === 'checkbox');
 		var isContent = (type === 'content');
 		var isImage = (type === 'image');
+
+		if (needsOptions && !commitPendingOptionEditIfAny()) {
+			return;
+		}
 		
 		if (needsOptions && fieldOptions.length === 0) {
 			showMessage('error', 'Aggiungi almeno un\'opzione per questo tipo di campo.');

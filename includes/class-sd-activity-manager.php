@@ -609,6 +609,7 @@ class SD_Activity_Manager {
 
 			$label = sanitize_text_field( $option['label'] ?? '' );
 			$value = sanitize_title( $option['value'] ?? $label );
+			$label = $this->normalize_diabetes_option_label( $label, $value );
 
 			if ( '' === $label || '' === $value ) {
 				continue;
@@ -621,6 +622,44 @@ class SD_Activity_Manager {
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * Corregge etichette opzioni diabete note quando il valore indica il tipo.
+	 *
+	 * @param string $label Etichetta opzione.
+	 * @param string $value Valore opzione (slug).
+	 * @return string
+	 */
+	private function normalize_diabetes_option_label( $label, $value ) {
+		$clean_label = sanitize_text_field( (string) $label );
+		$key         = sanitize_key( (string) $value );
+
+		$map = array(
+			't1'            => __( 'Tipo 1', 'sd-logbook' ),
+			'tipo_1'        => __( 'Tipo 1', 'sd-logbook' ),
+			'tipo-1'        => __( 'Tipo 1', 'sd-logbook' ),
+			'tipo1'         => __( 'Tipo 1', 'sd-logbook' ),
+			't2'            => __( 'Tipo 2', 'sd-logbook' ),
+			'tipo_2'        => __( 'Tipo 2', 'sd-logbook' ),
+			'tipo-2'        => __( 'Tipo 2', 'sd-logbook' ),
+			'tipo2'         => __( 'Tipo 2', 'sd-logbook' ),
+			't3c'           => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo_3c'       => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo-3c'       => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo3c'        => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'non_diabetico' => __( 'Non diabetico', 'sd-logbook' ),
+			'non-diabetico' => __( 'Non diabetico', 'sd-logbook' ),
+			'nd'            => __( 'Non diabetico', 'sd-logbook' ),
+		);
+
+		if ( isset( $map[ $key ] ) ) {
+			if ( '' === $clean_label || 'tipo' === strtolower( $clean_label ) || preg_match( '/^tipo\s*[0-9a-z]*$/i', $clean_label ) ) {
+				return $map[ $key ];
+			}
+		}
+
+		return $clean_label;
 	}
 
 	/**

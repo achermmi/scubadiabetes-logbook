@@ -101,6 +101,7 @@ class SD_Activity_Payment_Flow {
 					r.confirmation_expires_at,
 					a.title AS activity_title,
 					a.start_date AS activity_start_date,
+					a.end_date AS activity_end_date,
 					p.price_name
 				FROM {$wpdb->prefix}sd_activity_registrations r
 				LEFT JOIN {$wpdb->prefix}sd_activities a ON a.id = r.activity_id
@@ -158,6 +159,7 @@ class SD_Activity_Payment_Flow {
 					r.confirmation_expires_at,
 					a.title AS activity_title,
 					a.start_date AS activity_start_date,
+					a.end_date AS activity_end_date,
 					p.price_name
 				FROM {$wpdb->prefix}sd_activity_registrations r
 				LEFT JOIN {$wpdb->prefix}sd_activities a ON a.id = r.activity_id
