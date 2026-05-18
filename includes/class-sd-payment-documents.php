@@ -799,8 +799,7 @@ class SD_Payment_Documents {
 		$ops .= $this->text( 320, $height - 220, 10, 'Importo: ' . $amount_chf . ' (' . $amount_eur . ')' );
 		$ops .= $this->text( 320, $height - 238, 10, 'Data pagamento: ' . $paid_at );
 		if ( '' !== trim( $provider_id ) ) {
-			$ops .= $this->text( 320, $height - 256, 9, 'Transazione:' );
-			$ops .= $this->text( 320, $height - 270, 9, $provider_id );
+			$ops .= $this->text( 320, $height - 256, 9, 'Transazione: ' . $provider_id );
 		}
 
 		$ops .= $this->text( 28, $height - 360, 11, 'Dati registrati nel modulo iscrizione', true );
