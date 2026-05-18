@@ -58,11 +58,17 @@
 
 .sd-email-tpl-sidebar-header {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
+	gap: 12px;
 	padding: 14px 16px;
 	background: #f5f7fa;
 	border-bottom: 1px solid #dde3ec;
+}
+
+.sd-email-tpl-sidebar-header-text {
+	flex: 1;
+	min-width: 0;
 }
 
 .sd-email-tpl-sidebar-header h3 {
@@ -75,6 +81,19 @@
 	margin: 4px 0 0;
 	font-size: 0.78rem;
 	color: #6b7c93;
+}
+
+#sd-email-tpl-new {
+	flex-shrink: 0;
+	min-height: 36px;
+	padding: 0.35rem 0.9rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	box-shadow: 0 2px 8px rgba(0, 85, 165, 0.2);
+}
+
+#sd-email-tpl-new:hover {
+	box-shadow: 0 4px 12px rgba(0, 85, 165, 0.28);
 }
 .sd-email-tpl-sidebar-filter {
 	padding: 14px 16px;
@@ -411,19 +430,40 @@
 .sd-var-chip {
 	background: #eef2ff;
 	border: 1px solid #c7d2fe;
-	border-radius: 4px;
-	padding: 2px 7px;
+	border-radius: 8px;
+	padding: 6px 10px;
 	font-size: 0.72rem;
-	font-family: monospace;
 	color: #3730a3;
 	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s;
-	white-space: nowrap;
+	transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+	white-space: normal;
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	text-align: left;
+	line-height: 1.2;
+	max-width: 100%;
 }
 
 .sd-var-chip:hover {
-	background: #c7d2fe;
-	border-color: #818cf8;
+	background: #dbe4ff;
+	border-color: #8ea2ff;
+	box-shadow: 0 1px 5px rgba(79, 110, 247, 0.2);
+}
+
+.sd-var-chip-tag {
+	font-family: monospace;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: #2f3b9f;
+}
+
+.sd-var-chip-desc {
+	font-family: inherit;
+	font-size: 0.74rem;
+	font-weight: 500;
+	color: #4d5f7b;
 }
 
 /* ============================================================
@@ -514,21 +554,24 @@
 	.sd-preset-controls {
 		flex-direction: column;
 		align-items: stretch;
+	}
+
 	.sd-email-tpl-layout {
 		flex-direction: column;
 	}
+
 	.sd-email-tpl-sidebar {
 		width: 100%;
 		flex-basis: auto;
 	}
-	}
-}
 
-/* ============================================================
 	.sd-email-tpl-form-topbar {
 		flex-direction: column;
 		align-items: stretch;
 	}
+}
+
+/* ============================================================
    Anteprima
    ============================================================ */
 
@@ -584,6 +627,51 @@
 .sd-email-tpl-form-actions-right {
 	display: flex;
 	gap: 10px;
+	margin-left: auto;
+}
+
+#sd-email-tpl-page .sd-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.6rem 1.2rem;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	line-height: 1.2;
+	min-height: 40px;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+	white-space: nowrap;
+}
+
+#sd-email-tpl-page .sd-btn-primary {
+	background: var(--sd-primary, #0055a5);
+	color: #fff;
+}
+
+#sd-email-tpl-page .sd-btn-primary:hover {
+	background: #004185;
+	box-shadow: 0 2px 8px rgba(0, 85, 165, 0.3);
+}
+
+#sd-email-tpl-page .sd-btn-secondary {
+	background: #f3f4f6;
+	color: #374151;
+	border-color: var(--sd-border, #dde1e7);
+}
+
+#sd-email-tpl-page .sd-btn-secondary:hover {
+	background: #e5e7eb;
+}
+
+#sd-email-tpl-page .sd-btn-sm {
+	padding: 0.35rem 0.8rem;
+	font-size: 0.82rem;
+	min-height: 34px;
 }
 
 /* ============================================================

@@ -718,7 +718,10 @@
 			rowsHtml = '<tr><td colspan="2" class="sd-email-tpl-empty">' + escHtml(sdEmailTpl.strings.emptyVariables || '') + '</td></tr>';
 		} else {
 			state.currentVariables.forEach(function (variable) {
-				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">' + escHtml(variable.tag) + '</button>';
+				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
+				chipsHtml += '<span class="sd-var-chip-tag">' + escHtml(variable.tag) + '</span>';
+				chipsHtml += '<span class="sd-var-chip-desc">' + escHtml(variable.description || variable.label || '') + '</span>';
+				chipsHtml += '</button>';
 				rowsHtml += '<tr><td><code>' + escHtml(variable.tag) + '</code></td><td>' + escHtml(variable.description || variable.label || '') + '</td></tr>';
 			});
 		}

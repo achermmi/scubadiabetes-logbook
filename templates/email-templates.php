@@ -28,12 +28,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<!-- ==================== LISTA MODELLI ==================== -->
 		<div class="sd-email-tpl-sidebar" id="sd-email-tpl-sidebar">
 			<div class="sd-email-tpl-sidebar-header">
-				<div>
+				<div class="sd-email-tpl-sidebar-header-text">
 					<h3><?php esc_html_e( 'Modelli salvati', 'sd-logbook' ); ?></h3>
 					<p class="sd-email-tpl-sidebar-note"><?php esc_html_e( 'La lista si aggiorna in base al modulo selezionato.', 'sd-logbook' ); ?></p>
 				</div>
 				<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-email-tpl-new">
-					+ <?php esc_html_e( 'Nuovo modello', 'sd-logbook' ); ?>
+					<?php esc_html_e( 'Nuovo modello', 'sd-logbook' ); ?>
 				</button>
 			</div>
 			<div class="sd-email-tpl-sidebar-filter">
@@ -73,7 +73,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php foreach ( $vars as $v ) : ?>
 							<button type="button" class="sd-var-chip" data-var="<?php echo esc_attr( $v['tag'] ); ?>"
 								title="<?php echo esc_attr( $v['description'] ?? $v['label'] ); ?>">
-								<?php echo esc_html( $v['tag'] ); ?>
+								<span class="sd-var-chip-tag"><?php echo esc_html( $v['tag'] ); ?></span>
+								<span class="sd-var-chip-desc"><?php echo esc_html( $v['description'] ?? $v['label'] ?? '' ); ?></span>
 							</button>
 						<?php endforeach; ?>
 					</div>
