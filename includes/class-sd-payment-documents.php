@@ -868,8 +868,8 @@ class SD_Payment_Documents {
 				'text' => (string) $section['label'],
 			);
 			foreach ( $section['rows'] as $row ) {
-				$label_text  = $this->pdf_single_line_text( (string) $row['label'], 44 );
-				$value_lines = $this->wrap_text_lines( (string) $row['value'], 56 );
+				$label_text  = $this->pdf_single_line_text( (string) $row['label'], 62 );
+				$value_lines = $this->wrap_text_lines( (string) $row['value'], 40 );
 
 				if ( empty( $value_lines ) ) {
 					$value_lines = array( '' );
@@ -900,15 +900,16 @@ class SD_Payment_Documents {
 
 		$table_x       = 40;
 		$table_w       = 515;
-		$label_w       = 200;
+		$label_w       = 290;
 		$value_x       = $table_x + $label_w + 8;
 		$border_rgb    = array( 0.78, 0.81, 0.85 );
 		$label_bg_rgb  = array( 0.95, 0.96, 0.97 );
 		$section_color = array( 0.0, 0.33, 0.65 );
 
 		if ( 's' === $type ) {
+			$y   -= 12;
 			$ops .= $this->text( $table_x, $y, 10.5, (string) ( $item['text'] ?? '' ), true, $section_color );
-			$y   -= 16;
+			$y   -= 14;
 			return $ops;
 		}
 
@@ -1002,7 +1003,7 @@ class SD_Payment_Documents {
 		$type = isset( $item['t'] ) ? (string) $item['t'] : 'r';
 
 		if ( 's' === $type ) {
-			return 16;
+			return 26;
 		}
 
 		if ( 'r' === $type ) {
