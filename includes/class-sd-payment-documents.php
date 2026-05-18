@@ -865,11 +865,11 @@ class SD_Payment_Documents {
 
 			$items[] = array(
 				't'    => 's',
-				'text' => strtoupper( remove_accents( (string) $section['label'] ) ),
+				'text' => (string) $section['label'],
 			);
 			foreach ( $section['rows'] as $row ) {
-				$label_text  = $this->pdf_single_line_text( (string) $row['label'] . ':', 56 );
-				$value_lines = $this->wrap_text_lines( (string) $row['value'], 46 );
+				$label_text  = $this->pdf_single_line_text( (string) $row['label'], 44 );
+				$value_lines = $this->wrap_text_lines( (string) $row['value'], 56 );
 
 				if ( empty( $value_lines ) ) {
 					$value_lines = array( '' );
@@ -898,31 +898,45 @@ class SD_Payment_Documents {
 		$ops  = '';
 		$type = isset( $item['t'] ) ? (string) $item['t'] : 'r';
 
+		$table_x       = 40;
+		$table_w       = 515;
+		$label_w       = 200;
+		$value_x       = $table_x + $label_w + 8;
+		$border_rgb    = array( 0.78, 0.81, 0.85 );
+		$label_bg_rgb  = array( 0.95, 0.96, 0.97 );
+		$section_color = array( 0.0, 0.33, 0.65 );
+
 		if ( 's' === $type ) {
-			$ops .= $this->text( 40, $y, 8.8, (string) ( $item['text'] ?? '' ), true );
-			$y   -= 14;
+			$ops .= $this->text( $table_x, $y, 10.5, (string) ( $item['text'] ?? '' ), true, $section_color );
+			$y   -= 16;
 			return $ops;
 		}
 
 		if ( 'r' === $type ) {
-			$label_text = isset( $item['label_text'] ) ? (string) $item['label_text'] : (string) ( $item['label'] ?? '' );
+			$label_text  = isset( $item['label_text'] ) ? (string) $item['label_text'] : (string) ( $item['label'] ?? '' );
 			$value_lines = isset( $item['value_lines'] ) && is_array( $item['value_lines'] ) ? $item['value_lines'] : array( '' );
 			$row_lines   = max( 1, count( $value_lines ) );
-			$row_height  = ( 12 * $row_lines ) + 2;
+			$line_h      = 12;
+			$row_height  = ( $line_h * $row_lines ) + 6;
 
-			$label_x       = 40;
-			$label_w       = 268;
-			$value_x       = 320;
-			$label_bg_rgb  = array( 0.89, 0.95, 1.0 );
-			$label_bg_y    = $y - $row_height + 2;
-			$label_bg_h    = $row_height;
-			$ops          .= $this->rect_fill( $label_x, $label_bg_y, $label_w, $label_bg_h, $label_bg_rgb );
-			$ops          .= $this->text( $label_x + 4, $y, 8.3, $label_text, true, array( 0.06, 0.24, 0.42 ) );
+			$row_top    = $y + 2;
+			$row_bottom = $row_top - $row_height;
 
+			// Sfondo cella etichetta.
+			$ops .= $this->rect_fill( $table_x, $row_bottom, $label_w, $row_height, $label_bg_rgb );
+
+			// Bordi celle.
+			$ops .= $this->rect_stroke( $table_x, $row_bottom, $label_w, $row_height, $border_rgb );
+			$ops .= $this->rect_stroke( $table_x + $label_w, $row_bottom, $table_w - $label_w, $row_height, $border_rgb );
+
+			// Testo etichetta.
+			$ops .= $this->text( $table_x + 6, $y - 4, 8.6, $label_text, true, array( 0.18, 0.20, 0.24 ) );
+
+			// Testo valori.
 			for ( $line_index = 0; $line_index < $row_lines; $line_index++ ) {
-				$current_y = $y - ( 12 * $line_index );
+				$current_y = ( $y - 4 ) - ( $line_h * $line_index );
 				if ( isset( $value_lines[ $line_index ] ) ) {
-					$ops .= $this->text( $value_x, $current_y, 8.4, (string) $value_lines[ $line_index ] );
+					$ops .= $this->text( $value_x, $current_y, 8.6, (string) $value_lines[ $line_index ], false, array( 0.12, 0.14, 0.18 ) );
 				}
 			}
 
@@ -931,11 +945,11 @@ class SD_Payment_Documents {
 		}
 
 		if ( 'e' === $type ) {
-			$y -= 8;
+			$y -= 6;
 			return $ops;
 		}
 
-		$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ) );
+		$ops .= $this->text( $table_x, $y, 8.6, (string) ( $item['text'] ?? '' ) );
 		$y   -= 12;
 		return $ops;
 	}
@@ -988,7 +1002,7 @@ class SD_Payment_Documents {
 		$type = isset( $item['t'] ) ? (string) $item['t'] : 'r';
 
 		if ( 's' === $type ) {
-			return 14;
+			return 16;
 		}
 
 		if ( 'r' === $type ) {
@@ -997,11 +1011,11 @@ class SD_Payment_Documents {
 				$value_count = max( 1, count( $item['value_lines'] ) );
 			}
 
-			return ( 12 * $value_count ) + 2;
+			return ( 12 * $value_count ) + 6;
 		}
 
 		if ( 'e' === $type ) {
-			return 8;
+			return 6;
 		}
 
 		return 12;
