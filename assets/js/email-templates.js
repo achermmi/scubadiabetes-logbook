@@ -453,7 +453,7 @@
 		var resolvedBody = resolvePreviewVariables(body || '');
 		var resolvedSignature = resolvePreviewVariables(signature || '');
 
-		$('#sd-tpl-preview-subject').text(resolvedSubject || '(oggetto vuoto)');
+		$('#sd-tpl-preview-subject').text($('<div>').html(resolvedSubject).text() || '(oggetto vuoto)');
 		$('#sd-tpl-preview-body').html(resolvedBody || '');
 		$('#sd-tpl-preview-signature').html(resolvedSignature || '');
 	}
@@ -500,12 +500,33 @@
 			}
 		});
 
-		var resolved = String(text || '');
-		Object.keys(map).forEach(function (tag) {
-			resolved = resolved.split(tag).join(map[tag]);
-		});
+		// Sostituisce le variabili operando sui nodi di testo del DOM (non sulla stringa grezza),
+		// così le entità HTML eventualmente presenti nel contenuto dell'editor vengono decodificate
+		// prima della sostituzione e i valori HTML (es. <img>) vengono inseriti come markup.
+		var $temp = $('<div>').html(String(text || ''));
 
-		return resolved;
+		function processTextNodes($el) {
+			$el.contents().each(function () {
+				if (this.nodeType === 3) { // TEXT_NODE
+					var val = this.nodeValue;
+					var changed = false;
+					Object.keys(map).forEach(function (tag) {
+						if (val.indexOf(tag) !== -1) {
+							val = val.split(tag).join(map[tag]);
+							changed = true;
+						}
+					});
+					if (changed) {
+						$(this).replaceWith(val);
+					}
+				} else if (this.nodeType === 1) { // ELEMENT_NODE
+					processTextNodes($(this));
+				}
+			});
+		}
+
+		processTextNodes($temp);
+		return $temp.html();
 	}
 
 	// =========================================================================
