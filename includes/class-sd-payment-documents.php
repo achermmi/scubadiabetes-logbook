@@ -722,8 +722,8 @@ class SD_Payment_Documents {
 		if ( empty( $registration_items ) ) {
 			$registration_items = array(
 				array(
-					't'           => 'r',
-					'label_lines' => array( __( 'Nota:', 'sd-logbook' ) ),
+					't'          => 'r',
+					'label_text' => __( 'Nota:', 'sd-logbook' ),
 					'value_lines' => array( __( 'Nessun dato modulo registrato.', 'sd-logbook' ) ),
 				),
 			);
@@ -868,19 +868,16 @@ class SD_Payment_Documents {
 				'text' => strtoupper( remove_accents( (string) $section['label'] ) ),
 			);
 			foreach ( $section['rows'] as $row ) {
-				$label_lines = $this->wrap_text_lines( (string) $row['label'] . ':', 48 );
-				$value_lines = $this->wrap_text_lines( (string) $row['value'], 60 );
+				$label_text  = $this->pdf_single_line_text( (string) $row['label'] . ':', 56 );
+				$value_lines = $this->wrap_text_lines( (string) $row['value'], 46 );
 
-				if ( empty( $label_lines ) ) {
-					$label_lines = array( '' );
-				}
 				if ( empty( $value_lines ) ) {
 					$value_lines = array( '' );
 				}
 
 				$items[] = array(
 					't'           => 'r',
-					'label_lines' => array_values( $label_lines ),
+					'label_text'  => $label_text,
 					'value_lines' => array_values( $value_lines ),
 				);
 			}
@@ -908,25 +905,28 @@ class SD_Payment_Documents {
 		}
 
 		if ( 'r' === $type ) {
-			$label_lines = isset( $item['label_lines'] ) && is_array( $item['label_lines'] ) ? $item['label_lines'] : array( (string) ( $item['label'] ?? '' ) );
+			$label_text = isset( $item['label_text'] ) ? (string) $item['label_text'] : (string) ( $item['label'] ?? '' );
 			$value_lines = isset( $item['value_lines'] ) && is_array( $item['value_lines'] ) ? $item['value_lines'] : array( '' );
-			$row_lines   = max( count( $label_lines ), count( $value_lines ) );
+			$row_lines   = max( 1, count( $value_lines ) );
+			$row_height  = ( 12 * $row_lines ) + 2;
+
+			$label_x       = 40;
+			$label_w       = 268;
+			$value_x       = 320;
+			$label_bg_rgb  = array( 0.89, 0.95, 1.0 );
+			$label_bg_y    = $y - $row_height + 2;
+			$label_bg_h    = $row_height;
+			$ops          .= $this->rect_fill( $label_x, $label_bg_y, $label_w, $label_bg_h, $label_bg_rgb );
+			$ops          .= $this->text( $label_x + 4, $y, 8.3, $label_text, true, array( 0.06, 0.24, 0.42 ) );
 
 			for ( $line_index = 0; $line_index < $row_lines; $line_index++ ) {
 				$current_y = $y - ( 12 * $line_index );
-
-				if ( isset( $label_lines[ $line_index ] ) ) {
-					$ops .= $this->text( 40, $current_y, 8.5, (string) $label_lines[ $line_index ], true );
-				}
-
 				if ( isset( $value_lines[ $line_index ] ) ) {
-					$ops .= $this->text( 248, $current_y, 8.4, (string) $value_lines[ $line_index ] );
+					$ops .= $this->text( $value_x, $current_y, 8.4, (string) $value_lines[ $line_index ] );
 				}
 			}
 
-			$y -= ( 12 * $row_lines );
-			$y -= 2;
-
+			$y -= $row_height;
 			return $ops;
 		}
 
@@ -992,17 +992,12 @@ class SD_Payment_Documents {
 		}
 
 		if ( 'r' === $type ) {
-			$label_count = 1;
 			$value_count = 1;
-
-			if ( isset( $item['label_lines'] ) && is_array( $item['label_lines'] ) ) {
-				$label_count = max( 1, count( $item['label_lines'] ) );
-			}
 			if ( isset( $item['value_lines'] ) && is_array( $item['value_lines'] ) ) {
 				$value_count = max( 1, count( $item['value_lines'] ) );
 			}
 
-			return ( 12 * max( $label_count, $value_count ) ) + 2;
+			return ( 12 * $value_count ) + 2;
 		}
 
 		if ( 'e' === $type ) {
@@ -1764,6 +1759,30 @@ class SD_Payment_Documents {
 			hexdec( substr( $hex, 3, 2 ) ) / 255,
 			hexdec( substr( $hex, 5, 2 ) ) / 255,
 		);
+	}
+
+	/**
+	 * Tronca testo a una sola riga aggiungendo ellissi se necessario.
+	 *
+	 * @param string $text Testo.
+	 * @param int    $max_chars Lunghezza massima.
+	 * @return string
+	 */
+	private function pdf_single_line_text( $text, $max_chars = 56 ) {
+		$clean = trim( preg_replace( '/\s+/', ' ', (string) $text ) );
+		$max   = max( 1, (int) $max_chars );
+		if ( '' === $clean ) {
+			return '';
+		}
+
+		$len = function_exists( 'mb_strlen' ) ? mb_strlen( $clean ) : strlen( $clean );
+		if ( $len <= $max ) {
+			return $clean;
+		}
+
+		$slice_len = max( 1, $max - 1 );
+		$slice     = function_exists( 'mb_substr' ) ? mb_substr( $clean, 0, $slice_len ) : substr( $clean, 0, $slice_len );
+		return rtrim( (string) $slice ) . '...';
 	}
 
 	/**
