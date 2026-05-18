@@ -722,9 +722,9 @@ class SD_Payment_Documents {
 		if ( empty( $registration_items ) ) {
 			$registration_items = array(
 				array(
-					't'      => 'r',
-					'label'  => __( 'Nota', 'sd-logbook' ),
-					'values' => array( __( 'Nessun dato modulo registrato.', 'sd-logbook' ) ),
+					't'           => 'r',
+					'label_lines' => array( __( 'Nota:', 'sd-logbook' ) ),
+					'value_lines' => array( __( 'Nessun dato modulo registrato.', 'sd-logbook' ) ),
 				),
 			);
 		}
@@ -868,15 +868,20 @@ class SD_Payment_Documents {
 				'text' => strtoupper( remove_accents( (string) $section['label'] ) ),
 			);
 			foreach ( $section['rows'] as $row ) {
-				$value_lines = $this->wrap_text_lines( (string) $row['value'], 88 );
+				$label_lines = $this->wrap_text_lines( (string) $row['label'] . ':', 48 );
+				$value_lines = $this->wrap_text_lines( (string) $row['value'], 60 );
+
+				if ( empty( $label_lines ) ) {
+					$label_lines = array( '' );
+				}
 				if ( empty( $value_lines ) ) {
 					$value_lines = array( '' );
 				}
 
 				$items[] = array(
-					't'      => 'r',
-					'label'  => (string) $row['label'] . ':',
-					'values' => array_values( $value_lines ),
+					't'           => 'r',
+					'label_lines' => array_values( $label_lines ),
+					'value_lines' => array_values( $value_lines ),
 				);
 			}
 			$items[] = array( 't' => 'e' );
@@ -903,14 +908,24 @@ class SD_Payment_Documents {
 		}
 
 		if ( 'r' === $type ) {
-			$ops .= $this->text( 40, $y, 8.5, (string) ( $item['label'] ?? '' ), true );
-			$y   -= 12;
+			$label_lines = isset( $item['label_lines'] ) && is_array( $item['label_lines'] ) ? $item['label_lines'] : array( (string) ( $item['label'] ?? '' ) );
+			$value_lines = isset( $item['value_lines'] ) && is_array( $item['value_lines'] ) ? $item['value_lines'] : array( '' );
+			$row_lines   = max( count( $label_lines ), count( $value_lines ) );
 
-			$values = isset( $item['values'] ) && is_array( $item['values'] ) ? $item['values'] : array( '' );
-			foreach ( $values as $value_line ) {
-				$ops .= $this->text( 56, $y, 8.4, (string) $value_line );
-				$y   -= 12;
+			for ( $line_index = 0; $line_index < $row_lines; $line_index++ ) {
+				$current_y = $y - ( 12 * $line_index );
+
+				if ( isset( $label_lines[ $line_index ] ) ) {
+					$ops .= $this->text( 40, $current_y, 8.5, (string) $label_lines[ $line_index ], true );
+				}
+
+				if ( isset( $value_lines[ $line_index ] ) ) {
+					$ops .= $this->text( 248, $current_y, 8.4, (string) $value_lines[ $line_index ] );
+				}
 			}
+
+			$y -= ( 12 * $row_lines );
+			$y -= 2;
 
 			return $ops;
 		}
@@ -977,12 +992,17 @@ class SD_Payment_Documents {
 		}
 
 		if ( 'r' === $type ) {
-			$values_count = 1;
-			if ( isset( $item['values'] ) && is_array( $item['values'] ) ) {
-				$values_count = max( 1, count( $item['values'] ) );
+			$label_count = 1;
+			$value_count = 1;
+
+			if ( isset( $item['label_lines'] ) && is_array( $item['label_lines'] ) ) {
+				$label_count = max( 1, count( $item['label_lines'] ) );
+			}
+			if ( isset( $item['value_lines'] ) && is_array( $item['value_lines'] ) ) {
+				$value_count = max( 1, count( $item['value_lines'] ) );
 			}
 
-			return 12 + ( 12 * $values_count );
+			return ( 12 * max( $label_count, $value_count ) ) + 2;
 		}
 
 		if ( 'e' === $type ) {
