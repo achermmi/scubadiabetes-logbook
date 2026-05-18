@@ -631,6 +631,210 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Genera PDF di conferma pagamento per una registrazione attività.
+	 *
+	 * @param object $ctx          Context registrazione (vedi SD_Activity_Payment_Flow::get_context_by_token).
+	 * @param array  $payment_data Dati pagamento confermato.
+	 * @return string|WP_Error Percorso del PDF generato.
+	 */
+	public function generate_activity_payment_confirmation_document( $ctx, $payment_data = array() ) {
+		if ( ! is_object( $ctx ) || empty( $ctx->registration_id ) ) {
+			return new WP_Error( 'sd_act_pay_bad_ctx', __( 'Contesto registrazione non valido.', 'sd-logbook' ) );
+		}
+
+		$upload = wp_upload_dir();
+		if ( empty( $upload['basedir'] ) || ! is_dir( $upload['basedir'] ) ) {
+			return new WP_Error( 'sd_upload_dir_missing', __( 'Directory upload non disponibile.', 'sd-logbook' ) );
+		}
+
+		$dir = trailingslashit( $upload['basedir'] ) . 'sd-documents/' . gmdate( 'Y' ) . '/activity-' . (int) $ctx->activity_id . '/';
+		if ( ! wp_mkdir_p( $dir ) ) {
+			return new WP_Error( 'sd_docs_dir_failed', __( 'Impossibile creare la cartella documenti.', 'sd-logbook' ) );
+		}
+
+		$file  = $dir . 'conferma-pagamento-attivita-' . (int) $ctx->registration_id . '-' . gmdate( 'Ymd-His' ) . '.pdf';
+		$pages = $this->build_activity_payment_confirmation_pages( $ctx, is_array( $payment_data ) ? $payment_data : array() );
+		$this->write_styled_pdf( $file, $pages );
+
+		return $file;
+	}
+
+	/**
+	 * Costruisce le pagine PDF per la conferma pagamento attività.
+	 *
+	 * @param object $ctx          Context registrazione.
+	 * @param array  $payment_data Dati pagamento confermato.
+	 * @return array
+	 */
+	private function build_activity_payment_confirmation_pages( $ctx, array $payment_data ) {
+		$width   = 595.0;
+		$height  = 842.0;
+		$primary = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
+		$secondary = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
+
+		$association_name = (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
+		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
+		$activity_title   = (string) ( $ctx->activity_title ?? '' );
+		$activity_date    = ! empty( $ctx->activity_start_date ) ? date_i18n( 'd.m.Y', strtotime( (string) $ctx->activity_start_date ) ) : '';
+
+		$method_slug = sanitize_key( (string) ( $payment_data['payment_method'] ?? ( $ctx->payment_method ?? '' ) ) );
+		$method      = $this->payment_method_label( $method_slug );
+		$provider_id = sanitize_text_field( (string) ( $payment_data['provider_payment_id'] ?? ( $ctx->transaction_id ?? '' ) ) );
+		$paid_at_raw = (string) ( $payment_data['payment_date'] ?? current_time( 'mysql' ) );
+		$paid_at     = date_i18n( 'd.m.Y H:i', strtotime( $paid_at_raw ) );
+
+		$amount_chf = 'CHF ' . number_format( (float) ( $payment_data['amount_chf'] ?? $ctx->price_chf ?? 0 ), 2, '.', '' );
+		$amount_eur = 'EUR ' . number_format( (float) ( $payment_data['amount_eur'] ?? $ctx->price_eur ?? 0 ), 2, '.', '' );
+
+		$registration_lines = $this->build_activity_registration_data_lines( $ctx );
+		if ( empty( $registration_lines ) ) {
+			$registration_lines = array( 'Nessun dato modulo registrato.' );
+		}
+
+		$first_chunk_size = 22;
+		$next_chunk_size  = 42;
+		$chunks           = array();
+		$offset           = 0;
+		while ( $offset < count( $registration_lines ) ) {
+			$size     = 0 === $offset ? $first_chunk_size : $next_chunk_size;
+			$chunks[] = array_slice( $registration_lines, $offset, $size );
+			$offset  += $size;
+		}
+
+		$pages = array();
+
+		// Prima pagina con riepilogo pagamento.
+		$ops  = '';
+		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
+		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
+		$ops .= $this->text( 28, $height - 42, 16, $association_name, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( 28, $height - 66, 11, 'Conferma pagamento iscrizione attivita', false, array( 1, 1, 1 ) );
+
+		$ops .= $this->text( 28, $height - 124, 10, 'Numero conferma: ACT-PAY-' . gmdate( 'Y' ) . '-' . (int) $ctx->registration_id, true );
+		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y H:i' ) );
+
+		$ops .= $this->rect_stroke( 28, $height - 332, 539, 188, array( 0.82, 0.84, 0.88 ) );
+		$ops .= $this->text( 40, $height - 164, 11, 'Riepilogo iscrizione e pagamento', true );
+		$ops .= $this->text( 40, $height - 184, 10, 'ID registrazione: #' . (int) $ctx->registration_id );
+		$ops .= $this->text( 40, $height - 202, 10, 'Partecipante: ' . $participant_name );
+		$ops .= $this->text( 40, $height - 220, 10, 'Email: ' . (string) $ctx->email );
+		$ops .= $this->text( 40, $height - 238, 10, 'Attivita: ' . $activity_title );
+		if ( '' !== $activity_date ) {
+			$ops .= $this->text( 40, $height - 256, 10, 'Data attivita: ' . $activity_date );
+		}
+		if ( ! empty( $ctx->price_name ) ) {
+			$ops .= $this->text( 40, $height - 274, 10, 'Tariffa: ' . (string) $ctx->price_name );
+		}
+		$ops .= $this->text( 320, $height - 184, 10, 'Stato pagamento: PAGATO', true );
+		$ops .= $this->text( 320, $height - 202, 10, 'Metodo: ' . $method );
+		$ops .= $this->text( 320, $height - 220, 10, 'Importo: ' . $amount_chf );
+		$ops .= $this->text( 320, $height - 238, 10, '(' . $amount_eur . ')' );
+		$ops .= $this->text( 320, $height - 256, 10, 'Data pagamento: ' . $paid_at );
+		if ( '' !== trim( $provider_id ) ) {
+			$ops .= $this->text( 320, $height - 274, 9, 'Transazione: ' . $provider_id );
+		}
+
+		$ops .= $this->text( 28, $height - 360, 11, 'Dati registrati nel modulo iscrizione', true );
+
+		$y = $height - 382;
+		foreach ( (array) ( $chunks[0] ?? array() ) as $line ) {
+			$ops .= $this->text( 40, $y, 8.5, $line );
+			$y   -= 13;
+		}
+
+		$ops .= $this->text( 28, 56, 8, 'Documento riepilogativo del pagamento elettronico/PayPal per iscrizione attivita.', false, array( 0.36, 0.40, 0.46 ) );
+
+		$pages[] = array(
+			'width'    => $width,
+			'height'   => $height,
+			'commands' => $ops,
+		);
+
+		// Eventuali pagine aggiuntive con i dati modulo restanti.
+		if ( count( $chunks ) > 1 ) {
+			for ( $i = 1; $i < count( $chunks ); $i++ ) {
+				$page_ops  = '';
+				$page_ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
+				$page_ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
+				$page_ops .= $this->text( 28, $height - 42, 14, $association_name, true, array( 1, 1, 1 ) );
+				$page_ops .= $this->text( 28, $height - 66, 10, 'Conferma pagamento attivita - dettaglio dati modulo (pag. ' . ( $i + 1 ) . ')', false, array( 1, 1, 1 ) );
+				$page_ops .= $this->text( 28, $height - 124, 10, 'ID registrazione: #' . (int) $ctx->registration_id, true );
+				$page_ops .= $this->text( 360, $height - 124, 10, 'Partecipante: ' . $participant_name );
+
+				$page_y = $height - 156;
+				foreach ( $chunks[ $i ] as $line ) {
+					$page_ops .= $this->text( 40, $page_y, 8.5, $line );
+					$page_y   -= 13;
+				}
+
+				$page_ops .= $this->text( 28, 56, 8, 'Pagina aggiuntiva dati registrazione.', false, array( 0.36, 0.40, 0.46 ) );
+
+				$pages[] = array(
+					'width'    => $width,
+					'height'   => $height,
+					'commands' => $page_ops,
+				);
+			}
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * Estrae i dati di registrazione in righe testuali per il PDF.
+	 *
+	 * @param object $ctx Context registrazione.
+	 * @return array
+	 */
+	private function build_activity_registration_data_lines( $ctx ) {
+		$lines = array();
+
+		$raw = isset( $ctx->registration_data ) ? (string) $ctx->registration_data : '';
+		if ( '' === $raw ) {
+			return array();
+		}
+
+		$data = json_decode( $raw, true );
+		if ( ! is_array( $data ) || empty( $data ) ) {
+			foreach ( $this->wrap_text_lines( 'registration_data: ' . $raw, 96 ) as $line ) {
+				$lines[] = $line;
+			}
+			return $lines;
+		}
+
+		$labels = array(
+			'birth_date'           => 'Data di nascita',
+			'is_minor'             => 'Minorenne',
+			'luogo_di_nascita'     => 'Luogo di nascita',
+			'diabete_tipo'         => 'Tipo di diabete',
+			'celiachia'            => 'Celiachia',
+			'telefono_cellulare'   => 'Telefono cellulare',
+			'selected_price_names' => 'Tariffe selezionate',
+			'selected_price_ids'   => 'ID tariffe selezionate',
+			'selected_price_count' => 'Numero tariffe selezionate',
+		);
+
+		foreach ( $data as $key => $value ) {
+			$label = $labels[ $key ] ?? ucfirst( str_replace( array( '_', '-' ), ' ', (string) $key ) );
+
+			if ( is_array( $value ) ) {
+				$display = implode( ', ', array_map( 'strval', $value ) );
+			} elseif ( is_bool( $value ) ) {
+				$display = $value ? 'Si' : 'No';
+			} else {
+				$display = (string) $value;
+			}
+
+			$line = $label . ': ' . $display;
+			foreach ( $this->wrap_text_lines( $line, 96 ) as $wrapped ) {
+				$lines[] = $wrapped;
+			}
+		}
+
+		return $lines;
+	}
+
+	/**
 	 * Costruisce la pagina PDF della fattura attività.
 	 *
 	 * @param object $ctx Context registrazione.

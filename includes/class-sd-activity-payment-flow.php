@@ -257,12 +257,22 @@ class SD_Activity_Payment_Flow {
 			return true;
 		}
 
+		$completed_at = current_time( 'mysql' );
+		$payment_data = array(
+			'provider'            => (string) ( $data['provider'] ?? '' ),
+			'provider_payment_id' => (string) ( $data['provider_payment_id'] ?? '' ),
+			'payment_method'      => (string) ( $data['payment_method'] ?? '' ),
+			'payment_date'        => $completed_at,
+			'amount_chf'          => (float) $ctx->price_chf,
+			'amount_eur'          => (float) $ctx->price_eur,
+		);
+
 		// Aggiorna registrazione
 		$wpdb->update(
 			$wpdb->prefix . 'sd_activity_registrations',
 			array(
 				'payment_status' => 'paid',
-				'payment_date'   => current_time( 'mysql' ),
+				'payment_date'   => $completed_at,
 				'payment_method' => $data['payment_method'] ?? '',
 				'transaction_id' => $data['provider_payment_id'] ?? '',
 			),
@@ -285,13 +295,13 @@ class SD_Activity_Payment_Flow {
 				'transaction_id'     => $data['provider_payment_id'] ?? '',
 				'provider_payment_id' => $data['provider_payment_id'] ?? '',
 				'confirmation_token' => $token,
-				'completed_at'       => current_time( 'mysql' ),
+				'completed_at'       => $completed_at,
 				'payload'            => $data['payload'] ?? array(),
 			)
 		);
 
 		// Invia email di conferma
-		$this->send_confirmation_email( $ctx );
+		$this->send_confirmation_email( $ctx, $payment_data );
 
 		return true;
 	}
@@ -415,36 +425,155 @@ class SD_Activity_Payment_Flow {
 	/**
 	 * Invia email di conferma pagamento al partecipante.
 	 *
-	 * @param object $ctx Row dalla query.
+	 * @param object $ctx          Row dalla query.
+	 * @param array  $payment_data Dati pagamento confermato.
 	 */
-	private function send_confirmation_email( $ctx ) {
-		if ( empty( $ctx->email ) ) {
+	private function send_confirmation_email( $ctx, array $payment_data = array() ) {
+		if ( ! $this->is_electronic_or_paypal_payment( $payment_data ) ) {
 			return;
+		}
+
+		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
+		$activity_title   = (string) ( $ctx->activity_title ?? '' );
+		$activity_date    = ! empty( $ctx->activity_start_date )
+			? date_i18n( 'd.m.Y', strtotime( (string) $ctx->activity_start_date ) )
+			: '';
+
+		$payment_method_slug = sanitize_text_field( (string) ( $payment_data['payment_method'] ?? ( $ctx->payment_method ?? '' ) ) );
+		$payment_method      = $this->payment_method_label( $payment_method_slug );
+		$transaction_id      = sanitize_text_field( (string) ( $payment_data['provider_payment_id'] ?? ( $ctx->transaction_id ?? '' ) ) );
+		$payment_date_raw    = (string) ( $payment_data['payment_date'] ?? current_time( 'mysql' ) );
+		$payment_date_label  = date_i18n( 'd.m.Y H:i', strtotime( $payment_date_raw ) );
+
+		$amount_chf = number_format( (float) ( $payment_data['amount_chf'] ?? $ctx->price_chf ?? 0 ), 2, '.', '' );
+		$amount_eur = number_format( (float) ( $payment_data['amount_eur'] ?? $ctx->price_eur ?? 0 ), 2, '.', '' );
+
+		$attachments = array();
+		if ( class_exists( 'SD_Payment_Documents' ) ) {
+			$pdf_path = ( new SD_Payment_Documents() )->generate_activity_payment_confirmation_document( $ctx, $payment_data );
+			if ( ! is_wp_error( $pdf_path ) && file_exists( (string) $pdf_path ) ) {
+				$attachments[] = (string) $pdf_path;
+			} else {
+				$err = is_wp_error( $pdf_path ) ? $pdf_path->get_error_message() : 'unknown';
+				error_log( '[SD Activity Payment] PDF conferma pagamento non generato reg=' . (int) $ctx->registration_id . ' err=' . $err ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
 		}
 
 		$subject = sprintf(
 			/* translators: %s: titolo attività */
-			__( 'Iscrizione confermata: %s', 'sd-logbook' ),
-			$ctx->activity_title ?? ''
+			__( 'Pagamento confermato: %s', 'sd-logbook' ),
+			$activity_title
 		);
 
-		$body = sprintf(
-			/* translators: 1: nome, 2: titolo attività, 3: data, 4: importo */
-			__(
-				"Ciao %1\$s,\n\nIl tuo pagamento per l'attività \"%2\$s\" del %3\$s è stato ricevuto con successo.\nImporto: CHF %4\$s\n\nGrazie!\nScubaDiabetes",
-				'sd-logbook'
-			),
-			trim( $ctx->first_name . ' ' . $ctx->last_name ),
-			$ctx->activity_title ?? '',
-			! empty( $ctx->activity_start_date ) ? date_i18n( 'd.m.Y', strtotime( $ctx->activity_start_date ) ) : '',
-			number_format( (float) $ctx->price_chf, 2, '.', '' )
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
+		$body .= '<p>' . sprintf(
+			esc_html__( 'Ciao %1$s, il tuo pagamento per l\'attività "%2$s" è stato ricevuto con successo.', 'sd-logbook' ),
+			esc_html( $participant_name ),
+			esc_html( $activity_title )
+		) . '</p>';
+		$body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
+		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . '</td></tr>';
+		if ( '' !== $activity_date ) {
+			$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_date ) . '</td></tr>';
+		}
+		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Metodo pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_method ) . '</td></tr>';
+		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Importo', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
+		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		if ( '' !== trim( $transaction_id ) ) {
+			$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Riferimento transazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $transaction_id ) . '</td></tr>';
+		}
+		$body .= '</table>';
+		$body .= '<h3 style="color:#0055a5">' . esc_html__( 'Dati registrati nel modulo', 'sd-logbook' ) . '</h3>';
+		$body .= $this->build_registration_data_html( $ctx );
+		$body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'In allegato trovi il PDF con riepilogo completo di iscrizione e pagamento.', 'sd-logbook' ) . '</p>';
+		$body .= '</body></html>';
+
+		if ( ! empty( $ctx->email ) ) {
+			wp_mail( sanitize_email( (string) $ctx->email ), $subject, $body, $headers, $attachments );
+		}
+
+		$secretariat_email = sanitize_email( (string) get_option( 'sd_payment_invoice_association_email', 'info@scubadiabetes.ch' ) );
+		if ( ! is_email( $secretariat_email ) ) {
+			$secretariat_email = 'info@scubadiabetes.ch';
+		}
+		$secretariat_subject = sprintf(
+			/* translators: %s: titolo attività */
+			__( '[%1$s] Pagamento attività confermato: %2$s', 'sd-logbook' ),
+			get_bloginfo( 'name' ),
+			$activity_title
 		);
 
-		wp_mail(
-			sanitize_email( $ctx->email ),
-			$subject,
-			$body
+		$secretariat_body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
+		$secretariat_body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
+		$secretariat_body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>ID registrazione</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Partecipante', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Email</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . '</td></tr>';
+		if ( '' !== $activity_date ) {
+			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_date ) . '</td></tr>';
+		}
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Metodo pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_method ) . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Importo', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		if ( '' !== trim( $transaction_id ) ) {
+			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Riferimento transazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $transaction_id ) . '</td></tr>';
+		}
+		$secretariat_body .= '</table>';
+		$secretariat_body .= '<h3 style="color:#0055a5">' . esc_html__( 'Dati registrati nel modulo', 'sd-logbook' ) . '</h3>';
+		$secretariat_body .= $this->build_registration_data_html( $ctx );
+		$secretariat_body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'In allegato il PDF riepilogativo inviato al partecipante.', 'sd-logbook' ) . '</p>';
+		$secretariat_body .= '</body></html>';
+
+		wp_mail( $secretariat_email, $secretariat_subject, $secretariat_body, $headers, $attachments );
+	}
+
+	/**
+	 * Verifica se il pagamento è elettronico o PayPal.
+	 *
+	 * @param array $payment_data Dati pagamento.
+	 * @return bool
+	 */
+	private function is_electronic_or_paypal_payment( array $payment_data ) {
+		$provider = sanitize_key( (string) ( $payment_data['provider'] ?? '' ) );
+		$method   = sanitize_key( (string) ( $payment_data['payment_method'] ?? '' ) );
+
+		if ( in_array( $provider, array( 'stripe', 'paypal' ), true ) ) {
+			return true;
+		}
+
+		return in_array(
+			$method,
+			array( 'paypal', 'twint', 'carta_credito', 'apple_pay', 'google_pay' ),
+			true
 		);
+	}
+
+	/**
+	 * Etichetta leggibile del metodo di pagamento.
+	 *
+	 * @param string $slug Slug metodo.
+	 * @return string
+	 */
+	private function payment_method_label( $slug ) {
+		$map = array(
+			'paypal'        => __( 'PayPal', 'sd-logbook' ),
+			'twint'         => __( 'TWINT', 'sd-logbook' ),
+			'carta_credito' => __( 'Carta di credito/debito', 'sd-logbook' ),
+			'apple_pay'     => __( 'Apple Pay', 'sd-logbook' ),
+			'google_pay'    => __( 'Google Pay', 'sd-logbook' ),
+			'stripe'        => __( 'Stripe', 'sd-logbook' ),
+		);
+
+		$key = sanitize_key( (string) $slug );
+		if ( isset( $map[ $key ] ) ) {
+			return $map[ $key ];
+		}
+
+		return '' !== $key ? $key : __( 'n/d', 'sd-logbook' );
 	}
 
 	/**
