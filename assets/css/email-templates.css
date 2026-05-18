@@ -142,17 +142,35 @@
 	margin-left: 8px;
 }
 
+.sd-email-tpl-item-duplicate {
+	border: 1px solid #9db7dc;
+	background: #f8fbff;
+	color: #1f4e85;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 5px 8px;
+	cursor: pointer;
+	line-height: 1;
+	min-width: 62px;
+}
+
+.sd-email-tpl-item-duplicate:hover {
+	background: #eaf3ff;
+	border-color: #7ea4d4;
+}
+
 .sd-email-tpl-item-delete {
 	flex-shrink: 0;
 	background: none;
-	border: none;
+	border: 1px solid transparent;
 	cursor: pointer;
 	color: #c0392b;
 	font-size: 1rem;
-	padding: 2px 4px;
+	padding: 3px 6px;
 	border-radius: 4px;
 	opacity: 0.6;
-	transition: opacity 0.15s;
+	transition: opacity 0.15s, background 0.15s, border-color 0.15s;
 }
 
 .sd-email-tpl-item-delete:hover {

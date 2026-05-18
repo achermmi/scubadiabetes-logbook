@@ -107,8 +107,8 @@
 				branding: false,
 				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
 				toolbar2: 'bullist numlist outdent indent | blockquote hr table | link unlink image media | removeformat code',
-				toolbar3: 'undo redo | pastetext charmap | visualblocks visualchars | fullscreen',
-				plugins: 'lists link image media table code hr charmap paste visualblocks visualchars fullscreen',
+				toolbar3: 'undo redo | pastetext charmap | fullscreen',
+				plugins: 'lists link image media table code hr charmap paste fullscreen',
 				fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
 				setup: function (editor) {
 					editor.on('init', function () {
@@ -204,7 +204,7 @@
 					'<span class="sd-email-tpl-item-meta">' + escHtml(tpl.source_form_label || '') + '</span>' +
 				'</div>' +
 				'<div class="sd-email-tpl-item-actions">' +
-					'<button type="button" class="sd-email-tpl-item-duplicate" data-id="' + escInt(tpl.id) + '" title="Duplica">Dup</button>' +
+					'<button type="button" class="sd-email-tpl-item-duplicate" data-id="' + escInt(tpl.id) + '" title="Duplica">Duplica</button>' +
 					'<button type="button" class="sd-email-tpl-item-delete" data-id="' + escInt(tpl.id) + '" title="Elimina">✕</button>' +
 				'</div>' +
 			'</div>';
@@ -565,7 +565,7 @@
 
 		// Click su item lista
 		$(document).on('click', '.sd-email-tpl-item', function (e) {
-			if ($(e.target).hasClass('sd-email-tpl-item-delete')) { return; }
+			if ($(e.target).hasClass('sd-email-tpl-item-delete') || $(e.target).hasClass('sd-email-tpl-item-duplicate')) { return; }
 			var id = parseInt($(this).data('id'), 10);
 			if (id && id !== state.activeId) {
 				loadTemplate(id);
@@ -627,7 +627,7 @@
 			renderVariables();
 			updateModuleBadge();
 			resetForm();
-			hideEditor();
+			showEditor();
 			loadTemplates();
 		});
 
@@ -727,7 +727,7 @@
 	function updateModuleBadge(labelOverride) {
 		var form = state.forms[state.selectedFormKey] || {};
 		var label = labelOverride || form.label || state.selectedFormKey;
-		$('#sd-email-tpl-current-module').text(label ? 'Modulo attivo: ' + label : '');
+		$('#sd-email-tpl-current-module').text(label ? 'Tipo mailing list attivo: ' + label : '');
 	}
 
 	// =========================================================================

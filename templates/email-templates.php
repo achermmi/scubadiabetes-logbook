@@ -37,7 +37,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</button>
 			</div>
 			<div class="sd-email-tpl-sidebar-filter">
-				<label class="sd-field-label" for="sd-tpl-form-key-filter"><?php esc_html_e( 'Modulo d’iscrizione', 'sd-logbook' ); ?></label>
+				<label class="sd-field-label" for="sd-tpl-form-key-filter"><?php esc_html_e( 'Tipo mailing list', 'sd-logbook' ); ?></label>
 				<select id="sd-tpl-form-key-filter" class="sd-field-input"></select>
 			</div>
 			<div class="sd-email-tpl-list" id="sd-email-tpl-list">
@@ -58,7 +58,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<div class="sd-email-tpl-form-topbar">
 					<div class="sd-field-row sd-field-row-inline sd-field-row-module">
 						<label class="sd-field-label" for="sd-tpl-form-key-select">
-							<?php esc_html_e( 'Modulo d’iscrizione', 'sd-logbook' ); ?> <span class="required">*</span>
+							<?php esc_html_e( 'Tipo mailing list', 'sd-logbook' ); ?> <span class="required">*</span>
 						</label>
 						<select id="sd-tpl-form-key-select" class="sd-field-input" required></select>
 					</div>
@@ -185,26 +185,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		</div><!-- /.sd-email-tpl-editor -->
 	</div><!-- /.sd-email-tpl-layout -->
-
-	<!-- Legenda variabili -->
-	<div class="sd-email-tpl-vars-legend">
-		<h4><?php esc_html_e( 'Variabili disponibili', 'sd-logbook' ); ?></h4>
-		<table class="sd-email-tpl-vars-table">
-			<thead>
-				<tr>
-					<th><?php esc_html_e( 'Variabile', 'sd-logbook' ); ?></th>
-					<th><?php esc_html_e( 'Descrizione', 'sd-logbook' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach ( $vars as $v ) : ?>
-					<tr>
-						<td><code><?php echo esc_html( $v['tag'] ); ?></code></td>
-						<td><?php echo esc_html( $v['description'] ?? $v['label'] ); ?></td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
-	</div>
 
 </div><!-- /#sd-email-tpl-page -->

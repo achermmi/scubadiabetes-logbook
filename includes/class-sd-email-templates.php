@@ -239,8 +239,8 @@ class SD_Email_Templates {
 		$forms[ self::DEFAULT_MEMBERSHIP_FORM_KEY ] = array(
 			'key'       => self::DEFAULT_MEMBERSHIP_FORM_KEY,
 			'type'      => 'membership',
-			'group'     => __( 'Iscrizione associazione', 'sd-logbook' ),
-			'label'     => __( 'Modulo iscrizione associazione', 'sd-logbook' ),
+			'group'     => __( 'Soci SDS', 'sd-logbook' ),
+			'label'     => __( 'Soci SDS', 'sd-logbook' ),
 			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables() ),
 		);
 
@@ -292,7 +292,7 @@ class SD_Email_Templates {
 			$forms[ 'activity:' . $activity_id ] = array(
 				'key'       => 'activity:' . $activity_id,
 				'type'      => 'activity',
-				'group'     => __( 'Iscrizione attività', 'sd-logbook' ),
+				'group'     => __( 'Iscrizionii attività', 'sd-logbook' ),
 				'label'     => $label,
 				'variables' => self::dedupe_variables( $variables ),
 			);
