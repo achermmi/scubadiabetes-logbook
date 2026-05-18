@@ -1931,7 +1931,18 @@ class SD_Membership_Admin {
 		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
 
 		if ( $sent ) {
-			SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry, 'subject' => (string) $subject, 'email' => (string) $member->email ) );
+			SD_Membership_Helper::log_audit(
+				(int) $member->id,
+				'renewal_reminder',
+				'sd_members',
+				(int) $member->id,
+				null,
+				array(
+					'expiry'  => $member->membership_expiry,
+					'subject' => (string) $subject,
+					'email'   => (string) $member->email,
+				)
+			);
 		}
 
 		return (bool) $sent;
