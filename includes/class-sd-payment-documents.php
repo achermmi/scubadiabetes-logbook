@@ -789,9 +789,20 @@ class SD_Payment_Documents {
 		$ops .= $this->text( 28, $height - 360, 11, 'Dati registrati nel modulo iscrizione', true );
 
 		$y = $height - 382;
-		foreach ( (array) ( $chunks[0] ?? array() ) as $line ) {
-			$ops .= $this->text( 40, $y, 8.5, $line );
-			$y   -= 13;
+		foreach ( (array) ( $chunks[0] ?? array() ) as $item ) {
+			$t = $item['t'] ?? 'v';
+			if ( 's' === $t ) {
+				$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ), true );
+				$y   -= 14;
+			} elseif ( 'l' === $t ) {
+				$ops .= $this->text( 40, $y, 8.5, (string) ( $item['text'] ?? '' ), true );
+				$y   -= 12;
+			} elseif ( 'v' === $t ) {
+				$ops .= $this->text( 52, $y, 8.5, (string) ( $item['text'] ?? '' ) );
+				$y   -= 12;
+			} else {
+				$y -= 6;
+			}
 		}
 
 		$ops .= $this->text( 28, 56, 8, 'Documento riepilogativo del pagamento elettronico/PayPal per iscrizione attivita.', false, array( 0.36, 0.40, 0.46 ) );
@@ -823,9 +834,20 @@ class SD_Payment_Documents {
 				$page_ops .= $this->text( 360, $height - 124, 10, 'Partecipante: ' . $participant_name );
 
 				$page_y = $height - 156;
-				foreach ( $chunks[ $i ] as $line ) {
-					$page_ops .= $this->text( 40, $page_y, 8.5, $line );
-					$page_y   -= 13;
+				foreach ( $chunks[ $i ] as $item ) {
+					$t = $item['t'] ?? 'v';
+					if ( 's' === $t ) {
+						$page_ops .= $this->text( 40, $page_y, 8.5, (string) ( $item['text'] ?? '' ), true );
+						$page_y   -= 14;
+					} elseif ( 'l' === $t ) {
+						$page_ops .= $this->text( 40, $page_y, 8.5, (string) ( $item['text'] ?? '' ), true );
+						$page_y   -= 12;
+					} elseif ( 'v' === $t ) {
+						$page_ops .= $this->text( 52, $page_y, 8.5, (string) ( $item['text'] ?? '' ) );
+						$page_y   -= 12;
+					} else {
+						$page_y -= 6;
+					}
 				}
 
 				$page_ops .= $this->text( 28, 56, 8, 'Pagina aggiuntiva dati registrazione.', false, array( 0.36, 0.40, 0.46 ) );
@@ -856,8 +878,13 @@ class SD_Payment_Documents {
 	 * @param object $ctx Context registrazione.
 	 * @return array
 	 */
+	/**
+	 * Restituisce item strutturati per il rendering PDF del modulo:
+	 * ['t'=>'s'] sezione (grassetto), ['t'=>'l'] etichetta (grassetto),
+	 * ['t'=>'v'] valore, ['t'=>'e'] spaziatura.
+	 */
 	private function build_activity_registration_data_lines( $ctx ) {
-		$lines    = array();
+		$items    = array();
 		$sections = $this->get_activity_registration_summary_sections( $ctx );
 
 		foreach ( $sections as $section ) {
@@ -865,24 +892,17 @@ class SD_Payment_Documents {
 				continue;
 			}
 
-			$lines[] = strtoupper( remove_accents( (string) $section['label'] ) );
+			$items[] = array( 't' => 's', 'text' => strtoupper( remove_accents( (string) $section['label'] ) ) );
 			foreach ( $section['rows'] as $row ) {
-				$line = (string) $row['label'] . ': ' . (string) $row['value'];
-				foreach ( $this->wrap_text_lines( $line, 96 ) as $wrapped ) {
-					$lines[] = $wrapped;
+				$items[] = array( 't' => 'l', 'text' => (string) $row['label'] . ':' );
+				foreach ( $this->wrap_text_lines( (string) $row['value'], 88 ) as $wrapped ) {
+					$items[] = array( 't' => 'v', 'text' => $wrapped );
 				}
 			}
-			$lines[] = '';
+			$items[] = array( 't' => 'e' );
 		}
 
-		return array_values(
-			array_filter(
-				$lines,
-				static function ( $line ) {
-					return null !== $line;
-				}
-			)
-		);
+		return array_values( array_filter( $items ) );
 	}
 
 	/**
