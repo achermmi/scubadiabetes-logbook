@@ -1504,14 +1504,19 @@ class SD_Membership_Admin {
 			            THEN COALESCE(pm.has_paid_fee, 0)
 			            ELSE m.has_paid_fee
 			        END AS has_paid_effective,
-			        al.last_reminder_at
+			        al.last_reminder_at, al.last_reminder_data
 			 FROM {$db->table('members')} m
 			 LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id
 			 LEFT JOIN (
-			     SELECT record_id, MAX(created_at) AS last_reminder_at
-			     FROM {$db->table('audit_log')}
-			     WHERE action = 'renewal_reminder' AND table_name = 'sd_members'
-			     GROUP BY record_id
+			     SELECT al1.record_id, al1.created_at AS last_reminder_at, al1.new_data AS last_reminder_data
+			     FROM {$db->table('audit_log')} al1
+			     INNER JOIN (
+			         SELECT record_id, MAX(id) AS max_id
+			         FROM {$db->table('audit_log')}
+			         WHERE table_name = 'sd_members'
+			           AND action IN ('renewal_reminder','email_sent')
+			         GROUP BY record_id
+			     ) al2 ON al2.max_id = al1.id
 			 ) al ON al.record_id = m.id
 			 WHERE COALESCE(m.is_active,1) = 1
 			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC"
@@ -1534,6 +1539,14 @@ class SD_Membership_Admin {
 			$paid_effective = (int) $row->has_paid_effective;
 			$amount_due     = $paid_effective ? 0.0 : (float) $row->fee_amount;
 
+			$last_reminder_subject = '';
+			if ( ! empty( $row->last_reminder_data ) ) {
+				$decoded = json_decode( (string) $row->last_reminder_data, true );
+				if ( is_array( $decoded ) && ! empty( $decoded['subject'] ) ) {
+					$last_reminder_subject = (string) $decoded['subject'];
+				}
+			}
+
 			$result[] = array(
 				'id'             => (int) $row->id,
 				'name'           => trim( (string) $row->last_name . ', ' . (string) $row->first_name ),
@@ -1544,6 +1557,7 @@ class SD_Membership_Admin {
 				'amount_due'     => $amount_due,
 				'can_remind'     => ( ! empty( $row->email ) && is_email( $row->email ) ),
 				'last_reminder_at' => $row->last_reminder_at ? (string) $row->last_reminder_at : '',
+				'last_reminder_subject' => $last_reminder_subject,
 			);
 		}
 
@@ -1864,6 +1878,8 @@ class SD_Membership_Admin {
 						array(
 							'expiry'      => $member->membership_expiry,
 							'template_id' => $template_id,
+							'subject'     => (string) $subject,
+							'email'       => (string) $member->email,
 						)
 					);
 				}
@@ -1915,7 +1931,7 @@ class SD_Membership_Admin {
 		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
 
 		if ( $sent ) {
-			SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry ) );
+			SD_Membership_Helper::log_audit( (int) $member->id, 'renewal_reminder', 'sd_members', (int) $member->id, null, array( 'expiry' => $member->membership_expiry, 'subject' => (string) $subject, 'email' => (string) $member->email ) );
 		}
 
 		return (bool) $sent;

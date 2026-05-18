@@ -641,6 +641,17 @@ class SD_Activity_Payment_Flow {
 
 		$secretariat_sent = wp_mail( $secretariat_email, $secretariat_subject, $secretariat_body, $headers, $attachments );
 
+		if ( $secretariat_sent && class_exists( 'SD_Email_Logger' ) ) {
+			SD_Email_Logger::log(
+				'sd_activity_registrations',
+				(int) $ctx->registration_id,
+				$secretariat_email,
+				$secretariat_subject,
+				$is_refund ? 'refund_confirmation_secretariat' : 'payment_confirmation_secretariat',
+				array( 'activity_id' => (int) ( $ctx->activity_id ?? 0 ) )
+			);
+		}
+
 		if ( $participant_sent ) {
 			global $wpdb;
 			$wpdb->insert(
@@ -655,6 +666,7 @@ class SD_Activity_Payment_Flow {
 							'activity_id' => (int) ( $ctx->activity_id ?? 0 ),
 							'type'        => $is_refund ? 'refund_confirmation' : 'payment_confirmation',
 							'email'       => (string) $ctx->email,
+							'subject'     => (string) $subject,
 						)
 					),
 					'created_at' => current_time( 'mysql' ),
@@ -816,6 +828,17 @@ class SD_Activity_Payment_Flow {
 		$participant_sent = wp_mail( sanitize_email( (string) $ctx->email ), $subject, $body, $headers, $attachments );
 		remove_action( 'wp_mail_failed', $mail_error_listener, 10 );
 
+		if ( $participant_sent && class_exists( 'SD_Email_Logger' ) ) {
+			SD_Email_Logger::log(
+				'sd_activity_registrations',
+				(int) $ctx->registration_id,
+				(string) $ctx->email,
+				(string) $subject,
+				'invoice_request',
+				array( 'activity_id' => (int) ( $ctx->activity_id ?? 0 ) )
+			);
+		}
+
 		// --- Notifica segretariato ---
 		$admin_email = (string) get_option(
 			'sd_payment_invoice_association_email',
@@ -854,6 +877,17 @@ class SD_Activity_Payment_Flow {
 			$headers,
 			$attachments
 		);
+
+		if ( $admin_sent && class_exists( 'SD_Email_Logger' ) ) {
+			SD_Email_Logger::log(
+				'sd_activity_registrations',
+				(int) $ctx->registration_id,
+				(string) $admin_email,
+				(string) $admin_subject,
+				'invoice_request_secretariat',
+				array( 'activity_id' => (int) ( $ctx->activity_id ?? 0 ) )
+			);
+		}
 
 		if ( ! $admin_sent ) {
 			error_log( '[SD Activity Payment] send_invoice_request_email admin notification failed for reg=' . (int) $ctx->registration_id ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.57' );
+define( 'SD_LOGBOOK_VERSION', '1.3.59' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -65,6 +65,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-database.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-roles.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-currency-converter.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-email-logger.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-adapter.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-paypal.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-fattura.php';

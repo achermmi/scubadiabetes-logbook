@@ -5681,6 +5681,9 @@
 					(regDashboardState.rows || []).forEach(function (r) {
 						if (parseInt(r.id, 10) === regId) { r.status = newVal; }
 					});
+					(state.registrations || []).forEach(function (r) {
+						if (parseInt(r.id, 10) === regId) { r.status = newVal; }
+					});
 					showRegDashboardMessage('success', (resp.data && resp.data.message) || 'Stato aggiornato.');
 					renderRegDashboardRows(getFilteredRegRows());
 					updateRegBulkButton();
@@ -5739,6 +5742,9 @@
 					}
 					$sel.data('prev', newVal);
 					(regDashboardState.rows || []).forEach(function (r) {
+						if (parseInt(r.id, 10) === regId) { r.payment_status = newVal; }
+					});
+					(state.registrations || []).forEach(function (r) {
 						if (parseInt(r.id, 10) === regId) { r.payment_status = newVal; }
 					});
 					var baseMsg = (resp.data && resp.data.message) || 'Stato pagamento aggiornato.';
@@ -5933,7 +5939,7 @@
 				'</td>' +
 				'<td>' + formatRegDate(r.created_at) + '</td>' +
 				'<td>' + esc(amount) + '</td>' +
-				'<td>' + formatRegDateTime(r.last_email_at) + '</td>' +
+				'<td>' + formatRegDateTime(r.last_email_at) + (r.last_email_subject ? '<div class="sd-cell-sub" title="' + esc(r.last_email_subject) + '">' + esc(r.last_email_subject) + '</div>' : '') + '</td>' +
 				'<td class="sd-renewals-action-cell">' + actions.join(' ') + '</td>' +
 				'</tr>';
 		});

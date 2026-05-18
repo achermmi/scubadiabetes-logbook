@@ -191,7 +191,7 @@
 				'<td><span class="sd-renewal-status ' + statusClass + '">' + statusLabel + '</span></td>' +
 				'<td>' + formatDate(r.membership_expiry) + '</td>' +
 				'<td><span class="' + dueClass + '">' + dueLabel + '</span></td>' +
-				'<td>' + formatDateTime(r.last_reminder_at) + '</td>' +
+				'<td>' + formatDateTime(r.last_reminder_at) + (r.last_reminder_subject ? '<div class="sd-cell-sub" title="' + escapeHtml(r.last_reminder_subject) + '">' + escapeHtml(r.last_reminder_subject) + '</div>' : '') + '</td>' +
 				'<td>' + actionHtml + '</td>' +
 			'</tr>';
 		});

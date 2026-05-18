@@ -135,7 +135,10 @@ class SD_Membership_Helper {
 		$subject = sprintf( __( '[%1$s] Conferma iscrizione %2$s', 'sd-logbook' ), $site_name, $year );
 		if ( $send_to_member ) {
 			$body = self::get_welcome_email_body( $member, $plain_password, $site_name, $site_url, $registered_family );
-			wp_mail( $to, $subject, $body, $reg_headers );
+			$wm_sent = wp_mail( $to, $subject, $body, $reg_headers );
+			if ( $wm_sent && class_exists( 'SD_Email_Logger' ) ) {
+				SD_Email_Logger::log( 'sd_members', (int) $member->id, (string) $to, (string) $subject, 'registration_welcome' );
+			}
 		}
 
 		// === Email a ogni famigliare registrato ===
@@ -151,7 +154,10 @@ class SD_Membership_Helper {
 			);
 			if ( $send_to_member ) {
 				$fm_body = self::get_family_welcome_email_body( $fm, $member, $site_name, $site_url );
-				wp_mail( $fm['email'], $fm_subject, $fm_body, $headers );
+				$fm_sent = wp_mail( $fm['email'], $fm_subject, $fm_body, $headers );
+				if ( $fm_sent && class_exists( 'SD_Email_Logger' ) ) {
+					SD_Email_Logger::log( 'sd_members', (int) ( $fm['member_id'] ?? $member->id ), (string) $fm['email'], (string) $fm_subject, 'registration_family' );
+				}
 			}
 		}
 
@@ -161,7 +167,10 @@ class SD_Membership_Helper {
 			/* translators: 1: site name, 2: first name, 3: last name */
 			$staff_subject = sprintf( __( '[%1$s] Nuova iscrizione: %2$s %3$s', 'sd-logbook' ), $site_name, $member->first_name, $member->last_name );
 			$staff_body    = self::get_staff_email_body( $member, $site_name, $registered_family );
-			wp_mail( $secretariat_email, $staff_subject, $staff_body, $headers );
+			$staff_sent    = wp_mail( $secretariat_email, $staff_subject, $staff_body, $headers );
+			if ( $staff_sent && class_exists( 'SD_Email_Logger' ) ) {
+				SD_Email_Logger::log( 'sd_members', (int) $member->id, (string) $secretariat_email, (string) $staff_subject, 'registration_secretariat' );
+			}
 		}
 	}
 

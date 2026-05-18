@@ -2243,14 +2243,19 @@ class SD_Activity_Manager {
 		$last_email_sql = '';
 		if ( $audit_exists ) {
 			$last_email_sql = "LEFT JOIN (
-				SELECT record_id, MAX(created_at) AS last_email_at
-				FROM {$audit}
-				WHERE action = 'registration_broadcast' AND table_name = 'sd_activity_registrations'
-				GROUP BY record_id
+				SELECT al1.record_id, al1.created_at AS last_email_at, al1.new_data AS last_email_data
+				FROM {$audit} al1
+				INNER JOIN (
+					SELECT record_id, MAX(id) AS max_id
+					FROM {$audit}
+					WHERE table_name = 'sd_activity_registrations'
+					  AND action IN ('registration_broadcast','email_sent')
+					GROUP BY record_id
+				) al2 ON al2.max_id = al1.id
 			) al ON al.record_id = r.id";
 		}
 
-		$select_extra = $audit_exists ? ', al.last_email_at' : ', NULL AS last_email_at';
+		$select_extra = $audit_exists ? ', al.last_email_at, al.last_email_data' : ', NULL AS last_email_at, NULL AS last_email_data';
 
 		$sql = $wpdb->prepare(
 			"SELECT r.id, r.first_name, r.last_name, r.email, r.status, r.payment_status,
@@ -2281,6 +2286,14 @@ class SD_Activity_Manager {
 				}
 			}
 
+			$last_email_subject = '';
+			if ( ! empty( $row->last_email_data ) ) {
+				$decoded = json_decode( (string) $row->last_email_data, true );
+				if ( is_array( $decoded ) && ! empty( $decoded['subject'] ) ) {
+					$last_email_subject = (string) $decoded['subject'];
+				}
+			}
+
 			$result[] = array(
 				'id'             => (int) $row->id,
 				'first_name'     => (string) $row->first_name,
@@ -2294,6 +2307,7 @@ class SD_Activity_Manager {
 				'created_at'     => $registration_date,
 				'can_remind'     => ( ! empty( $email ) && is_email( $email ) ),
 				'last_email_at'  => ! empty( $row->last_email_at ) ? (string) $row->last_email_at : '',
+				'last_email_subject' => $last_email_subject,
 			);
 		}
 
@@ -2597,6 +2611,7 @@ class SD_Activity_Manager {
 							'activity_id' => (int) $row->activity_id,
 							'template_id' => $template_id,
 							'email'       => (string) $row->email,
+							'subject'     => (string) $subject,
 						)
 					),
 					'created_at' => current_time( 'mysql' ),

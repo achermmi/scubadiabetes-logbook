@@ -575,3 +575,6 @@
 		width: 100%;
 	}
 }
+
+.sd-cell-sub { font-size: 11px; color: #64748b; margin-top: 2px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+

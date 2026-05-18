@@ -536,6 +536,17 @@ class SD_Payment_Orchestrator {
 
 		wp_mail( $to, $subject, $body, $headers, $attachments );
 
+		if ( class_exists( 'SD_Email_Logger' ) ) {
+			SD_Email_Logger::log(
+				'sd_payments',
+				(int) ( $payment->id ?? 0 ),
+				(string) $to,
+				(string) $subject,
+				'membership_activation',
+				array( 'member_id' => (int) $member->id )
+			);
+		}
+
 		$wpdb->update(
 			$db->table( 'payments' ),
 			array( 'is_activation_email_sent' => 1 ),
@@ -662,6 +673,16 @@ class SD_Payment_Orchestrator {
 				array( 'is_activation_email_sent' => 1 ),
 				array( 'id' => (int) $payment->id )
 			);
+			if ( class_exists( 'SD_Email_Logger' ) ) {
+				SD_Email_Logger::log(
+					'sd_members',
+					(int) $member->id,
+					(string) $to,
+					(string) $subject,
+					'invoice_email',
+					array( 'payment_id' => (int) $payment->id )
+				);
+			}
 		} else {
 			error_log( 'SD send_invoice_email: wp_mail fallito per member_id=' . $member_id . ' to=' . $to );
 		}
