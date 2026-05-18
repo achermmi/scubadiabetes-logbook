@@ -69,7 +69,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<option value="0"><?php esc_html_e( '— Testo predefinito —', 'sd-logbook' ); ?></option>
 				<?php
 				if ( class_exists( 'SD_Email_Templates' ) ) {
-					foreach ( SD_Email_Templates::get_all_as_options() as $tpl_id => $tpl_name ) {
+					foreach ( SD_Email_Templates::get_all_as_options( array( 'template_type' => 'membership', 'form_key' => 'membership:association' ) ) as $tpl_id => $tpl_name ) {
 						echo '<option value="' . esc_attr( $tpl_id ) . '">' . esc_html( $tpl_name ) . '</option>';
 					}
 				}

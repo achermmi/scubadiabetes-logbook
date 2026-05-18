@@ -1830,7 +1830,7 @@ class SD_Membership_Admin {
 
 		// Prova a usare un modello personalizzato.
 		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
-			$built = SD_Email_Templates::build( $template_id, $member );
+			$built = SD_Email_Templates::build( $template_id, $member, array( 'form_key' => 'membership:association' ) );
 			if ( $built ) {
 				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );
 				if ( '' === trim( $subject ) ) {

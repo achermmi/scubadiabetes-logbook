@@ -6,11 +6,14 @@
 	'use strict';
 
 	var state = {
+		forms: sdEmailTpl.forms || {},
+		selectedFormKey: sdEmailTpl.defaultFormKey || '',
 		templates: [],
-		activeId:  0,
-		dirty:     false,
+		activeId: 0,
+		dirty: false,
 		activeField: 'subject',
-		previewOpen: false
+		previewOpen: false,
+		currentVariables: []
 	};
 
 	var presets = {
@@ -43,14 +46,44 @@
 			return;
 		}
 
+		populateFormSelectors();
+		renderVariables();
 		initEditors();
 		loadTemplates();
 		bindEvents();
+		updateModuleBadge();
 
 		$(window).on('resize', function () {
 			refreshEditors();
 		});
 	});
+
+	function populateFormSelectors() {
+		var groups = {};
+		Object.keys(state.forms).forEach(function (formKey) {
+			var form = state.forms[formKey] || {};
+			var group = form.group || 'Moduli';
+			if (!groups[group]) {
+				groups[group] = [];
+			}
+			groups[group].push({ key: formKey, label: form.label || formKey });
+		});
+
+		['#sd-tpl-form-key-select', '#sd-tpl-form-key-filter'].forEach(function (selector) {
+			var html = '';
+			Object.keys(groups).forEach(function (group) {
+				html += '<optgroup label="' + escAttr(group) + '">';
+				groups[group].forEach(function (item) {
+					html += '<option value="' + escAttr(item.key) + '">' + escHtml(item.label) + '</option>';
+				});
+				html += '</optgroup>';
+			});
+
+			$(selector).html(html).val(state.selectedFormKey);
+		});
+
+		$('#sd-tpl-form-key').val(state.selectedFormKey);
+	}
 
 	// =========================================================================
 	// EDITOR VISUALE (TinyMCE)
@@ -70,11 +103,12 @@
 			tinymce: {
 				wpautop: false,
 				height: height,
-				menubar: false,
+				menubar: true,
 				branding: false,
-				toolbar1: 'undo redo | styleselect formatselect fontselect fontsizeselect',
-				toolbar2: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify',
-				toolbar3: 'bullist numlist outdent indent | blockquote hr | link unlink | removeformat',
+				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
+				toolbar2: 'bullist numlist outdent indent | blockquote hr table | link unlink image media | removeformat code',
+				toolbar3: 'undo redo | pastetext charmap | visualblocks visualchars | fullscreen',
+				plugins: 'lists link image media table code hr charmap paste visualblocks visualchars fullscreen',
 				fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
 				setup: function (editor) {
 					editor.on('init', function () {
@@ -95,7 +129,7 @@
 				}
 			},
 			quicktags: true,
-			mediaButtons: false
+			mediaButtons: true
 		});
 	}
 
@@ -139,7 +173,8 @@
 
 		$.post(sdEmailTpl.ajaxUrl, {
 			action: 'sd_email_tpl_list',
-			nonce:  sdEmailTpl.nonce
+			nonce: sdEmailTpl.nonce,
+			form_key: state.selectedFormKey
 		}, function (resp) {
 			if (!resp.success) {
 				showMessage('error', (resp.data && resp.data.message) || sdEmailTpl.strings.errorGeneric);
@@ -156,7 +191,7 @@
 	function renderList() {
 		var $list = $('#sd-email-tpl-list');
 		if (!state.templates.length) {
-			$list.html('<div class="sd-email-tpl-empty">Nessun modello salvato.</div>');
+			$list.html('<div class="sd-email-tpl-empty">' + escHtml(sdEmailTpl.strings.emptyTemplates || 'Nessun modello salvato.') + '</div>');
 			return;
 		}
 
@@ -164,8 +199,14 @@
 		state.templates.forEach(function (tpl) {
 			var isActive = (parseInt(tpl.id, 10) === state.activeId) ? ' is-active' : '';
 			html += '<div class="sd-email-tpl-item' + isActive + '" data-id="' + escInt(tpl.id) + '">' +
-				'<span class="sd-email-tpl-item-name" title="' + escAttr(tpl.name) + '">' + escHtml(tpl.name) + '</span>' +
-				'<button type="button" class="sd-email-tpl-item-delete" data-id="' + escInt(tpl.id) + '" title="Elimina">✕</button>' +
+				'<div class="sd-email-tpl-item-main">' +
+					'<span class="sd-email-tpl-item-name" title="' + escAttr(tpl.name) + '">' + escHtml(tpl.name) + '</span>' +
+					'<span class="sd-email-tpl-item-meta">' + escHtml(tpl.source_form_label || '') + '</span>' +
+				'</div>' +
+				'<div class="sd-email-tpl-item-actions">' +
+					'<button type="button" class="sd-email-tpl-item-duplicate" data-id="' + escInt(tpl.id) + '" title="Duplica">Dup</button>' +
+					'<button type="button" class="sd-email-tpl-item-delete" data-id="' + escInt(tpl.id) + '" title="Elimina">✕</button>' +
+				'</div>' +
 			'</div>';
 		});
 		$list.html(html);
@@ -186,6 +227,7 @@
 		$('#sd-email-tpl-placeholder').show();
 		state.activeId = 0;
 		state.dirty    = false;
+		$('#sd-tpl-duplicate').hide();
 		renderList();
 	}
 
@@ -220,6 +262,8 @@
 
 	function resetForm() {
 		$('#sd-tpl-id').val('0');
+		$('#sd-tpl-form-key').val(state.selectedFormKey);
+		$('#sd-tpl-form-key-select').val(state.selectedFormKey);
 		$('#sd-tpl-name').val('');
 		$('#sd-tpl-subject').val('');
 		setFieldValue('sd-tpl-body', '');
@@ -227,6 +271,8 @@
 		state.previewOpen = false;
 		syncPreviewLayout();
 		$('#sd-tpl-toggle-preview').text('Mostra anteprima');
+		$('#sd-tpl-duplicate').hide();
+		updateModuleBadge();
 	}
 
 	// =========================================================================
@@ -250,8 +296,13 @@
 			var tpl = resp.data.template;
 			state.activeId = parseInt(tpl.id, 10);
 			state.dirty    = false;
+			state.selectedFormKey = tpl.source_form_key || state.selectedFormKey;
 
 			$('#sd-tpl-id').val(tpl.id);
+			$('#sd-tpl-form-key').val(state.selectedFormKey);
+			$('#sd-tpl-form-key-select, #sd-tpl-form-key-filter').val(state.selectedFormKey);
+			renderVariables();
+			updateModuleBadge(tpl.source_form_label || '');
 			$('#sd-tpl-name').val(tpl.name || '');
 			$('#sd-tpl-subject').val(tpl.subject || '');
 			setFieldValue('sd-tpl-body', tpl.body || '');
@@ -260,6 +311,7 @@
 			state.previewOpen = false;
 			syncPreviewLayout();
 			$('#sd-tpl-toggle-preview').text('Mostra anteprima');
+			$('#sd-tpl-duplicate').show();
 
 			showEditor();
 			renderList();
@@ -283,6 +335,7 @@
 			action:    'sd_email_tpl_save',
 			nonce:     sdEmailTpl.nonce,
 			id:        $('#sd-tpl-id').val(),
+			source_form_key: $('#sd-tpl-form-key').val(),
 			name:      $('#sd-tpl-name').val(),
 			subject:   $('#sd-tpl-subject').val(),
 			body:      body,
@@ -295,7 +348,10 @@
 			}
 			state.activeId = parseInt(resp.data.id, 10);
 			state.dirty    = false;
+			state.selectedFormKey = resp.data.source_form_key || state.selectedFormKey;
 			$('#sd-tpl-id').val(state.activeId);
+			$('#sd-tpl-duplicate').show();
+			$('#sd-tpl-form-key-select, #sd-tpl-form-key-filter').val(state.selectedFormKey);
 			showMessage('success', resp.data.message || sdEmailTpl.strings.saveSuccess);
 			loadTemplates();
 		}).fail(function () {
@@ -327,6 +383,30 @@
 				hideEditor();
 			}
 			loadTemplates();
+		}).fail(function () {
+			showMessage('error', sdEmailTpl.strings.errorGeneric);
+		});
+	}
+
+	function duplicateTemplate(id) {
+		if (!confirm(sdEmailTpl.strings.confirmDuplicate || 'Duplicare il modello selezionato?')) {
+			return;
+		}
+
+		$.post(sdEmailTpl.ajaxUrl, {
+			action: 'sd_email_tpl_duplicate',
+			nonce:  sdEmailTpl.nonce,
+			id:     id
+		}, function (resp) {
+			if (!resp.success) {
+				showMessage('error', (resp.data && resp.data.message) || sdEmailTpl.strings.errorGeneric);
+				return;
+			}
+			showMessage('success', resp.data.message || sdEmailTpl.strings.duplicateSuccess);
+			loadTemplates();
+			if (resp.data && resp.data.id) {
+				loadTemplate(resp.data.id);
+			}
 		}).fail(function () {
 			showMessage('error', sdEmailTpl.strings.errorGeneric);
 		});
@@ -397,6 +477,7 @@
 			'{{anno_prossimo}}': nextYear,
 			'{{scadenza}}': '31.12.' + year,
 			'{{tipo_socio}}': 'Individuale',
+			'{{tipo_iscrizione}}': 'individuale',
 			'{{tassa_sociale}}': 'CHF 80.00',
 			'{{tassa_sociale_numero}}': '80.00',
 			'{{nome}}': 'Mario',
@@ -404,9 +485,17 @@
 			'{{nome_completo}}': 'Mario Rossi',
 			'{{email_socio}}': 'mario.rossi@example.com',
 			'{{email_associazione}}': 'segreteria@scubadiabetes.org',
+			'{{telefono_associazione}}': '+41 79 000 00 00',
+			'{{indirizzo_associazione}}': 'Via Esempio 1, 6900 Lugano',
 			'{{logo}}': '<img src="' + uploadsBase + 'cropped-cropped-ScubaDS-1.jpeg" alt="Logo" style="max-height:80px;display:block;">',
 			'{{logo_esteso}}': '<img src="' + uploadsBase + 'scubadiabetes_radius60.png" alt="Logo esteso" style="max-height:120px;display:block;">'
 		};
+
+		state.currentVariables.forEach(function (variable) {
+			if (variable && variable.tag && typeof map[variable.tag] === 'undefined') {
+				map[variable.tag] = variable.sample || variable.label || variable.tag;
+			}
+		});
 
 		var resolved = String(text || '');
 		Object.keys(map).forEach(function (tag) {
@@ -490,6 +579,12 @@
 			if (id) { deleteTemplate(id); }
 		});
 
+		$(document).on('click', '.sd-email-tpl-item-duplicate', function (e) {
+			e.stopPropagation();
+			var id = parseInt($(this).data('id'), 10);
+			if (id) { duplicateTemplate(id); }
+		});
+
 		// Annulla
 		$('#sd-tpl-cancel').on('click', function () {
 			if (state.dirty && !confirm(sdEmailTpl.strings.unsavedChanges)) { return; }
@@ -506,9 +601,35 @@
 		});
 
 		$('#sd-tpl-apply-preset').on('click', applyPreset);
+		$('#sd-tpl-duplicate').on('click', function () {
+			if (state.activeId) {
+				duplicateTemplate(state.activeId);
+			}
+		});
 
 		// Anteprima
 		$('#sd-tpl-toggle-preview').on('click', togglePreview);
+
+		$('#sd-tpl-form-key-select, #sd-tpl-form-key-filter').on('change', function () {
+			var nextKey = $(this).val();
+			if (!nextKey || nextKey === state.selectedFormKey) {
+				return;
+			}
+
+			if (state.dirty && !confirm(sdEmailTpl.strings.unsavedChanges)) {
+				$(this).val(state.selectedFormKey);
+				return;
+			}
+
+			state.selectedFormKey = nextKey;
+			$('#sd-tpl-form-key').val(state.selectedFormKey);
+			$('#sd-tpl-form-key-select, #sd-tpl-form-key-filter').val(state.selectedFormKey);
+			renderVariables();
+			updateModuleBadge();
+			resetForm();
+			hideEditor();
+			loadTemplates();
+		});
 
 		// Dirty flag su input subject / name
 		$('#sd-tpl-name, #sd-tpl-subject').on('input', function () {
@@ -581,6 +702,32 @@
 		}
 
 		showMessage('success', 'Preset applicato. Verifica il contenuto e salva il modello.');
+	}
+
+	function renderVariables() {
+		var form = state.forms[state.selectedFormKey] || {};
+		state.currentVariables = Array.isArray(form.variables) ? form.variables : [];
+
+		var chipsHtml = '';
+		var rowsHtml = '';
+		if (!state.currentVariables.length) {
+			chipsHtml = '<div class="sd-email-tpl-empty">' + escHtml(sdEmailTpl.strings.emptyVariables || '') + '</div>';
+			rowsHtml = '<tr><td colspan="2" class="sd-email-tpl-empty">' + escHtml(sdEmailTpl.strings.emptyVariables || '') + '</td></tr>';
+		} else {
+			state.currentVariables.forEach(function (variable) {
+				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">' + escHtml(variable.tag) + '</button>';
+				rowsHtml += '<tr><td><code>' + escHtml(variable.tag) + '</code></td><td>' + escHtml(variable.description || variable.label || '') + '</td></tr>';
+			});
+		}
+
+		$('#sd-var-chips-main').html(chipsHtml);
+		$('.sd-email-tpl-vars-table tbody').html(rowsHtml);
+	}
+
+	function updateModuleBadge(labelOverride) {
+		var form = state.forms[state.selectedFormKey] || {};
+		var label = labelOverride || form.label || state.selectedFormKey;
+		$('#sd-email-tpl-current-module').text(label ? 'Modulo attivo: ' + label : '');
 	}
 
 	// =========================================================================

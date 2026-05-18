@@ -71,6 +71,16 @@
 	font-weight: 600;
 	color: #1a2332;
 }
+.sd-email-tpl-sidebar-note {
+	margin: 4px 0 0;
+	font-size: 0.78rem;
+	color: #6b7c93;
+}
+.sd-email-tpl-sidebar-filter {
+	padding: 14px 16px;
+	border-bottom: 1px solid #dde3ec;
+	background: #fff;
+}
 
 .sd-email-tpl-list {
 	padding: 8px 0;
@@ -92,6 +102,13 @@
 	border-left: 3px solid transparent;
 	transition: background 0.15s, border-color 0.15s;
 }
+.sd-email-tpl-item-main {
+	min-width: 0;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
 
 .sd-email-tpl-item:hover {
 	background: #f0f4ff;
@@ -111,6 +128,18 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	margin-right: 8px;
+}
+.sd-email-tpl-item-meta {
+	font-size: 0.72rem;
+	color: #6b7c93;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.sd-email-tpl-item-actions {
+	display: flex;
+	gap: 4px;
+	margin-left: 8px;
 }
 
 .sd-email-tpl-item-delete {
@@ -145,6 +174,26 @@
 .sd-email-tpl-editor {
 	flex: 1;
 	min-width: 0;
+}
+.sd-email-tpl-form-topbar {
+	display: flex;
+	gap: 16px;
+	align-items: flex-end;
+	flex-wrap: wrap;
+	margin-bottom: 20px;
+}
+.sd-field-row-inline {
+	margin-bottom: 0;
+	flex: 1 1 420px;
+}
+.sd-email-tpl-current-module {
+	padding: 10px 14px;
+	border-radius: 999px;
+	background: #eef2ff;
+	color: #3730a3;
+	font-size: 0.82rem;
+	font-weight: 600;
+	max-width: 100%;
 }
 
 /* Override global form grid styles from other admin pages */
@@ -199,6 +248,12 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
+}
+.sd-email-tpl-vars-help,
+.sd-field-help {
+	margin: 0 0 10px;
+	font-size: 0.82rem;
+	color: #6b7c93;
 }
 
 /* ============================================================
@@ -303,6 +358,7 @@
 	display: flex;
 	gap: 10px;
 	align-items: center;
+	flex-wrap: wrap;
 }
 
 .sd-preset-select {
@@ -426,10 +482,21 @@
 	.sd-preset-controls {
 		flex-direction: column;
 		align-items: stretch;
+	.sd-email-tpl-layout {
+		flex-direction: column;
+	}
+	.sd-email-tpl-sidebar {
+		width: 100%;
+		flex-basis: auto;
+	}
 	}
 }
 
 /* ============================================================
+	.sd-email-tpl-form-topbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
    Anteprima
    ============================================================ */
 

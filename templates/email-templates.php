@@ -3,7 +3,9 @@
  * Template: Gestione modelli email
  *
  * Variabili disponibili:
- * @var array $vars  Elenco variabili supportate (tag + label)
+ * @var array  $forms            Elenco moduli iscrizione disponibili
+ * @var array  $vars             Elenco variabili supportate per il modulo iniziale
+ * @var string $default_form_key Chiave modulo iniziale
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<div class="sd-form-header">
 		<h2 class="sd-form-title"><?php esc_html_e( 'Modelli Email', 'sd-logbook' ); ?></h2>
+		<p class="sd-form-subtitle"><?php esc_html_e( 'Crea template per iscrizioni all’associazione e alle attività con variabili dinamiche basate sul modulo selezionato.', 'sd-logbook' ); ?></p>
 	</div>
 
 	<!-- Messaggi -->
@@ -25,10 +28,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<!-- ==================== LISTA MODELLI ==================== -->
 		<div class="sd-email-tpl-sidebar" id="sd-email-tpl-sidebar">
 			<div class="sd-email-tpl-sidebar-header">
-				<h3><?php esc_html_e( 'Modelli salvati', 'sd-logbook' ); ?></h3>
+				<div>
+					<h3><?php esc_html_e( 'Modelli salvati', 'sd-logbook' ); ?></h3>
+					<p class="sd-email-tpl-sidebar-note"><?php esc_html_e( 'La lista si aggiorna in base al modulo selezionato.', 'sd-logbook' ); ?></p>
+				</div>
 				<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-email-tpl-new">
 					+ <?php esc_html_e( 'Nuovo modello', 'sd-logbook' ); ?>
 				</button>
+			</div>
+			<div class="sd-email-tpl-sidebar-filter">
+				<label class="sd-field-label" for="sd-tpl-form-key-filter"><?php esc_html_e( 'Modulo d’iscrizione', 'sd-logbook' ); ?></label>
+				<select id="sd-tpl-form-key-filter" class="sd-field-input"></select>
 			</div>
 			<div class="sd-email-tpl-list" id="sd-email-tpl-list">
 				<div class="sd-email-tpl-loading" id="sd-email-tpl-loading">
@@ -43,14 +53,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<!-- Form nascosto di default -->
 			<form id="sd-email-tpl-form" autocomplete="off" novalidate>
 				<input type="hidden" id="sd-tpl-id" name="id" value="0">
+				<input type="hidden" id="sd-tpl-form-key" name="source_form_key" value="<?php echo esc_attr( $default_form_key ); ?>">
+
+				<div class="sd-email-tpl-form-topbar">
+					<div class="sd-field-row sd-field-row-inline sd-field-row-module">
+						<label class="sd-field-label" for="sd-tpl-form-key-select">
+							<?php esc_html_e( 'Modulo d’iscrizione', 'sd-logbook' ); ?> <span class="required">*</span>
+						</label>
+						<select id="sd-tpl-form-key-select" class="sd-field-input" required></select>
+					</div>
+					<div class="sd-email-tpl-current-module" id="sd-email-tpl-current-module"></div>
+				</div>
 
 				<!-- VARIABILI DISPONIBILI IN ALTO -->
 				<div class="sd-email-tpl-vars-section">
 					<h4 class="sd-email-tpl-vars-title"><?php esc_html_e( 'Variabili disponibili', 'sd-logbook' ); ?></h4>
-					<div class="sd-var-chips sd-var-chips-main">
+					<p class="sd-email-tpl-vars-help"><?php esc_html_e( 'Cambiando modulo si aggiornano sia le variabili sia l’elenco dei template relativi.', 'sd-logbook' ); ?></p>
+					<div class="sd-var-chips sd-var-chips-main" id="sd-var-chips-main">
 						<?php foreach ( $vars as $v ) : ?>
 							<button type="button" class="sd-var-chip" data-var="<?php echo esc_attr( $v['tag'] ); ?>"
-								title="<?php echo esc_attr( $v['label'] ); ?>">
+								title="<?php echo esc_attr( $v['description'] ?? $v['label'] ); ?>">
 								<?php echo esc_html( $v['tag'] ); ?>
 							</button>
 						<?php endforeach; ?>
@@ -82,6 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</label>
 					<input type="text" id="sd-tpl-name" name="name" class="sd-field-input"
 						placeholder="<?php esc_attr_e( 'Es. Reminder rinnovo annuale', 'sd-logbook' ); ?>" required>
+					<div class="sd-field-help"><?php esc_html_e( 'Un template può essere duplicato e poi adattato a una nuova variante.', 'sd-logbook' ); ?></div>
 				</div>
 
 				<!-- Oggetto -->
@@ -141,6 +164,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php esc_html_e( 'Mostra anteprima', 'sd-logbook' ); ?>
 					</button>
 					<div class="sd-email-tpl-form-actions-right">
+						<button type="button" class="sd-btn sd-btn-secondary" id="sd-tpl-duplicate" style="display:none;">
+							<?php esc_html_e( 'Duplica', 'sd-logbook' ); ?>
+						</button>
 						<button type="button" class="sd-btn sd-btn-secondary" id="sd-tpl-cancel">
 							<?php esc_html_e( 'Annulla', 'sd-logbook' ); ?>
 						</button>
@@ -174,7 +200,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php foreach ( $vars as $v ) : ?>
 					<tr>
 						<td><code><?php echo esc_html( $v['tag'] ); ?></code></td>
-						<td><?php echo esc_html( $v['label'] ); ?></td>
+						<td><?php echo esc_html( $v['description'] ?? $v['label'] ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>

@@ -905,13 +905,18 @@ class SD_Database {
 		$sql   = "CREATE TABLE {$table} (
 			id int(11) NOT NULL AUTO_INCREMENT,
 			name varchar(200) NOT NULL,
+			template_type varchar(30) NOT NULL DEFAULT 'membership',
+			source_form_key varchar(191) NOT NULL DEFAULT 'membership:association',
 			subject varchar(500) NOT NULL,
 			body longtext NOT NULL,
 			signature longtext DEFAULT NULL,
+			used_variables longtext DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
-			KEY idx_name (name(100))
+			KEY idx_name (name(100)),
+			KEY idx_template_type (template_type),
+			KEY idx_source_form_key (source_form_key(100))
 		) {$charset_collate};";
 		dbDelta( $sql );
 	}

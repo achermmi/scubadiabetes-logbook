@@ -2436,17 +2436,26 @@ class SD_Activity_Manager {
 		$ctx->email        = (string) $row->email;
 		$ctx->member_number = (string) $row->id;
 		$ctx->fee_amount   = (float) $row->price_chf;
+		$ctx->price_chf    = (float) $row->price_chf;
+		$ctx->price_eur    = isset( $row->price_eur ) ? (float) $row->price_eur : 0;
 		$ctx->member_type  = 'attivo';
 		$ctx->membership_expiry = '';
+		$ctx->registration_data = isset( $row->registration_data ) ? (string) $row->registration_data : '';
 
 		// Carica titolo attività per fallback subject/body.
 		global $wpdb;
-		$activity_title = (string) $wpdb->get_var(
+		$activity = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT title FROM ' . $wpdb->prefix . 'sd_activities WHERE id = %d',
+				'SELECT title, location, start_date, end_date, description FROM ' . $wpdb->prefix . 'sd_activities WHERE id = %d',
 				(int) $row->activity_id
 			)
 		);
+		$activity_title = ! empty( $activity->title ) ? (string) $activity->title : '';
+		$ctx->activity_title = $activity_title;
+		$ctx->activity_location = ! empty( $activity->location ) ? (string) $activity->location : '';
+		$ctx->activity_start_date = ! empty( $activity->start_date ) ? (string) $activity->start_date : '';
+		$ctx->activity_end_date = ! empty( $activity->end_date ) ? (string) $activity->end_date : '';
+		$ctx->activity_description = ! empty( $activity->description ) ? (string) $activity->description : '';
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
@@ -2454,7 +2463,7 @@ class SD_Activity_Manager {
 		$html_body = '';
 
 		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
-			$built = SD_Email_Templates::build( $template_id, $ctx );
+			$built = SD_Email_Templates::build( $template_id, $ctx, array( 'form_key' => 'activity:' . (int) $row->activity_id ) );
 			if ( $built ) {
 				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );
 				if ( '' === trim( $subject ) ) {
