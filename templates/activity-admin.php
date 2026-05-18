@@ -20,7 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<div class="sd-admin-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Dashboard Attivita', 'sd-logbook' ); ?>">
 		<button type="button" class="sd-admin-tab is-active" data-tab="attivita"><?php esc_html_e( 'Attivita', 'sd-logbook' ); ?></button>
-		<button type="button" class="sd-admin-tab" data-tab="modifica"><?php esc_html_e( 'Modifica Attivita', 'sd-logbook' ); ?></button>
 		<button type="button" class="sd-admin-tab" data-tab="registrazioni"><?php esc_html_e( 'Registrazioni', 'sd-logbook' ); ?></button>
 		<button type="button" class="sd-admin-tab" data-tab="pagamenti"><?php esc_html_e( 'Pagamenti', 'sd-logbook' ); ?></button>
 	</div>

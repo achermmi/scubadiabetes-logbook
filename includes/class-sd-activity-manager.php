@@ -1191,7 +1191,7 @@ class SD_Activity_Manager {
 			'updated_at'     => current_time( 'mysql' ),
 		);
 
-		if ( 'paid' === $payment_status && empty( $payment_data['payment_date'] ) ) {
+		if ( in_array( $payment_status, array( 'paid', 'refunded' ), true ) && empty( $payment_data['payment_date'] ) ) {
 			$update_data['payment_date'] = current_time( 'mysql' );
 		} elseif ( ! empty( $payment_data['payment_date'] ) ) {
 			$update_data['payment_date'] = sanitize_text_field( $payment_data['payment_date'] );
@@ -1859,11 +1859,45 @@ class SD_Activity_Manager {
 		$payment_status  = sanitize_text_field( $_POST['payment_status'] ?? 'pending' );
 		$payment_data    = isset( $_POST['payment_data'] ) ? array_map( 'sanitize_text_field', (array) $_POST['payment_data'] ) : array();
 
+		if ( 'refunded' === $payment_status ) {
+			global $wpdb;
+			$current_status = (string) $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT payment_status FROM ' . $wpdb->prefix . 'sd_activity_registrations WHERE id = %d',
+					$registration_id
+				)
+			);
+			if ( 'paid' !== $current_status && 'refunded' !== $current_status ) {
+				wp_send_json_error( array( 'message' => __( 'Il rimborso è ammesso solo per pagamenti già marcati come "Pagato".', 'sd-logbook' ) ) );
+			}
+		}
+
 		if ( ! $this->update_registration_payment_status( $registration_id, $payment_status, $payment_data ) ) {
 			wp_send_json_error( array( 'message' => __( 'Errore nell\'aggiornamento', 'sd-logbook' ) ) );
 		}
 
-		wp_send_json_success( array( 'message' => __( 'Pagamento aggiornato', 'sd-logbook' ) ) );
+		$email_sent  = false;
+		$email_error = '';
+		if ( in_array( $payment_status, array( 'paid', 'refunded' ), true ) && class_exists( 'SD_Activity_Payment_Flow' ) ) {
+			$flow   = new SD_Activity_Payment_Flow();
+			$method = ( 'refunded' === $payment_status ) ? 'send_refund_confirmation_email' : 'resend_payment_confirmation_email';
+			if ( method_exists( $flow, $method ) ) {
+				$result = $flow->{$method}( $registration_id );
+				if ( is_wp_error( $result ) ) {
+					$email_error = $result->get_error_message();
+				} else {
+					$email_sent = true;
+				}
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'message'     => __( 'Pagamento aggiornato', 'sd-logbook' ),
+				'email_sent'  => $email_sent,
+				'email_error' => $email_error,
+			)
+		);
 	}
 
 	/**
@@ -1928,8 +1962,8 @@ class SD_Activity_Manager {
 		$status_raw         = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : null;
 		$payment_status_raw = isset( $_POST['payment_status'] ) ? sanitize_text_field( wp_unslash( $_POST['payment_status'] ) ) : null;
 
-		$allowed_statuses         = array( 'registered', 'waitlist', 'cancelled', 'refunded' );
-		$allowed_payment_statuses = array( 'pending', 'paid', 'invoice_requested', 'invoice_sent', 'invoice_error', 'cancelled', 'free' );
+		$allowed_statuses         = array( 'registered', 'waitlist', 'cancelled' );
+		$allowed_payment_statuses = array( 'pending', 'paid', 'refunded', 'invoice_requested', 'invoice_sent', 'invoice_error', 'cancelled', 'free' );
 
 		$data    = array();
 		$formats = array();

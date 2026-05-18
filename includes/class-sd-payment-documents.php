@@ -652,7 +652,7 @@ class SD_Payment_Documents {
 			return new WP_Error( 'sd_docs_dir_failed', __( 'Impossibile creare la cartella documenti.', 'sd-logbook' ) );
 		}
 
-		$file  = $dir . 'conferma-pagamento-attivita-' . (int) $ctx->registration_id . '-' . gmdate( 'Ymd-His' ) . '.pdf';
+		$file  = $dir . ( ( isset( $payment_data['type'] ) && 'refund' === $payment_data['type'] ) ? 'conferma-rimborso-attivita-' : 'conferma-pagamento-attivita-' ) . (int) $ctx->registration_id . '-' . gmdate( 'Ymd-His' ) . '.pdf';
 		$pages = $this->build_activity_payment_confirmation_pages( $ctx, is_array( $payment_data ) ? $payment_data : array() );
 		$this->write_styled_pdf( $file, $pages );
 
@@ -701,6 +701,8 @@ class SD_Payment_Documents {
 	private function build_activity_payment_confirmation_pages( $ctx, array $payment_data ) {
 		$width   = 595.0;
 		$height  = 842.0;
+		$is_refund = ( isset( $payment_data['type'] ) && 'refund' === $payment_data['type'] );
+		$red       = array( 0.73, 0.11, 0.11 );
 		$primary = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
 		$secondary = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
 
@@ -760,9 +762,9 @@ class SD_Payment_Documents {
 		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
 		$ops .= $this->text( $text_x, $height - 42, 16, $association_name, true, array( 1, 1, 1 ) );
-		$ops .= $this->text( $text_x, $height - 66, 11, 'Conferma pagamento iscrizione attivita', false, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 66, 11, $is_refund ? 'Conferma rimborso pagamento iscrizione attivita' : 'Conferma pagamento iscrizione attivita', false, array( 1, 1, 1 ) );
 
-		$ops .= $this->text( 28, $height - 124, 10, 'Numero conferma: ACT-PAY-' . gmdate( 'Y' ) . '-' . (int) $ctx->registration_id, true );
+		$ops .= $this->text( 28, $height - 124, 10, ( $is_refund ? 'Numero conferma: ACT-REF-' : 'Numero conferma: ACT-PAY-' ) . gmdate( 'Y' ) . '-' . (int) $ctx->registration_id, true );
 		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y H:i' ) );
 
 		$ops .= $this->rect_stroke( 28, $height - 332, 539, 188, array( 0.82, 0.84, 0.88 ) );
@@ -794,10 +796,18 @@ class SD_Payment_Documents {
 		}
 
 		// Colonna destra: dettaglio pagamento.
-		$ops .= $this->text( 320, $height - 184, 10, 'Stato pagamento: PAGATO', true );
+		if ( $is_refund ) {
+			$ops .= $this->text( 320, $height - 184, 10, 'Stato pagamento: RIMBORSATO', true, $red );
+		} else {
+			$ops .= $this->text( 320, $height - 184, 10, 'Stato pagamento: PAGATO', true );
+		}
 		$ops .= $this->text( 320, $height - 202, 10, 'Metodo: ' . $method );
 		$ops .= $this->text( 320, $height - 220, 10, 'Importo: ' . $amount_chf . ' (' . $amount_eur . ')' );
-		$ops .= $this->text( 320, $height - 238, 10, 'Data pagamento: ' . $paid_at );
+		if ( $is_refund ) {
+			$ops .= $this->text( 320, $height - 238, 10, 'Rimborsato pagamento del: ' . $paid_at, true, $red );
+		} else {
+			$ops .= $this->text( 320, $height - 238, 10, 'Data pagamento: ' . $paid_at );
+		}
 		if ( '' !== trim( $provider_id ) ) {
 			$ops .= $this->text( 320, $height - 256, 9, 'Transazione: ' . $provider_id );
 		}

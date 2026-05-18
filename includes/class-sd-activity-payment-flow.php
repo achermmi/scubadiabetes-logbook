@@ -462,6 +462,45 @@ class SD_Activity_Payment_Flow {
 		);
 	}
 
+	/**
+	 * Invio email di conferma rimborso da admin per una registrazione rimborsata.
+	 *
+	 * @param int $registration_id ID registrazione.
+	 * @return array|WP_Error
+	 */
+	public function send_refund_confirmation_email( int $registration_id ) {
+		$ctx = $this->get_context_by_registration_id( $registration_id );
+		if ( is_wp_error( $ctx ) ) {
+			return $ctx;
+		}
+
+		if ( 'refunded' !== (string) $ctx->payment_status ) {
+			return new WP_Error( 'sd_act_pay_not_refunded', __( 'La conferma rimborso può essere inviata solo per registrazioni rimborsate.', 'sd-logbook' ) );
+		}
+
+		if ( empty( $ctx->email ) || ! is_email( (string) $ctx->email ) ) {
+			return new WP_Error( 'sd_act_pay_invalid_email', __( 'E-mail partecipante non valida.', 'sd-logbook' ) );
+		}
+
+		$payment_data = array(
+			'type'                => 'refund',
+			'payment_method'      => (string) ( $ctx->payment_method ?? '' ),
+			'provider_payment_id' => (string) ( $ctx->transaction_id ?? '' ),
+			'payment_date'        => (string) ( $ctx->payment_date ?? current_time( 'mysql' ) ),
+			'amount_chf'          => (float) ( $ctx->price_chf ?? 0 ),
+			'amount_eur'          => (float) ( $ctx->price_eur ?? 0 ),
+		);
+
+		$sent = $this->send_confirmation_email( $ctx, $payment_data, true );
+		if ( ! $sent ) {
+			return new WP_Error( 'sd_act_pay_refund_failed', __( 'Invio e-mail conferma rimborso fallito.', 'sd-logbook' ) );
+		}
+
+		return array(
+			'sent' => true,
+		);
+	}
+
 	// =========================================================================
 	// Email helpers
 	// =========================================================================
@@ -476,6 +515,8 @@ class SD_Activity_Payment_Flow {
 		if ( ! $force_send && ! $this->is_electronic_or_paypal_payment( $payment_data ) ) {
 			return false;
 		}
+
+		$is_refund = ( isset( $payment_data['type'] ) && 'refund' === $payment_data['type'] );
 
 		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
 		$activity_title   = (string) ( $ctx->activity_title ?? '' );
@@ -505,19 +546,32 @@ class SD_Activity_Payment_Flow {
 
 		$subject = sprintf(
 			/* translators: %s: titolo attività */
-			__( 'Pagamento confermato: %s', 'sd-logbook' ),
+			$is_refund ? __( 'Rimborso confermato: %s', 'sd-logbook' ) : __( 'Pagamento confermato: %s', 'sd-logbook' ),
 			$activity_title
 		);
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 		$body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
-		$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
-		$body .= '<p>' . sprintf(
-			esc_html__( 'Ciao %1$s, il tuo pagamento per l\'attività "%2$s" è stato ricevuto con successo.', 'sd-logbook' ),
-			esc_html( $participant_name ),
-			esc_html( $activity_title )
-		) . '</p>';
+		if ( $is_refund ) {
+			$body .= '<h2 style="color:#b91c1c">' . esc_html__( 'Rimborso pagamento confermato', 'sd-logbook' ) . '</h2>';
+			$body .= '<p>' . sprintf(
+				esc_html__( 'Ciao %1$s, ti confermiamo che è stato eseguito il rimborso del pagamento relativo all\'attività "%2$s".', 'sd-logbook' ),
+				esc_html( $participant_name ),
+				esc_html( $activity_title )
+			) . '</p>';
+			$body .= '<p style="color:#b91c1c;font-weight:bold;font-size:15px">' . sprintf(
+				esc_html__( 'Rimborsato pagamento del: %s', 'sd-logbook' ),
+				esc_html( $payment_date_label )
+			) . '</p>';
+		} else {
+			$body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
+			$body .= '<p>' . sprintf(
+				esc_html__( 'Ciao %1$s, il tuo pagamento per l\'attività "%2$s" è stato ricevuto con successo.', 'sd-logbook' ),
+				esc_html( $participant_name ),
+				esc_html( $activity_title )
+			) . '</p>';
+		}
 		$body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
 		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . '</td></tr>';
 		if ( '' !== $activity_date ) {
@@ -525,7 +579,11 @@ class SD_Activity_Payment_Flow {
 		}
 		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Metodo pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_method ) . '</td></tr>';
 		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Importo', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
-		$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		if ( $is_refund ) {
+			$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong style="color:#b91c1c">' . esc_html__( 'Rimborsato pagamento del', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:#b91c1c;font-weight:bold">' . esc_html( $payment_date_label ) . '</td></tr>';
+		} else {
+			$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		}
 		if ( '' !== trim( $transaction_id ) ) {
 			$body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Riferimento transazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $transaction_id ) . '</td></tr>';
 		}
@@ -546,13 +604,17 @@ class SD_Activity_Payment_Flow {
 		}
 		$secretariat_subject = sprintf(
 			/* translators: %s: titolo attività */
-			__( '[%1$s] Pagamento attività confermato: %2$s', 'sd-logbook' ),
+			$is_refund
+				? __( '[%1$s] Rimborso attività confermato: %2$s', 'sd-logbook' )
+				: __( '[%1$s] Pagamento attività confermato: %2$s', 'sd-logbook' ),
 			get_bloginfo( 'name' ),
 			$activity_title
 		);
 
 		$secretariat_body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
-		$secretariat_body .= '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
+		$secretariat_body .= $is_refund
+			? '<h2 style="color:#b91c1c">' . esc_html__( 'Rimborso attività confermato', 'sd-logbook' ) . '</h2>'
+			: '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
 		$secretariat_body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>ID registrazione</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Partecipante', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
@@ -563,7 +625,11 @@ class SD_Activity_Payment_Flow {
 		}
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Metodo pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_method ) . '</td></tr>';
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Importo', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
-		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		if ( $is_refund ) {
+			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong style="color:#b91c1c">' . esc_html__( 'Rimborsato pagamento del', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0;color:#b91c1c;font-weight:bold">' . esc_html( $payment_date_label ) . '</td></tr>';
+		} else {
+			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $payment_date_label ) . '</td></tr>';
+		}
 		if ( '' !== trim( $transaction_id ) ) {
 			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Riferimento transazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $transaction_id ) . '</td></tr>';
 		}
@@ -574,6 +640,28 @@ class SD_Activity_Payment_Flow {
 		$secretariat_body .= '</body></html>';
 
 		$secretariat_sent = wp_mail( $secretariat_email, $secretariat_subject, $secretariat_body, $headers, $attachments );
+
+		if ( $participant_sent ) {
+			global $wpdb;
+			$wpdb->insert(
+				$wpdb->prefix . 'sd_audit_log',
+				array(
+					'member_id'  => get_current_user_id(),
+					'action'     => 'registration_broadcast',
+					'table_name' => 'sd_activity_registrations',
+					'record_id'  => (int) $ctx->registration_id,
+					'new_data'   => wp_json_encode(
+						array(
+							'activity_id' => (int) ( $ctx->activity_id ?? 0 ),
+							'type'        => $is_refund ? 'refund_confirmation' : 'payment_confirmation',
+							'email'       => (string) $ctx->email,
+						)
+					),
+					'created_at' => current_time( 'mysql' ),
+				),
+				array( '%d', '%s', '%s', '%d', '%s', '%s' )
+			);
+		}
 
 		return (bool) $participant_sent && (bool) $secretariat_sent;
 	}

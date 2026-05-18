@@ -167,6 +167,9 @@
 			$(this).addClass('is-active');
 			$('.sd-admin-panel').removeClass('is-active');
 			$('.sd-admin-panel[data-panel="' + tab + '"]').addClass('is-active');
+			if (tab === 'pagamenti' && typeof updatePaymentsStats === 'function') {
+				updatePaymentsStats();
+			}
 		});
 	}
 
@@ -4317,12 +4320,12 @@
 		var regStatusOptions = [
 			{ v: 'registered', l: 'Iscritto' },
 			{ v: 'waitlist', l: 'Lista d\'attesa' },
-			{ v: 'cancelled', l: 'Annullato' },
-			{ v: 'refunded', l: 'Rimborsato' }
+			{ v: 'cancelled', l: 'Annullato' }
 		];
 		var payStatusOptions = [
 			{ v: 'pending', l: 'In attesa' },
 			{ v: 'paid', l: 'Pagato' },
+			{ v: 'refunded', l: 'Rimborsato' },
 			{ v: 'invoice_requested', l: 'Fattura richiesta' },
 			{ v: 'invoice_sent', l: 'Fattura inviata' },
 			{ v: 'invoice_error', l: 'Errore invio fattura' },
@@ -4570,14 +4573,18 @@
 	}
 
 	function updatePaymentsStats() {
-		var total = state.registrations.length;
+		var source = (regDashboardState && Array.isArray(regDashboardState.rows) && regDashboardState.rows.length)
+			? regDashboardState.rows
+			: (state.registrations || []);
+		var total = source.length;
 		var paid = 0;
 		var pending = 0;
 
-		state.registrations.forEach(function (r) {
-			if (String(r.payment_status) === 'paid') {
+		source.forEach(function (r) {
+			var status = String(r.payment_status || '');
+			if (status === 'paid' || status === 'free') {
 				paid++;
-			} else {
+			} else if (status === 'pending' || status === 'invoice_requested' || status === 'invoice_sent' || status === 'invoice_error') {
 				pending++;
 			}
 		});
@@ -5646,6 +5653,113 @@
 		$('#sd-reg-bulk-email').on('click', sendRegEmailsBulk);
 		$('#sd-reg-email-all-paid').on('click', sendRegEmailsAllPaid);
 
+		$(document).on('change', '.sd-reg-status-select', function () {
+			var $sel = $(this);
+			var regId = parseInt($sel.data('reg-id'), 10) || 0;
+			var newVal = String($sel.val() || '');
+			var prevVal = String($sel.data('prev') || '');
+			if (!regId || newVal === prevVal) { return; }
+			$sel.prop('disabled', true);
+			$.ajax({
+				url: sdActivityAdmin.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'sd_activity_registration_update_status',
+					nonce: sdActivityAdmin.nonce,
+					registration_id: regId,
+					status: newVal
+				},
+				success: function (resp) {
+					$sel.prop('disabled', false);
+					if (!resp || !resp.success) {
+						$sel.val(prevVal);
+						showRegDashboardMessage('error', (resp && resp.data && resp.data.message) || 'Errore aggiornamento stato.');
+						return;
+					}
+					$sel.data('prev', newVal);
+					(regDashboardState.rows || []).forEach(function (r) {
+						if (parseInt(r.id, 10) === regId) { r.status = newVal; }
+					});
+					showRegDashboardMessage('success', (resp.data && resp.data.message) || 'Stato aggiornato.');
+					renderRegDashboardRows(getFilteredRegRows());
+					updateRegBulkButton();
+				},
+				error: function () {
+					$sel.prop('disabled', false);
+					$sel.val(prevVal);
+					showRegDashboardMessage('error', 'Errore di rete durante aggiornamento stato.');
+				}
+			});
+		});
+
+		$(document).on('change', '.sd-reg-payment-select', function () {
+			var $sel = $(this);
+			var regId = parseInt($sel.data('reg-id'), 10) || 0;
+			var newVal = String($sel.val() || '');
+			var prevVal = String($sel.data('prev') || '');
+			if (!regId || newVal === prevVal) { return; }
+			var payLabels = {
+				'pending': 'In attesa',
+				'paid': 'Pagato',
+				'refunded': 'Rimborsato',
+				'invoice_requested': 'Fattura richiesta',
+				'invoice_sent': 'Fattura inviata',
+				'invoice_error': 'Errore fattura',
+				'cancelled': 'Annullato',
+				'free': 'Gratuito'
+			};
+			var prevLabel = payLabels[prevVal] || prevVal || '—';
+			var newLabel = payLabels[newVal] || newVal;
+			var confirmMsg = 'Confermi il cambio dello stato pagamento da "' + prevLabel + '" a "' + newLabel + '"?';
+			if (newVal === 'paid' || newVal === 'refunded') {
+				confirmMsg += '\n\nVerrà inviata automaticamente un\'e-mail di conferma alla persona iscritta, con il PDF allegato.';
+			}
+			if (!window.confirm(confirmMsg)) {
+				$sel.val(prevVal);
+				return;
+			}
+			$sel.prop('disabled', true);
+			$.ajax({
+				url: sdActivityAdmin.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'sd_activity_registration_update_payment',
+					nonce: sdActivityAdmin.nonce,
+					registration_id: regId,
+					payment_status: newVal
+				},
+				success: function (resp) {
+					$sel.prop('disabled', false);
+					if (!resp || !resp.success) {
+						$sel.val(prevVal);
+						showRegDashboardMessage('error', (resp && resp.data && resp.data.message) || 'Errore aggiornamento stato pagamento.');
+						return;
+					}
+					$sel.data('prev', newVal);
+					(regDashboardState.rows || []).forEach(function (r) {
+						if (parseInt(r.id, 10) === regId) { r.payment_status = newVal; }
+					});
+					var baseMsg = (resp.data && resp.data.message) || 'Stato pagamento aggiornato.';
+					if (resp.data && resp.data.email_sent) {
+						baseMsg += ' (E-mail di conferma inviata)';
+					} else if (resp.data && resp.data.email_error) {
+						baseMsg += ' (E-mail non inviata: ' + resp.data.email_error + ')';
+					}
+					showRegDashboardMessage('success', baseMsg);
+					renderRegDashboardRows(getFilteredRegRows());
+					updateRegBulkButton();
+					if (typeof updatePaymentsStats === 'function') { updatePaymentsStats(); }
+				},
+				error: function () {
+					$sel.prop('disabled', false);
+					$sel.val(prevVal);
+					showRegDashboardMessage('error', 'Errore di rete durante aggiornamento pagamento.');
+				}
+			});
+		});
+
 		var searchTimer = null;
 		$(document).on('input', '#sd-reg-search', function () {
 			var val = String($(this).val() || '').trim().toLowerCase();
@@ -5740,6 +5854,7 @@
 		var payStatusMap = {
 			'pending': { cls: 'sd-renewal-status-soon', label: 'In attesa' },
 			'paid': { cls: 'sd-renewal-status-valid', label: 'Pagato' },
+			'refunded': { cls: 'sd-renewal-status-expired', label: 'Rimborsato' },
 			'invoice_requested': { cls: 'sd-renewal-status-soon', label: 'Fattura richiesta' },
 			'invoice_sent': { cls: 'sd-renewal-status-soon', label: 'Fattura inviata' },
 			'invoice_error': { cls: 'sd-renewal-status-expired', label: 'Errore fattura' },
@@ -5749,25 +5864,41 @@
 		var regStatusMap = {
 			'registered': { cls: 'sd-renewal-status-valid', label: 'Iscritto' },
 			'waitlist': { cls: 'sd-renewal-status-soon', label: 'Lista d\'attesa' },
-			'cancelled': { cls: 'sd-renewal-status-expired', label: 'Annullato' },
-			'refunded': { cls: 'sd-renewal-status-expired', label: 'Rimborsato' }
+			'cancelled': { cls: 'sd-renewal-status-expired', label: 'Annullato' }
 		};
 
 		var html = '';
 		rows.forEach(function (r) {
 			var rawPay = String(r.payment_status || '').trim();
+			if (!rawPay || rawPay === '0') { rawPay = 'pending'; }
 			var canSendPaymentConfirmation = rawPay === 'paid' && !!r.can_remind;
 			var payInfo;
-			if (rawPay && payStatusMap[rawPay]) {
+			if (payStatusMap[rawPay]) {
 				payInfo = payStatusMap[rawPay];
-			} else if (!rawPay || rawPay === '0') {
-				payInfo = { cls: 'sd-renewal-status-pending', label: 'In attesa' };
 			} else {
-				payInfo = { cls: 'sd-renewal-status-pending', label: rawPay };
+				payInfo = { cls: 'sd-renewal-status-soon', label: rawPay };
 			}
 
 			var rawReg = String(r.status || '').trim().toLowerCase();
 			var regInfo = regStatusMap[rawReg] || { cls: 'sd-renewal-status-pending', label: rawReg || '—' };
+
+			var regOptionsHtml = '';
+			Object.keys(regStatusMap).forEach(function (k) {
+				regOptionsHtml += '<option value="' + esc(k) + '"' + (k === rawReg ? ' selected' : '') + '>' + esc(regStatusMap[k].label) + '</option>';
+			});
+			if (rawReg && !regStatusMap[rawReg]) {
+				regOptionsHtml += '<option value="' + esc(rawReg) + '" selected>' + esc(regInfo.label) + '</option>';
+			}
+
+			var payOptionsHtml = '';
+			Object.keys(payStatusMap).forEach(function (k) {
+				// "Rimborsato" è selezionabile solo se lo stato corrente è "Pagato" (o già "Rimborsato").
+				if (k === 'refunded' && rawPay !== 'paid' && rawPay !== 'refunded') { return; }
+				payOptionsHtml += '<option value="' + esc(k) + '"' + (k === rawPay ? ' selected' : '') + '>' + esc(payStatusMap[k].label) + '</option>';
+			});
+			if (rawPay && !payStatusMap[rawPay]) {
+				payOptionsHtml += '<option value="' + esc(rawPay) + '" selected>' + esc(payInfo.label) + '</option>';
+			}
 
 			var chf = parseFloat(r.price_chf || 0);
 			var eur = parseFloat(r.price_eur || 0);
@@ -5788,8 +5919,18 @@
 			html += '<tr>' +
 				'<td><strong>' + esc(r.name || '') + '</strong></td>' +
 				'<td>' + esc(r.email || '—') + '</td>' +
-				'<td><span class="sd-renewal-status ' + regInfo.cls + '">' + esc(regInfo.label) + '</span></td>' +
-				'<td><span class="sd-renewal-status ' + payInfo.cls + '">' + esc(payInfo.label) + '</span></td>' +
+				'<td>' +
+					'<span class="sd-status-pill-wrap">' +
+						'<span class="sd-renewal-status ' + regInfo.cls + '">' + esc(regInfo.label) + '</span>' +
+						'<select class="sd-status-pill-select sd-reg-status-select" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawReg) + '" aria-label="Stato iscrizione">' + regOptionsHtml + '</select>' +
+					'</span>' +
+				'</td>' +
+				'<td>' +
+					'<span class="sd-status-pill-wrap">' +
+						'<span class="sd-renewal-status ' + payInfo.cls + '">' + esc(payInfo.label) + '</span>' +
+						'<select class="sd-status-pill-select sd-reg-payment-select" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawPay) + '" aria-label="Stato pagamento">' + payOptionsHtml + '</select>' +
+					'</span>' +
+				'</td>' +
 				'<td>' + formatRegDate(r.created_at) + '</td>' +
 				'<td>' + esc(amount) + '</td>' +
 				'<td>' + formatRegDateTime(r.last_email_at) + '</td>' +
