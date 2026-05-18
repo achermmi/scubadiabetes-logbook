@@ -809,7 +809,7 @@ class SD_Payment_Documents {
 			$ops .= $this->render_activity_registration_item( $item, $y );
 		}
 
-		$ops .= $this->text( 28, 56, 8, 'Documento riepilogativo del pagamento elettronico/PayPal per iscrizione attivita.', false, array( 0.36, 0.40, 0.46 ) );
+		$ops .= $this->text( 28, 56, 8, 'Documento riepilogativo del pagamento elettronico/PayPal/TWINT per iscrizione attivita.', false, array( 0.36, 0.40, 0.46 ) );
 
 		$pages[] = array(
 			'width'    => $width,
