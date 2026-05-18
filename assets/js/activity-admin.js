@@ -5742,10 +5742,22 @@
 					}
 					$sel.data('prev', newVal);
 					(regDashboardState.rows || []).forEach(function (r) {
-						if (parseInt(r.id, 10) === regId) { r.payment_status = newVal; }
+						if (parseInt(r.id, 10) === regId) {
+							r.payment_status = newVal;
+							if (resp.data && resp.data.last_email_at) {
+								r.last_email_at = resp.data.last_email_at;
+								r.last_email_subject = resp.data.last_email_subject || '';
+							}
+						}
 					});
 					(state.registrations || []).forEach(function (r) {
-						if (parseInt(r.id, 10) === regId) { r.payment_status = newVal; }
+						if (parseInt(r.id, 10) === regId) {
+							r.payment_status = newVal;
+							if (resp.data && resp.data.last_email_at) {
+								r.last_email_at = resp.data.last_email_at;
+								r.last_email_subject = resp.data.last_email_subject || '';
+							}
+						}
 					});
 					var baseMsg = (resp.data && resp.data.message) || 'Stato pagamento aggiornato.';
 					if (resp.data && resp.data.email_sent) {

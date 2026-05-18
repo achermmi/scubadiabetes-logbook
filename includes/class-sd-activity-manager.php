@@ -1891,11 +1891,35 @@ class SD_Activity_Manager {
 			}
 		}
 
+		// Recupera l'ultimo log e-mail per restituire data/oggetto al client.
+		$last_email_at      = '';
+		$last_email_subject = '';
+		global $wpdb;
+		$audit_row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT created_at, new_data FROM ' . $wpdb->prefix . "sd_audit_log
+				 WHERE table_name = %s AND record_id = %d
+				   AND action IN ('registration_broadcast','email_sent')
+				 ORDER BY id DESC LIMIT 1",
+				'sd_activity_registrations',
+				$registration_id
+			)
+		);
+		if ( $audit_row ) {
+			$last_email_at = (string) $audit_row->created_at;
+			$decoded       = json_decode( (string) $audit_row->new_data, true );
+			if ( is_array( $decoded ) && ! empty( $decoded['subject'] ) ) {
+				$last_email_subject = (string) $decoded['subject'];
+			}
+		}
+
 		wp_send_json_success(
 			array(
-				'message'     => __( 'Pagamento aggiornato', 'sd-logbook' ),
-				'email_sent'  => $email_sent,
-				'email_error' => $email_error,
+				'message'            => __( 'Pagamento aggiornato', 'sd-logbook' ),
+				'email_sent'         => $email_sent,
+				'email_error'        => $email_error,
+				'last_email_at'      => $last_email_at,
+				'last_email_subject' => $last_email_subject,
 			)
 		);
 	}

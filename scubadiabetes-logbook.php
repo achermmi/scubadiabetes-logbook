@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.59' );
+define( 'SD_LOGBOOK_VERSION', '1.3.60' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
