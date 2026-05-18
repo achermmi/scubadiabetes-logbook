@@ -86,6 +86,7 @@ class SD_Email_Templates {
 				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 				'nonce'          => wp_create_nonce( 'sd_email_tpl_nonce' ),
 				'forms'          => $forms,
+				'tinymceAdvancedMceUrl' => plugins_url( 'mce/', WP_PLUGIN_DIR . '/tinymce-advanced/tinymce-advanced.php' ),
 				'defaultFormKey' => self::get_default_form_key( $forms ),
 				'strings' => array(
 					'confirmDelete'  => __( 'Eliminare il modello selezionato?', 'sd-logbook' ),

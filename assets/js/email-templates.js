@@ -107,6 +107,10 @@
 			height: height,
 			menubar: true,
 			branding: false,
+				external_plugins: (sdEmailTpl.tinymceAdvancedMceUrl ? {
+					table: sdEmailTpl.tinymceAdvancedMceUrl + 'table/plugin.min.js',
+					code: sdEmailTpl.tinymceAdvancedMceUrl + 'code/plugin.min.js'
+				} : {}),
 				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
 				toolbar2: 'bullist numlist outdent indent | blockquote hr | link unlink image media table code | removeformat',
 				toolbar3: 'undo redo | pastetext charmap | fullscreen',
