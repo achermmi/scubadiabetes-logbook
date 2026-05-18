@@ -106,9 +106,9 @@
 				menubar: true,
 				branding: false,
 				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
-				toolbar2: 'bullist numlist outdent indent | blockquote hr table | link unlink image media | removeformat code',
+				toolbar2: 'bullist numlist outdent indent | blockquote hr | link unlink image media | removeformat',
 				toolbar3: 'undo redo | pastetext charmap | fullscreen',
-				plugins: 'lists link image media table code hr charmap paste fullscreen',
+				plugins: 'lists link image media hr charmap paste fullscreen',
 				fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
 				setup: function (editor) {
 					editor.on('init', function () {
