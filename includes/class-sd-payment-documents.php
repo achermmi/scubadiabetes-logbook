@@ -930,11 +930,11 @@ class SD_Payment_Documents {
 			$ops .= $this->rect_stroke( $table_x + $label_w, $row_bottom, $table_w - $label_w, $row_height, $border_rgb );
 
 			// Testo etichetta.
-			$ops .= $this->text( $table_x + 6, $y - 4, 8.6, $label_text, true, array( 0.18, 0.20, 0.24 ) );
+			$ops .= $this->text( $table_x + 6, $y - 8, 8.6, $label_text, true, array( 0.18, 0.20, 0.24 ) );
 
 			// Testo valori.
 			for ( $line_index = 0; $line_index < $row_lines; $line_index++ ) {
-				$current_y = ( $y - 4 ) - ( $line_h * $line_index );
+				$current_y = ( $y - 8 ) - ( $line_h * $line_index );
 				if ( isset( $value_lines[ $line_index ] ) ) {
 					$ops .= $this->text( $value_x, $current_y, 8.6, (string) $value_lines[ $line_index ], false, array( 0.12, 0.14, 0.18 ) );
 				}
