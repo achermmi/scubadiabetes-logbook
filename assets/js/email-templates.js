@@ -99,20 +99,19 @@
 			return;
 		}
 
-		var defaultSettings = (typeof wp.editor.getDefaultSettings === 'function') ? wp.editor.getDefaultSettings() : {};
-		var defaultTinymce = (defaultSettings && defaultSettings.tinymce) ? defaultSettings.tinymce : {};
-		var inheritedSetup = (defaultTinymce && typeof defaultTinymce.setup === 'function') ? defaultTinymce.setup : null;
-		var tinymceConfig = $.extend(true, {}, defaultTinymce, {
+		wp.editor.initialize(textareaId, {
+			mediaButtons: true,
+			quicktags: true,
+			tinymce: {
 			wpautop: false,
 			height: height,
 			menubar: true,
 			branding: false,
+				toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
+				toolbar2: 'bullist numlist outdent indent | blockquote hr | link unlink image media table code | removeformat',
+				toolbar3: 'undo redo | pastetext charmap | fullscreen',
 			fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
 			setup: function (editor) {
-				if (inheritedSetup) {
-					inheritedSetup(editor);
-				}
-
 				editor.on('init', function () {
 					editor.save();
 				});
@@ -129,28 +128,7 @@
 					}
 				});
 			}
-		});
-
-		if (!tinymceConfig.toolbar1) {
-			tinymceConfig.toolbar1 = 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify';
-		}
-
-		if (!tinymceConfig.toolbar2) {
-			tinymceConfig.toolbar2 = 'bullist numlist outdent indent | blockquote hr | link unlink image media table code | removeformat';
-		}
-
-		if (!tinymceConfig.toolbar3) {
-			tinymceConfig.toolbar3 = 'undo redo | pastetext charmap | fullscreen';
-		}
-
-		if (!tinymceConfig.plugins) {
-			tinymceConfig.plugins = 'lists link image media hr charmap paste fullscreen table code';
-		}
-
-		wp.editor.initialize(textareaId, {
-			tinymce: tinymceConfig,
-			quicktags: true,
-			mediaButtons: true
+			}
 		});
 	}
 
