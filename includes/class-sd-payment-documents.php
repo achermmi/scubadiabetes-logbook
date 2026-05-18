@@ -660,6 +660,38 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Costruisce HTML ordinato e leggibile dei dati registrazione attività.
+	 *
+	 * @param object $ctx Context registrazione.
+	 * @return string
+	 */
+	public function build_activity_registration_summary_html( $ctx ) {
+		$sections = $this->get_activity_registration_summary_sections( $ctx );
+		if ( empty( $sections ) ) {
+			return '<p style="color:#64748b;font-size:13px">' . esc_html__( 'Nessun dato modulo registrato.', 'sd-logbook' ) . '</p>';
+		}
+
+		$html = '';
+		foreach ( $sections as $section ) {
+			if ( empty( $section['rows'] ) ) {
+				continue;
+			}
+
+			$html .= '<h4 style="color:#0055a5;margin:18px 0 8px">' . esc_html( (string) $section['label'] ) . '</h4>';
+			$html .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
+			foreach ( $section['rows'] as $row ) {
+				$html .= '<tr>';
+				$html .= '<td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc;width:38%"><strong>' . esc_html( (string) $row['label'] ) . '</strong></td>';
+				$html .= '<td style="padding:6px 10px;border:1px solid #e2e8f0">' . nl2br( esc_html( (string) $row['value'] ) ) . '</td>';
+				$html .= '</tr>';
+			}
+			$html .= '</table>';
+		}
+
+		return '' !== $html ? $html : '<p style="color:#64748b;font-size:13px">' . esc_html__( 'Nessun dato modulo registrato.', 'sd-logbook' ) . '</p>';
+	}
+
+	/**
 	 * Costruisce le pagine PDF per la conferma pagamento attività.
 	 *
 	 * @param object $ctx          Context registrazione.
@@ -703,12 +735,32 @@ class SD_Payment_Documents {
 
 		$pages = array();
 
+		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
+		$logo_bg    = array(
+			(int) round( $primary[0] * 255 ),
+			(int) round( $primary[1] * 255 ),
+			(int) round( $primary[2] * 255 ),
+		);
+		$logo_image = $this->resolve_qr_image_for_pdf( $logo_url, $logo_bg );
+		$logo_h     = 76;
+		$logo_w     = 76;
+		$logo_x     = 28;
+		$logo_y     = $height - 88 + (int) round( ( 88 - $logo_h ) / 2 );
+		$text_x     = 120;
+		if ( ! empty( $logo_image['path'] ) ) {
+			$logo_meta = @getimagesize( (string) $logo_image['path'] );
+			if ( is_array( $logo_meta ) && ! empty( $logo_meta[1] ) && (int) $logo_meta[1] > 0 ) {
+				$logo_w = (int) round( $logo_h * (int) $logo_meta[0] / (int) $logo_meta[1] );
+				$text_x = $logo_x + $logo_w + 12;
+			}
+		}
+
 		// Prima pagina con riepilogo pagamento.
 		$ops  = '';
 		$ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 		$ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
-		$ops .= $this->text( 28, $height - 42, 16, $association_name, true, array( 1, 1, 1 ) );
-		$ops .= $this->text( 28, $height - 66, 11, 'Conferma pagamento iscrizione attivita', false, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 42, 16, $association_name, true, array( 1, 1, 1 ) );
+		$ops .= $this->text( $text_x, $height - 66, 11, 'Conferma pagamento iscrizione attivita', false, array( 1, 1, 1 ) );
 
 		$ops .= $this->text( 28, $height - 124, 10, 'Numero conferma: ACT-PAY-' . gmdate( 'Y' ) . '-' . (int) $ctx->registration_id, true );
 		$ops .= $this->text( 360, $height - 124, 10, 'Data emissione: ' . gmdate( 'd.m.Y H:i' ) );
@@ -748,6 +800,15 @@ class SD_Payment_Documents {
 			'width'    => $width,
 			'height'   => $height,
 			'commands' => $ops,
+			'images'   => ! empty( $logo_image['path'] ) ? array(
+				array(
+					'path' => (string) $logo_image['path'],
+					'x'    => $logo_x,
+					'y'    => $logo_y,
+					'w'    => $logo_w,
+					'h'    => $logo_h,
+				),
+			) : array(),
 		);
 
 		// Eventuali pagine aggiuntive con i dati modulo restanti.
@@ -756,8 +817,8 @@ class SD_Payment_Documents {
 				$page_ops  = '';
 				$page_ops .= $this->rect_fill( 0, $height - 88, $width, 88, $primary );
 				$page_ops .= $this->rect_fill( 0, $height - 96, $width, 8, $secondary );
-				$page_ops .= $this->text( 28, $height - 42, 14, $association_name, true, array( 1, 1, 1 ) );
-				$page_ops .= $this->text( 28, $height - 66, 10, 'Conferma pagamento attivita - dettaglio dati modulo (pag. ' . ( $i + 1 ) . ')', false, array( 1, 1, 1 ) );
+				$page_ops .= $this->text( $text_x, $height - 42, 14, $association_name, true, array( 1, 1, 1 ) );
+				$page_ops .= $this->text( $text_x, $height - 66, 10, 'Conferma pagamento attivita - dettaglio dati modulo (pag. ' . ( $i + 1 ) . ')', false, array( 1, 1, 1 ) );
 				$page_ops .= $this->text( 28, $height - 124, 10, 'ID registrazione: #' . (int) $ctx->registration_id, true );
 				$page_ops .= $this->text( 360, $height - 124, 10, 'Partecipante: ' . $participant_name );
 
@@ -773,6 +834,15 @@ class SD_Payment_Documents {
 					'width'    => $width,
 					'height'   => $height,
 					'commands' => $page_ops,
+					'images'   => ! empty( $logo_image['path'] ) ? array(
+						array(
+							'path' => (string) $logo_image['path'],
+							'x'    => $logo_x,
+							'y'    => $logo_y,
+							'w'    => $logo_w,
+							'h'    => $logo_h,
+						),
+					) : array(),
 				);
 			}
 		}
@@ -787,8 +857,41 @@ class SD_Payment_Documents {
 	 * @return array
 	 */
 	private function build_activity_registration_data_lines( $ctx ) {
-		$lines = array();
+		$lines    = array();
+		$sections = $this->get_activity_registration_summary_sections( $ctx );
 
+		foreach ( $sections as $section ) {
+			if ( empty( $section['rows'] ) ) {
+				continue;
+			}
+
+			$lines[] = strtoupper( remove_accents( (string) $section['label'] ) );
+			foreach ( $section['rows'] as $row ) {
+				$line = (string) $row['label'] . ': ' . (string) $row['value'];
+				foreach ( $this->wrap_text_lines( $line, 96 ) as $wrapped ) {
+					$lines[] = $wrapped;
+				}
+			}
+			$lines[] = '';
+		}
+
+		return array_values(
+			array_filter(
+				$lines,
+				static function ( $line ) {
+					return null !== $line;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Restituisce le sezioni ordinate con etichette e valori formattati come nel modulo.
+	 *
+	 * @param object $ctx Context registrazione.
+	 * @return array<int,array{key:string,label:string,order:int,rows:array<int,array{label:string,value:string}>}>
+	 */
+	private function get_activity_registration_summary_sections( $ctx ) {
 		$raw = isset( $ctx->registration_data ) ? (string) $ctx->registration_data : '';
 		if ( '' === $raw ) {
 			return array();
@@ -796,42 +899,362 @@ class SD_Payment_Documents {
 
 		$data = json_decode( $raw, true );
 		if ( ! is_array( $data ) || empty( $data ) ) {
-			foreach ( $this->wrap_text_lines( 'registration_data: ' . $raw, 96 ) as $line ) {
-				$lines[] = $line;
-			}
-			return $lines;
+			return array();
 		}
 
-		$labels = array(
-			'birth_date'           => 'Data di nascita',
-			'is_minor'             => 'Minorenne',
-			'luogo_di_nascita'     => 'Luogo di nascita',
-			'diabete_tipo'         => 'Tipo di diabete',
-			'celiachia'            => 'Celiachia',
-			'telefono_cellulare'   => 'Telefono cellulare',
-			'selected_price_names' => 'Tariffe selezionate',
-			'selected_price_ids'   => 'ID tariffe selezionate',
-			'selected_price_count' => 'Numero tariffe selezionate',
+		$activity      = null;
+		$form_fields   = array();
+		$layout_order  = array();
+		$section_ranks = array();
+		if ( class_exists( 'SD_Activity_Manager' ) ) {
+			$activity = SD_Activity_Manager::get_instance()->get_activity( (int) ( $ctx->activity_id ?? 0 ) );
+			if ( is_array( $activity ) ) {
+				$form_fields  = isset( $activity['form_fields'] ) && is_array( $activity['form_fields'] ) ? $activity['form_fields'] : array();
+				$layout_order = isset( $activity['section_layout_order'] ) && is_array( $activity['section_layout_order'] ) ? $activity['section_layout_order'] : array();
+			}
+		}
+
+		foreach ( $layout_order as $index => $section_key ) {
+			$section_key = sanitize_key( (string) $section_key );
+			if ( '' !== $section_key && ! isset( $section_ranks[ $section_key ] ) ) {
+				$section_ranks[ $section_key ] = $index + 1;
+			}
+		}
+
+		$sections      = array();
+		$processed     = array();
+		$consent_flags = $this->extract_activity_consent_flags( $data );
+
+		foreach ( $form_fields as $field ) {
+			$key        = sanitize_key( (string) ( $field['field_name'] ?? '' ) );
+			$field_type = sanitize_key( (string) ( $field['field_type'] ?? 'text' ) );
+			if ( '' === $key || in_array( $field_type, array( 'content', 'image', 'info' ), true ) ) {
+				continue;
+			}
+
+			if ( ! array_key_exists( $key, $data ) ) {
+				continue;
+			}
+
+			$label = $this->normalize_activity_registration_label( (string) ( $field['field_label'] ?? '' ), $key );
+			if ( $this->is_activity_consent_container_field( $key, $label ) ) {
+				$processed[ $key ] = true;
+				continue;
+			}
+
+			$value = $this->format_activity_registration_value( $data[ $key ], $field, $key, $consent_flags );
+			$processed[ $key ] = true;
+			if ( '' === trim( $value ) ) {
+				continue;
+			}
+
+			$this->append_activity_summary_row(
+				$sections,
+				sanitize_key( (string) ( $field['section_key'] ?? 'additional' ) ),
+				(string) ( $field['section_label'] ?? __( 'Informazioni aggiuntive', 'sd-logbook' ) ),
+				intval( $field['section_order'] ?? 20 ),
+				$section_ranks,
+				$label,
+				$value
+			);
+		}
+
+		if ( ! empty( $data['birth_date'] ) && empty( $processed['birth_date'] ) ) {
+			$this->append_activity_summary_row( $sections, 'personal', __( 'Dati personali', 'sd-logbook' ), 10, $section_ranks, __( 'Data di nascita', 'sd-logbook' ), $this->format_activity_registration_value( $data['birth_date'], array(), 'birth_date', $consent_flags ) );
+		}
+		if ( array_key_exists( 'is_minor', $data ) && empty( $processed['is_minor'] ) ) {
+			$this->append_activity_summary_row( $sections, 'personal', __( 'Dati personali', 'sd-logbook' ), 10, $section_ranks, __( 'Minorenne', 'sd-logbook' ), $this->format_activity_registration_value( $data['is_minor'], array(), 'is_minor', $consent_flags ) );
+		}
+		if ( ! empty( $data['selected_price_names'] ) ) {
+			$this->append_activity_summary_row( $sections, 'pricing', __( 'Selezione tariffa', 'sd-logbook' ), 30, $section_ranks, __( 'Tariffe selezionate', 'sd-logbook' ), $this->format_activity_registration_value( $data['selected_price_names'], array(), 'selected_price_names', $consent_flags ) );
+		}
+
+		if ( $consent_flags['ok1'] ) {
+			$this->append_activity_summary_row( $sections, 'consents', __( 'Consensi', 'sd-logbook' ), 40, $section_ranks, __( 'Accettazione consenso: Informazioni e consenso a tutela della privacy', 'sd-logbook' ), __( 'Ok', 'sd-logbook' ) );
+		}
+		if ( $consent_flags['ok2'] ) {
+			$this->append_activity_summary_row( $sections, 'consents', __( 'Consensi', 'sd-logbook' ), 40, $section_ranks, __( 'Accettazione consenso: Categorie particolari di dati personali', 'sd-logbook' ), __( 'Ok', 'sd-logbook' ) );
+		}
+
+		foreach ( $data as $key => $value ) {
+			$normalized_key = sanitize_key( (string) $key );
+			if ( isset( $processed[ $normalized_key ] ) || in_array( $normalized_key, array( 'selected_price_ids', 'selected_price_count' ), true ) ) {
+				continue;
+			}
+			if ( $this->is_activity_consent_container_field( $normalized_key, '' ) ) {
+				continue;
+			}
+
+			$label = $this->normalize_activity_registration_label( '', $normalized_key );
+			$display = $this->format_activity_registration_value( $value, array(), $normalized_key, $consent_flags );
+			if ( '' === trim( $display ) ) {
+				continue;
+			}
+
+			$this->append_activity_summary_row( $sections, 'additional', __( 'Informazioni aggiuntive', 'sd-logbook' ), 20, $section_ranks, $label, $display );
+		}
+
+		usort(
+			$sections,
+			static function ( $left, $right ) {
+				if ( (int) $left['rank'] !== (int) $right['rank'] ) {
+					return (int) $left['rank'] - (int) $right['rank'];
+				}
+				if ( (int) $left['order'] !== (int) $right['order'] ) {
+					return (int) $left['order'] - (int) $right['order'];
+				}
+				return strcmp( (string) $left['label'], (string) $right['label'] );
+			}
+		);
+
+		return $sections;
+	}
+
+	/**
+	 * Aggiunge una riga alla struttura riepilogo.
+	 *
+	 * @param array  $sections      Sezioni raccolte.
+	 * @param string $section_key   Chiave sezione.
+	 * @param string $section_label Etichetta sezione.
+	 * @param int    $section_order Ordine sezione.
+	 * @param array  $section_ranks Ordine esplicito layout.
+	 * @param string $label         Etichetta riga.
+	 * @param string $value         Valore riga.
+	 * @return void
+	 */
+	private function append_activity_summary_row( array &$sections, $section_key, $section_label, $section_order, array $section_ranks, $label, $value ) {
+		if ( '' === trim( (string) $value ) ) {
+			return;
+		}
+
+		$key = '' !== sanitize_key( (string) $section_key ) ? sanitize_key( (string) $section_key ) : 'additional';
+		if ( ! isset( $sections[ $key ] ) ) {
+			$sections[ $key ] = array(
+				'key'   => $key,
+				'label' => '' !== trim( (string) $section_label ) ? (string) $section_label : __( 'Informazioni aggiuntive', 'sd-logbook' ),
+				'order' => (int) $section_order,
+				'rank'  => isset( $section_ranks[ $key ] ) ? (int) $section_ranks[ $key ] : 999,
+				'rows'  => array(),
+			);
+		}
+
+		$sections[ $key ]['rows'][] = array(
+			'label' => (string) $label,
+			'value' => (string) $value,
+		);
+	}
+
+	/**
+	 * Normalizza etichette note dei dati registrazione.
+	 *
+	 * @param string $label Etichetta raw.
+	 * @param string $key   Chiave campo.
+	 * @return string
+	 */
+	private function normalize_activity_registration_label( $label, $key ) {
+		$normalized_key = sanitize_key( (string) $key );
+		$clean_label    = sanitize_text_field( (string) $label );
+		$map = array(
+			'birth_date'          => __( 'Data di nascita', 'sd-logbook' ),
+			'is_minor'            => __( 'Minorenne', 'sd-logbook' ),
+			'luogo_di_nascita'    => __( 'Luogo di nascita', 'sd-logbook' ),
+			'diabete_tipo'        => __( 'Tipo di diabete', 'sd-logbook' ),
+			'celiachia'           => __( 'Celiachia', 'sd-logbook' ),
+			'telefono_cellulare'  => __( 'Telefono cellulare', 'sd-logbook' ),
+			'localita'            => __( 'Località', 'sd-logbook' ),
+			'localit'             => __( 'Località', 'sd-logbook' ),
+			'selected_price_names'=> __( 'Tariffe selezionate', 'sd-logbook' ),
+		);
+
+		if ( isset( $map[ $normalized_key ] ) ) {
+			return $map[ $normalized_key ];
+		}
+
+		if ( '' !== $clean_label ) {
+			return $clean_label;
+		}
+
+		return ucfirst( str_replace( array( '_', '-' ), ' ', $normalized_key ) );
+	}
+
+	/**
+	 * Formatta un valore registrazione usando le opzioni del campo quando disponibili.
+	 *
+	 * @param mixed  $value         Valore raw.
+	 * @param array  $field         Definizione campo.
+	 * @param string $key           Chiave campo.
+	 * @param array  $consent_flags Flag consensi derivati.
+	 * @return string
+	 */
+	private function format_activity_registration_value( $value, array $field, $key, array $consent_flags ) {
+		$normalized_key = sanitize_key( (string) $key );
+
+		if ( 'birth_date' === $normalized_key ) {
+			$raw_date = trim( (string) $value );
+			if ( '' === $raw_date ) {
+				return '';
+			}
+			$timestamp = strtotime( $raw_date );
+			return $timestamp ? date_i18n( 'd.m.Y', $timestamp ) : $raw_date;
+		}
+
+		if ( 'is_minor' === $normalized_key ) {
+			return $this->is_truthy_registration_value( $value ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+		}
+
+		if ( is_array( $value ) ) {
+			if ( $this->is_activity_consent_container_field( $normalized_key, (string) ( $field['field_label'] ?? '' ) ) ) {
+				return '';
+			}
+			$mapped = $this->map_activity_option_values_to_labels( $value, $field, $normalized_key );
+			$mapped = array_values( array_filter( array_map( 'trim', $mapped ) ) );
+			return implode( ', ', $mapped );
+		}
+
+		if ( $this->is_activity_consent_container_field( $normalized_key, (string) ( $field['field_label'] ?? '' ) ) ) {
+			return '';
+		}
+
+		$mapped_scalar = $this->map_activity_option_values_to_labels( array( $value ), $field, $normalized_key );
+		return trim( (string) ( $mapped_scalar[0] ?? '' ) );
+	}
+
+	/**
+	 * Mappa valori campo a etichette opzione, con fallback per valori noti.
+	 *
+	 * @param array  $values Valori raw.
+	 * @param array  $field  Definizione campo.
+	 * @param string $key    Chiave campo.
+	 * @return array
+	 */
+	private function map_activity_option_values_to_labels( array $values, array $field, $key ) {
+		$options_map = array();
+		foreach ( (array) ( $field['options'] ?? array() ) as $option ) {
+			if ( ! is_array( $option ) ) {
+				continue;
+			}
+			$option_value = (string) ( $option['value'] ?? '' );
+			if ( '' === $option_value ) {
+				continue;
+			}
+			$options_map[ $option_value ] = (string) ( $option['label'] ?? $option_value );
+		}
+
+		$diabetes_map = array(
+			't1'     => __( 'Tipo 1', 'sd-logbook' ),
+			'tipo_1' => __( 'Tipo 1', 'sd-logbook' ),
+			'tipo1'  => __( 'Tipo 1', 'sd-logbook' ),
+			't2'     => __( 'Tipo 2', 'sd-logbook' ),
+			'tipo_2' => __( 'Tipo 2', 'sd-logbook' ),
+			'tipo2'  => __( 'Tipo 2', 'sd-logbook' ),
+			't3c'    => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo_3c'=> __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+			'tipo3c' => __( 'Tipo 3C (Pancreasectomia, Pancreatite)', 'sd-logbook' ),
+		);
+
+		$mapped = array();
+		foreach ( $values as $value ) {
+			$raw = is_scalar( $value ) ? trim( (string) $value ) : '';
+			if ( '' === $raw ) {
+				continue;
+			}
+
+			if ( isset( $options_map[ $raw ] ) ) {
+				$mapped[] = $options_map[ $raw ];
+				continue;
+			}
+
+			$normalized = sanitize_key( $raw );
+			if ( 'diabete_tipo' === sanitize_key( (string) $key ) && isset( $diabetes_map[ $normalized ] ) ) {
+				$mapped[] = $diabetes_map[ $normalized ];
+				continue;
+			}
+
+			if ( $this->is_truthy_registration_value( $raw ) ) {
+				$mapped[] = __( 'Ok', 'sd-logbook' );
+				continue;
+			}
+
+			if ( in_array( strtolower( $raw ), array( 'si', 'sì', 'yes', 'no', 'true', 'false' ), true ) ) {
+				$mapped[] = $this->is_truthy_registration_value( $raw ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+				continue;
+			}
+
+			$mapped[] = $raw;
+		}
+
+		return $mapped;
+	}
+
+	/**
+	 * Estrae i flag consenso ok1/ok2 dai dati registrazione.
+	 *
+	 * @param array $data Dati registrazione.
+	 * @return array{ok1:bool,ok2:bool}
+	 */
+	private function extract_activity_consent_flags( array $data ) {
+		$flags = array(
+			'ok1' => false,
+			'ok2' => false,
 		);
 
 		foreach ( $data as $key => $value ) {
-			$label = $labels[ $key ] ?? ucfirst( str_replace( array( '_', '-' ), ' ', (string) $key ) );
-
-			if ( is_array( $value ) ) {
-				$display = implode( ', ', array_map( 'strval', $value ) );
-			} elseif ( is_bool( $value ) ) {
-				$display = $value ? 'Si' : 'No';
-			} else {
-				$display = (string) $value;
+			$normalized_key = sanitize_key( (string) $key );
+			if ( 'ok1' === $normalized_key ) {
+				$flags['ok1'] = $flags['ok1'] || $this->is_truthy_registration_value( $value );
+				continue;
+			}
+			if ( 'ok2' === $normalized_key ) {
+				$flags['ok2'] = $flags['ok2'] || $this->is_truthy_registration_value( $value );
+				continue;
 			}
 
-			$line = $label . ': ' . $display;
-			foreach ( $this->wrap_text_lines( $line, 96 ) as $wrapped ) {
-				$lines[] = $wrapped;
+			if ( is_array( $value ) ) {
+				$normalized_values = array_map(
+					static function ( $item ) {
+						return sanitize_key( (string) $item );
+					},
+					$value
+				);
+				$flags['ok1'] = $flags['ok1'] || in_array( 'ok1', $normalized_values, true );
+				$flags['ok2'] = $flags['ok2'] || in_array( 'ok2', $normalized_values, true );
 			}
 		}
 
-		return $lines;
+		return $flags;
+	}
+
+	/**
+	 * Riconosce il contenitore raw dei consensi nel modulo.
+	 *
+	 * @param string $key   Chiave campo.
+	 * @param string $label Etichetta campo.
+	 * @return bool
+	 */
+	private function is_activity_consent_container_field( $key, $label ) {
+		$normalized_key   = sanitize_key( (string) $key );
+		$normalized_label = sanitize_key( remove_accents( (string) $label ) );
+
+		if ( false !== strpos( $normalized_key, 'accettazione_consenso' ) ) {
+			return true;
+		}
+
+		return false !== strpos( $normalized_label, 'accettazione_consenso' );
+	}
+
+	/**
+	 * Valuta se un valore registrazione rappresenta un boolean true.
+	 *
+	 * @param mixed $value Valore raw.
+	 * @return bool
+	 */
+	private function is_truthy_registration_value( $value ) {
+		if ( is_array( $value ) ) {
+			return ! empty( $value );
+		}
+
+		$raw = strtolower( trim( (string) $value ) );
+		return in_array( $raw, array( '1', 'true', 'yes', 'ok', 'si', 'sì' ), true );
 	}
 
 	/**

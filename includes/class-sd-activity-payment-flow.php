@@ -40,6 +40,7 @@ class SD_Activity_Payment_Flow {
 		add_action( 'template_redirect', array( $this, 'handle_actions' ) );
 		add_action( 'init', array( $this, 'handle_stripe_webhook_activity' ) );
 		add_action( 'wp_ajax_sd_activity_resend_invoice_email', array( $this, 'ajax_resend_invoice_email' ) );
+		add_action( 'wp_ajax_sd_activity_send_payment_confirmation_email', array( $this, 'ajax_send_payment_confirmation_email' ) );
 	}
 
 	// =========================================================================
@@ -152,6 +153,9 @@ class SD_Activity_Payment_Flow {
 					r.last_name,
 					r.registration_data,
 					r.payment_status,
+					r.payment_date,
+					r.payment_method,
+					r.transaction_id,
 					r.price_chf,
 					r.price_eur,
 					r.price_id,
@@ -420,6 +424,44 @@ class SD_Activity_Payment_Flow {
 		);
 	}
 
+	/**
+	 * Reinvio email di conferma pagamento da admin per una registrazione gia pagata.
+	 *
+	 * @param int $registration_id ID registrazione.
+	 * @return array|WP_Error
+	 */
+	public function resend_payment_confirmation_email( int $registration_id ) {
+		$ctx = $this->get_context_by_registration_id( $registration_id );
+		if ( is_wp_error( $ctx ) ) {
+			return $ctx;
+		}
+
+		if ( 'paid' !== (string) $ctx->payment_status ) {
+			return new WP_Error( 'sd_act_pay_not_paid', __( 'La conferma pagamento può essere inviata solo per registrazioni già pagate.', 'sd-logbook' ) );
+		}
+
+		if ( empty( $ctx->email ) || ! is_email( (string) $ctx->email ) ) {
+			return new WP_Error( 'sd_act_pay_invalid_email', __( 'E-mail partecipante non valida.', 'sd-logbook' ) );
+		}
+
+		$payment_data = array(
+			'payment_method'      => (string) ( $ctx->payment_method ?? '' ),
+			'provider_payment_id' => (string) ( $ctx->transaction_id ?? '' ),
+			'payment_date'        => (string) ( $ctx->payment_date ?? current_time( 'mysql' ) ),
+			'amount_chf'          => (float) ( $ctx->price_chf ?? 0 ),
+			'amount_eur'          => (float) ( $ctx->price_eur ?? 0 ),
+		);
+
+		$sent = $this->send_confirmation_email( $ctx, $payment_data, true );
+		if ( ! $sent ) {
+			return new WP_Error( 'sd_act_pay_confirmation_failed', __( 'Invio e-mail conferma pagamento fallito.', 'sd-logbook' ) );
+		}
+
+		return array(
+			'sent' => true,
+		);
+	}
+
 	// =========================================================================
 	// Email helpers
 	// =========================================================================
@@ -430,9 +472,9 @@ class SD_Activity_Payment_Flow {
 	 * @param object $ctx          Row dalla query.
 	 * @param array  $payment_data Dati pagamento confermato.
 	 */
-	private function send_confirmation_email( $ctx, array $payment_data = array() ) {
-		if ( ! $this->is_electronic_or_paypal_payment( $payment_data ) ) {
-			return;
+	private function send_confirmation_email( $ctx, array $payment_data = array(), bool $force_send = false ) {
+		if ( ! $force_send && ! $this->is_electronic_or_paypal_payment( $payment_data ) ) {
+			return false;
 		}
 
 		$participant_name = trim( (string) $ctx->first_name . ' ' . (string) $ctx->last_name );
@@ -493,8 +535,9 @@ class SD_Activity_Payment_Flow {
 		$body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'In allegato trovi il PDF con riepilogo completo di iscrizione e pagamento.', 'sd-logbook' ) . '</p>';
 		$body .= '</body></html>';
 
+		$participant_sent = true;
 		if ( ! empty( $ctx->email ) ) {
-			wp_mail( sanitize_email( (string) $ctx->email ), $subject, $body, $headers, $attachments );
+			$participant_sent = wp_mail( sanitize_email( (string) $ctx->email ), $subject, $body, $headers, $attachments );
 		}
 
 		$secretariat_email = sanitize_email( (string) get_option( 'sd_payment_invoice_association_email', 'info@scubadiabetes.ch' ) );
@@ -530,7 +573,9 @@ class SD_Activity_Payment_Flow {
 		$secretariat_body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'In allegato il PDF riepilogativo inviato al partecipante.', 'sd-logbook' ) . '</p>';
 		$secretariat_body .= '</body></html>';
 
-		wp_mail( $secretariat_email, $secretariat_subject, $secretariat_body, $headers, $attachments );
+		$secretariat_sent = wp_mail( $secretariat_email, $secretariat_subject, $secretariat_body, $headers, $attachments );
+
+		return (bool) $participant_sent && (bool) $secretariat_sent;
 	}
 
 	/**
@@ -568,6 +613,8 @@ class SD_Activity_Payment_Flow {
 			'apple_pay'     => __( 'Apple Pay', 'sd-logbook' ),
 			'google_pay'    => __( 'Google Pay', 'sd-logbook' ),
 			'stripe'        => __( 'Stripe', 'sd-logbook' ),
+			'fattura'       => __( 'Fattura / bonifico', 'sd-logbook' ),
+			'manuale_admin' => __( 'Conferma manuale amministrazione', 'sd-logbook' ),
 		);
 
 		$key = sanitize_key( (string) $slug );
@@ -741,6 +788,10 @@ class SD_Activity_Payment_Flow {
 	 * @return string
 	 */
 	private function build_registration_data_html( $ctx ) {
+		if ( class_exists( 'SD_Payment_Documents' ) ) {
+			return ( new SD_Payment_Documents() )->build_activity_registration_summary_html( $ctx );
+		}
+
 		$raw = isset( $ctx->registration_data ) ? (string) $ctx->registration_data : '';
 		if ( '' === $raw ) {
 			return '<p style="color:#64748b;font-size:13px">' . esc_html__( 'Nessun dato modulo registrato.', 'sd-logbook' ) . '</p>';
@@ -843,6 +894,35 @@ class SD_Activity_Payment_Flow {
 				'message'        => __( 'Invio email fattura fallito. Verifica il log email.', 'sd-logbook' ),
 				'payment_status' => $result['status'],
 				'error'          => $result['error'],
+			)
+		);
+	}
+
+	/**
+	 * AJAX admin: invia nuovamente la conferma pagamento per una registrazione pagata.
+	 *
+	 * @return void
+	 */
+	public function ajax_send_payment_confirmation_email() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non valida.', 'sd-logbook' ) ) );
+		}
+
+		$result = $this->resend_payment_confirmation_email( $registration_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'E-mail di conferma pagamento inviata con successo.', 'sd-logbook' ),
 			)
 		);
 	}

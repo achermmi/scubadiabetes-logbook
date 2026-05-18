@@ -490,6 +490,10 @@ window.sdActivityAdmin = {
 		regSendingLabel: '<?php esc_attr_e( 'Invio...', 'sd-logbook' ); ?>',
 		regBulkSendingLabel: '<?php esc_attr_e( 'Invio massivo...', 'sd-logbook' ); ?>',
 		regBulkDone: '<?php esc_attr_e( 'Invio massivo completato.', 'sd-logbook' ); ?>',
+		regPaymentConfirmationLabel: '<?php esc_attr_e( 'Invia conferma pagamento', 'sd-logbook' ); ?>',
+		regPaymentConfirmationSending: '<?php esc_attr_e( 'Invio conferma...', 'sd-logbook' ); ?>',
+		regPaymentConfirmationSent: '<?php esc_attr_e( 'E-mail di conferma pagamento inviata con successo.', 'sd-logbook' ); ?>',
+		regPaymentConfirmationError: '<?php esc_attr_e( 'Invio conferma pagamento non riuscito.', 'sd-logbook' ); ?>',
 		regAllPaidLabel: '<?php esc_attr_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?>',
 		regAllPaidSendingLabel: '<?php esc_attr_e( 'Invio a tutti i pagati...', 'sd-logbook' ); ?>',
 		regAllPaidConfirm: '<?php esc_attr_e( 'Inviare l\'e-mail a tutte le iscrizioni pagate dell\'attività selezionata?', 'sd-logbook' ); ?>'

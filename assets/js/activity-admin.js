@@ -4044,11 +4044,13 @@
 			var minorInfo = getMinorInfoFromBirthDate(birthDate);
 			var statusCode = String(r.status || 'registered');
 			var paymentStatusCode = String(r.payment_status || 'pending');
+			var canSendPaymentConfirmation = paymentStatusCode === 'paid' && !!r.email;
 			var statusSelect = buildStatusSelect(parseInt(r.id, 10), statusCode);
 			var paymentSelect = buildPaymentStatusSelect(parseInt(r.id, 10), paymentStatusCode);
 			var canResendInvoice = paymentStatusCode === 'invoice_requested' || paymentStatusCode === 'invoice_error';
 			var eurAmount = getPriceEurWithCurrentRate(r.price_chf, r.price_eur);
 			var actionsHtml = [];
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-reg-send-payment-confirmation" data-id="' + parseInt(r.id, 10) + '"' + (canSendPaymentConfirmation ? '' : ' disabled') + '>Invia conferma pagamento</button>');
 			if (canResendInvoice) {
 				actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + parseInt(r.id, 10) + '">Reinvia fattura</button>');
 			}
@@ -4532,6 +4534,39 @@
 			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Email fattura inviata.');
 			loadRegistrations();
 		});
+	}
+
+	function sendPaymentConfirmationEmail(registrationId, onSuccess, skipConfirm) {
+		if (!skipConfirm && !window.confirm('Inviare la conferma pagamento con PDF allegato a questa iscrizione?')) {
+			return false;
+		}
+
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_activity_send_payment_confirmation_email',
+			nonce: sdActivityAdmin.nonce,
+			registration_id: registrationId,
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				var errorMessage = (resp && resp.data && resp.data.message) ? resp.data.message : (sdActivityAdmin.strings.regPaymentConfirmationError || sdActivityAdmin.strings.error);
+				showMessage('error', errorMessage);
+				if (typeof onSuccess === 'function') {
+					onSuccess(false, errorMessage);
+				}
+				return;
+			}
+
+			var successMessage = (resp && resp.data && resp.data.message) ? resp.data.message : (sdActivityAdmin.strings.regPaymentConfirmationSent || 'Conferma pagamento inviata.');
+			showMessage('success', successMessage);
+			if (typeof onSuccess === 'function') {
+				onSuccess(true, successMessage);
+			}
+			loadRegistrations();
+			if (typeof loadRegDashboard === 'function') {
+				loadRegDashboard();
+			}
+		});
+
+		return true;
 	}
 
 	function updatePaymentsStats() {
@@ -5592,6 +5627,22 @@
 			sendRegEmailSingle($btn, regId);
 		});
 
+		$(document).on('click', '.sd-reg-send-payment-confirmation', function () {
+			var $btn = $(this);
+			var regId = parseInt($btn.data('id') || $btn.data('reg-id'), 10) || 0;
+			if (!regId || $btn.prop('disabled')) { return; }
+			if (!window.confirm('Inviare la conferma pagamento con PDF allegato a questa iscrizione?')) { return; }
+
+			var originalLabel = $btn.text();
+			$btn.prop('disabled', true).text(regStrings().regPaymentConfirmationSending || 'Invio conferma...');
+			sendPaymentConfirmationEmail(regId, function (success, message) {
+				if (typeof showRegDashboardMessage === 'function') {
+					showRegDashboardMessage(success ? 'success' : 'error', message || (success ? (regStrings().regPaymentConfirmationSent || 'Conferma pagamento inviata.') : (regStrings().regPaymentConfirmationError || 'Invio conferma pagamento non riuscito.')));
+				}
+				$btn.prop('disabled', false).text(originalLabel);
+			}, true);
+		});
+
 		$('#sd-reg-bulk-email').on('click', sendRegEmailsBulk);
 		$('#sd-reg-email-all-paid').on('click', sendRegEmailsAllPaid);
 
@@ -5705,6 +5756,7 @@
 		var html = '';
 		rows.forEach(function (r) {
 			var rawPay = String(r.payment_status || '').trim();
+			var canSendPaymentConfirmation = rawPay === 'paid' && !!r.can_remind;
 			var payInfo;
 			if (rawPay && payStatusMap[rawPay]) {
 				payInfo = payStatusMap[rawPay];
@@ -5726,6 +5778,7 @@
 				actions.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
 					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>');
 			}
+			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-send-payment-confirmation" data-reg-id="' + esc(r.id) + '"' + (canSendPaymentConfirmation ? '' : ' disabled') + '>' + esc(regStrings().regPaymentConfirmationLabel || 'Invia conferma pagamento') + '</button>');
 			if (rawPay === 'invoice_requested' || rawPay === 'invoice_error') {
 				actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + esc(r.id) + '" title="Reinvia fattura">Reinvia fattura</button>');
 			}
