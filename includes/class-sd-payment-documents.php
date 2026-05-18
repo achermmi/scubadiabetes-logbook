@@ -892,11 +892,20 @@ class SD_Payment_Documents {
 				continue;
 			}
 
-			$items[] = array( 't' => 's', 'text' => strtoupper( remove_accents( (string) $section['label'] ) ) );
+			$items[] = array(
+				't'    => 's',
+				'text' => strtoupper( remove_accents( (string) $section['label'] ) ),
+			);
 			foreach ( $section['rows'] as $row ) {
-				$items[] = array( 't' => 'l', 'text' => (string) $row['label'] . ':' );
+				$items[] = array(
+					't'    => 'l',
+					'text' => (string) $row['label'] . ':',
+				);
 				foreach ( $this->wrap_text_lines( (string) $row['value'], 88 ) as $wrapped ) {
-					$items[] = array( 't' => 'v', 'text' => $wrapped );
+					$items[] = array(
+						't'    => 'v',
+						'text' => $wrapped,
+					);
 				}
 			}
 			$items[] = array( 't' => 'e' );
