@@ -2113,6 +2113,7 @@ class SD_Activity_Manager {
 
 		wp_enqueue_media();
 		wp_enqueue_editor();
+
 		$activity_admin_css_version = SD_LOGBOOK_VERSION;
 		$activity_admin_css_file    = SD_LOGBOOK_PLUGIN_DIR . 'assets/css/activity-admin.css';
 		if ( file_exists( $activity_admin_css_file ) ) {

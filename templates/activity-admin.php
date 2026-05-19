@@ -124,23 +124,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<div class="sd-field-group sd-field-full">
 							<label for="sd-activity-description" class="sd-label"><?php esc_html_e( 'Descrizione', 'sd-logbook' ); ?></label>
 							<?php
-							wp_editor(
-								'',
-								'sd-activity-description',
-								array(
-									'media_buttons' => true,
-									'textarea_rows' => 8,
-									'quicktags'     => true,
-									'tinymce'       => array(
-										'wpautop'  => true,
-										'height'   => 260,
-										'toolbar1' => 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,unlink,undo,redo',
-										'toolbar2' => 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,wp_help',
-									),
-									'editor_class'  => 'sd-textarea',
-								)
-							);
+							// Editor identico a quello dei Template Email (vedi class-sd-email-templates.php).
+							// Render lato server come semplice <textarea>; l'init TinyMCE avviene UNA SOLA volta
+							// lato client tramite wp.editor.initialize(), mai ri-inizializzato durante editActivity()
+							// per evitare la ricorsione St.setDocument indotta da TADV.
 							?>
+							<textarea id="sd-activity-description" name="description" class="sd-codemirror-textarea" rows="16"></textarea>
 						</div>
 					</div>
 				</div>
@@ -267,7 +256,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 					<div id="sd-field-content-wrap" style="display:none;">
 						<p class="sd-field-options-label"><?php esc_html_e( 'Contenuto Formattato:', 'sd-logbook' ); ?></p>
-						<textarea id="sd-field-content-editor" style="width:100%; min-height:250px;"></textarea>
+						<textarea id="sd-field-content-editor" name="field_content" class="sd-codemirror-textarea" rows="12" style="width:100%; min-height:250px;"></textarea>
 					</div>
 					<div id="sd-field-image-wrap" style="display:none;">
 						<p class="sd-field-options-label"><?php esc_html_e( 'Configurazione Immagine:', 'sd-logbook' ); ?></p>
@@ -476,6 +465,7 @@ window.sdActivityAdmin = {
 	ajaxUrl: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
 	nonce: '<?php echo esc_attr( wp_create_nonce( 'sd_nonce' ) ); ?>',
 	currentChfEurRate: <?php echo esc_js( (string) ( class_exists( 'SD_Currency_Converter' ) ? floatval( SD_Currency_Converter::get_instance()->get_rate() ) : 0 ) ); ?>,
+	tinymceAdvancedMceUrl: '<?php echo esc_url( plugins_url( 'mce/', WP_PLUGIN_DIR . '/tinymce-advanced/tinymce-advanced.php' ) ); ?>',
 	strings: {
 		confirmDelete: '<?php esc_attr_e( 'Eliminare questa attivita?', 'sd-logbook' ); ?>',
 		saveFirst: '<?php esc_attr_e( 'Salva prima l\'attivita.', 'sd-logbook' ); ?>',

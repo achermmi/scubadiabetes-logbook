@@ -20,6 +20,8 @@
 		descriptionModeFlipDone: false,
 	};
 
+	// Editor visuali in stile email-template: init tramite wp.editor.initialize con guard anti re-init.
+	// Questo mantiene toolbar/menubar/plugins coerenti con "Corpo email (HTML)" e "Firma (HTML)".
 	var visualDescriptionEditorEnabled = true;
 	var descriptionDebugSeq = 0;
 	var priceRateNoteDefault = 'Salva prima l\'attivita per poter aggiungere tariffe.';
@@ -518,58 +520,10 @@
 				preventActivityDescriptionAutoFocusAndScrollTop();
 			}, 300);
 
-			// Pragmatic fix: TinyMCE's internal body can become detached from the visible iframe
-			// when the wrap is re-rendered between activity edits or after section moves.
-			// Always destroy and reinit the editor at activity open if it already exists — this
-			// guarantees a clean editor <-> iframe binding without relying on soft rebind heuristics.
+			// Mantieni l'istanza editor stabile: niente destroy/reinit forzato.
 			window.setTimeout(function () {
-				try {
-					var existingEditor = (typeof getActivityDescriptionEditor === 'function') ? getActivityDescriptionEditor() : null;
-					if (!existingEditor) {
-						// No editor yet: the regular init flow will create it. Reveal so the user can see it.
-						debugDescriptionLog('editor-reinit:skip-no-editor', {});
-						revealDescWrap();
-						return;
-					}
-					var srcLen = String(activityDescription || '').length;
-					debugDescriptionLog('editor-reinit:start', { sourceLen: srcLen });
-					state.descriptionPendingValue = String(activityDescription || '');
-					state.descriptionLastKnownHtml = String(activityDescription || '');
-
-					if (typeof destroyActivityDescriptionEditor === 'function') {
-						destroyActivityDescriptionEditor();
-					}
-					window.setTimeout(function () {
-						try {
-							if (typeof initActivityDescriptionEditor === 'function') {
-								initActivityDescriptionEditor();
-							}
-						} catch (initErr) {
-							debugDescriptionLog('editor-reinit:init-error', { error: String(initErr && initErr.message ? initErr.message : initErr) });
-						}
-						window.setTimeout(function () {
-							try {
-								applyActivityDescriptionContentToNativeEditor(String(activityDescription || ''), true);
-								if (typeof ensureActivityDescriptionEditable === 'function') {
-									ensureActivityDescriptionEditable();
-								}
-								if (typeof preventActivityDescriptionAutoFocusAndScrollTop === 'function') {
-									preventActivityDescriptionAutoFocusAndScrollTop();
-								}
-								debugDescriptionLog('editor-reinit:done', { sourceLen: srcLen });
-							} catch (applyErr) {
-								debugDescriptionLog('editor-reinit:apply-error', { error: String(applyErr && applyErr.message ? applyErr.message : applyErr) });
-							}
-							// Reveal the wrap after content has been pushed into the freshly inited editor.
-							revealDescWrap();
-						}, 160);
-					}, 60);
-				} catch (reinitErr) {
-					debugDescriptionLog('editor-reinit:outer-error', { error: String(reinitErr && reinitErr.message ? reinitErr.message : reinitErr) });
-					// Safety: if anything blew up, make sure the wrap isn't left hidden.
-					revealDescWrap();
-				}
-			}, 150);
+				revealDescWrap();
+			}, 180);
 
 			// Se è stato salvato un campo, resetta il flag
 			state.scrollToFieldId = null;
@@ -1260,6 +1214,24 @@
 		return normalizedLeft === normalizedRight;
 	}
 
+	function buildEmailTemplateTinyMceConfig(height) {
+		var tadvUrl = (window.sdActivityAdmin && window.sdActivityAdmin.tinymceAdvancedMceUrl) || '';
+		return {
+			wpautop: false,
+			height: height,
+			menubar: true,
+			branding: false,
+			external_plugins: tadvUrl ? {
+				table: tadvUrl + 'table/plugin.min.js',
+				code: tadvUrl + 'code/plugin.min.js'
+			} : {},
+			toolbar1: 'formatselect styleselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify',
+			toolbar2: 'bullist numlist outdent indent | blockquote hr | link unlink image media table code | removeformat',
+			toolbar3: 'undo redo | pastetext charmap | fullscreen',
+			fontsize_formats: '8pt 10pt 11pt 12pt 14pt 16pt 18pt 24pt 30pt 36pt',
+		};
+	}
+
 	function getFieldContentEditor() {
 		if (!window.tinymce || typeof window.tinymce.get !== 'function') {
 			return null;
@@ -1283,6 +1255,16 @@
 			}
 		}
 
+		if (window.wp && window.wp.editor && typeof window.wp.editor.remove === 'function') {
+			try {
+				window.wp.editor.remove('sd-field-content-editor');
+			} catch (err2) {
+				// Ignore removal errors.
+			}
+		}
+
+		window.sdFieldContentEditorInited = false;
+
 		$('#sd-field-content-editor').prop('readonly', false).prop('disabled', false).show();
 	}
 
@@ -1292,7 +1274,7 @@
 			return true;
 		}
 
-		$textarea.prop('readonly', false).prop('disabled', false).show();
+		$textarea.prop('readonly', false).prop('disabled', false);
 		$textarea.css({
 			'pointer-events': 'auto',
 			'user-select': 'text',
@@ -1301,8 +1283,11 @@
 
 		var editor = getFieldContentEditor();
 		if (!editor) {
+			$textarea.show();
 			return false;
 		}
+
+		forceFieldContentTmceUiState();
 
 		try {
 			if (typeof editor.setMode === 'function') {
@@ -1333,6 +1318,22 @@
 		return !!(body && body.getAttribute('contenteditable') !== 'false');
 	}
 
+	function forceFieldContentTmceUiState() {
+		var $wrap = $('#wp-sd-field-content-editor-wrap');
+		if (!$wrap.length) {
+			return;
+		}
+
+		$wrap.removeClass('html-active').addClass('tmce-active');
+		$wrap.find('.wp-editor-area').hide();
+		$wrap.find('.quicktags-toolbar').hide();
+		$wrap.find('.mce-tinymce').css({ display: '', visibility: 'visible' }).show();
+		$wrap.find('.mce-edit-area').css({ display: '', visibility: 'visible' }).show();
+
+		$('#sd-field-content-editor-html').addClass('wp-switch-editor switch-html');
+		$('#sd-field-content-editor-tmce').addClass('wp-switch-editor switch-tmce');
+	}
+
 	function setFieldContentEditorValue(value, options) {
 		var normalized = String(value || '');
 		var opts = options || {};
@@ -1361,10 +1362,6 @@
 	}
 
 	function initFieldContentEditor() {
-		if (!window.tinymce || typeof window.tinymce.init !== 'function') {
-			return;
-		}
-
 		var target = document.getElementById('sd-field-content-editor');
 		if (!target) {
 			return;
@@ -1372,26 +1369,44 @@
 
 		var existingEditor = getFieldContentEditor();
 		if (existingEditor) {
+			window.sdFieldContentEditorInited = true;
 			ensureFieldContentEditorEditable();
 			return;
 		}
 
-		window.tinymce.init({
-			target: target,
-			plugins: 'link image media lists',
-			toolbar: 'formatselect | bold italic underline | bullist numlist | link image | alignleft aligncenter alignright',
-			menubar: 'edit insert format table',
-			height: 250,
-			setup: function (editor) {
-				editor.on('init', function () {
-					ensureFieldContentEditorEditable();
-					editor.save();
-				});
-				editor.on('change keyup SetContent Undo Redo', function () {
-					editor.save();
-				});
-			},
+		if ($('#wp-sd-field-content-editor-wrap').length) {
+			window.sdFieldContentEditorInited = true;
+			ensureFieldContentEditorEditable();
+			return;
+		}
+
+		if (!window.wp || !window.wp.editor || typeof window.wp.editor.initialize !== 'function') {
+			return;
+		}
+
+		if (window.sdFieldContentEditorInited) {
+			return;
+		}
+
+		var tinyConfig = buildEmailTemplateTinyMceConfig(260);
+		tinyConfig.setup = function (editor) {
+			editor.on('init', function () {
+				ensureFieldContentEditorEditable();
+				editor.save();
+			});
+			editor.on('change keyup input undo redo SetContent', function () {
+				editor.save();
+			});
+		};
+
+		window.sdFieldContentEditorInited = true;
+		window.wp.editor.initialize('sd-field-content-editor', {
+			mediaButtons: true,
+			quicktags: true,
+			tinymce: tinyConfig,
 		});
+
+		window.setTimeout(forceFieldContentTmceUiState, 80);
 	}
 
 	function openMediaLibraryForActivityThumbnail(e) {
@@ -1707,8 +1722,8 @@
 			renderOptionsPreview();
 		}
 		
-		// Initialize TinyMCE for formatted-content field with explicit target.
-		if (isContent && window.tinymce) {
+		// Inizializza editor stile email-template per "Contenuto Formattato".
+		if (isContent) {
 			window.setTimeout(function () {
 				initFieldContentEditor();
 				ensureFieldContentEditorEditable();
@@ -2267,9 +2282,8 @@
 		toggleFieldSectionInputs();
 		
 		// Set content in editor if it's a content field
-		if (field.field_type === 'content' && window.tinymce) {
-			destroyFieldContentEditor();
-			setTimeout(function () {
+		if (field.field_type === 'content') {
+			window.setTimeout(function () {
 				initFieldContentEditor();
 				if (!setFieldContentEditorValue(field.content || '', { focus: true })) {
 					$('#sd-field-content-editor').val(field.content || '');
@@ -2277,7 +2291,7 @@
 				window.setTimeout(function () {
 					ensureFieldContentEditorEditable();
 					setFieldContentEditorValue(field.content || '', { focus: false });
-				}, 160);
+				}, 180);
 			}, 120);
 		}
 
@@ -4657,7 +4671,15 @@
 
 	function switchTab(name) {
 		var options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
-		$('.sd-admin-tab[data-tab="' + name + '"]').trigger('click');
+		// Aggiorna direttamente classi attive: il tab "modifica" non ha piu' un pulsante visibile,
+		// quindi non possiamo affidarci a .trigger('click') sul pulsante.
+		$('.sd-admin-tab').removeClass('is-active');
+		$('.sd-admin-tab[data-tab="' + name + '"]').addClass('is-active');
+		$('.sd-admin-panel').removeClass('is-active');
+		$('.sd-admin-panel[data-panel="' + name + '"]').addClass('is-active');
+		if (name === 'pagamenti' && typeof updatePaymentsStats === 'function') {
+			updatePaymentsStats();
+		}
 		if (name === 'modifica') {
 			window.setTimeout(function () {
 				initActivityDescriptionEditor();
@@ -5012,12 +5034,73 @@
 	}
 
 	// Stable native lifecycle override for Description editor.
+	// L'editor TinyMCE viene inizializzato UNA SOLA volta (vedi flag sdActivityDescriptionInited)
+	// con le stesse impostazioni dell'editor Template Email (Corpo/Firma). Le chiamate successive
+	// si limitano a setContent, evitando re-init multipli.
 	function initActivityDescriptionEditor() {
 		var $textarea = $('#sd-activity-description');
 		if (!$textarea.length) {
 			return;
 		}
 
+		var pending = state.descriptionPendingValue !== null
+			? String(state.descriptionPendingValue)
+			: String($textarea.val() || '');
+		var normalized = normalizeActivityDescriptionHtml(pending);
+
+		if (!window.sdActivityDescriptionInited) {
+			if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
+				try {
+					var tinyConfig = buildEmailTemplateTinyMceConfig(320);
+					tinyConfig.setup = function (editor) {
+						editor.on('init', function () {
+							try { editor.save(); } catch (e0) {}
+							try {
+								var pendingNow = state.descriptionPendingValue !== null
+									? String(state.descriptionPendingValue)
+									: String($('#sd-activity-description').val() || '');
+								var n = normalizeActivityDescriptionHtml(pendingNow);
+								editor.setContent(n || '');
+								editor.save();
+							} catch (e1) {}
+						});
+						editor.on('change keyup input undo redo SetContent', function () {
+							try { editor.save(); } catch (e2) {}
+						});
+					};
+					window.wp.editor.initialize('sd-activity-description', {
+						mediaButtons: true,
+						quicktags: true,
+						tinymce: tinyConfig,
+					});
+					window.sdActivityDescriptionInited = true;
+				} catch (initErr) {
+					window.sdActivityDescriptionInited = false;
+				}
+			} else {
+				window.setTimeout(initActivityDescriptionEditor, 120);
+			}
+		}
+
+		// Aggiorna il contenuto sull'istanza esistente (se gia' inizializzata).
+		if (window.tinymce && typeof window.tinymce.get === 'function') {
+			var existing = window.tinymce.get('sd-activity-description');
+			if (existing && typeof existing.setContent === 'function') {
+				try {
+					existing.setContent(normalized || '');
+					if (typeof existing.save === 'function') {
+						existing.save();
+					}
+				} catch (errSet) {
+					// fallback: la textarea conserva il valore.
+				}
+			}
+		}
+		$textarea.val(normalized);
+		state.descriptionLastKnownHtml = normalized;
+		return;
+
+		// eslint-disable-next-line no-unreachable
 		debugDescriptionLog('init:start', {
 			textareaLen: String($textarea.val() || '').length,
 			hasCurrentActivity: !!state.currentActivity,
@@ -5130,6 +5213,9 @@
 	}
 
 	function maybeForceActivityDescriptionHardRecovery(reason) {
+		debugDescriptionLog('hard-recovery:disabled', { reason: reason });
+		return false;
+
 		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
 		var normalizedSource = normalizeActivityDescriptionHtml(source);
 		if (!normalizedSource) {
@@ -5191,6 +5277,9 @@
 	}
 
 	function maybeForceActivityDescriptionModeFlip(reason) {
+		debugDescriptionLog('mode-flip:disabled', { reason: reason });
+		return false;
+
 		var source = String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
 		var normalizedSource = normalizeActivityDescriptionHtml(source);
 		if (!normalizedSource) {
@@ -5288,9 +5377,6 @@
 					// Ignore repaint errors.
 				}
 			}
-			window.setTimeout(function () {
-				maybeForceActivityDescriptionHardRecovery('refresh-visual-only');
-			}, 120);
 		}, 40);
 	}
 
@@ -5313,11 +5399,9 @@
 				enforceContent: !!enforceContent,
 				sourceLen: source.length,
 			});
+			initActivityDescriptionEditor();
 			applyActivityDescriptionContentToNativeEditor(source, true);
-			window.setTimeout(function () {
-				debugDescriptionLog('schedule:refresh-120ms', { delayMs: 120 });
-				refreshActivityDescriptionVisualEditor();
-			}, 120);
+			window.setTimeout(refreshActivityDescriptionVisualEditor, 90);
 			syncActivityDescriptionHtmlTextareaFromEditor();
 		}, delay);
 	}
