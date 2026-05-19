@@ -4784,41 +4784,28 @@
 			updatePaymentsStats();
 		}
 		if (name === 'modifica') {
-			window.setTimeout(function () {
-				// Non re-inizializzare se l'editor e' gia' montato e sano:
-				// un nuovo init/setContent provoca reload dell'iframe TinyMCE
-				// e svuota il contenuto visibile (con violations "unload"/setBaseAndExtent).
+			// Inizializza/refresha l'editor Descrizione UNA SOLA VOLTA per apertura attivita'.
+			// Re-init o setContent/getContent successivi triggerano TADV -> reload iframe
+			// (violations "unload", contenuto svuotato, editor non editabile).
+			var alreadyMounted = false;
+			try {
 				if (window.sdActivityDescriptionInited
 					&& window.tinymce
 					&& typeof window.tinymce.get === 'function') {
 					var existingEd = window.tinymce.get('sd-activity-description');
 					if (existingEd && isActivityDescriptionEditorHealthy(existingEd)) {
-						return;
+						alreadyMounted = true;
 					}
 				}
-				initActivityDescriptionEditor();
-			}, 0);
-		}
-		if (name === 'modifica' && !options.skipDescriptionRefresh) {
-			// Skip refresh se editor sano e textarea allineata al contenuto editor:
-			// il refresh forzato fa setContent e azzera/ricarica l'iframe.
-			var skipRefresh = false;
-			try {
-				if (window.tinymce && typeof window.tinymce.get === 'function') {
-					var edRef = window.tinymce.get('sd-activity-description');
-					if (edRef && isActivityDescriptionEditorHealthy(edRef)
-						&& typeof edRef.getContent === 'function') {
-						var taVal = String($('#sd-activity-description').val() || '');
-						var edVal = String(edRef.getContent() || '');
-						if (normalizeActivityDescriptionHtml(taVal)
-							=== normalizeActivityDescriptionHtml(edVal)) {
-							skipRefresh = true;
-						}
-					}
+			} catch (eMounted) {}
+
+			if (!alreadyMounted) {
+				window.setTimeout(function () {
+					initActivityDescriptionEditor();
+				}, 0);
+				if (!options.skipDescriptionRefresh) {
+					scheduleActivityDescriptionRefresh('', 80, false);
 				}
-			} catch (eSkip) {}
-			if (!skipRefresh) {
-				scheduleActivityDescriptionRefresh('', 80, false);
 			}
 		}
 	}
