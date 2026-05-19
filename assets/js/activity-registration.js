@@ -339,9 +339,19 @@
 			const activity = this.activity;
 
 			$('#sd-activity-title').text(activity.title);
-			$('#sd-activity-subtitle').text(
-				activity.location ? 'LUOGO: ' + activity.location : 'Scopri i dettagli dell\'attività'
-			);
+			if (activity.location) {
+				$('#sd-activity-subtitle')
+					.removeClass('is-generic')
+					.html(
+						'<span class="sd-subtitle-kicker">LUOGO</span>' +
+						'<span class="sd-subtitle-sep">•</span>' +
+						'<span class="sd-subtitle-location">' + this.escapeHtml(activity.location) + '</span>'
+					);
+			} else {
+				$('#sd-activity-subtitle')
+					.addClass('is-generic')
+					.text('Scopri i dettagli dell\'attività');
+			}
 
 			// Format dates (DD.MM.YYYY) and times (HH:MM).
 			const rawStartDate = activity.start_date || activity.start_date_formatted || '';
