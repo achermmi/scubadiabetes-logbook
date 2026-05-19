@@ -5182,10 +5182,15 @@
 		var normalized = normalizeActivityDescriptionHtml(pending);
 
 		if (!window.sdActivityDescriptionInited) {
+			// Pre-popola la textarea PRIMA di initialize: TinyMCE legge il contenuto al primo init.
+			// Evita di chiamare setContent() in seguito (TADV reagisce a setContent ricaricando l'iframe
+			// e si verificano violations "unload" + crash setBaseAndExtent).
+			$textarea.val(normalized);
+			state.descriptionPendingValue = normalized;
+			state.descriptionLastKnownHtml = normalized;
+
 			if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
-				// Pulisci eventuale istanza TinyMCE stale dal registro globale
-				// (puo' causare "Cannot read properties of null (reading 'setBaseAndExtent')"
-				// se editor.min.js prova a fare selezione su un iframe gia' smontato).
+				// Pulisci eventuale istanza TinyMCE stale dal registro globale.
 				try {
 					if (window.tinymce && typeof window.tinymce.get === 'function') {
 						var stale = window.tinymce.get('sd-activity-description');
@@ -5200,17 +5205,6 @@
 				try {
 					var tinyConfig = buildEmailTemplateTinyMceConfig(320);
 					tinyConfig.setup = function (editor) {
-						editor.on('init', function () {
-							try { editor.save(); } catch (e0) {}
-							try {
-								var pendingNow = state.descriptionPendingValue !== null
-									? String(state.descriptionPendingValue)
-									: String($('#sd-activity-description').val() || '');
-								var n = normalizeActivityDescriptionHtml(pendingNow);
-								editor.setContent(n || '');
-								editor.save();
-							} catch (e1) {}
-						});
 						editor.on('change keyup input undo redo SetContent', function () {
 							try { editor.save(); } catch (e2) {}
 						});
@@ -5227,7 +5221,14 @@
 			} else {
 				window.setTimeout(initActivityDescriptionEditor, 120);
 			}
+			return;
 		}
+
+		// Editor gia' inizializzato: NON chiamare ne' setContent ne' getContent
+		// (entrambi triggerano TADV -> reload iframe -> contenuto sparisce).
+		// Aggiornare il contenuto su un editor gia' montato per una nuova attivita'
+		// va fatto altrove (es. via remove + re-init pulito), non qui.
+		return;
 
 		// Aggiorna il contenuto sull'istanza esistente (se gia' inizializzata e iframe pronto).
 		if (window.tinymce && typeof window.tinymce.get === 'function') {
@@ -5541,19 +5542,48 @@
 		state.descriptionRefreshTimer = window.setTimeout(function () {
 			state.descriptionRefreshTimer = null;
 			var source = enforceContent ? String(expectedHtml || '') : String($('#sd-activity-description').val() || state.descriptionPendingValue || state.descriptionLastKnownHtml || '');
+			var normalizedSource = normalizeActivityDescriptionHtml(source);
 			debugDescriptionLog('schedule:run', {
 				delayMs: delay,
 				enforceContent: !!enforceContent,
 				sourceLen: source.length,
 			});
-			// Inizializza solo se non ancora fatto; se l'editor esiste non serve re-init
-			// (evita destroy/reinit che lascia il documento iframe in stato null).
-			if (!window.sdActivityDescriptionInited) {
-				initActivityDescriptionEditor();
+
+			// Pre-popola la textarea con il contenuto target.
+			var $ta = $('#sd-activity-description');
+			if ($ta.length) {
+				$ta.val(normalizedSource).prop('readonly', false).prop('disabled', false);
 			}
-			applyActivityDescriptionContentToNativeEditor(source, true);
-			window.setTimeout(refreshActivityDescriptionVisualEditor, 90);
-			syncActivityDescriptionHtmlTextareaFromEditor();
+			state.descriptionPendingValue = normalizedSource;
+			state.descriptionLastKnownHtml = normalizedSource;
+
+			// Se l'editor TinyMCE e' gia' montato con un contenuto diverso (es. cambio attivita'),
+			// rimuovilo completamente e re-inizializza: TinyMCE leggera' la textarea preimpostata.
+			// NON usare setContent: TADV reagisce ricaricando l'iframe -> contenuto sparisce.
+			if (window.sdActivityDescriptionInited
+				&& window.tinymce
+				&& typeof window.tinymce.get === 'function') {
+				var existingForRefresh = window.tinymce.get('sd-activity-description');
+				if (existingForRefresh) {
+					try {
+						if (typeof existingForRefresh.remove === 'function') {
+							existingForRefresh.remove();
+						}
+					} catch (eRem) {}
+					try {
+						if (window.wp && window.wp.editor && typeof window.wp.editor.remove === 'function') {
+							window.wp.editor.remove('sd-activity-description');
+						}
+					} catch (eRem2) {}
+					window.sdActivityDescriptionInited = false;
+					// Ripristina la textarea (puo' essere stata svuotata dal remove).
+					if ($ta.length) {
+						$ta.val(normalizedSource);
+					}
+				}
+			}
+
+			initActivityDescriptionEditor();
 		}, delay);
 	}
 
