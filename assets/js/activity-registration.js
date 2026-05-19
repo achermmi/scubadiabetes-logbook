@@ -68,6 +68,13 @@
 
 			$(document).on('change blur', '#sd-birth-date', function () {
 				self.updateMinorWarning();
+				self.applyConditionalVisibility();
+			});
+
+			// I campi base personali non hanno classe .sd-dynamic-field:
+			// ricalcola visibilita' condizionale anche quando cambiano.
+			$(document).on('change input blur', '#sd-first-name, #sd-last-name, #sd-email, #sd-birth-date', function () {
+				self.applyConditionalVisibility();
 			});
 
 			$(document).on('change input', '.sd-dynamic-field', function () {
@@ -927,10 +934,117 @@
 			return String(value === undefined || value === null ? '' : value).trim().toLowerCase();
 		},
 
+		normalizeConditionOperator: function (operator) {
+			const op = String(operator || '').trim().toLowerCase();
+			if (op === 'not_equals' || op === '!=' || op === 'diverso') {
+				return 'not_equals';
+			}
+			if (op === 'greater' || op === 'maggiore' || op === 'gt' || op === '>') {
+				return 'greater';
+			}
+			if (op === 'less' || op === 'minore' || op === 'lt' || op === '<') {
+				return 'less';
+			}
+			if (op === 'contains' || op === 'contiene' || op === 'contiente') {
+				return 'contains';
+			}
+			if (op === 'true' || op === 'vero') {
+				return 'true';
+			}
+			if (op === 'false' || op === 'falso') {
+				return 'false';
+			}
+			if (op === 'minorenne') {
+				return 'minorenne';
+			}
+			if (op === 'maggiorenne') {
+				return 'maggiorenne';
+			}
+			if (op === 'empty' || op === 'vuoto' || op === 'null') {
+				return 'empty';
+			}
+			if (op === 'not_empty' || op === 'non_vuoto' || op === 'not_null') {
+				return 'not_empty';
+			}
+			return 'equals';
+		},
+
+		conditionOperatorNeedsValue: function (operator) {
+			const op = this.normalizeConditionOperator(operator);
+			return op === 'equals' || op === 'not_equals' || op === 'greater' || op === 'less' || op === 'contains';
+		},
+
+		isTruthyConditionValue: function (value) {
+			const normalized = this.normalizeConditionValue(value);
+			return ['1', 'true', 'vero', 'yes', 'si', 'sì', 'on'].indexOf(normalized) !== -1;
+		},
+
+		isFalsyConditionValue: function (value) {
+			const normalized = this.normalizeConditionValue(value);
+			return normalized === '' || ['0', 'false', 'falso', 'no', 'off', 'null', 'undefined'].indexOf(normalized) !== -1;
+		},
+
+		parseComparableConditionValue: function (value) {
+			const raw = String(value === undefined || value === null ? '' : value).trim();
+			if (!raw) {
+				return { type: 'empty', value: null };
+			}
+
+			const normalizedNumber = raw.replace(',', '.');
+			if (/^-?\d+(\.\d+)?$/.test(normalizedNumber)) {
+				return { type: 'number', value: parseFloat(normalizedNumber) };
+			}
+
+			const parsedDate = new Date(raw);
+			if (!isNaN(parsedDate.getTime())) {
+				return { type: 'date', value: parsedDate.getTime() };
+			}
+
+			return { type: 'string', value: this.normalizeConditionValue(raw) };
+		},
+
+		compareConditionValues: function (left, right) {
+			const a = this.parseComparableConditionValue(left);
+			const b = this.parseComparableConditionValue(right);
+
+			if (a.type === b.type && a.type !== 'empty') {
+				if (a.value < b.value) {
+					return -1;
+				}
+				if (a.value > b.value) {
+					return 1;
+				}
+				return 0;
+			}
+
+			const fallbackA = this.normalizeConditionValue(left);
+			const fallbackB = this.normalizeConditionValue(right);
+			if (fallbackA < fallbackB) {
+				return -1;
+			}
+			if (fallbackA > fallbackB) {
+				return 1;
+			}
+			return 0;
+		},
+
 		getFieldCurrentValueById: function (fieldId) {
 			const idNum = parseInt(fieldId, 10) || 0;
 			if (!idNum) {
 				return '';
+			}
+
+			if (idNum === -101) {
+				return $('#sd-first-name').val() || '';
+			}
+			if (idNum === -102) {
+				return $('#sd-last-name').val() || '';
+			}
+			if (idNum === -103) {
+				return $('#sd-email').val() || '';
+			}
+			if (idNum === -104) {
+				return $('#sd-birth-date').val() || '';
 			}
 
 			const field = (this.fields || []).find(function (item) {
@@ -938,6 +1052,32 @@
 			});
 			if (!field) {
 				return '';
+			}
+
+			const sourceFieldName = String(field.field_name || '').toLowerCase();
+			if (sourceFieldName === 'first_name') {
+				const v = $('#sd-first-name').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'last_name') {
+				const v = $('#sd-last-name').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'email') {
+				const v = $('#sd-email').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'birth_date') {
+				const v = $('#sd-birth-date').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
 			}
 
 			const baseName = 'field_' + field.field_name;
@@ -960,11 +1100,50 @@
 				return '';
 			}
 
+			if (idNum === -101) {
+				return $('#sd-first-name').val() || '';
+			}
+			if (idNum === -102) {
+				return $('#sd-last-name').val() || '';
+			}
+			if (idNum === -103) {
+				return $('#sd-email').val() || '';
+			}
+			if (idNum === -104) {
+				return $('#sd-birth-date').val() || '';
+			}
+
 			const field = (this.fields || []).find(function (item) {
 				return parseInt(item.id, 10) === idNum;
 			});
 			if (!field) {
 				return '';
+			}
+
+			const sourceFieldName = String(field.field_name || '').toLowerCase();
+			if (sourceFieldName === 'first_name') {
+				const v = $('#sd-first-name').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'last_name') {
+				const v = $('#sd-last-name').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'email') {
+				const v = $('#sd-email').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
+			}
+			if (sourceFieldName === 'birth_date') {
+				const v = $('#sd-birth-date').val();
+				if (v !== undefined && v !== null && String(v) !== '') {
+					return v;
+				}
 			}
 
 			const baseName = 'field_' + field.field_name;
@@ -1028,13 +1207,54 @@
 
 			const evaluateRule = function (rule) {
 				const sourceId = parseInt(rule && rule.source_field_id, 10) || 0;
-				const operator = (rule && rule.operator === 'not_equals') ? 'not_equals' : 'equals';
-				const expected = self.normalizeConditionValue(rule && rule.value ? rule.value : '');
-				const current = self.normalizeConditionValue(self.getFieldCurrentValueById(sourceId));
-				const currentLabel = self.normalizeConditionValue(self.getFieldCurrentLabelById(sourceId));
+				const operator = self.normalizeConditionOperator(rule && rule.operator ? rule.operator : 'equals');
+				const expectedRaw = String(rule && rule.value ? rule.value : '');
+				const expected = self.normalizeConditionValue(expectedRaw);
+				const currentRaw = String(self.getFieldCurrentValueById(sourceId) || '');
+				const currentLabelRaw = String(self.getFieldCurrentLabelById(sourceId) || '');
+				const current = self.normalizeConditionValue(currentRaw);
+				const currentLabel = self.normalizeConditionValue(currentLabelRaw);
 
-				if (!sourceId || expected === '') {
+				if (!sourceId || (self.conditionOperatorNeedsValue(operator) && expected === '')) {
 					return true;
+				}
+
+				if (operator === 'greater') {
+					return self.compareConditionValues(currentRaw || currentLabelRaw, expectedRaw) > 0;
+				}
+
+				if (operator === 'less') {
+					return self.compareConditionValues(currentRaw || currentLabelRaw, expectedRaw) < 0;
+				}
+
+				if (operator === 'contains') {
+					return current.indexOf(expected) !== -1 || currentLabel.indexOf(expected) !== -1;
+				}
+
+				if (operator === 'true') {
+					return self.isTruthyConditionValue(currentRaw || currentLabelRaw);
+				}
+
+				if (operator === 'false') {
+					return self.isFalsyConditionValue(currentRaw || currentLabelRaw);
+				}
+
+				if (operator === 'minorenne') {
+					const info = self.getMinorInfoFromBirthDate(currentRaw || currentLabelRaw);
+					return info.age !== null && info.age >= 0 && info.age < 18;
+				}
+
+				if (operator === 'maggiorenne') {
+					const info = self.getMinorInfoFromBirthDate(currentRaw || currentLabelRaw);
+					return info.age !== null && info.age >= 18;
+				}
+
+				if (operator === 'empty') {
+					return self.normalizeConditionValue(currentRaw) === '' && self.normalizeConditionValue(currentLabelRaw) === '';
+				}
+
+				if (operator === 'not_empty') {
+					return self.normalizeConditionValue(currentRaw) !== '' || self.normalizeConditionValue(currentLabelRaw) !== '';
 				}
 
 				if (operator === 'not_equals') {
@@ -1056,7 +1276,16 @@
 					? entry.rules
 					: ((entry && entry.source_field_id) ? [entry] : []);
 				const validRules = ruleList.filter(function (rule) {
-					return (parseInt(rule && rule.source_field_id, 10) || 0) > 0 && String(rule && rule.value ? rule.value : '').trim() !== '';
+					const sourceId = parseInt(rule && rule.source_field_id, 10) || 0;
+					const op = self.normalizeConditionOperator(rule && rule.operator ? rule.operator : 'equals');
+					const value = String(rule && rule.value ? rule.value : '').trim();
+					if (!sourceId) {
+						return false;
+					}
+					if (!self.conditionOperatorNeedsValue(op)) {
+						return true;
+					}
+					return value !== '';
 				});
 				let shouldShow = true;
 
@@ -1064,7 +1293,7 @@
 					shouldShow = true;
 				} else if (
 					mode === 'or' &&
-					validRules.every(function (rule) { return rule.operator === 'not_equals'; })
+					validRules.every(function (rule) { return self.normalizeConditionOperator(rule.operator) === 'not_equals'; })
 				) {
 					// UX-friendly behavior: "A diverso da X OR diverso da Y" on the same source
 					// is commonly intended as exclusion set (different from both X and Y).
@@ -1501,7 +1730,31 @@
 				return { isMinor: false, age: null };
 			}
 
-			const birth = new Date(raw + 'T00:00:00');
+			let parsedYear = null;
+			let parsedMonth = null;
+			let parsedDay = null;
+
+			// Prefer ISO yyyy-mm-dd (input type=date), fallback dd/mm/yyyy.
+			const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+			if (isoMatch) {
+				parsedYear = parseInt(isoMatch[1], 10);
+				parsedMonth = parseInt(isoMatch[2], 10);
+				parsedDay = parseInt(isoMatch[3], 10);
+			} else {
+				const dmyMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+				if (dmyMatch) {
+					parsedDay = parseInt(dmyMatch[1], 10);
+					parsedMonth = parseInt(dmyMatch[2], 10);
+					parsedYear = parseInt(dmyMatch[3], 10);
+				}
+			}
+
+			let birth = null;
+			if (parsedYear && parsedMonth && parsedDay) {
+				birth = new Date(parsedYear, parsedMonth - 1, parsedDay);
+			} else {
+				birth = new Date(raw + 'T00:00:00');
+			}
 			if (isNaN(birth.getTime())) {
 				return { isMinor: false, age: null };
 			}

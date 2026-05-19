@@ -209,6 +209,10 @@
 		$(document).on('click', '.sd-condition-rule-remove', function () {
 			$(this).closest('.sd-condition-rule-row').remove();
 		});
+		$(document).on('change', '.sd-condition-operator', function () {
+			var $row = $(this).closest('.sd-condition-rule-row');
+			updateConditionValueInputState($row);
+		});
 
 		$('#sd-reg-filter-btn').on('click', loadRegistrations);
 		$('#sd-reg-activity-id').on('change', loadRegistrations);
@@ -1909,8 +1913,19 @@
 		var html = '<option value="">Seleziona campo sorgente</option>';
 		var targetId = parseInt(targetFieldId, 10) || 0;
 
+		// Campi base sempre presenti nel modulo iscrizione.
+		html += '<option value="-101">Nome</option>';
+		html += '<option value="-102">Cognome</option>';
+		html += '<option value="-103">Email</option>';
+		html += '<option value="-104">Data di nascita</option>';
+
 		(state.currentFields || []).forEach(function (field) {
 			var sourceId = parseInt(field.id, 10) || 0;
+			var sourceFieldName = String(field && field.field_name ? field.field_name : '').toLowerCase();
+			// I campi base hanno gia' voci virtuali dedicate (-101..-104): evita duplicati ambigui.
+			if (sourceFieldName === 'first_name' || sourceFieldName === 'last_name' || sourceFieldName === 'email' || sourceFieldName === 'birth_date') {
+				return;
+			}
 			if (!sourceId || sourceId === targetId || field.field_type === 'content') {
 				return;
 			}
@@ -1920,20 +1935,106 @@
 		return html;
 	}
 
+	function normalizeConditionOperator(operator) {
+		var op = String(operator || '').trim().toLowerCase();
+		if (op === 'not_equals' || op === '!=' || op === 'diverso') {
+			return 'not_equals';
+		}
+		if (op === 'greater' || op === 'maggiore' || op === 'gt' || op === '>') {
+			return 'greater';
+		}
+		if (op === 'less' || op === 'minore' || op === 'lt' || op === '<') {
+			return 'less';
+		}
+		if (op === 'contains' || op === 'contiene' || op === 'contiente') {
+			return 'contains';
+		}
+		if (op === 'true' || op === 'vero') {
+			return 'true';
+		}
+		if (op === 'false' || op === 'falso') {
+			return 'false';
+		}
+		if (op === 'minorenne') {
+			return 'minorenne';
+		}
+		if (op === 'maggiorenne') {
+			return 'maggiorenne';
+		}
+		if (op === 'empty' || op === 'vuoto' || op === 'null') {
+			return 'empty';
+		}
+		if (op === 'not_empty' || op === 'non_vuoto' || op === 'not_null') {
+			return 'not_empty';
+		}
+		return 'equals';
+	}
+
+	function conditionOperatorRequiresValue(operator) {
+		var op = normalizeConditionOperator(operator);
+		return op === 'equals' || op === 'not_equals' || op === 'greater' || op === 'less' || op === 'contains';
+	}
+
+	function getConditionValuePlaceholder(operator) {
+		var op = normalizeConditionOperator(operator);
+		if (op === 'greater') {
+			return 'Valore soglia (es. 18)';
+		}
+		if (op === 'less') {
+			return 'Valore soglia (es. 65)';
+		}
+		if (op === 'contains') {
+			return 'Testo da contenere';
+		}
+		return 'Valore atteso (es. Non diabetico)';
+	}
+
+	function getConditionOperatorOptionsHtml() {
+		var html = '';
+		html += '<option value="equals">È uguale a</option>';
+		html += '<option value="not_equals">È diverso da</option>';
+		html += '<option value="greater">Maggiore</option>';
+		html += '<option value="less">Minore</option>';
+		html += '<option value="contains">Contiene</option>';
+		html += '<option value="true">Vero</option>';
+		html += '<option value="false">Falso</option>';
+		html += '<option value="minorenne">Minorenne (data di nascita)</option>';
+		html += '<option value="maggiorenne">Maggiorenne (data di nascita)</option>';
+		html += '<option value="empty">Vuoto (null)</option>';
+		html += '<option value="not_empty">Non vuoto (not null)</option>';
+		return html;
+	}
+
+	function updateConditionValueInputState($row) {
+		if (!$row || !$row.length) {
+			return;
+		}
+
+		var operator = normalizeConditionOperator($row.find('.sd-condition-operator').val());
+		var requiresValue = conditionOperatorRequiresValue(operator);
+		var $valueInput = $row.find('.sd-condition-value');
+
+		$valueInput.attr('placeholder', getConditionValuePlaceholder(operator));
+		if (!requiresValue) {
+			$valueInput.val('');
+			$valueInput.prop('disabled', true).hide();
+			return;
+		}
+
+		$valueInput.prop('disabled', false).show();
+	}
+
 	function addConditionRuleRow(rule) {
 		var targetId = parseInt($('#sd-field-id').val(), 10) || 0;
 		var sourceId = rule && rule.source_field_id ? parseInt(rule.source_field_id, 10) : 0;
-		var operator = (rule && rule.operator === 'not_equals') ? 'not_equals' : 'equals';
+		var operator = normalizeConditionOperator(rule && rule.operator ? rule.operator : 'equals');
 		var value = rule && rule.value ? String(rule.value) : '';
 		var sourceOptions = getConditionSourceOptionsHtml(targetId);
 		var html = '';
 
 		html += '<div class="sd-field-builder-meta sd-condition-rule-row">';
 		html += '<select class="sd-select sd-condition-source-field">' + sourceOptions + '</select>';
-		html += '<select class="sd-select sd-condition-operator">';
-		html += '<option value="equals">È uguale a</option>';
-		html += '<option value="not_equals">È diverso da</option>';
-		html += '</select>';
+		html += '<select class="sd-select sd-condition-operator">' + getConditionOperatorOptionsHtml() + '</select>';
 		html += '<input type="text" class="sd-input sd-condition-value" placeholder="Valore atteso (es. Non diabetico)">';
 		html += '<button type="button" class="sd-btn sd-btn-danger sd-condition-rule-remove">Rimuovi</button>';
 		html += '</div>';
@@ -1943,6 +2044,7 @@
 		$row.find('.sd-condition-source-field').val(sourceId ? String(sourceId) : '');
 		$row.find('.sd-condition-operator').val(operator);
 		$row.find('.sd-condition-value').val(value);
+		updateConditionValueInputState($row);
 	}
 
 	function collectConditionRulesFromForm() {
@@ -1950,17 +2052,18 @@
 		$('#sd-condition-rules .sd-condition-rule-row').each(function () {
 			var $row = $(this);
 			var sourceId = parseInt($row.find('.sd-condition-source-field').val(), 10) || 0;
-			var operator = $row.find('.sd-condition-operator').val() === 'not_equals' ? 'not_equals' : 'equals';
+			var operator = normalizeConditionOperator($row.find('.sd-condition-operator').val());
 			var value = String($row.find('.sd-condition-value').val() || '').trim();
+			var requiresValue = conditionOperatorRequiresValue(operator);
 
-			if (!sourceId || value === '') {
+			if (!sourceId || (requiresValue && value === '')) {
 				return;
 			}
 
 			rules.push({
 				source_field_id: sourceId,
 				operator: operator,
-				value: value,
+				value: requiresValue ? value : '',
 			});
 		});
 
