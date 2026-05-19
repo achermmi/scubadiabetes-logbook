@@ -380,8 +380,12 @@
 				$('#sd-activity-image-wrap').hide();
 			}
 
-			const maxParticipants = parseInt(activity.max_participants) || 0;
-			const currentParticipants = parseInt(activity.current_participants) || 0;
+			const maxParticipants = parseInt(activity.max_participants, 10) || 0;
+			// Preferisci il conteggio reale calcolato lato server (registrations_count).
+			const currentParticipants = parseInt(
+				(activity.registrations_count ?? activity.current_participants ?? activity.participants_count ?? 0),
+				10
+			) || 0;
 			const availableSpots = Math.max(0, maxParticipants - currentParticipants);
 
 			let spotsText = availableSpots + ' / ' + maxParticipants;
