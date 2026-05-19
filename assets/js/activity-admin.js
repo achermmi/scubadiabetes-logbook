@@ -5086,8 +5086,21 @@
 					return;
 				}
 
-				editor.setContent(normalized || '');
-				editor.save();
+				// Guard: non chiamare setContent se l'iframe non ha ancora il body (causa setBaseAndExtent crash).
+				if (!isActivityDescriptionEditorHealthy(editor)) {
+					if (tries < maxTries) {
+						window.setTimeout(syncVisual, 80);
+					}
+					return;
+				}
+				try {
+					editor.setContent(normalized || '');
+					editor.save();
+				} catch (setContentErr) {
+					// iframe doc null: rimanda.
+					if (tries < maxTries) { window.setTimeout(syncVisual, 80); }
+					return;
+				}
 				if (typeof editor.setMode === 'function') {
 					editor.setMode('design');
 				}
@@ -5153,6 +5166,20 @@
 
 		if (!window.sdActivityDescriptionInited) {
 			if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function') {
+				// Pulisci eventuale istanza TinyMCE stale dal registro globale
+				// (puo' causare "Cannot read properties of null (reading 'setBaseAndExtent')"
+				// se editor.min.js prova a fare selezione su un iframe gia' smontato).
+				try {
+					if (window.tinymce && typeof window.tinymce.get === 'function') {
+						var stale = window.tinymce.get('sd-activity-description');
+						if (stale && typeof stale.remove === 'function') {
+							stale.remove();
+						}
+					}
+					if (window.wp.editor && typeof window.wp.editor.remove === 'function') {
+						try { window.wp.editor.remove('sd-activity-description'); } catch (eRm) {}
+					}
+				} catch (eClean) {}
 				try {
 					var tinyConfig = buildEmailTemplateTinyMceConfig(320);
 					tinyConfig.setup = function (editor) {
@@ -5185,10 +5212,10 @@
 			}
 		}
 
-		// Aggiorna il contenuto sull'istanza esistente (se gia' inizializzata).
+		// Aggiorna il contenuto sull'istanza esistente (se gia' inizializzata e iframe pronto).
 		if (window.tinymce && typeof window.tinymce.get === 'function') {
 			var existing = window.tinymce.get('sd-activity-description');
-			if (existing && typeof existing.setContent === 'function') {
+			if (existing && typeof existing.setContent === 'function' && isActivityDescriptionEditorHealthy(existing)) {
 				try {
 					existing.setContent(normalized || '');
 					if (typeof existing.save === 'function') {
@@ -5502,7 +5529,11 @@
 				enforceContent: !!enforceContent,
 				sourceLen: source.length,
 			});
-			initActivityDescriptionEditor();
+			// Inizializza solo se non ancora fatto; se l'editor esiste non serve re-init
+			// (evita destroy/reinit che lascia il documento iframe in stato null).
+			if (!window.sdActivityDescriptionInited) {
+				initActivityDescriptionEditor();
+			}
 			applyActivityDescriptionContentToNativeEditor(source, true);
 			window.setTimeout(refreshActivityDescriptionVisualEditor, 90);
 			syncActivityDescriptionHtmlTextareaFromEditor();
