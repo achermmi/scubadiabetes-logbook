@@ -4785,11 +4785,41 @@
 		}
 		if (name === 'modifica') {
 			window.setTimeout(function () {
+				// Non re-inizializzare se l'editor e' gia' montato e sano:
+				// un nuovo init/setContent provoca reload dell'iframe TinyMCE
+				// e svuota il contenuto visibile (con violations "unload"/setBaseAndExtent).
+				if (window.sdActivityDescriptionInited
+					&& window.tinymce
+					&& typeof window.tinymce.get === 'function') {
+					var existingEd = window.tinymce.get('sd-activity-description');
+					if (existingEd && isActivityDescriptionEditorHealthy(existingEd)) {
+						return;
+					}
+				}
 				initActivityDescriptionEditor();
 			}, 0);
 		}
 		if (name === 'modifica' && !options.skipDescriptionRefresh) {
-			scheduleActivityDescriptionRefresh('', 80, false);
+			// Skip refresh se editor sano e textarea allineata al contenuto editor:
+			// il refresh forzato fa setContent e azzera/ricarica l'iframe.
+			var skipRefresh = false;
+			try {
+				if (window.tinymce && typeof window.tinymce.get === 'function') {
+					var edRef = window.tinymce.get('sd-activity-description');
+					if (edRef && isActivityDescriptionEditorHealthy(edRef)
+						&& typeof edRef.getContent === 'function') {
+						var taVal = String($('#sd-activity-description').val() || '');
+						var edVal = String(edRef.getContent() || '');
+						if (normalizeActivityDescriptionHtml(taVal)
+							=== normalizeActivityDescriptionHtml(edVal)) {
+							skipRefresh = true;
+						}
+					}
+				}
+			} catch (eSkip) {}
+			if (!skipRefresh) {
+				scheduleActivityDescriptionRefresh('', 80, false);
+			}
 		}
 	}
 
