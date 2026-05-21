@@ -3,6 +3,7 @@
  * Upload file → anteprima → selezione → conferma import
  */
 (function ($) {
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
     'use strict';
 
     var previewData = [];
@@ -293,7 +294,7 @@
         $('#sd-btn-schema-dump').on('click', function () {
             var fileInput = document.getElementById('sd-schema-file-input');
             if (!fileInput || !fileInput.files.length) {
-                alert('Seleziona un file .db prima.');
+                alert(__('Seleziona un file .db prima.', 'sd-logbook'));
                 return;
             }
             var $btn = $(this);

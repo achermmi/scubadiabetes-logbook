@@ -3,6 +3,7 @@
  * Carica dati, form inline, salvataggio con storico, visualizzazione storia
  */
 (function($) {
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
     'use strict';
 
     var currentDiveId    = null;
@@ -608,7 +609,7 @@
         // Controlla se ci sono modifiche non salvate
         var currentData = $('#sd-edit-form').serialize();
         if (_formSnapshot !== null && currentData !== _formSnapshot) {
-            if (!confirm('Hai modifiche non salvate. Chiudendo perderai i dati inseriti.\n\nVuoi continuare?')) {
+            if (!confirm(__('Hai modifiche non salvate. Chiudendo perderai i dati inseriti.\n\nVuoi continuare?', 'sd-logbook'))) {
                 return; // L'utente ha scelto di restare nel form
             }
         }

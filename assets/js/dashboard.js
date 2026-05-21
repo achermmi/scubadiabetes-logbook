@@ -3,6 +3,7 @@
  * Dettaglio, modifica, storico, mappa Leaflet
  */
 (function($) {
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
     'use strict';
 
     var currentDiveId = null;
@@ -460,7 +461,7 @@
                     );
                 },
                 error: function() {
-                    alert('Errore di connessione');
+                    alert(__('Errore di connessione', 'sd-logbook'));
                     $btn.prop('disabled', false);
                 }
             });

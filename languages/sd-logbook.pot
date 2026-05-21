@@ -1,0 +1,7647 @@
+# Copyright (C) 2026 Mirko Achermann
+# This file is distributed under the GPL v2 or later.
+# Placeholder POT: rigenerare con `wp i18n make-pot . languages/sd-logbook.pot`
+# oppure tramite Loco Translate (Plugin > ScubaDiabetes Logbook > Sync).
+# La lingua sorgente del progetto e' l'italiano.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ScubaDiabetes Logbook 1.3.78\n"
+"Report-Msgid-Bugs-To: https://scubadiabetes.ch\n"
+"Last-Translator: Mirko Achermann <info@scubadiabetes.ch>\n"
+"Language-Team: ScubaDiabetes <info@scubadiabetes.ch>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-05-21 17:34+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Domain: sd-logbook\n"
+
+#. %d=valore glucosio mg/dL
+#: includes/class-sd-tidepool.php:558
+msgid " Ultima lettura disponibile: %d mg/dL."
+msgstr ""
+
+#. %1$d=valore glucosio, %2$s=trend
+#: includes/class-sd-dexcom.php:557
+#, php-format
+msgid " Ultima lettura: %1$d mg/dL (%2$s)."
+msgstr ""
+
+#. %d=valore glucosio mg/dL
+#: includes/class-sd-carelink.php:1179 includes/class-sd-libreview.php:925
+msgid " Ultima lettura: %d mg/dL."
+msgstr ""
+
+#: templates/cgm-medical.php:120
+msgid "% anomalie"
+msgstr ""
+
+#. 1: n. letture corrette, 2: offset in ore, 3: n. duplicate rimosse
+#: includes/class-sd-libreview.php:1044
+#, php-format
+msgid ""
+"%1$d letture LibreView corrette (−%2$d ore), %3$d duplicate rimosse. "
+"Ricarica la pagina per verificare."
+msgstr ""
+
+#: templates/profile.php:350
+msgid "%d gg"
+msgstr ""
+
+#. %d: number of updated dives
+#: includes/class-sd-dive-edit.php:613
+msgid "%d immersioni aggiornate con le nuove regole."
+msgstr ""
+
+#. %d = numero letture eliminate
+#: includes/class-sd-libreview.php:1086
+msgid ""
+"%d lettura LibreView eliminata. Esegui \"Sync Ora\" per reimportare i dati."
+msgid_plural ""
+"%d letture LibreView eliminate. Esegui \"Sync Ora\" per reimportare i dati."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sd-carelink.php:1000
+msgid "%d lettura sincronizzata da CareLink."
+msgid_plural "%d letture sincronizzate da CareLink."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sd-libreview.php:728
+msgid "%d lettura sincronizzata da LibreView."
+msgid_plural "%d letture sincronizzate da LibreView."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sd-dexcom.php:433 includes/class-sd-tidepool.php:428
+msgid "%d lettura sincronizzata."
+msgid_plural "%d letture sincronizzate."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/dive-edit.php:72
+msgid "%d modifiche"
+msgstr ""
+
+#: templates/dive-form.php:183
+msgid "%O₂"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:908
+#, php-format
+msgid "%s (copia)"
+msgstr ""
+
+#: templates/profile.php:1353
+msgid "(invariato)"
+msgstr ""
+
+#: includes/class-sd-libreview.php:730
+#, php-format
+msgid "(Ultima API: %s)"
+msgstr ""
+
+#: templates/profile.php:46
+msgid "(usato solo a scopo di ricerca)"
+msgstr ""
+
+#: templates/membership-form.php:640
+msgid "* Campo obbligatorio"
+msgstr ""
+
+#: templates/diabetes-form.php:191
+msgid "+ 30 MIN"
+msgstr ""
+
+#: templates/activity-admin.php:363
+msgid "+ Condizione"
+msgstr ""
+
+#: templates/activity-admin.php:38
+msgid "+ Nuova Attivita"
+msgstr ""
+
+#: templates/activity-admin.php:268
+msgid "+ Opzione"
+msgstr ""
+
+#: templates/diabetes-form.php:189
+msgid "- 20 MIN"
+msgstr ""
+
+#: templates/diabetes-form.php:188
+msgid "- 45 MIN"
+msgstr ""
+
+#: templates/diabetes-form.php:190
+msgid "- 5 MIN"
+msgstr ""
+
+#: templates/diabetes-form.php:187
+msgid "- 90 MIN"
+msgstr ""
+
+#: templates/membership-edit.php:197
+msgid "-- Non indicata --"
+msgstr ""
+
+#: templates/membership-form.php:543
+msgid "-- Non specificato --"
+msgstr ""
+
+#: templates/membership-edit.php:179 templates/membership-edit.php:364
+#: templates/membership-form.php:61 templates/membership-form.php:145
+#: templates/membership-form.php:228 templates/membership-form.php:323
+#: templates/membership-form.php:440
+msgid "-- Seleziona --"
+msgstr ""
+
+#: templates/membership-form.php:196
+msgid "-- Seleziona cantone --"
+msgstr ""
+
+#: templates/membership-form.php:119 templates/membership-form.php:481
+msgid "-- Seleziona taglia --"
+msgstr ""
+
+#: templates/activity-registration-form.php:130
+msgid "--Seleziona--"
+msgstr ""
+
+#: templates/membership-form.php:39
+msgid "1. Dati anagrafici"
+msgstr ""
+
+#: templates/membership-edit.php:203 templates/membership-form.php:125
+#: templates/membership-form.php:487
+msgid "12–14 anni"
+msgstr ""
+
+#: templates/membership-form.php:212
+msgid "2. Genitore / Tutore legale"
+msgstr ""
+
+#: templates/cgm-dashboard.php:126
+msgid "24h"
+msgstr ""
+
+#: templates/membership-edit.php:199 templates/membership-form.php:121
+#: templates/membership-form.php:483
+msgid "2–3 anni"
+msgstr ""
+
+#: templates/membership-form.php:353
+msgid "3. Iscrizione"
+msgstr ""
+
+#: templates/cgm-dashboard.php:128
+msgid "30 giorni"
+msgstr ""
+
+#: templates/membership-form.php:529
+msgid "4. Dati subacqueo"
+msgstr ""
+
+#: templates/membership-edit.php:200 templates/membership-form.php:122
+#: templates/membership-form.php:484
+msgid "4–5 anni"
+msgstr ""
+
+#: templates/membership-form.php:611
+msgid "5. Consensi"
+msgstr ""
+
+#: templates/membership-edit.php:201 templates/membership-form.php:123
+#: templates/membership-form.php:485
+msgid "6–8 anni"
+msgstr ""
+
+#: templates/cgm-dashboard.php:127
+msgid "7 giorni"
+msgstr ""
+
+#: templates/membership-edit.php:202 templates/membership-form.php:124
+#: templates/membership-form.php:486
+msgid "9–11 anni"
+msgstr ""
+
+#: templates/email-templates.php:133
+msgid "<p>Caro/a <strong>{{nome}} {{cognome}}</strong>,</p>"
+msgstr ""
+
+#: templates/email-templates.php:144
+msgid ""
+"<p>Cordiali saluti,<br>Segretariato ScubaDiabetes<br><a href=\\\"mailto:"
+"{{email_associazione}}\\\">{{email_associazione}}</a></p>"
+msgstr ""
+
+#: templates/dive-import.php:200
+msgid "= già presente (stessa data/ora)"
+msgstr ""
+
+#: templates/dive-import.php:199
+msgid "= non ancora nel logbook"
+msgstr ""
+
+#. 1: site name, 2: year
+#: includes/class-sd-membership-helper.php:135
+#, php-format
+msgid "[%1$s] Conferma iscrizione %2$s"
+msgstr ""
+
+#. 1: site name, 2: year
+#: includes/class-sd-payment-orchestrator.php:610
+#, php-format
+msgid "[%1$s] Conferma iscrizione e fattura tassa sociale %2$d"
+msgstr ""
+
+#. 1: site name, 2: year
+#: includes/class-sd-membership-helper.php:151
+#, php-format
+msgid "[%1$s] Conferma iscrizione famigliare %2$s"
+msgstr ""
+
+#. 1: site name, 2: titolo attività
+#: includes/class-sd-activity-payment-flow.php:778
+#, php-format
+msgid "[%1$s] Iscrizione ricevuta e fattura: %2$s"
+msgstr ""
+
+#. 1: site name, 2: titolo attività
+#: includes/class-sd-activity-payment-flow.php:849
+#, php-format
+msgid "[%1$s] Nuova iscrizione con richiesta fattura: %2$s"
+msgstr ""
+
+#. 1: site name, 2: first name, 3: last name
+#: includes/class-sd-membership-helper.php:168
+#, php-format
+msgid "[%1$s] Nuova iscrizione: %2$s %3$s"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:609
+#, php-format
+msgid "[%1$s] Pagamento attività confermato: %2$s"
+msgstr ""
+
+#. 1: site name, 2: year
+#: includes/class-sd-payment-orchestrator.php:458
+#, php-format
+msgid "[%1$s] Pagamento confermato — Iscrizione %2$d attivata"
+msgstr ""
+
+#. %s: titolo attività
+#: includes/class-sd-activity-payment-flow.php:608
+#, php-format
+msgid "[%1$s] Rimborso attività confermato: %2$s"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1852
+msgid "[ScubaDiabetes] Reminder rinnovo iscrizione"
+msgstr ""
+
+#. 1: year, 2: expiry date
+#: includes/class-sd-membership-admin.php:1894
+#, php-format
+msgid "[ScubaDiabetes] Rinnovo iscrizione %1$s - Scadenza %2$s"
+msgstr ""
+
+#: templates/research-dashboard.php:54
+msgid "A"
+msgstr ""
+
+#: includes/class-sd-dashboard.php:115 includes/class-sd-dive-edit.php:70
+#: includes/class-sd-dive-form.php:145 includes/class-sd-dive-import.php:65
+#: includes/class-sd-diver-profile.php:64
+#: includes/class-sd-medical-panel.php:68
+#: includes/class-sd-research-dashboard.php:65
+msgid "Accedi"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:205
+#: includes/class-sd-membership-helper.php:279
+#: includes/class-sd-payment-orchestrator.php:508
+msgid "Accedi al portale"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:710
+#: includes/class-sd-email-templates.php:742
+#: includes/class-sd-email-templates.php:777
+#: includes/class-sd-email-templates.php:883
+#: includes/class-sd-email-templates.php:939
+#: includes/class-sd-libreview.php:977 includes/class-sd-libreview.php:1060
+#: includes/class-sd-membership-admin.php:243
+#: includes/class-sd-membership-admin.php:330
+#: includes/class-sd-membership-admin.php:496
+#: includes/class-sd-membership-admin.php:516
+#: includes/class-sd-membership-admin.php:1176
+#: includes/class-sd-membership-admin.php:1415
+#: includes/class-sd-membership-admin.php:1491
+#: includes/class-sd-membership-admin.php:1580
+#: includes/class-sd-membership-admin.php:1628
+#: includes/class-sd-membership-admin.php:1730
+msgid "Accesso negato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:688
+#: includes/class-sd-membership-admin.php:178
+msgid "Accesso negato. Questa pagina è riservata allo staff."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:239
+#: includes/class-sd-predive-check.php:137
+msgid "Accesso non autorizzato."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:130
+#: includes/class-sd-diabetic-registry.php:57
+#: includes/class-sd-medical-panel.php:74
+msgid "Accesso riservato a medici e staff."
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1139
+msgid "Accettazione consenso: Categorie particolari di dati personali"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1136
+msgid "Accettazione consenso: Informazioni e consenso a tutela della privacy"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:489 templates/membership-admin.php:185
+#: templates/membership-edit.php:300 templates/membership-form.php:308
+#: templates/membership-form.php:360
+msgid "Accompagnatore"
+msgstr ""
+
+#: templates/membership-edit.php:575 templates/membership-form.php:295
+msgid "Accompagnatori autorizzati"
+msgstr ""
+
+#: templates/membership-form.php:517 templates/membership-form.php:617
+msgid ""
+"Acconsento alla condivisione anonima dei miei dati per la ricerca "
+"scientifica sul diabete e le immersioni subacquee (protocollo Diabete "
+"Sommerso). I dati saranno trattati in forma anonima."
+msgstr ""
+
+#: templates/profile.php:955 templates/profile.php:1067
+#: templates/profile.php:1206
+msgid "Account"
+msgstr ""
+
+#: includes/class-sd-carelink.php:1227
+msgid "Account CareLink disconnesso."
+msgstr ""
+
+#: templates/profile.php:909
+msgid "Account Dexcom connesso con successo!"
+msgstr ""
+
+#: includes/class-sd-dexcom.php:598
+msgid "Account Dexcom disconnesso."
+msgstr ""
+
+#: includes/class-sd-libreview.php:1107
+msgid "Account LibreView disconnesso."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:598
+msgid "Account Tidepool disconnesso."
+msgstr ""
+
+#: includes/class-sd-roles.php:278
+msgid "Admin"
+msgstr ""
+
+#: templates/membership-edit.php:253
+msgid "Administrator (WordPress)"
+msgstr ""
+
+#: templates/membership-form.php:392
+msgid "Adulti"
+msgstr ""
+
+#: templates/membership-edit.php:205 templates/membership-form.php:127
+#: templates/membership-form.php:489
+msgid "Adulto/a"
+msgstr ""
+
+#: templates/profile.php:276
+msgid "Advanced Open Water"
+msgstr ""
+
+#: templates/profile.php:251
+msgid "Agenzia"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:140
+msgid "Agenzia e livello sono obbligatori."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:84 templates/predive-check.php:40
+msgid "Aggiorna"
+msgstr ""
+
+#: templates/profile.php:171 templates/profile.php:201
+msgid "Aggiungi"
+msgstr ""
+
+#: templates/membership-form.php:301
+msgid "Aggiungi accompagnatore"
+msgstr ""
+
+#: templates/activity-admin.php:241
+msgid "Aggiungi Campo"
+msgstr ""
+
+#: templates/profile.php:315
+msgid "Aggiungi certificazione"
+msgstr ""
+
+#: templates/profile.php:495
+msgid "Aggiungi contatto"
+msgstr ""
+
+#: templates/membership-form.php:414
+msgid "Aggiungi familiare"
+msgstr ""
+
+#: templates/membership-form.php:409
+msgid ""
+"Aggiungi i familiari che usufruiranno dell'iscrizione famiglia. Verrà creato "
+"un account per ogni famigliare."
+msgstr ""
+
+#: templates/profile.php:415
+msgid "Aggiungi idoneità"
+msgstr ""
+
+#: templates/membership-form.php:566
+msgid "Aggiungi medicamento"
+msgstr ""
+
+#: templates/activity-admin.php:205
+msgid "Aggiungi Tariffa"
+msgstr ""
+
+#: templates/dive-form.php:499
+msgid "Aggrovigliamento"
+msgstr ""
+
+#: templates/dive-form.php:440
+msgid "Agitato"
+msgstr ""
+
+#: templates/profile.php:598
+msgid "AHCL (microinfusore closed-loop)"
+msgstr ""
+
+#: templates/cgm-medical.php:57
+msgid "Al"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:149
+msgid "Alias cognome"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:149
+msgid "Alias compatibilità per il cognome della persona iscritta."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:148
+msgid "Alias compatibilità per il nome della persona iscritta."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:151
+msgid "Alias compatibilità per l’e-mail della persona iscritta."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:150
+msgid "Alias compatibilità per nome e cognome."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:151
+msgid "Alias e-mail socio"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:148
+msgid "Alias nome"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:150
+msgid "Alias nome completo"
+msgstr ""
+
+#: templates/membership-edit.php:464 templates/membership-form.php:553
+#: templates/profile.php:157
+msgid "Allergie"
+msgstr ""
+
+#: templates/activity-admin.php:320
+msgid "Allineamento Orizzontale:"
+msgstr ""
+
+#: templates/activity-admin.php:337
+msgid "Allineamento Verticale:"
+msgstr ""
+
+#: templates/activity-admin.php:361
+msgid "Almeno una vera (OR)"
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:523
+msgid "Alta"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:202
+msgid "Altezza"
+msgstr ""
+
+#: templates/membership-edit.php:421 templates/membership-form.php:537
+#: templates/profile.php:114
+msgid "Altezza (cm)"
+msgstr ""
+
+#: templates/activity-admin.php:312
+msgid "Altezza (px)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:202
+msgid "Altezza inserita nel modulo."
+msgstr ""
+
+#: templates/activity-admin.php:341
+msgid "Alto"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:630
+#: templates/diabetic-registry.php:44 templates/dive-form.php:502
+#: templates/dive-form.php:518 templates/membership-admin.php:173
+#: templates/membership-edit.php:229 templates/membership-edit.php:446
+#: templates/membership-form.php:153 templates/membership-form.php:459
+#: templates/profile.php:264 templates/profile.php:285
+#: templates/profile.php:391 templates/profile.php:476
+#: templates/profile.php:585 templates/profile.php:667
+#: templates/profile.php:690
+msgid "Altro"
+msgstr ""
+
+#: templates/membership-form.php:592
+msgid "altro"
+msgstr ""
+
+#: templates/profile.php:615
+msgid "Altro (specificare)"
+msgstr ""
+
+#: templates/profile.php:695
+msgid "Altro microinfusore (specificare)"
+msgstr ""
+
+#: templates/membership-form.php:329 templates/profile.php:474
+msgid "Amico/a"
+msgstr ""
+
+#: templates/membership-edit.php:57
+msgid "Anagrafica"
+msgstr ""
+
+#: templates/research-dashboard.php:17
+msgid "Analisi dati glicemici per la ricerca scientifica"
+msgstr ""
+
+#: templates/dive-import.php:132
+msgid "Analisi del file in corso…"
+msgstr ""
+
+#: templates/dive-import.php:113
+msgid "Analizza schema"
+msgstr ""
+
+#: templates/research-dashboard.php:122
+msgid "Andamento glicemico nel tempo"
+msgstr ""
+
+#: templates/diabetic-registry.php:143 templates/membership-admin.php:133
+#: templates/membership-edit.php:376 templates/membership-edit.php:668
+#: templates/research-dashboard.php:28
+msgid "Anno"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:141
+msgid "Anno corrente"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:141
+msgid "Anno corrente in quattro cifre."
+msgstr ""
+
+#: templates/diabetic-registry.php:86
+msgid "Anno iscrizione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:142
+msgid "Anno prossimo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:142
+msgid "Anno successivo a quello corrente."
+msgstr ""
+
+#: templates/dashboard.php:272 templates/dive-import.php:210
+#: templates/email-templates.php:172 templates/membership-edit.php:746
+#: templates/profile.php:309 templates/profile.php:409
+#: templates/profile.php:489 templates/profile.php:1030
+#: templates/profile.php:1170 templates/profile.php:1277
+#: templates/profile.php:1363
+msgid "Annulla"
+msgstr ""
+
+#: templates/activity-admin.php:261 templates/activity-admin.php:368
+msgid "Annulla Modifica"
+msgstr ""
+
+#: templates/activity-admin.php:213
+msgid "Annulla modifica"
+msgstr ""
+
+#: templates/research-dashboard.php:69
+msgid "Annullata"
+msgstr ""
+
+#: templates/research-dashboard.php:101
+msgid "Annullate"
+msgstr ""
+
+#: templates/membership-edit.php:680
+msgid "Annullato"
+msgstr ""
+
+#: templates/cgm-medical.php:68
+msgid "Anomale (&lt; 70 o &gt; 180)"
+msgstr ""
+
+#: templates/email-templates.php:152
+msgid "Anteprima"
+msgstr ""
+
+#: templates/activity-admin.php:283
+msgid "Anteprima immagine"
+msgstr ""
+
+#: templates/activity-admin.php:129
+msgid "Anteprima immagine attività"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:221
+msgid "API Base URL"
+msgstr ""
+
+#: templates/profile.php:764
+msgid "API_SECRET (token personale)"
+msgstr ""
+
+#: templates/profile.php:1350
+msgid "API_SECRET (token)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:641
+msgid "Appenzello Esterno (AR)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:640
+msgid "Appenzello Interno (AI)"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:713
+msgid "Apple Pay"
+msgstr ""
+
+#: templates/cgm-dashboard.php:135
+msgid "Applica"
+msgstr ""
+
+#: templates/email-templates.php:96
+msgid "Applica preset"
+msgstr ""
+
+#: templates/dive-form.php:147
+msgid "Applica Profilo"
+msgstr ""
+
+#: templates/activity-admin.php:35 templates/activity-admin.php:158
+msgid "Archiviata"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:628
+msgid "Argentina"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:639
+msgid "Argovia (AG)"
+msgstr ""
+
+#: templates/dive-form.php:173
+msgid "Aria"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:804
+#: includes/class-sd-payment-orchestrator.php:644
+msgid "Associazione:"
+msgstr ""
+
+#: templates/activity-admin.php:22
+msgid "Attivita"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:576
+#: includes/class-sd-activity-payment-flow.php:622
+#: includes/class-sd-activity-payment-flow.php:858
+#: templates/activity-payment-confirmation.php:66
+msgid "Attività"
+msgstr ""
+
+#: templates/activity-admin.php:400
+msgid "Attività:"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:485 templates/diabetic-registry.php:77
+#: templates/membership-admin.php:181 templates/membership-admin.php:256
+#: templates/membership-edit.php:296
+msgid "Attivo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:486 templates/membership-admin.php:182
+#: templates/membership-edit.php:297 templates/membership-form.php:362
+msgid "Attivo Capo Famiglia"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:487
+#: includes/class-sd-membership-helper.php:375
+#: templates/membership-admin.php:183 templates/membership-edit.php:298
+msgid "Attivo Famigliare"
+msgstr ""
+
+#: templates/dive-form.php:500
+msgid "Attrezzatura"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:624
+msgid "Australia"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:600
+msgid "Austria"
+msgstr ""
+
+#. %s=error description
+#: includes/class-sd-carelink.php:439
+#, php-format
+msgid "Autenticazione CareLink fallita: %s"
+msgstr ""
+
+#: includes/class-sd-payment-paypal.php:66
+msgid "Autenticazione PayPal non riuscita."
+msgstr ""
+
+#: templates/research-dashboard.php:67
+msgid "Autorizzata"
+msgstr ""
+
+#: templates/research-dashboard.php:99
+msgid "Autorizzate"
+msgstr ""
+
+#: templates/profile.php:915
+msgid "Autorizzazione negata dall'utente."
+msgstr ""
+
+#: templates/membership-admin.php:101
+msgid "Azione"
+msgstr ""
+
+#: templates/activity-admin.php:50 templates/activity-admin.php:448
+#: templates/membership-admin.php:260 templates/membership-edit.php:626
+msgid "Azioni"
+msgstr ""
+
+#: templates/activity-registration-form.php:105
+msgid "Azzera"
+msgstr ""
+
+#: templates/membership-edit.php:198 templates/membership-form.php:120
+#: templates/membership-form.php:482
+msgid "Bambino/a"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:569
+msgid "Banca"
+msgstr ""
+
+#: templates/dive-form.php:241 templates/dive-form.php:253
+msgid "Bar"
+msgstr ""
+
+#: templates/dive-form.php:334
+msgid "Barca"
+msgstr ""
+
+#: templates/diabetes-form.php:298
+msgid "Basale ridotta"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:643
+msgid "Basilea Campagna (BL)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:644
+msgid "Basilea Città (BS)"
+msgstr ""
+
+#: templates/activity-admin.php:349
+msgid "Basso"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:603
+msgid "Belgio"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:193
+#: includes/class-sd-membership-helper.php:262
+msgid "Benvenuto in ScubaDiabetes!"
+msgstr ""
+
+#: templates/email-templates.php:93
+msgid "Benvenuto nuovo socio"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:642
+msgid "Berna (BE)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:593
+msgid "BIC Banca"
+msgstr ""
+
+#: templates/profile.php:277
+msgid "BLS"
+msgstr ""
+
+#: templates/diabetes-form.php:305
+msgid "Bolo ridotto"
+msgstr ""
+
+#: templates/dive-form.php:517
+msgid "Bombola"
+msgstr ""
+
+#: templates/dive-form.php:158
+msgid "Bombole"
+msgstr ""
+
+#: templates/membership-edit.php:365 templates/membership-edit.php:684
+#: templates/payment-confirmation.php:18
+msgid "Bonifico IBAN"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:399
+msgid "Bonifico IBAN:"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:627
+msgid "Brasile"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:618
+msgid "Bulgaria"
+msgstr ""
+
+#: templates/dive-form.php:459
+msgid "Buona"
+msgstr ""
+
+#: templates/activity-registration-form.php:132
+msgid "Calcolo prezzo in €..."
+msgstr ""
+
+#: templates/dive-form.php:476
+msgid "Caldo"
+msgstr ""
+
+#: templates/dive-form.php:432
+msgid "Calmo"
+msgstr ""
+
+#. %s arrow
+#: includes/class-sd-predive-check.php:254
+#, php-format
+msgid ""
+"Calo rapido della glicemia %s: il rischio ipoglicemia in immersione è "
+"elevato."
+msgstr ""
+
+#: templates/email-templates.php:71
+msgid ""
+"Cambiando modulo si aggiornano sia le variabili sia l’elenco dei template "
+"relativi."
+msgstr ""
+
+#: templates/activity-admin.php:225
+msgid "Campi Modulo"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:328
+#: includes/class-sd-membership-helper.php:372
+msgid "Campo"
+msgstr ""
+
+#. 1: field label, 2: section label
+#: includes/class-sd-email-templates.php:280
+#, php-format
+msgid "Campo attività \"%1$s\" dalla sezione \"%2$s\"."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:114
+#: templates/activity-registration-form.php:127
+msgid "Campo obbligatorio"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:623
+msgid "Canada"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:183
+#: includes/class-sd-membership-admin.php:1268
+#: templates/membership-edit.php:177 templates/membership-form.php:194
+msgid "Cantone"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:183
+msgid "Cantone di residenza."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:180
+#: includes/class-sd-membership-admin.php:1265
+#: templates/membership-edit.php:156 templates/membership-form.php:173
+#: templates/membership-form.php:275 templates/profile.php:96
+msgid "CAP"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:550
+msgid "CAP Associazione"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:577
+msgid "CAP Banca"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:195
+msgid "CAP del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:195
+msgid "CAP tutore"
+msgstr ""
+
+#: templates/dive-form.php:179
+msgid "Capacità (L)"
+msgstr ""
+
+#: templates/diabetes-form.php:97 templates/diabetes-form.php:197
+msgid "Capillare (mg/dL)"
+msgstr ""
+
+#: templates/diabetic-registry.php:78
+msgid "Capofamiglia"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-carelink.php:203
+#, php-format
+msgid "CareLink discovery fallita (HTTP %1$d): %2$s"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=location
+#: includes/class-sd-carelink.php:473
+#, php-format
+msgid ""
+"CareLink non ha restituito il codice di autorizzazione (HTTP %1$d, location: "
+"%2$s). Verifica username e password."
+msgstr ""
+
+#: includes/class-sd-carelink.php:340 includes/class-sd-carelink.php:433
+#: includes/class-sd-carelink.php:456
+msgid ""
+"CareLink richiede la verifica CAPTCHA. Accedi manualmente su carelink."
+"minimed.eu nel browser, completa il CAPTCHA e riprova tra qualche minuto."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:607
+msgid "Carica il QR in Libreria Media e incolla qui il relativo URL."
+msgstr ""
+
+#: templates/activity-admin.php:54
+msgid "Caricamento attivita..."
+msgstr ""
+
+#: templates/activity-admin.php:393
+msgid "Caricamento cruscotto registrazioni..."
+msgstr ""
+
+#: templates/membership-admin.php:59
+msgid "Caricamento cruscotto rinnovi..."
+msgstr ""
+
+#: templates/research-dashboard.php:176
+msgid "Caricamento dati..."
+msgstr ""
+
+#: templates/cgm-dashboard.php:149
+msgid "Caricamento grafico…"
+msgstr ""
+
+#: templates/membership-admin.php:106 templates/membership-admin.php:265
+msgid "Caricamento in corso..."
+msgstr ""
+
+#: templates/activity-registration-form.php:21
+msgid "Caricamento modulo..."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:100 templates/activity-admin.php:491
+#: templates/dashboard.php:198 templates/dashboard.php:220
+#: templates/dashboard.php:239 templates/dive-edit.php:103
+#: templates/dive-edit.php:126 templates/email-templates.php:45
+#: templates/medical-panel.php:103 templates/membership-admin.php:240
+msgid "Caricamento..."
+msgstr ""
+
+#: templates/cgm-dashboard.php:162 templates/cgm-medical.php:133
+#: templates/diabetic-registry.php:125
+msgid "Caricamento…"
+msgstr ""
+
+#: templates/dive-form.php:481
+msgid "Carico di lavoro"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:630
+#, php-format
+msgid ""
+"Caro/a %1$s, abbiamo ricevuto la tua domanda di iscrizione per l'anno %2$d."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:788
+#, php-format
+msgid "Caro/a %1$s, abbiamo ricevuto la tua iscrizione all'attività \"%2$s\"."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:493
+#, php-format
+msgid ""
+"Caro/a %1$s, il tuo pagamento è stato ricevuto e la tua iscrizione per "
+"l'anno %2$d è ora attiva."
+msgstr ""
+
+#. member full name
+#: includes/class-sd-membership-admin.php:1901
+#: includes/class-sd-membership-helper.php:195
+#: includes/class-sd-membership-helper.php:264
+#, php-format
+msgid "Caro/a <strong>%s</strong>,"
+msgstr ""
+
+#: templates/membership-edit.php:368 templates/membership-edit.php:687
+msgid "Carta di credito / debito"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:712
+msgid "Carta di credito/debito"
+msgstr ""
+
+#: includes/class-sd-payment-paypal.php:178
+msgid "Cattura pagamento PayPal non riuscita."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:810
+msgid "Causale:"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:934
+#: includes/class-sd-payment-documents.php:1225
+msgid "Celiachia"
+msgstr ""
+
+#: templates/activity-admin.php:328 templates/activity-admin.php:345
+msgid "Centro"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1275
+msgid "Centro Diabetologia"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:178
+#: templates/diabetic-registry.php:139 templates/membership-edit.php:505
+#: templates/membership-form.php:463
+msgid "Centro diabetologico"
+msgstr ""
+
+#: templates/membership-form.php:157 templates/profile.php:674
+msgid "Centro diabetologico di riferimento"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:178
+msgid "Centro diabetologico di riferimento."
+msgstr ""
+
+#: templates/membership-admin.php:215 templates/research-dashboard.php:84
+msgid "Cerca"
+msgstr ""
+
+#: templates/activity-admin.php:418
+msgid "Cerca nome, cognome, email..."
+msgstr ""
+
+#: templates/cgm-medical.php:42
+msgid "Cerca paziente"
+msgstr ""
+
+#: templates/diabetic-registry.php:25
+msgid "Cerca per nome / email"
+msgstr ""
+
+#: templates/activity-admin.php:29
+msgid "Cerca per titolo o luogo..."
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:167
+msgid "Certificazione salvata."
+msgstr ""
+
+#: templates/profile.php:220
+msgid "Certificazioni Sub"
+msgstr ""
+
+#: templates/diabetic-registry.php:64
+msgid "CGM"
+msgstr ""
+
+#: templates/diabetes-form.php:278
+msgid "Chetonemia"
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:57
+msgid "Chiave segreta Stripe non configurata."
+msgstr ""
+
+#: templates/activity-admin.php:260
+msgid "Chiave sezione (opzionale)"
+msgstr ""
+
+#: templates/dashboard.php:206 templates/dashboard.php:252
+#: templates/dive-edit.php:112 templates/medical-panel.php:113
+#: templates/medical-panel.php:117 templates/medical-panel.php:127
+#: templates/profile.php:1404 templates/profile.php:1410
+msgid "Chiudi"
+msgstr ""
+
+#: templates/diabetes-form.php:146 templates/diabetes-form.php:246
+msgid "CHO lenti (gr)"
+msgstr ""
+
+#: templates/diabetes-form.php:140 templates/diabetes-form.php:240
+msgid "CHO rapidi (gr)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:98
+msgid "Ci sono modifiche non salvate. Continuare?"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:570
+#, php-format
+msgid ""
+"Ciao %1$s, il tuo pagamento per l'attività \"%2$s\" è stato ricevuto con "
+"successo."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:559
+#, php-format
+msgid ""
+"Ciao %1$s, ti confermiamo che è stato eseguito il rimborso del pagamento "
+"relativo all'attività \"%2$s\"."
+msgstr ""
+
+#. 1: Nome membro, 2: anno, 3: importo
+#: templates/payment-checkout.php:29
+#, php-format
+msgid ""
+"Ciao %1$s,<br>completa ora il pagamento della tassa sociale %2$s di CHF %3$s."
+msgstr ""
+
+#. 1: Nome partecipante, 2: titolo attività, 3: importo CHF
+#: templates/activity-payment-checkout.php:31
+#, php-format
+msgid ""
+"Ciao %1$s,<br>completa ora il pagamento per l'attività <strong>%2$s</strong>."
+"<br>Importo dovuto: <strong>CHF %3$s</strong>"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1266
+#: templates/membership-edit.php:160 templates/membership-form.php:279
+msgid "Città"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:181
+msgid "Città o località."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:194
+msgid "Città tutore"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:151
+msgid "Client ID"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:168
+msgid "Client Secret"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1261
+msgid "Codice Fiscale / AVS"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:184 templates/membership-edit.php:188
+#: templates/membership-form.php:203
+msgid "Codice fiscale / AVS"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:184
+msgid "Codice fiscale o numero AVS inserito."
+msgstr ""
+
+#: templates/profile.php:1153
+msgid "Codice paese"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:180
+msgid "Codice postale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:168
+#: includes/class-sd-email-templates.php:217
+#: includes/class-sd-membership-admin.php:1254 templates/membership-edit.php:90
+#: templates/membership-form.php:47 templates/membership-form.php:222
+#: templates/membership-form.php:317 templates/membership-form.php:430
+#: templates/profile.php:58
+msgid "Cognome"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:186
+msgid "Cognome del genitore/tutore legale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:168
+msgid "Cognome della persona che compila il modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:217
+msgid "Cognome della persona iscritta all’attività."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:186
+msgid "Cognome tutore"
+msgstr ""
+
+#: templates/membership-admin.php:250
+msgid "Cognome, Nome"
+msgstr ""
+
+#: templates/profile.php:838
+msgid ""
+"Collega il tuo account Dexcom tramite l'API ufficiale OAuth 2.0. Non vengono "
+"mai salvate le tue credenziali Dexcom: verrai reindirizzato alla pagina "
+"login di Dexcom dove potrai autenticarti direttamente."
+msgstr ""
+
+#: templates/profile.php:948
+msgid ""
+"Collega il tuo account LibreView (Abbott) per importare automaticamente le "
+"letture CGM dai sensori FreeStyle Libre 2, Libre 3 e Libre Pro. Le letture "
+"vengono sincronizzate ogni ora tramite le API LibreLinkUp."
+msgstr ""
+
+#: templates/profile.php:1060
+msgid ""
+"Collega il tuo account Medtronic CareLink per importare automaticamente le "
+"letture CGM dai sensori Guardian (3, 4), Guardian Sensor 3 e SimplerA. "
+"Richiede un account CareLink Patient attivo. I dati vengono sincronizzati "
+"ogni ora."
+msgstr ""
+
+#: templates/profile.php:1199
+msgid ""
+"Collega il tuo account Tidepool per importare automaticamente le letture CGM."
+" Tidepool è una piattaforma open-source gratuita che aggrega dati da sensori "
+"CGM, microinfusori e misuratori. I dati vengono sincronizzati ogni ora."
+msgstr ""
+
+#: templates/predive-check.php:98
+msgid ""
+"Collega il tuo sensore CGM nel profilo per ricevere valutazioni automatiche."
+msgstr ""
+
+#: templates/profile.php:1305
+msgid ""
+"Collega il tuo server Nightscout per importare automaticamente valori CGM e "
+"somministrazioni di insulina. I dati vengono sincronizzati ogni ora e "
+"possono essere usati per pre-compilare il log immersioni."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:527
+msgid "Colore brand primario"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:531
+msgid "Colore brand secondario"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:103
+msgid "Come configurare l'integrazione Dexcom"
+msgstr ""
+
+#: templates/profile.php:793
+msgid "Come configurare le app CGM"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:801
+#: includes/class-sd-payment-orchestrator.php:641
+msgid "Come effettuare il pagamento (Bonifico IBAN)"
+msgstr ""
+
+#: templates/dive-form.php:470
+msgid "Comfort termico"
+msgstr ""
+
+#: templates/dive-form.php:557 templates/dive-import.php:190
+msgid "Compagno"
+msgstr ""
+
+#: templates/dive-form.php:498
+msgid "Compagno perso"
+msgstr ""
+
+#: templates/membership-form.php:29
+msgid "Compila il modulo per iscriverti all'Associazione ScubaDiabetes."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:978
+#: templates/membership-edit.php:679
+msgid "Completato"
+msgstr ""
+
+#: templates/dive-form.php:513
+msgid "Computer"
+msgstr ""
+
+#: templates/diabetic-registry.php:67
+msgid "Con CGM"
+msgstr ""
+
+#: templates/activity-admin.php:34 templates/activity-admin.php:157
+msgid "Conclusa"
+msgstr ""
+
+#: templates/profile.php:533
+msgid ""
+"Condividi le mie immersioni per la ricerca scientifica (impostazione "
+"predefinita)"
+msgstr ""
+
+#: templates/dive-form.php:597
+msgid "Condividi questa immersione per la ricerca scientifica"
+msgstr ""
+
+#: templates/dive-form.php:592
+msgid "Condivisione dati"
+msgstr ""
+
+#: templates/profile.php:505
+msgid "Condivisione dati per la ricerca"
+msgstr ""
+
+#: templates/activity-admin.php:366
+msgid "Condizione: il campo sarà visibile solo quando la condizione è vera."
+msgstr ""
+
+#: templates/dive-form.php:360 templates/dive-form.php:428
+msgid "Condizioni"
+msgstr ""
+
+#: templates/membership-form.php:105 templates/membership-form.php:508
+msgid "Conferma Email"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:717
+msgid "Conferma manuale amministrazione"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:361
+#: templates/payment-confirmation.php:2
+msgid "Conferma Pagamento"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:786
+#: includes/class-sd-payment-orchestrator.php:628
+msgid "Conferma ricezione iscrizione"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:115
+msgid "Confermi il salvataggio dell'immersione?"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:124
+msgid "Confermi l'eliminazione del profilo selezionato?"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:104
+msgid "Confermi la richiesta di pagamento tramite fattura?"
+msgstr ""
+
+#: templates/profile.php:801
+msgid "Config → Nightscout Client → Nightscout URL + API secret"
+msgstr ""
+
+#: templates/profile.php:728
+msgid ""
+"Configura le tue app CGM (xDrip+, Loop, AndroidAPS, Spike, Juggluco…) per "
+"inviare i dati direttamente a ScubaDiabetes, senza bisogno di un server "
+"Nightscout esterno. I dati vengono usati per pre-compilare automaticamente "
+"il log immersioni."
+msgstr ""
+
+#: templates/activity-admin.php:277
+msgid "Configurazione Immagine:"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:455
+msgid "Configurazione provider e flusso"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:483
+msgid "Configurazione Stripe"
+msgstr ""
+
+#: templates/dive-form.php:475
+msgid "Confortevole"
+msgstr ""
+
+#: templates/research-dashboard.php:126
+msgid "Confronto annuale — media glicemia per checkpoint"
+msgstr ""
+
+#: templates/profile.php:470
+msgid "Coniuge/Partner"
+msgstr ""
+
+#. %d=numero letture
+#: includes/class-sd-carelink.php:1188
+msgid "Connessione CareLink OK. %d lettura disponibile."
+msgid_plural "Connessione CareLink OK. %d letture disponibili."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sd-carelink.php:1158
+msgid "Connessione CareLink OK. Impossibile recuperare dati CGM al momento."
+msgstr ""
+
+#: includes/class-sd-dexcom.php:553
+msgid "Connessione Dexcom OK."
+msgstr ""
+
+#. %d=numero sensori
+#: includes/class-sd-libreview.php:936
+msgid "Connessione LibreView OK. %d sensore trovato."
+msgid_plural "Connessione LibreView OK. %d sensori trovati."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sd-libreview.php:907
+msgid "Connessione LibreView OK. Nessun sensore attivo trovato nell'account."
+msgstr ""
+
+#: templates/profile.php:1296
+msgid "Connessione Nightscout"
+msgstr ""
+
+#: includes/class-sd-nightscout.php:321
+msgid "Connessione Nightscout rimossa e dati locali eliminati."
+msgstr ""
+
+#: includes/class-sd-nightscout.php:248
+msgid "Connessione non configurata. Salva prima le credenziali."
+msgstr ""
+
+#. 1: Nightscout version, 2: server status
+#: includes/class-sd-nightscout.php:265
+#, php-format
+msgid "Connessione OK — Nightscout v%1$s (status: %2$s)"
+msgstr ""
+
+#: includes/class-sd-nightscout.php:228
+msgid "Connessione salvata."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:547
+msgid "Connessione Tidepool OK."
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-libreview.php:423
+#, php-format
+msgid "Connessioni LibreView non recuperabili (HTTP %1$d): %2$s"
+msgstr ""
+
+#: templates/profile.php:831 templates/profile.php:941
+#: templates/profile.php:1053 templates/profile.php:1192
+#: templates/profile.php:1298
+msgid "Connesso"
+msgstr ""
+
+#: templates/profile.php:890
+msgid "Connetti con Dexcom"
+msgstr ""
+
+#: templates/profile.php:1359
+msgid "Connetti Nightscout"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1136
+#: includes/class-sd-payment-documents.php:1139
+#: templates/activity-registration-form.php:93
+#: templates/activity-registration-form.php:94
+msgid "Consensi"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:204
+msgid "Consenso predefinito alla condivisione per ricerca."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1281
+msgid "Consenso Privacy"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:205
+msgid "Consenso privacy"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:205
+msgid "Consenso privacy fornito nel modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:204
+msgid "Consenso ricerca"
+msgstr ""
+
+#: templates/dive-edit.php:35
+msgid "Consulta e modifica le tue immersioni registrate"
+msgstr ""
+
+#: templates/profile.php:425
+msgid "Contatti di emergenza"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:284
+msgid "Contatto salvato."
+msgstr ""
+
+#: templates/activity-admin.php:238
+msgid "Contenuto Formattato"
+msgstr ""
+
+#: templates/activity-admin.php:273
+msgid "Contenuto Formattato:"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:613
+#: includes/class-sd-payment-documents.php:642
+msgid "Contesto registrazione non valido."
+msgstr ""
+
+#: templates/diabetes-form.php:283
+msgid "Controllata"
+msgstr ""
+
+#: templates/predive-check.php:32
+msgid "Controllo Pre-Immersione"
+msgstr ""
+
+#: templates/profile.php:758
+msgid "Copia"
+msgstr ""
+
+#: templates/activity-admin.php:179
+msgid "Copia shortcode"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:122
+msgid "Copia URI"
+msgstr ""
+
+#: templates/profile.php:756
+msgid "Copia URL"
+msgstr ""
+
+#. site name
+#: includes/class-sd-membership-admin.php:1920
+#: includes/class-sd-membership-helper.php:242
+#: includes/class-sd-membership-helper.php:285
+#: includes/class-sd-membership-helper.php:309
+msgid "Cordiali saluti,"
+msgstr ""
+
+#: templates/email-templates.php:129
+msgid "Corpo email (HTML)"
+msgstr ""
+
+#: templates/profile.php:1388
+msgid "Correggi timestamp (−2h)"
+msgstr ""
+
+#: templates/dive-form.php:448
+msgid "Corrente"
+msgstr ""
+
+#: includes/class-sd-libreview.php:986
+msgid ""
+"Correzione già applicata in precedenza (completa). Nessuna ulteriore "
+"modifica."
+msgstr ""
+
+#: templates/profile.php:1382
+msgid "Correzione timestamp LibreView (una-tantum)"
+msgstr ""
+
+#: templates/profile.php:1306
+msgid "Cos'è Nightscout?"
+msgstr ""
+
+#: templates/dive-form.php:567
+msgid "Cosa ho visto"
+msgstr ""
+
+#: templates/activity-admin.php:17
+msgid ""
+"Crea attivita, configura modulo/tariffe e gestisci iscrizioni e pagamenti."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:114
+msgid "Crea o modifica la tua app e copia Client ID e Client Secret."
+msgstr ""
+
+#: templates/email-templates.php:19
+msgid ""
+"Crea template per iscrizioni all’associazione e alle attività con variabili "
+"dinamiche basate sul modulo selezionato."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:621
+msgid "Crea/Aggiorna pagine checkout e conferma"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:616
+msgid "Creazione guidata pagine"
+msgstr ""
+
+#: includes/class-sd-payment-paypal.php:124
+msgid "Creazione ordine PayPal non riuscita."
+msgstr ""
+
+#: includes/class-sd-carelink.php:1113
+msgid "Credenziali CareLink salvate e connessione verificata."
+msgstr ""
+
+#: includes/class-sd-dexcom.php:521
+msgid "Credenziali Dexcom salvate."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:498
+msgid "Credenziali di accesso al portale"
+msgstr ""
+
+#: includes/class-sd-libreview.php:861
+msgid "Credenziali LibreView salvate."
+msgstr ""
+
+#: includes/class-sd-payment-paypal.php:41
+msgid "Credenziali PayPal non configurate."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:515
+msgid "Credenziali Tidepool salvate."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:619
+msgid "Croazia"
+msgstr ""
+
+#: templates/activity-admin.php:389
+msgid "Cruscotto Registrazioni"
+msgstr ""
+
+#: templates/membership-admin.php:55
+msgid "Cruscotto Rinnovi Soci"
+msgstr ""
+
+#: templates/profile.php:597
+msgid "CSII (microinfusore open-loop)"
+msgstr ""
+
+#: templates/research-dashboard.php:50
+msgid "Da"
+msgstr ""
+
+#: templates/dive-import.php:36
+msgid "da Subsurface (.ssrf), Shearwater Cloud (.db) o UDDF (.uddf)"
+msgstr ""
+
+#: templates/cgm-medical.php:50
+msgid "Dal"
+msgstr ""
+
+#. 1: data inizio, 2: data fine
+#: templates/activity-payment-confirmation.php:77
+#, php-format
+msgid "dal %1$s al %2$s"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:611
+msgid "Danimarca"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:156
+msgid ""
+"Dashboard amministrativa per gestire attività e iscrizioni (riservato admin)"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:87 templates/dive-form.php:90
+#: templates/dive-import.php:184 templates/membership-edit.php:672
+#: templates/profile.php:294 templates/research-dashboard.php:152
+msgid "Data"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:578
+#: includes/class-sd-activity-payment-flow.php:624
+msgid "Data attività"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1282
+msgid "Data Consenso"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:139
+msgid "Data corrente in formato esteso italiano."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:138
+msgid "Data corrente in formato GG.MM.AAAA."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:224
+msgid "Data di fine attività."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:223
+msgid "Data di inizio attività."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:930
+#: includes/class-sd-email-templates.php:169
+#: includes/class-sd-email-templates.php:219
+#: includes/class-sd-membership-helper.php:347
+#: includes/class-sd-payment-documents.php:1126
+#: includes/class-sd-payment-documents.php:1221
+#: templates/membership-edit.php:97 templates/membership-form.php:54
+#: templates/membership-form.php:237 templates/membership-form.php:434
+#: templates/profile.php:106
+msgid "Data di nascita"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:188
+msgid "Data di nascita del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:169
+msgid "Data di nascita inserita nel modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:219
+msgid "Data di nascita raccolta nel modulo attività."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:188
+msgid "Data di nascita tutore"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:152
+msgid "Data di scadenza dell’iscrizione del socio."
+msgstr ""
+
+#: templates/dive-form.php:85
+msgid "Data e Sito"
+msgstr ""
+
+#: templates/activity-admin.php:110 templates/activity-registration-form.php:48
+msgid "Data Fine"
+msgstr ""
+
+#: templates/cgm-dashboard.php:134
+msgid "Data fine"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:224
+msgid "Data fine attività"
+msgstr ""
+
+#: templates/profile.php:636
+msgid "Data HbA1c"
+msgstr ""
+
+#: templates/activity-admin.php:46 templates/activity-admin.php:106
+#: templates/activity-registration-form.php:44
+msgid "Data Inizio"
+msgstr ""
+
+#: templates/cgm-dashboard.php:132
+msgid "Data inizio"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:223
+msgid "Data inizio attività"
+msgstr ""
+
+#: templates/activity-admin.php:445
+msgid "Data iscrizione"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1257
+#: templates/membership-admin.php:252 templates/membership-edit.php:552
+#: templates/membership-edit.php:623
+msgid "Data Nascita"
+msgstr ""
+
+#: templates/membership-form.php:333
+msgid "Data nascita"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:929
+msgid "Data o orario non validi."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:138
+msgid "Data oggi breve"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:139
+msgid "Data oggi estesa"
+msgstr ""
+
+#: templates/membership-admin.php:255
+msgid "Data Pag."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1287
+msgid "Data Pagamento"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:585
+#: includes/class-sd-activity-payment-flow.php:631
+#: templates/membership-edit.php:358
+msgid "Data pagamento"
+msgstr ""
+
+#: templates/profile.php:375
+msgid "Data rilascio"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:934
+msgid "Dati aggiornati con successo."
+msgstr ""
+
+#: templates/membership-edit.php:82
+msgid "Dati anagrafici"
+msgstr ""
+
+#: templates/activity-admin.php:83
+msgid "Dati Attivita"
+msgstr ""
+
+#: templates/membership-edit.php:288
+msgid "Dati di gestione"
+msgstr ""
+
+#: templates/profile.php:550
+msgid "Dati diabete"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:413
+msgid "Dati diabete aggiornati."
+msgstr ""
+
+#: includes/class-sd-dive-edit.php:417
+msgid "Dati diabete aggiunti"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:539
+msgid "Dati Fattura (Associazione)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:566
+msgid "Dati Fattura (Banca)"
+msgstr ""
+
+#: templates/research-dashboard.php:136
+msgid "Dati immersioni"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:301
+#: includes/class-sd-medical-panel.php:424
+msgid "Dati incompleti"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:869
+msgid "Dati modulo di iscrizione"
+msgstr ""
+
+#: includes/class-sd-dive-import.php:270
+msgid "Dati non validi."
+msgstr ""
+
+#: templates/activity-registration-form.php:69
+#: templates/activity-registration-form.php:70
+msgid "Dati Personali"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1126
+#: includes/class-sd-payment-documents.php:1129 templates/profile.php:36
+msgid "Dati personali"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:513
+msgid "Dati personali aggiornati."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:591
+#: includes/class-sd-activity-payment-flow.php:637
+msgid "Dati registrati nel modulo"
+msgstr ""
+
+#: templates/research-dashboard.php:143
+msgid "DATI SUBACQUEI"
+msgstr ""
+
+#: templates/membership-edit.php:60 templates/membership-edit.php:413
+msgid "Dati subacqueo"
+msgstr ""
+
+#: templates/dive-form.php:450
+msgid "Debole"
+msgstr ""
+
+#: templates/research-dashboard.php:148
+msgid "DEC."
+msgstr ""
+
+#: templates/research-dashboard.php:64
+msgid "Decisione"
+msgstr ""
+
+#: templates/research-dashboard.php:118
+msgid "Decisioni protocollo"
+msgstr ""
+
+#: templates/dive-form.php:291
+msgid "Deco stop"
+msgstr ""
+
+#: templates/dive-form.php:290
+msgid "Deco stop / Deep stop (avanzato)"
+msgstr ""
+
+#: templates/dive-form.php:302
+msgid "Deep stop"
+msgstr ""
+
+#: templates/activity-admin.php:187
+msgid ""
+"Definisci le diverse tariffe dell'attivita. Il valore EUR viene proposto "
+"automaticamente dal cambio CHF/EUR del giorno."
+msgstr ""
+
+#: templates/activity-admin.php:138
+msgid "Descrizione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:225
+msgid "Descrizione attività"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:225
+msgid "Descrizione dell’attività."
+msgstr ""
+
+#: templates/activity-admin.php:355
+msgid "Descrizione immagine"
+msgstr ""
+
+#: templates/activity-admin.php:332
+msgid "Destra"
+msgstr ""
+
+#: templates/dashboard.php:157 templates/dashboard.php:159
+msgid "Dettagli"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:209
+msgid "Dettagli iscrizione:"
+msgstr ""
+
+#: templates/dashboard.php:235
+msgid "Dettaglio Immersione"
+msgstr ""
+
+#: templates/medical-panel.php:100
+msgid "Dettaglio subacqueo"
+msgstr ""
+
+#: templates/profile.php:609
+msgid "Dettaglio terapia"
+msgstr ""
+
+#: templates/activity-registration-form.php:131
+msgid "Devi accettare i termini"
+msgstr ""
+
+#: includes/class-sd-libreview.php:322
+msgid ""
+"Devi accettare i Termini di Servizio dell'app LibreLinkUp (Abbott). Installa "
+"l'app \"LibreLinkUp\" su iOS/Android, accedi con le stesse credenziali e "
+"accetta i termini, quindi riprova."
+msgstr ""
+
+#: includes/class-sd-membership.php:158
+msgid "Devi accettare l'informativa sulla privacy."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:64
+msgid "Devi effettuare il login per importare immersioni."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:144
+msgid "Devi effettuare il login per registrare un'immersione."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:104
+msgid "Devi effettuare il login per usare il controllo pre-immersione."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:96
+msgid "Devi effettuare il login per vedere i tuoi dati CGM."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:124
+msgid "Devi effettuare il login per vedere il pannello CGM."
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:67
+msgid "Devi effettuare il login per vedere il pannello medico."
+msgstr ""
+
+#: includes/class-sd-dashboard.php:114
+msgid "Devi effettuare il login per vedere la dashboard."
+msgstr ""
+
+#: includes/class-sd-research-dashboard.php:64
+msgid "Devi effettuare il login per vedere la research dashboard."
+msgstr ""
+
+#: includes/class-sd-diabetic-registry.php:54
+#: includes/class-sd-dive-edit.php:69 includes/class-sd-diver-profile.php:63
+msgid "Devi effettuare il login."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:39
+msgid "Dexcom API OAuth"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:97
+msgid "Dexcom API OAuth — Impostazioni"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:40
+msgid "Dexcom OAuth"
+msgstr ""
+
+#: templates/membership-admin.php:257
+msgid "Diab."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1274
+#: includes/class-sd-membership-helper.php:350
+#: templates/membership-admin.php:163 templates/membership-edit.php:555
+#: templates/membership-edit.php:624 templates/membership-form.php:143
+#: templates/membership-form.php:450
+msgid "Diabete"
+msgstr ""
+
+#: templates/medical-panel.php:30
+msgid "Diabetici"
+msgstr ""
+
+#: templates/medical-panel.php:71 templates/membership-edit.php:42
+msgid "Diabetico"
+msgstr ""
+
+#: templates/dive-import.php:110
+msgid "Diagnostica schema .db (solo admin)"
+msgstr ""
+
+#: templates/activity-admin.php:309
+msgid "Dimensionamento:"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:24
+#: includes/class-sd-payment-documents.php:51
+#: includes/class-sd-payment-documents.php:618
+#: includes/class-sd-payment-documents.php:647
+msgid "Directory upload non disponibile."
+msgstr ""
+
+#: templates/diabetes-form.php:128 templates/diabetes-form.php:228
+msgid "Discesa"
+msgstr ""
+
+#: templates/diabetes-form.php:131 templates/diabetes-form.php:231
+msgid "Discesa rapida"
+msgstr ""
+
+#: templates/profile.php:882 templates/profile.php:987
+#: templates/profile.php:1103 templates/profile.php:1238
+#: templates/profile.php:1334
+msgid "Disconnetti"
+msgstr ""
+
+#: templates/profile.php:651
+msgid "Dispositivo CGM"
+msgstr ""
+
+#: templates/research-dashboard.php:114
+msgid "Distribuzione glicemie"
+msgstr ""
+
+#: templates/profile.php:279
+msgid "Divemaster"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:514
+msgid "Documenti allegati"
+msgstr ""
+
+#: templates/profile.php:400
+msgid "Documento (PDF, JPG, PNG, ZIP — max 5 MB)"
+msgstr ""
+
+#: templates/profile.php:303
+msgid "Documento brevetto (PDF, JPG, PNG — max 5 MB)"
+msgstr ""
+
+#: templates/membership-edit.php:483 templates/membership-form.php:582
+msgid "Dosaggio"
+msgstr ""
+
+#: templates/activity-admin.php:32 templates/activity-admin.php:155
+msgid "Draft"
+msgstr ""
+
+#: templates/dive-form.php:346
+msgid "Drift"
+msgstr ""
+
+#: templates/email-templates.php:169
+msgid "Duplica"
+msgstr ""
+
+#: templates/dive-form.php:149
+msgid "Duplica Profilo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:93
+msgid "Duplicare il modello selezionato?"
+msgstr ""
+
+#: templates/dive-import.php:160
+msgid "duplicati"
+msgstr ""
+
+#: templates/dive-import.php:200
+msgid "Duplicato"
+msgstr ""
+
+#: templates/dive-import.php:187
+msgid "Durata"
+msgstr ""
+
+#: templates/dive-form.php:283 templates/dive-form.php:298
+#: templates/dive-form.php:309
+msgid "Durata (min)"
+msgstr ""
+
+#: templates/diabetes-form.php:320
+msgid "Durata disconn. (min)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:174
+#: includes/class-sd-email-templates.php:218 templates/profile.php:68
+#: templates/profile.php:462
+msgid "E-mail"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:558
+msgid "E-mail Associazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:143
+msgid "E-mail associazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:191
+msgid "E-mail del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:218
+msgid "E-mail della persona iscritta all’attività."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:174
+msgid "E-mail della persona iscritta."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:1048
+#: templates/activity-admin.php:502
+msgid "E-mail di conferma pagamento inviata con successo."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:152
+#: includes/class-sd-membership-admin.php:1618 templates/activity-admin.php:494
+msgid "E-mail inviata con successo."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:444
+#: includes/class-sd-activity-payment-flow.php:482
+msgid "E-mail partecipante non valida."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:191
+msgid "E-mail tutore"
+msgstr ""
+
+#: templates/profile.php:280
+msgid "Ecodiver"
+msgstr ""
+
+#: templates/membership-form.php:326
+msgid "Educatore"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:226
+msgid "Elenco delle tariffe selezionate nel modulo attività."
+msgstr ""
+
+#: templates/dashboard.php:169 templates/dashboard.php:244
+#: templates/dashboard.php:276 templates/profile.php:163
+#: templates/profile.php:193 templates/profile.php:1409
+msgid "Elimina"
+msgstr ""
+
+#: templates/membership-admin.php:221 templates/membership-edit.php:607
+#: templates/membership-edit.php:750
+msgid "Elimina iscrizione"
+msgstr ""
+
+#: templates/dive-form.php:152
+msgid "Elimina Profilo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:92
+msgid "Eliminare il modello selezionato?"
+msgstr ""
+
+#: templates/activity-admin.php:488
+msgid "Eliminare questa attivita?"
+msgstr ""
+
+#: templates/dashboard.php:267
+msgid "Eliminare questa immersione?"
+msgstr ""
+
+#. %d number of deleted memberships
+#: includes/class-sd-membership-admin.php:1040
+msgid "Eliminazione completata. Iscrizioni rimosse: %d."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:621
+#: includes/class-sd-activity-payment-flow.php:860
+#: includes/class-sd-membership-admin.php:1255
+#: includes/class-sd-membership-helper.php:345
+#: includes/class-sd-membership-helper.php:374 templates/activity-admin.php:442
+#: templates/membership-admin.php:96 templates/membership-admin.php:251
+#: templates/membership-edit.php:138 templates/membership-edit.php:554
+#: templates/membership-edit.php:582 templates/membership-edit.php:622
+#: templates/membership-form.php:100 templates/membership-form.php:257
+#: templates/membership-form.php:343 templates/membership-form.php:504
+msgid "Email"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:172
+msgid "Email di conferma inviata al partecipante"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:1009
+#: includes/class-sd-membership-admin.php:2023
+msgid "Email fattura inviata con successo."
+msgstr ""
+
+#: templates/profile.php:999
+msgid "Email LibreView"
+msgstr ""
+
+#: templates/activity-registration-form.php:129
+msgid "Email non valida"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:738
+msgid "Email partecipante mancante."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1610
+msgid "Email socio non valida."
+msgstr ""
+
+#: templates/profile.php:1247
+msgid "Email Tidepool"
+msgstr ""
+
+#: templates/membership-edit.php:528
+msgid "Email:"
+msgstr ""
+
+#: templates/diabetes-form.php:330
+msgid "Episodio ipoglicemico durante immersione"
+msgstr ""
+
+#: templates/dive-form.php:129
+msgid "Equipaggiamento"
+msgstr ""
+
+#: templates/dive-form.php:511
+msgid "Erogatore"
+msgstr ""
+
+#. %d=status code API
+#: includes/class-sd-libreview.php:331
+msgid "Errore API LibreView (status %d). Verifica email e password."
+msgstr ""
+
+#: includes/class-sd-libreview.php:1074
+msgid "Errore DB durante l'eliminazione."
+msgstr ""
+
+#: includes/class-sd-libreview.php:1018
+msgid "Errore DB durante la correzione."
+msgstr ""
+
+#: includes/class-sd-membership.php:384
+msgid "Errore durante il salvataggio. Riprova."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:953
+msgid "Errore durante l'eliminazione."
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:29
+msgid "Errore invio email fattura"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:976
+msgid "Errore invio fattura"
+msgstr ""
+
+#: templates/activity-admin.php:492
+msgid "Errore nel caricamento del cruscotto registrazioni."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:151
+msgid "Errore nel caricamento del cruscotto rinnovi."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:87
+msgid "Errore nel recupero dati. Riprova."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:113
+msgid "Errore nel salvataggio"
+msgstr ""
+
+#: includes/class-sd-carelink.php:1108
+msgid ""
+"Errore nel salvataggio delle credenziali. La tabella CareLink potrebbe non "
+"essere stata creata: riattiva il plugin."
+msgstr ""
+
+#: includes/class-sd-libreview.php:856
+msgid ""
+"Errore nel salvataggio delle credenziali. La tabella LibreView potrebbe non "
+"essere stata creata: riattiva il plugin dalle impostazioni WordPress."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:855
+#: includes/class-sd-email-templates.php:862
+msgid "Errore nel salvataggio."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:270 includes/class-sd-dive-form.php:277
+msgid "Errore nel salvataggio. Riprova."
+msgstr ""
+
+#: includes/class-sd-currency-converter.php:298
+msgid "Errore nella conversione valuta"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:921
+msgid "Errore nella duplicazione."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:230
+msgid "Errore parsing: "
+msgstr ""
+
+#: includes/class-sd-dive-import.php:1709
+msgid "Errore PDO SQLite: "
+msgstr ""
+
+#: includes/class-sd-dive-import.php:1691
+msgid "Errore query SQLite3: "
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:84
+msgid "Errore Stripe sconosciuto."
+msgstr ""
+
+#: templates/profile.php:1002 templates/profile.php:1250
+msgid "es. mario.rossi@email.com"
+msgstr ""
+
+#: templates/membership-form.php:579
+msgid "es. Metformina"
+msgstr ""
+
+#: templates/membership-form.php:158 templates/membership-form.php:464
+msgid "es. Ospedale Regionale Lugano"
+msgstr ""
+
+#: templates/email-templates.php:107
+msgid "Es. Reminder rinnovo annuale"
+msgstr ""
+
+#: templates/email-templates.php:117
+msgid "Es. Rinnovo iscrizione {{anno_oggi}} — {{nome}} {{cognome}}"
+msgstr ""
+
+#: templates/activity-admin.php:193
+msgid "Es. Soci, Non soci, Early bird"
+msgstr ""
+
+#: templates/dive-form.php:116
+msgid "es: 15.1667"
+msgstr ""
+
+#: templates/diabetes-form.php:159 templates/diabetes-form.php:259
+msgid "es: 2 biscotti"
+msgstr ""
+
+#: templates/dive-form.php:112
+msgid "es: 37.5667"
+msgstr ""
+
+#: templates/dive-form.php:143
+msgid "es: apnea, OWD, tecnica"
+msgstr ""
+
+#: templates/dive-form.php:106
+msgid "es: Canalone Acitrezza"
+msgstr ""
+
+#: templates/dive-form.php:102
+msgid "es: Catania, Sicilia"
+msgstr ""
+
+#: templates/profile.php:1157
+msgid "Es: ch (Svizzera), it (Italia), de (Germania), us (USA)."
+msgstr ""
+
+#: templates/profile.php:675
+msgid "es: Ospedale Regionale Lugano"
+msgstr ""
+
+#: templates/diabetes-form.php:335
+msgid "es: Risalita, glucosio gel in superficie"
+msgstr ""
+
+#: includes/class-sd-membership.php:182
+msgid ""
+"Esiste già un account con questa email. Contatta il segretariato se hai "
+"bisogno di assistenza."
+msgstr ""
+
+#: includes/class-sd-membership.php:193
+msgid ""
+"Esiste già una richiesta di iscrizione con questa email. Contatta il "
+"segretariato se hai bisogno di assistenza."
+msgstr ""
+
+#: templates/dive-import.php:61
+msgid ""
+"Esporta da File → Esporta → Subsurface XML. Contiene sito, profondità, tempo,"
+" temperatura, bombole, compagni, note."
+msgstr ""
+
+#: templates/activity-admin.php:433
+msgid "Esporta Excel"
+msgstr ""
+
+#: templates/dive-form.php:532
+msgid "Esposizione all'altitudine"
+msgstr ""
+
+#: templates/activity-admin.php:229
+msgid "Etichetta campo"
+msgstr ""
+
+#: templates/activity-admin.php:266
+msgid "Etichetta opzione"
+msgstr ""
+
+#: templates/profile.php:1142
+msgid "Europa (EU)"
+msgstr ""
+
+#: templates/dashboard.php:78 templates/research-dashboard.php:89
+msgid "Export CSV"
+msgstr ""
+
+#: templates/medical-panel.php:51
+msgid "Export ricerca"
+msgstr ""
+
+#: templates/membership-form.php:244
+msgid "F"
+msgstr ""
+
+#: templates/profile.php:124
+msgid "F (Femmina)"
+msgstr ""
+
+#: templates/profile.php:744 templates/profile.php:1320
+msgid "fa"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:979
+msgid "Fallito"
+msgstr ""
+
+#: templates/membership-edit.php:63 templates/membership-form.php:400
+msgid "Famiglia"
+msgstr ""
+
+#: templates/diabetic-registry.php:79 templates/membership-edit.php:349
+msgid "Famigliare"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:370
+msgid "Famigliare %d"
+msgstr ""
+
+#: templates/membership-edit.php:70
+msgid "Famigliari"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:224
+#: includes/class-sd-membership-helper.php:368
+msgid "Famigliari iscritti:"
+msgstr ""
+
+#: templates/membership-edit.php:604
+msgid "Famigliari registrati"
+msgstr ""
+
+#: templates/membership-form.php:421
+msgid "Familiare"
+msgstr ""
+
+#: templates/membership-edit.php:547
+msgid "Familiari"
+msgstr ""
+
+#: templates/membership-edit.php:482
+msgid "Farmaco"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:865
+#: templates/membership-edit.php:372 templates/membership-edit.php:690
+#: templates/payment-confirmation.php:21
+msgid "Fattura"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:716
+msgid "Fattura / bonifico"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:317
+msgid "Fattura generata e inviata al socio. In attesa accredito."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:975
+msgid "Fattura inviata"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:23
+msgid "Fattura inviata via email"
+msgstr ""
+
+#: templates/payment-confirmation.php:7
+msgid ""
+"Fattura inviata. Stato in attesa di accredito; il socio e il rispettivo "
+"account verrà attivato dopo verifica pagamento."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:974
+msgid "Fattura richiesta"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:26
+msgid "Fattura richiesta – pagamento in attesa"
+msgstr ""
+
+#: templates/membership-form.php:63 templates/membership-form.php:442
+msgid "Femminile (F)"
+msgstr ""
+
+#: templates/profile.php:472
+msgid "Figlio/a"
+msgstr ""
+
+#: includes/class-sd-dive-import.php:328
+msgid "File SSRF non valido (XML malformato)."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:213
+msgid "File troppo grande (max 50 MB)."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:1038
+msgid "File UDDF non valido (XML malformato)."
+msgstr ""
+
+#: templates/activity-admin.php:37 templates/cgm-medical.php:92
+#: templates/diabetic-registry.php:99
+msgid "Filtra"
+msgstr ""
+
+#: templates/membership-admin.php:26
+msgid "Filtra: hanno pagato"
+msgstr ""
+
+#: templates/membership-admin.php:30
+msgid "Filtra: in attesa pagamento"
+msgstr ""
+
+#: templates/membership-admin.php:42
+msgid "Filtra: soci attivi"
+msgstr ""
+
+#: templates/membership-admin.php:34
+msgid "Filtra: soci che hanno pagato"
+msgstr ""
+
+#: templates/membership-admin.php:46
+msgid "Filtra: soci non attivi"
+msgstr ""
+
+#: templates/membership-admin.php:38
+msgid "Filtra: soci non pagato"
+msgstr ""
+
+#: templates/research-dashboard.php:25
+msgid "Filtri"
+msgstr ""
+
+#: templates/activity-admin.php:422
+msgid "Filtro rapido registrazioni"
+msgstr ""
+
+#: templates/membership-admin.php:81
+msgid "Filtro rapido rinnovi"
+msgstr ""
+
+#: templates/dive-form.php:247
+msgid "FINE"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:612
+msgid "Finlandia"
+msgstr ""
+
+#: templates/email-templates.php:140
+msgid "Firma (HTML)"
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:249
+msgid "Firma webhook Stripe non valida."
+msgstr ""
+
+#: templates/dive-form.php:410
+msgid "Fiume"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:165
+msgid "Flusso di Pagamento"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:492 templates/membership-admin.php:188
+#: templates/membership-edit.php:303
+msgid "Fondatore"
+msgstr ""
+
+#: templates/dive-import.php:53
+msgid "Formati supportati"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:149
+msgid ""
+"Formato documento non valido o file troppo grande (max 5 MB, PDF/JPG/PNG)."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:218
+msgid ""
+"Formato non supportato. Usa .ssrf (Subsurface), .db (Shearwater Cloud) o ."
+"uddf."
+msgstr ""
+
+#: templates/dive-import.php:77
+msgid ""
+"Formato universale UDDF 3.2 esportato da Garmin Descent, MacDive, DivingLog "
+"e molti altri computer. Esporta da File → Esporta → UDDF."
+msgstr ""
+
+#: templates/dive-form.php:452
+msgid "Forte"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:599
+msgid "Francia"
+msgstr ""
+
+#: templates/profile.php:473
+msgid "Fratello/Sorella"
+msgstr ""
+
+#: templates/diabetes-form.php:117 templates/diabetes-form.php:217
+msgid "Freccia sensore"
+msgstr ""
+
+#: templates/dive-form.php:474
+msgid "Freddo"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:645
+msgid "Friburgo (FR)"
+msgstr ""
+
+#: templates/dive-form.php:496
+msgid "Galleggiamento"
+msgstr ""
+
+#: templates/dive-form.php:512
+msgid "GAV"
+msgstr ""
+
+#: templates/profile.php:781
+msgid "Genera token"
+msgstr ""
+
+#: includes/class-sd-payment-flow.php:93
+msgid "Generazione fattura e messa in attesa pagamento."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:170
+#: includes/class-sd-membership-admin.php:1260
+#: includes/class-sd-membership-helper.php:348
+#: templates/membership-edit.php:101 templates/membership-form.php:59
+#: templates/membership-form.php:241 templates/membership-form.php:438
+msgid "Genere"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:190
+msgid "Genere del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:170
+msgid "Genere selezionato nel modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:190
+msgid "Genere tutore"
+msgstr ""
+
+#: templates/membership-form.php:229 templates/membership-form.php:324
+#: templates/profile.php:471
+msgid "Genitore"
+msgstr ""
+
+#: templates/membership-edit.php:517
+msgid "Genitore / Tutore"
+msgstr ""
+
+#. guardian full name
+#: includes/class-sd-membership-helper.php:302
+#, php-format
+msgid "Gentile <strong>%s</strong>,"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:598
+msgid "Germania"
+msgstr ""
+
+#: templates/membership-edit.php:58
+msgid "Gestione"
+msgstr ""
+
+#: templates/activity-admin.php:16
+msgid "Gestione Attivita"
+msgstr ""
+
+#: templates/membership-admin.php:17
+msgid "Gestione Soci"
+msgstr ""
+
+#: templates/dive-form.php:418
+msgid "Ghiaccio"
+msgstr ""
+
+#: templates/predive-check.php:128
+msgid "GIALLO — procedere con cautela / consultare il medico"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:626
+msgid "Giappone"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:646
+msgid "Ginevra (GE)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:649
+msgid "Giura (JU)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:647
+msgid "Glarona (GL)"
+msgstr ""
+
+#: templates/cgm-medical.php:64
+msgid "Glicemia"
+msgstr ""
+
+#. 1: arrow, 2: glucose value
+#: includes/class-sd-predive-check.php:264
+#, php-format
+msgid "Glicemia %2$s in calo %1$s: troppo vicina alla soglia di ipoglicemia."
+msgstr ""
+
+#. %s glucose value with unit
+#: includes/class-sd-predive-check.php:304
+#, php-format
+msgid ""
+"Glicemia %s: leggermente sopra il range target. Valuta con il tuo medico."
+msgstr ""
+
+#. %s glucose value with unit
+#: includes/class-sd-predive-check.php:294
+#, php-format
+msgid ""
+"Glicemia %s: nella zona borderline. La maggior parte dei protocolli richiede "
+"almeno 120 mg/dL prima di immergersi."
+msgstr ""
+
+#: templates/predive-check.php:141
+msgid "Glicemia 120-180 mg/dL con trend stabile, piatto o in salita"
+msgstr ""
+
+#: templates/predive-check.php:132
+msgid "Glicemia 181-249 mg/dL (sopra range target)"
+msgstr ""
+
+#: templates/predive-check.php:131
+msgid "Glicemia 250-300 mg/dL (iperglicemia elevata)"
+msgstr ""
+
+#: templates/predive-check.php:130
+msgid "Glicemia 90-119 mg/dL (zona borderline)"
+msgstr ""
+
+#: templates/predive-check.php:120
+msgid "Glicemia < 90 mg/dL"
+msgstr ""
+
+#: templates/predive-check.php:121
+msgid "Glicemia > 300 mg/dL"
+msgstr ""
+
+#. %s arrow
+#: includes/class-sd-predive-check.php:326
+#, php-format
+msgid ""
+"Glicemia in lieve calo %s: monitora la tendenza e considera uno spuntino."
+msgstr ""
+
+#: templates/research-dashboard.php:77
+msgid "Glicemia max"
+msgstr ""
+
+#: templates/research-dashboard.php:110
+msgid "Glicemia media per checkpoint"
+msgstr ""
+
+#: templates/research-dashboard.php:73
+msgid "Glicemia min"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:340
+msgid "Glicemia nella zona ideale pre-immersione. Buona immersione!"
+msgstr ""
+
+#: templates/diabetes-form.php:31
+msgid "Glicemie e Provvedimenti"
+msgstr ""
+
+#: templates/dive-form.php:342
+msgid "Gommone"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:714
+msgid "Google Pay"
+msgstr ""
+
+#. 1: Nome partecipante, 2: titolo attività
+#: templates/activity-payment-confirmation.php:56
+#, php-format
+msgid ""
+"Grazie %1$s! La tua iscrizione all'attività <strong>%2$s</strong> è stata "
+"registrata."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:621
+msgid "Grecia"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:648
+msgid "Grigioni (GR)"
+msgstr ""
+
+#: templates/dive-form.php:422
+msgid "Grotta"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:203 templates/membership-edit.php:425
+#: templates/membership-form.php:541 templates/profile.php:130
+msgid "Gruppo sanguigno"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:203
+msgid "Gruppo sanguigno dichiarato."
+msgstr ""
+
+#: templates/profile.php:82
+msgid "GSM"
+msgstr ""
+
+#: templates/dive-form.php:506
+msgid "Guasti attrezzatura"
+msgstr ""
+
+#: templates/dive-form.php:561
+msgid "Guida"
+msgstr ""
+
+#: templates/membership-admin.php:28
+msgid "Hanno pagato"
+msgstr ""
+
+#: templates/profile.php:630
+msgid "HbA1c"
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:237
+msgid "Header Stripe-Signature malformato."
+msgstr ""
+
+#. %s: privacy policy link
+#: templates/membership-form.php:629
+#, php-format
+msgid "Ho letto e accetto l'%s dell'Associazione ScubaDiabetes. *"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://m-achermann.com"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://scubadiabetes.ch"
+msgstr ""
+
+#: includes/class-sd-membership.php:230
+msgid "I dati del genitore/tutore sono obbligatori per i minorenni."
+msgstr ""
+
+#: templates/cgm-dashboard.php:48
+msgid "I miei dati CGM"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:585
+msgid "IBAN Banca"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:805
+#: includes/class-sd-payment-orchestrator.php:645
+msgid "IBAN:"
+msgstr ""
+
+#. Identificativo
+#: includes/class-sd-membership-admin.php:1248 templates/activity-admin.php:44
+msgid "ID"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:750
+#: includes/class-sd-email-templates.php:891
+#: includes/class-sd-email-templates.php:948
+msgid "ID non valido."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:619
+#: includes/class-sd-activity-payment-flow.php:857
+msgid "ID registrazione"
+msgstr ""
+
+#: templates/profile.php:44
+msgid "ID Ricerca"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:521
+#: includes/class-sd-membership-admin.php:1105
+msgid "ID socio non valido."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:937
+msgid "ID tariffe"
+msgstr ""
+
+#: templates/profile.php:325
+msgid "Idoneità medica"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:237
+msgid "Idoneità salvata."
+msgstr ""
+
+#: includes/class-sd-membership.php:143
+msgid "Il cognome è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:803
+msgid "Il corpo del messaggio è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-libreview.php:996
+msgid ""
+"Il fuso orario WordPress è impostato su UTC. Prima imposta il fuso corretto "
+"in Impostazioni → Generali (es. Europe/Rome)."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:124
+msgid "Il link di pagamento è scaduto. Contatta l'organizzatore."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:247
+msgid "Il luogo di immersione è obbligatorio."
+msgstr ""
+
+#: templates/activity-payment-checkout.php:77 templates/payment-checkout.php:69
+msgid "Il metodo di pagamento online non è al momento attivo. Usa Fattura."
+msgstr ""
+
+#: templates/profile.php:26
+msgid "Il mio profilo subacqueo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:797
+msgid "Il nome del modello è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-membership.php:140
+msgid "Il nome è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-membership.php:152
+msgid "Il numero di telefono è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:130
+msgid "Il profilo selezionato è già al limite dell'elenco."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1993
+msgid "Il socio ha già effettuato il pagamento."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1607
+msgid "Il socio non è attivo."
+msgstr ""
+
+#: includes/class-sd-membership.php:236
+msgid "Il telefono del genitore/tutore è obbligatorio."
+msgstr ""
+
+#: templates/membership-form.php:365
+msgid "Il tipo è impostato automaticamente per l'iscrizione famiglia."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:635
+msgid ""
+"Il tuo account verrà attivato alla ricezione del pagamento della tassa "
+"sociale."
+msgstr ""
+
+#: scubadiabetes-logbook.php:137
+msgid ""
+"Il tuo account è stato disabilitato. Contatta il segretariato per maggiori "
+"informazioni."
+msgstr ""
+
+#: templates/profile.php:1355
+msgid "Il tuo API_SECRET Nightscout. Viene cifrato prima di essere salvato."
+msgstr ""
+
+#: templates/activity-admin.php:239
+msgid "Immagine"
+msgstr ""
+
+#: templates/activity-registration-form.php:40
+msgid "Immagine attività"
+msgstr ""
+
+#: templates/activity-admin.php:123
+msgid "Immagine URL"
+msgstr ""
+
+#: templates/dive-form.php:398
+msgid "Immersione"
+msgstr ""
+
+#: includes/class-sd-dive-edit.php:432
+msgid "Immersione aggiornata con successo!"
+msgstr ""
+
+#: includes/class-sd-dashboard.php:340
+msgid "Immersione eliminata"
+msgstr ""
+
+#: includes/class-sd-dashboard.php:208 includes/class-sd-dive-edit.php:124
+msgid "Immersione non trovata"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:316
+msgid "Immersione non valida per il subacqueo selezionato"
+msgstr ""
+
+#: templates/dive-form.php:64
+msgid "Immersione N° %d"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:289
+msgid "Immersione salvata con successo!"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:112
+msgid "Immersione salvata!"
+msgstr ""
+
+#: templates/research-dashboard.php:98
+msgid "Immersioni"
+msgstr ""
+
+#: templates/dashboard.php:30 templates/dive-form.php:49
+#: templates/medical-panel.php:80
+msgid "immersioni"
+msgstr ""
+
+#: templates/medical-panel.php:34
+msgid "Immersioni totali"
+msgstr ""
+
+#: templates/dive-import.php:35
+msgid "Importa immersioni"
+msgstr ""
+
+#: templates/dive-import.php:207
+msgid "Importa le immersioni selezionate"
+msgstr ""
+
+#: templates/diabetes-form.php:73
+msgid "Importa letture da CGM"
+msgstr ""
+
+#: templates/dive-import.php:240
+msgid "Importa un altro file"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:581
+#: includes/class-sd-activity-payment-flow.php:627
+#: includes/class-sd-activity-payment-flow.php:864
+#: templates/activity-admin.php:446
+#: templates/activity-payment-confirmation.php:98
+#: templates/membership-edit.php:669 templates/payment-confirmation.php:15
+msgid "Importo"
+msgstr ""
+
+#: templates/activity-admin.php:196
+msgid "Importo CHF"
+msgstr ""
+
+#: templates/membership-admin.php:99
+msgid "Importo Dovuto"
+msgstr ""
+
+#: templates/activity-admin.php:200
+msgid "Importo EUR"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:155
+msgid "Importo formattato in CHF."
+msgstr ""
+
+#. Pagamento
+#: includes/class-sd-membership-admin.php:1286
+msgid "Importo Pagato CHF"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:199
+msgid "Importo quota associativa numerico."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:809
+msgid "Importo:"
+msgstr ""
+
+#. fee amount in CHF
+#: includes/class-sd-membership-admin.php:1916
+#, php-format
+msgid "Importo: <strong>CHF %s</strong>"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:127
+msgid "Impossibile aggiornare l'ordine dei profili."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:1685
+msgid "Impossibile aprire il database Shearwater."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:116
+msgid "Impossibile caricare i profili attrezzatura."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:548
+msgid "Impossibile copiare il file temporaneo."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:98
+msgid "Impossibile copiare il file."
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:29
+#: includes/class-sd-payment-documents.php:56
+#: includes/class-sd-payment-documents.php:623
+#: includes/class-sd-payment-documents.php:652
+msgid "Impossibile creare la cartella documenti."
+msgstr ""
+
+#: includes/class-sd-nightscout.php:391
+msgid "Impossibile decifrare il token Nightscout."
+msgstr ""
+
+#: includes/class-sd-dexcom.php:265
+msgid "Impossibile decifrare la password Dexcom."
+msgstr ""
+
+#: includes/class-sd-libreview.php:567
+msgid "Impossibile decifrare la password LibreView."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:252
+msgid "Impossibile decifrare la password Tidepool."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:125
+msgid "Impossibile duplicare il profilo attrezzatura."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:118
+msgid "Impossibile eliminare il profilo attrezzatura."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:321 includes/class-sd-dive-import.php:1029
+msgid "Impossibile leggere il file."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:117
+msgid "Impossibile salvare il profilo attrezzatura."
+msgstr ""
+
+#: templates/research-dashboard.php:170
+msgid "Imposta i filtri e premi \"Cerca\" per visualizzare i dati."
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:32
+#: includes/class-sd-activity-settings.php:33
+#: includes/class-sd-activity-settings.php:72
+msgid "Impostazioni Attività"
+msgstr ""
+
+#: templates/profile.php:797
+msgid ""
+"Impostazioni → Cloud Upload → Nightscout sync → inserisci URL + API_SECRET"
+msgstr ""
+
+#: templates/profile.php:805
+msgid "Impostazioni → Followers → Nightscout → URL + API_SECRET"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:639
+msgid "In allegato il PDF riepilogativo inviato al partecipante."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:871
+msgid "In allegato la stessa fattura PDF inviata al partecipante."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:593
+msgid ""
+"In allegato trovi il PDF con riepilogo completo di iscrizione e pagamento."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:802
+#: includes/class-sd-payment-orchestrator.php:642
+msgid ""
+"In allegato trovi la fattura PDF. Effettua un bonifico bancario con i "
+"seguenti dati:"
+msgstr ""
+
+#: templates/activity-admin.php:469
+msgid "In Attesa"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:973
+msgid "In attesa"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:35
+msgid "In attesa di pagamento"
+msgstr ""
+
+#: templates/membership-admin.php:32
+msgid "In attesa pagamento"
+msgstr ""
+
+#. %s = URL documentazione Dexcom sandbox
+#: includes/class-sd-dexcom-settings.php:199
+#, php-format
+msgid "In modalità sandbox, usa le credenziali di test descritte su %s."
+msgstr ""
+
+#. guardian role (e.g. genitore, tutore)
+#: includes/class-sd-membership-helper.php:306
+#, php-format
+msgid ""
+"In qualità di %s, Lei verrà tenuta/o informata/o delle attività "
+"dell'associazione relative al/la minore."
+msgstr ""
+
+#: templates/membership-admin.php:36
+#, php-format
+msgid "Incassato %s"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:125
+msgid "Incolla Client ID e Client Secret nei campi qui sotto e salva."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:200
+msgid "Indica se la persona pratica attività subacquea."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:220
+msgid "Indica se la persona risulta minorenne dal modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:171
+msgid "Indica se la persona è sotto tutela legale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:179 templates/membership-form.php:162
+#: templates/membership-form.php:268
+msgid "Indirizzo"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:546
+msgid "Indirizzo Associazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:145
+msgid "Indirizzo associazione"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:573
+msgid "Indirizzo Banca"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:193
+msgid "Indirizzo del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:143
+msgid "Indirizzo e-mail del segretariato/associazione."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:145
+msgid "Indirizzo postale dell’associazione, se configurato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:193
+msgid "Indirizzo tutore"
+msgstr ""
+
+#: templates/membership-edit.php:536
+msgid "Indirizzo:"
+msgstr ""
+
+#: templates/membership-form.php:630
+msgid "Informativa sulla Privacy"
+msgstr ""
+
+#: templates/activity-registration-form.php:76
+#: templates/activity-registration-form.php:77
+msgid "Informazioni Aggiuntive"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:282
+#: includes/class-sd-payment-documents.php:1117
+#: includes/class-sd-payment-documents.php:1157
+#: includes/class-sd-payment-documents.php:1197
+msgid "Informazioni aggiuntive"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:213
+msgid "Informazioni tecniche"
+msgstr ""
+
+#: templates/dive-form.php:324
+msgid "Ingresso in acqua"
+msgstr ""
+
+#: templates/diabetic-registry.php:57 templates/profile.php:600
+msgid "Iniettiva non insulinica"
+msgstr ""
+
+#: templates/dive-form.php:235
+msgid "INIZIO"
+msgstr ""
+
+#: templates/dive-form.php:229
+msgid "Inizio / Fine Immersione"
+msgstr ""
+
+#: templates/diabetes-form.php:152 templates/diabetes-form.php:252
+msgid "INS (U)"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:910
+msgid ""
+"Inserisci data e ora di inizio immersione prima di importare le letture."
+msgstr ""
+
+#: includes/class-sd-membership.php:174
+msgid "Inserisci il centro diabetologico di riferimento."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:600
+msgid ""
+"Inserisci il testo/payload QR da stampare nella fattura (es. payload Swiss "
+"QR)."
+msgstr ""
+
+#: includes/class-sd-carelink.php:1069
+msgid "Inserisci il tuo username CareLink."
+msgstr ""
+
+#: includes/class-sd-libreview.php:816 includes/class-sd-membership.php:146
+#: includes/class-sd-tidepool.php:486
+msgid "Inserisci un indirizzo email valido."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:119
+msgid "Inserisci un nome profilo (es. apnea, OWD, tecnica)."
+msgstr ""
+
+#: templates/activity-registration-form.php:128
+msgid "Inserisci una data di nascita valida"
+msgstr ""
+
+#: templates/profile.php:281
+msgid "Instructor"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:133
+msgid "Integrazione configurata correttamente."
+msgstr ""
+
+#: templates/profile.php:829
+msgid "Integrazione Dexcom"
+msgstr ""
+
+#: templates/profile.php:939
+msgid "Integrazione LibreView (FreeStyle Libre)"
+msgstr ""
+
+#: templates/profile.php:1051
+msgid "Integrazione Medtronic CareLink"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:140
+msgid ""
+"Integrazione non ancora configurata. Gli utenti non potranno connettere il "
+"proprio account Dexcom."
+msgstr ""
+
+#: templates/profile.php:1190
+msgid "Integrazione Tidepool"
+msgstr ""
+
+#: templates/dive-form.php:486
+msgid "Intenso"
+msgstr ""
+
+#: templates/profile.php:724
+msgid "Interno"
+msgstr ""
+
+#: templates/activity-admin.php:500
+msgid "Invia conferma pagamento"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:154 templates/activity-admin.php:496
+msgid "Invia e-mail"
+msgstr ""
+
+#: templates/activity-admin.php:431 templates/activity-admin.php:504
+msgid "Invia e-mail a tutte le iscrizioni pagate"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:160 templates/membership-admin.php:89
+msgid "Invia e-mail a tutti i soci attivi"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:156 templates/activity-admin.php:430
+#: templates/membership-admin.php:88
+msgid "Invia e-mail massivo"
+msgstr ""
+
+#: templates/membership-edit.php:755
+msgid "Invia Fattura"
+msgstr ""
+
+#: templates/membership-form.php:642
+msgid "Invia iscrizione"
+msgstr ""
+
+#: templates/activity-admin.php:506
+msgid ""
+"Inviare l'e-mail a tutte le iscrizioni pagate dell'attività selezionata?"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:162
+msgid "Inviare l'e-mail a tutti i soci attivi con indirizzo email valido?"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:158
+msgid "Inviare l'e-mail a tutti i soci del filtro selezionato?"
+msgstr ""
+
+#: templates/activity-admin.php:505
+msgid "Invio a tutti i pagati..."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:161
+msgid "Invio a tutti..."
+msgstr ""
+
+#: templates/activity-admin.php:503
+msgid "Invio conferma pagamento non riuscito."
+msgstr ""
+
+#: templates/activity-admin.php:501
+msgid "Invio conferma..."
+msgstr ""
+
+#. 1: sent emails, 2: failed emails, 3: skipped members
+#: includes/class-sd-membership-admin.php:1779
+#, php-format
+msgid "Invio e-mail completato. Inviate: %1$d, fallite: %2$d, saltate: %3$d."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:457
+msgid "Invio e-mail conferma pagamento fallito."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:496
+msgid "Invio e-mail conferma rimborso fallito."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:153 templates/activity-admin.php:495
+msgid "Invio e-mail non riuscito."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:898
+msgid "Invio email fallito."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:1017
+msgid "Invio email fattura fallito. Verifica il log email."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:2025
+msgid "Invio email non riuscito. Controlla la configurazione SMTP del sito."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:159 templates/activity-admin.php:499
+msgid "Invio massivo completato."
+msgstr ""
+
+#. 1: sent reminders, 2: failed reminders, 3: skipped members
+#: includes/class-sd-membership-admin.php:1703
+#, php-format
+msgid "Invio massivo completato. Inviati: %1$d, falliti: %2$d, saltati: %3$d."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:157 templates/activity-admin.php:498
+msgid "Invio massivo..."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1807
+#: includes/class-sd-membership-admin.php:1823
+msgid ""
+"Invio reminder non riuscito. Controlla la configurazione email del sito."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1820
+msgid ""
+"Invio reminder non riuscito: certificato TLS del server SMTP non valido o "
+"non verificabile. Controlla host SMTP, porta/cifratura e catena certificati "
+"sul provider."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1817
+msgid ""
+"Invio reminder non riuscito: il server SMTP rifiuta il certificato TLS in "
+"questo ambiente di sviluppo. Verifica host/porta/cifratura nel plugin SMTP "
+"oppure prova in produzione con SMTP Infomaniak."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:155 templates/activity-admin.php:497
+msgid "Invio..."
+msgstr ""
+
+#: templates/profile.php:390
+msgid "Iperbarica"
+msgstr ""
+
+#. %s glucose value with unit
+#: includes/class-sd-predive-check.php:242
+#, php-format
+msgid "Iperglicemia grave: glicemia %s. Correggi prima di immergerti."
+msgstr ""
+
+#. %s glucose value with unit
+#: includes/class-sd-predive-check.php:314
+#, php-format
+msgid "Iperglicemia: glicemia %s. Consulta il tuo medico prima di immergerti."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:517
+msgid "Ipoglicemia"
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:514
+msgid "Ipoglicemia grave"
+msgstr ""
+
+#: templates/diabetes-form.php:326
+msgid "Ipoglicemia in immersione"
+msgstr ""
+
+#. %s glucose value with unit
+#: includes/class-sd-predive-check.php:232
+#, php-format
+msgid "Ipoglicemia: glicemia %s. Non immergerti."
+msgstr ""
+
+#: templates/research-dashboard.php:102
+msgid "Ipoglicemie"
+msgstr ""
+
+#: templates/profile.php:599
+msgid "Ipoglicemizzante orale"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:608
+msgid "Irlanda"
+msgstr ""
+
+#: templates/activity-admin.php:441
+msgid "Iscritto"
+msgstr ""
+
+#: templates/activity-registration-form.php:32
+msgid "Iscrizione Attività"
+msgstr ""
+
+#. %s: member name
+#: includes/class-sd-membership.php:668
+#, php-format
+msgid ""
+"Iscrizione completata con successo! Benvenuto/a <strong>%s</strong>. "
+"Controlla la tua email per le credenziali di accesso e le istruzioni di "
+"pagamento."
+msgstr ""
+
+#: templates/activity-registration-form.php:134
+msgid "Iscrizione completata!"
+msgstr ""
+
+#: templates/activity-registration-form.php:111
+msgid "Iscrizione completata! Sei stato reindirizzato al pagamento..."
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:49
+msgid "Iscrizione confermata!"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:212
+msgid "Iscrizione Famiglia / Nucleo familiare"
+msgstr ""
+
+#: templates/membership-form.php:393
+msgid "Iscrizione individuale"
+msgstr ""
+
+#. year
+#: includes/class-sd-membership-helper.php:300
+#, php-format
+msgid "Iscrizione ScubaDiabetes %s"
+msgstr ""
+
+#. %s: titolo attività
+#: includes/class-sd-activity-payment-flow.php:1147
+#: includes/class-sd-activity-payment-flow.php:1263
+#, php-format
+msgid "Iscrizione: %s"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:296
+msgid "Iscrizionii attività"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:235
+msgid "Istruzioni per il pagamento:"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:597
+msgid "Italia"
+msgstr ""
+
+#: includes/class-sd-membership.php:233
+msgid "L'email del genitore/tutore non è valida."
+msgstr ""
+
+#: includes/class-sd-membership.php:155
+msgid "L'indirizzo completo è obbligatorio."
+msgstr ""
+
+#: templates/profile.php:844
+msgid ""
+"L'integrazione Dexcom API non è ancora configurata. Contatta "
+"l'amministratore del sito."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:800
+msgid "L'oggetto è obbligatorio."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:440
+msgid ""
+"La conferma pagamento può essere inviata solo per registrazioni già pagate."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:478
+msgid ""
+"La conferma rimborso può essere inviata solo per registrazioni rimborsate."
+msgstr ""
+
+#: includes/class-sd-membership.php:149
+msgid "La data di nascita è obbligatoria."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:244 includes/class-sd-diver-profile.php:206
+msgid "La data è obbligatoria."
+msgstr ""
+
+#. member full name
+#: includes/class-sd-membership-helper.php:304
+#, php-format
+msgid ""
+"La informiamo che l'iscrizione all'Associazione ScubaDiabetes per <strong>"
+"%s</strong> è stata ricevuta con successo."
+msgstr ""
+
+#: templates/email-templates.php:33
+msgid "La lista si aggiorna in base al modulo selezionato."
+msgstr ""
+
+#: includes/class-sd-carelink.php:1072 includes/class-sd-libreview.php:820
+#: includes/class-sd-tidepool.php:490
+msgid "La password è obbligatoria."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:271
+msgid ""
+"La quota associativa è inclusa nell'iscrizione famiglia — nessun pagamento è "
+"richiesto da parte tua."
+msgstr ""
+
+#: templates/profile.php:1003
+msgid "La stessa email con cui accedi a LibreView.io o all'app LibreLinkUp."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:653
+msgid "La tessera associativa verrà emessa dopo la conferma del pagamento."
+msgstr ""
+
+#. year
+#: includes/class-sd-membership-helper.php:197
+#, php-format
+msgid ""
+"La tua iscrizione all'Associazione ScubaDiabetes per l'anno <strong>"
+"%s</strong> è stata ricevuta con successo."
+msgstr ""
+
+#. membership expiry date
+#: includes/class-sd-membership-admin.php:1903
+#, php-format
+msgid ""
+"La tua iscrizione all'Associazione ScubaDiabetes scade il <strong>%s</strong>"
+"."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1912
+msgid ""
+"La tua iscrizione risulta attiva. Conserva questa e-mail come promemoria "
+"amministrativo."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:793
+msgid ""
+"La tua partecipazione verrà confermata alla ricezione del pagamento della "
+"fattura allegata."
+msgstr ""
+
+#. %s: variable tag
+#: includes/class-sd-email-templates.php:825
+#, php-format
+msgid "La variabile %s non è disponibile per il modulo selezionato."
+msgstr ""
+
+#: templates/dive-form.php:406
+msgid "Lago"
+msgstr ""
+
+#: templates/activity-admin.php:311
+msgid "Larghezza (px)"
+msgstr ""
+
+#: templates/dive-form.php:111
+msgid "Latitudine"
+msgstr ""
+
+#: templates/activity-admin.php:471
+msgid ""
+"Le azioni di aggiornamento pagamento sono disponibili nella tab "
+"Registrazioni."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:363
+msgid ""
+"Le condizioni glicemiche sono favorevoli. Puoi procedere con l'immersione "
+"seguendo le normali precauzioni."
+msgstr ""
+
+#: templates/profile.php:1384
+msgid ""
+"Le letture salvate prima dell'aggiornamento del 04/05/2026 hanno un orario "
+"sfasato di +2h. Clicca per correggere tutti i record (operazione applicabile "
+"solo una volta)."
+msgstr ""
+
+#: templates/dashboard.php:71 templates/dive-edit.php:34
+msgid "Le mie immersioni"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:200
+#: includes/class-sd-membership-helper.php:274
+msgid "Le tue credenziali di accesso:"
+msgstr ""
+
+#: templates/predive-check.php:114
+msgid "Legenda Colori"
+msgstr ""
+
+#: templates/predive-check.php:113
+msgid "Legenda semaforo pre-immersione"
+msgstr ""
+
+#: templates/dive-form.php:484
+msgid "Leggero"
+msgstr ""
+
+#: templates/cgm-medical.php:116
+msgid "Letture anomale"
+msgstr ""
+
+#: templates/cgm-medical.php:129 templates/profile.php:737
+msgid "Letture CGM"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-dexcom.php:222
+#, php-format
+msgid "Letture Dexcom fallite (HTTP %1$d): %2$s"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-libreview.php:463
+#, php-format
+msgid "Letture LibreView non recuperabili (HTTP %1$d): %2$s"
+msgstr ""
+
+#: templates/profile.php:865 templates/profile.php:967
+#: templates/profile.php:1083 templates/profile.php:1218
+msgid "Letture salvate"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-tidepool.php:211
+#, php-format
+msgid "Letture Tidepool fallite (HTTP %1$d): %2$s"
+msgstr ""
+
+#: templates/cgm-dashboard.php:116
+msgid "Letture totali"
+msgstr ""
+
+#: templates/cgm-medical.php:108
+msgid "Letture trovate"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:601
+msgid "Liechtenstein"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:497
+msgid "Live Secret Key (sk_live_...)"
+msgstr ""
+
+#: templates/profile.php:271
+msgid "Livello"
+msgstr ""
+
+#: templates/profile.php:1116
+msgid "Lo stesso username con cui accedi a carelink.minimed.eu."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:554
+msgid "Localita Associazione"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:581
+msgid "Localita Banca"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:181
+#: includes/class-sd-payment-documents.php:1227
+#: includes/class-sd-payment-documents.php:1228
+#: templates/membership-form.php:177 templates/profile.php:100
+msgid "Località"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:194
+msgid "Località del genitore/tutore."
+msgstr ""
+
+#: templates/membership-edit.php:76
+msgid "Log"
+msgstr ""
+
+#: templates/membership-edit.php:719
+msgid "Log modifiche (ultimi 20)"
+msgstr ""
+
+#. Description of the plugin
+msgid ""
+"Logbook subacqueo per persone con diabete. Registrazione immersioni, "
+"monitoraggio glicemico, raccolta dati scientifici secondo il protocollo "
+"Diabete Sommerso."
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-dexcom.php:169
+#, php-format
+msgid "Login Dexcom fallito (HTTP %1$d): %2$s"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-libreview.php:309
+#, php-format
+msgid "Login LibreView fallito (HTTP %1$d): %2$s"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=body
+#: includes/class-sd-tidepool.php:152
+#, php-format
+msgid "Login Tidepool fallito (HTTP %1$d): %2$s"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:146
+msgid "Logo associazione in formato HTML immagine."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:147
+msgid "Logo esteso"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:147
+msgid "Logo esteso associazione in formato HTML immagine."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:146
+msgid "Logo piccolo"
+msgstr ""
+
+#: templates/dive-form.php:115
+msgid "Longitudine"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:650
+msgid "Lucerna (LU)"
+msgstr ""
+
+#: templates/activity-admin.php:47 templates/activity-admin.php:99
+#: templates/activity-registration-form.php:52
+msgid "Luogo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:222
+msgid "Luogo attività"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:222
+msgid "Luogo dell’attività."
+msgstr ""
+
+#: templates/dive-form.php:101
+msgid "Luogo di immersione"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:932
+#: includes/class-sd-email-templates.php:172
+#: includes/class-sd-payment-documents.php:1223
+#: templates/membership-edit.php:121 templates/membership-form.php:83
+#: templates/membership-form.php:250
+msgid "Luogo di nascita"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:189
+msgid "Luogo di nascita del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:172
+msgid "Luogo di nascita dichiarato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:189
+msgid "Luogo di nascita tutore"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1258
+msgid "Luogo Nascita"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:602
+msgid "Lussemburgo"
+msgstr ""
+
+#: templates/membership-form.php:243
+msgid "M"
+msgstr ""
+
+#: templates/profile.php:124
+msgid "M (Maschio)"
+msgstr ""
+
+#: templates/activity-admin.php:315
+msgid "Mantieni proporzioni"
+msgstr ""
+
+#: templates/dive-import.php:182
+msgid "Marca"
+msgstr ""
+
+#: templates/dive-form.php:402
+msgid "Mare"
+msgstr ""
+
+#: templates/dive-form.php:510
+msgid "Maschera"
+msgstr ""
+
+#: templates/membership-form.php:62 templates/membership-form.php:441
+msgid "Maschile (M)"
+msgstr ""
+
+#: templates/dive-import.php:104
+msgid "Max 50 MB · .ssrf · .db · .uddf"
+msgstr ""
+
+#: templates/activity-admin.php:114
+msgid "Max Partecipanti"
+msgstr ""
+
+#: templates/profile.php:596
+msgid "MDI (multi-iniettiva)"
+msgstr ""
+
+#: templates/dive-form.php:451 templates/dive-form.php:460
+msgid "Media"
+msgstr ""
+
+#: templates/activity-admin.php:126 templates/activity-admin.php:305
+msgid "Media Library"
+msgstr ""
+
+#: templates/cgm-dashboard.php:102
+msgid "Media ultime 24h"
+msgstr ""
+
+#: templates/membership-edit.php:477 templates/profile.php:180
+msgid "Medicamenti"
+msgstr ""
+
+#: templates/membership-form.php:563
+msgid "Medicamenti / Terapie"
+msgstr ""
+
+#: templates/membership-form.php:573
+msgid "Medicamento"
+msgstr ""
+
+#: includes/class-sd-roles.php:260 templates/membership-admin.php:208
+#: templates/membership-edit.php:261 templates/profile.php:395
+msgid "Medico"
+msgstr ""
+
+#: templates/profile.php:475
+msgid "Medico curante"
+msgstr ""
+
+#: templates/membership-form.php:408
+msgid "Membri del nucleo familiare"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1278
+msgid "Membro dal"
+msgstr ""
+
+#: templates/dive-form.php:536
+msgid "Meno di 6 ore"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:140
+msgid "Mese corrente"
+msgstr ""
+
+#: templates/dive-form.php:364
+msgid "Meteo"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:475
+msgid "Metodi attivi"
+msgstr ""
+
+#: templates/membership-edit.php:362 templates/membership-edit.php:671
+#: templates/payment-confirmation.php:16
+msgid "Metodo"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:73 templates/payment-checkout.php:65
+msgid "Metodo Fattura non attivo nelle impostazioni."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1288
+msgid "Metodo Pagamento"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:580
+#: includes/class-sd-activity-payment-flow.php:626
+#: includes/class-sd-activity-payment-flow.php:865
+msgid "Metodo pagamento"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:71 templates/payment-checkout.php:63
+msgid "Metodo PayPal non attivo nelle impostazioni."
+msgstr ""
+
+#: templates/profile.php:678
+msgid "Microinfusore"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:89
+msgid "min fa"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:931
+#: includes/class-sd-email-templates.php:220
+#: includes/class-sd-payment-documents.php:1129
+#: includes/class-sd-payment-documents.php:1222
+msgid "Minorenne"
+msgstr ""
+
+#: templates/membership-form.php:385
+msgid "Minorenni, over 65, AI"
+msgstr ""
+
+#. Author of the plugin
+msgid "Mirko Achermann"
+msgstr ""
+
+#: templates/profile.php:809
+msgid "Mirror → Nightscout → inserisci URL e API_SECRET"
+msgstr ""
+
+#: templates/dive-form.php:171
+msgid "Miscela"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:460
+msgid "Modalita PayPal"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:183
+#: includes/class-sd-payment-settings.php:486
+msgid "Modalità"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:135
+msgid "Modalità SANDBOX attiva (dati di test)"
+msgstr ""
+
+#: templates/email-templates.php:18
+msgid "Modelli Email"
+msgstr ""
+
+#: templates/email-templates.php:32
+msgid "Modelli salvati"
+msgstr ""
+
+#: templates/dive-import.php:183
+msgid "Modello"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:96
+#: includes/class-sd-email-templates.php:927
+msgid "Modello duplicato con successo."
+msgstr ""
+
+#: templates/activity-admin.php:405 templates/membership-admin.php:66
+msgid "Modello e-mail:"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:95
+#: includes/class-sd-email-templates.php:956
+msgid "Modello eliminato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:761
+#: includes/class-sd-email-templates.php:902
+msgid "Modello non trovato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:94
+#: includes/class-sd-email-templates.php:871
+msgid "Modello salvato con successo."
+msgstr ""
+
+#: templates/dive-form.php:485
+msgid "Moderato"
+msgstr ""
+
+#: templates/dashboard.php:161 templates/dashboard.php:163
+#: templates/dashboard.php:249 templates/dive-edit.php:81
+#: templates/membership-edit.php:646 templates/profile.php:1408
+msgid "Modifica"
+msgstr ""
+
+#: templates/profile.php:984 templates/profile.php:1100
+#: templates/profile.php:1235
+msgid "Modifica Credenziali"
+msgstr ""
+
+#: templates/profile.php:1372
+msgid "Modifica credenziali"
+msgstr ""
+
+#: templates/dashboard.php:194 templates/dive-edit.php:98
+msgid "Modifica Immersione"
+msgstr ""
+
+#: templates/membership-edit.php:451
+msgid "Modificabile dalla scheda Anagrafica"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:144
+msgid "Modulo di iscrizione per un'attività"
+msgstr ""
+
+#. %s: current year
+#: templates/membership-form.php:23
+#, php-format
+msgid "Modulo di iscrizione ScubaDiabetes %s"
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:525
+msgid "Molto alta"
+msgstr ""
+
+#: templates/dive-form.php:477
+msgid "Molto caldo"
+msgstr ""
+
+#: templates/dive-form.php:473
+msgid "Molto freddo"
+msgstr ""
+
+#: templates/diabetes-form.php:184
+msgid "Momento"
+msgstr ""
+
+#: templates/dive-form.php:436
+msgid "Mosso"
+msgstr ""
+
+#: templates/profile.php:770
+msgid "Mostra"
+msgstr ""
+
+#: templates/profile.php:768
+msgid "Mostra / Copia"
+msgstr ""
+
+#: templates/email-templates.php:165
+msgid "Mostra anteprima"
+msgstr ""
+
+#: templates/dashboard.php:179
+msgid "Mostra posizione"
+msgstr ""
+
+#: templates/medical-panel.php:28
+msgid "Mostra solo i diabetici"
+msgstr ""
+
+#: templates/membership-admin.php:22
+msgid "Mostra tutti i soci"
+msgstr ""
+
+#: templates/medical-panel.php:24
+msgid "Mostra tutti i subacquei"
+msgstr ""
+
+#: templates/profile.php:1010 templates/profile.php:1123
+#: templates/profile.php:1257
+msgid "Mostra/Nascondi password"
+msgstr ""
+
+#: templates/dive-form.php:514
+msgid "Muta"
+msgstr ""
+
+#: templates/dive-form.php:217
+msgid "Muta 7 mm, guanti, cappuccio..."
+msgstr ""
+
+#: templates/profile.php:282
+msgid "Muta Stagna"
+msgstr ""
+
+#: templates/dive-form.php:515
+msgid "Muta stagna"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:725
+msgid "n/d"
+msgstr ""
+
+#: templates/dive-form.php:497
+msgid "Navigazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:182
+#: includes/class-sd-membership-admin.php:1267
+#: templates/membership-edit.php:164 templates/membership-form.php:181
+#: templates/membership-form.php:283
+msgid "Nazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:173 templates/membership-edit.php:125
+#: templates/membership-form.php:87
+msgid "Nazione di nascita"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1259
+msgid "Nazione Nascita"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:196
+msgid "Nazione tutore"
+msgstr ""
+
+#: templates/membership-form.php:245
+msgid "NB"
+msgstr ""
+
+#: templates/profile.php:124
+msgid "NB (Non binario)"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:116
+msgid ""
+"Nel portale Dexcom, imposta il seguente Redirect URI nella sezione "
+"\"Redirect URIs\" della tua app:"
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:520
+msgid "Nella norma"
+msgstr ""
+
+#: templates/cgm-medical.php:69
+msgid "Nella norma (70–180)"
+msgstr ""
+
+#: includes/class-sd-research-dashboard.php:113
+msgid "Nessun dato"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:88
+msgid "Nessun dato CGM disponibile."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:192
+msgid "Nessun dato CGM trovato. Non è possibile valutare la glicemia."
+msgstr ""
+
+#: includes/class-sd-dashboard.php:268
+msgid "Nessun dato da esportare"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:484
+msgid "Nessun dato diabetico da esportare"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:920
+#: includes/class-sd-activity-payment-flow.php:925
+#: includes/class-sd-payment-documents.php:671
+#: includes/class-sd-payment-documents.php:691
+#: includes/class-sd-payment-documents.php:729
+msgid "Nessun dato modulo registrato."
+msgstr ""
+
+#: templates/predive-check.php:97
+msgid "Nessun dispositivo CGM configurato."
+msgstr ""
+
+#: includes/class-sd-libreview.php:659
+msgid "Nessun dispositivo LibreView associato all'account."
+msgstr ""
+
+#: templates/membership-edit.php:654
+msgid "Nessun famigliare registrato per questo intestatario."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:203
+msgid "Nessun file ricevuto o errore di upload."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:86
+msgid "Nessun file."
+msgstr ""
+
+#: templates/membership-edit.php:500
+msgid "Nessun medicamento registrato."
+msgstr ""
+
+#: templates/activity-payment-checkout.php:113
+msgid "Nessun metodo di pagamento disponibile. Contatta l'organizzatore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:101
+msgid "Nessun modello salvato per questo modulo."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1988
+msgid "Nessun pagamento Bonifico IBAN trovato per questo socio."
+msgstr ""
+
+#: templates/membership-edit.php:711
+msgid "Nessun pagamento registrato."
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:32
+msgid "Nessun pagamento richiesto"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1772
+msgid "Nessun socio attivo con email valida trovato."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1696
+msgid "Nessun socio con reminder inviabile per il filtro selezionato."
+msgstr ""
+
+#: templates/diabetic-registry.php:129
+msgid "Nessun socio diabetico trovato con i filtri selezionati."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:251
+msgid ""
+"Nessun socio selezionato. Torna alla <a href=\"javascript:history.back()\">"
+"lista soci</a>."
+msgstr ""
+
+#: templates/profile.php:774
+msgid "Nessun token generato."
+msgstr ""
+
+#: templates/dive-form.php:535 templates/dive-import.php:170
+msgid "Nessuna"
+msgstr ""
+
+#: templates/membership-edit.php:472
+msgid "Nessuna allergia registrata."
+msgstr ""
+
+#: includes/class-sd-carelink.php:1139
+msgid "Nessuna connessione CareLink configurata."
+msgstr ""
+
+#: includes/class-sd-dexcom.php:536
+msgid "Nessuna connessione Dexcom configurata."
+msgstr ""
+
+#: includes/class-sd-libreview.php:885
+msgid "Nessuna connessione LibreView configurata."
+msgstr ""
+
+#: includes/class-sd-nightscout.php:386
+msgid "Nessuna connessione Nightscout abilitata."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:530
+msgid "Nessuna connessione Tidepool configurata."
+msgstr ""
+
+#: templates/dashboard.php:90 templates/dive-edit.php:44
+msgid "Nessuna immersione registrata."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:234
+msgid "Nessuna immersione trovata nel file."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1033
+msgid "Nessuna iscrizione eliminata."
+msgstr ""
+
+#: templates/predive-check.php:119
+msgid "Nessuna lettura CGM nelle ultime 2 ore (stato ignoto)"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:1039
+msgid ""
+"Nessuna lettura CGM trovata per gli orari dell'immersione. Verifica che il "
+"dispositivo sia sincronizzato e che l'immersione sia avvenuta nelle ultime "
+"24 ore."
+msgstr ""
+
+#: templates/membership-edit.php:735
+msgid "Nessuna modifica registrata."
+msgstr ""
+
+#: templates/dive-form.php:495 templates/dive-form.php:509
+msgid "Nessuno"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:651
+msgid "Neuchâtel (NE)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:652
+msgid "Nidvaldo (NW)"
+msgstr ""
+
+#. %d: HTTP status code
+#: includes/class-sd-nightscout.php:129
+msgid "Nightscout ha risposto con il codice HTTP %d. Verifica URL e token."
+msgstr ""
+
+#: templates/dive-form.php:174 templates/profile.php:283
+msgid "Nitrox"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:953
+#: includes/class-sd-email-templates.php:609
+#: includes/class-sd-membership-helper.php:349
+#: includes/class-sd-membership-helper.php:354
+#: includes/class-sd-payment-documents.php:1265
+#: includes/class-sd-payment-documents.php:1342 templates/dive-form.php:527
+#: templates/membership-edit.php:113 templates/membership-edit.php:277
+#: templates/membership-edit.php:325 templates/membership-edit.php:641
+#: templates/membership-form.php:72
+msgid "No"
+msgstr ""
+
+#. Anagrafica
+#: includes/class-sd-email-templates.php:167
+#: includes/class-sd-email-templates.php:216
+#: includes/class-sd-membership-admin.php:1253
+#: templates/diabetic-registry.php:136 templates/membership-edit.php:86
+#: templates/membership-edit.php:551 templates/membership-edit.php:579
+#: templates/membership-edit.php:621 templates/membership-form.php:43
+#: templates/membership-form.php:218 templates/membership-form.php:313
+#: templates/membership-form.php:426 templates/profile.php:54
+msgid "Nome"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:542
+msgid "Nome Associazione"
+msgstr ""
+
+#: templates/dive-form.php:558
+msgid "Nome compagno"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:344
+#: includes/class-sd-membership-helper.php:373
+msgid "Nome completo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:185
+msgid "Nome del genitore/tutore legale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:140
+msgid "Nome del mese corrente."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:167
+msgid "Nome della persona che compila il modulo."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:216
+msgid "Nome della persona iscritta all’attività."
+msgstr ""
+
+#: templates/profile.php:452
+msgid "Nome e cognome"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:273
+msgid "Nome e telefono obbligatori."
+msgstr ""
+
+#: templates/membership-form.php:578
+msgid "Nome farmaco"
+msgstr ""
+
+#: templates/dive-form.php:562
+msgid "Nome guida"
+msgstr ""
+
+#: templates/profile.php:396
+msgid "Nome medico"
+msgstr ""
+
+#: templates/email-templates.php:104
+msgid "Nome modello"
+msgstr ""
+
+#: templates/dive-form.php:142
+msgid "Nome profilo"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:474
+msgid "Nome profilo obbligatorio."
+msgstr ""
+
+#: templates/activity-admin.php:192
+msgid "Nome tariffa"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:185
+msgid "Nome tutore"
+msgstr ""
+
+#: templates/cgm-medical.php:45 templates/diabetic-registry.php:28
+msgid "Nome, cognome o email…"
+msgstr ""
+
+#: templates/membership-admin.php:120
+msgid "Nome, Cognome, Email..."
+msgstr ""
+
+#: templates/profile.php:72
+msgid "Nome, cognome, ruolo ed e-mail si modificano dal profilo WordPress."
+msgstr ""
+
+#: templates/membership-edit.php:520
+msgid "Nome:"
+msgstr ""
+
+#: templates/membership-admin.php:197
+msgid "Non attivo"
+msgstr ""
+
+#: includes/class-sd-carelink.php:1053 includes/class-sd-carelink.php:1123
+#: includes/class-sd-carelink.php:1202 includes/class-sd-carelink.php:1220
+#: includes/class-sd-cgm-dashboard.php:151 includes/class-sd-dexcom.php:484
+#: includes/class-sd-dexcom.php:531 includes/class-sd-dexcom.php:573
+#: includes/class-sd-dexcom.php:591 includes/class-sd-dexcom.php:608
+#: includes/class-sd-dive-form.php:902 includes/class-sd-libreview.php:806
+#: includes/class-sd-libreview.php:871 includes/class-sd-libreview.php:955
+#: includes/class-sd-libreview.php:1100
+#: includes/class-sd-nightscout-server.php:636
+#: includes/class-sd-nightscout.php:170 includes/class-sd-nightscout.php:243
+#: includes/class-sd-nightscout.php:282 includes/class-sd-nightscout.php:312
+#: includes/class-sd-nightscout.php:333 includes/class-sd-predive-check.php:134
+#: includes/class-sd-tidepool.php:479 includes/class-sd-tidepool.php:525
+#: includes/class-sd-tidepool.php:573 includes/class-sd-tidepool.php:591
+msgid "Non autenticato."
+msgstr ""
+
+#: includes/class-sd-dashboard.php:328
+#: includes/class-sd-diabetic-registry.php:73
+#: includes/class-sd-dive-edit.php:168 includes/class-sd-dive-edit.php:461
+#: includes/class-sd-dive-edit.php:512 includes/class-sd-dive-import.php:83
+#: includes/class-sd-dive-import.php:199 includes/class-sd-dive-import.php:264
+#: includes/class-sd-diver-profile.php:325
+#: includes/class-sd-medical-panel.php:174
+#: includes/class-sd-medical-panel.php:460
+#: includes/class-sd-research-dashboard.php:85
+#: includes/class-sd-research-dashboard.php:108
+msgid "Non autorizzato"
+msgstr ""
+
+#: templates/membership-form.php:64 templates/membership-form.php:443
+msgid "Non binario (NB)"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:179
+msgid ""
+"Non condividere mai questo valore. Viene salvato nel database WordPress."
+msgstr ""
+
+#: templates/profile.php:833 templates/profile.php:943
+#: templates/profile.php:1055 templates/profile.php:1194
+#: templates/profile.php:1300
+msgid "Non connesso"
+msgstr ""
+
+#: templates/medical-panel.php:46
+msgid "Non diabetici"
+msgstr ""
+
+#: templates/medical-panel.php:75 templates/membership-admin.php:172
+#: templates/membership-edit.php:222 templates/membership-edit.php:439
+#: templates/membership-form.php:146 templates/membership-form.php:452
+#: templates/profile.php:578
+msgid "Non diabetico"
+msgstr ""
+
+#: includes/class-sd-dashboard.php:121
+msgid "Non hai i permessi per accedere alla dashboard."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:152
+msgid "Non hai i permessi per registrare immersioni."
+msgstr ""
+
+#: includes/class-sd-dive-edit.php:73 includes/class-sd-dive-import.php:68
+msgid "Non hai i permessi."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:365
+msgid ""
+"Non immergerti. Correggi la glicemia e attendi la stabilizzazione prima di "
+"rivalutare."
+msgstr ""
+
+#: templates/membership-form.php:444
+msgid "Non indicato (U)"
+msgstr ""
+
+#: templates/membership-admin.php:128 templates/membership-edit.php:352
+msgid "Non pagato"
+msgstr ""
+
+#: templates/membership-admin.php:40
+#, php-format
+msgid "Non pagato %s"
+msgstr ""
+
+#: templates/diabetic-registry.php:58 templates/profile.php:595
+msgid "Non specificata"
+msgstr ""
+
+#: templates/diabetic-registry.php:43 templates/membership-edit.php:447
+msgid "Non specificato"
+msgstr ""
+
+#: templates/membership-edit.php:230
+msgid "Non specificato (legacy)"
+msgstr ""
+
+#: templates/membership-admin.php:158
+msgid "Non subacqueo"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:129
+msgid ""
+"Non è stato possibile inviare l'email della fattura. Contatta "
+"l'organizzazione per completare il pagamento."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:610
+msgid "Norvegia"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:535
+msgid "Nota footer ricevuta"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:400
+msgid "Nota salvata."
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:728
+msgid "Nota:"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1284 templates/dive-form.php:572
+#: templates/profile.php:404 templates/profile.php:484
+#: templates/profile.php:698
+msgid "Note"
+msgstr ""
+
+#: templates/profile.php:485
+msgid "Note aggiuntive"
+msgstr ""
+
+#: templates/diabetes-form.php:340
+msgid "Note diabete"
+msgstr ""
+
+#: templates/dive-form.php:552
+msgid "Note e Compagni"
+msgstr ""
+
+#: templates/dive-form.php:216
+msgid "Note sull'equipaggiamento"
+msgstr ""
+
+#: templates/dive-form.php:380 templates/profile.php:284
+msgid "Notturna"
+msgstr ""
+
+#: templates/membership-form.php:401
+msgid "Nucleo familiare"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:227
+msgid "Numero di tariffe selezionate."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:144
+msgid "Numero di telefono dell’associazione, se configurato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:175
+msgid "Numero di telefono principale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:156
+msgid "Numero o ID socio/registrazione."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:156
+#: templates/payment-confirmation.php:14
+msgid "Numero socio"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:938
+msgid "Numero tariffe"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:227
+msgid "Numero tariffe selezionate"
+msgstr ""
+
+#: templates/activity-admin.php:171
+msgid "Nuova"
+msgstr ""
+
+#: templates/profile.php:168
+msgid "Nuova allergia…"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:855
+msgid "Nuova iscrizione con richiesta fattura"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:326
+msgid "Nuova iscrizione ricevuta"
+msgstr ""
+
+#: templates/activity-admin.php:250
+msgid "Nuova sezione personalizzata"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:625
+msgid "Nuova Zelanda"
+msgstr ""
+
+#: templates/dive-import.php:156
+msgid "nuove"
+msgstr ""
+
+#: templates/dive-import.php:199
+msgid "Nuovo"
+msgstr ""
+
+#: templates/profile.php:198
+msgid "Nuovo medicamento…"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:99 templates/email-templates.php:36
+msgid "Nuovo modello"
+msgstr ""
+
+#: templates/dive-form.php:372
+msgid "Nuvoloso"
+msgstr ""
+
+#: templates/dive-form.php:161
+msgid "N° Bombole"
+msgstr ""
+
+#: templates/profile.php:298
+msgid "N° Brevetto"
+msgstr ""
+
+#: templates/dive-form.php:94
+msgid "N° Immersione"
+msgstr ""
+
+#: templates/activity-admin.php:255
+msgid "Obbligatorio"
+msgstr ""
+
+#: templates/membership-form.php:213
+msgid "Obbligatorio per minorenni"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:653
+msgid "Obvaldo (OW)"
+msgstr ""
+
+#: templates/email-templates.php:114
+msgid "Oggetto"
+msgstr ""
+
+#: includes/class-sd-libreview.php:761
+msgid "Ogni 5 minuti"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:225
+msgid ""
+"Ogni famigliare ha ricevuto un'email separata con le proprie credenziali di "
+"accesso."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:230
+msgid "Ogni ora (WP Cron)"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1136
+#: includes/class-sd-payment-documents.php:1139
+#: includes/class-sd-payment-documents.php:1337
+msgid "Ok"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:491 templates/diabetic-registry.php:80
+#: templates/membership-admin.php:187 templates/membership-edit.php:302
+msgid "Onorario"
+msgstr ""
+
+#: templates/profile.php:275
+msgid "Open Water"
+msgstr ""
+
+#: templates/dive-import.php:93
+msgid "oppure clicca per selezionarlo"
+msgstr ""
+
+#: templates/profile.php:299
+msgid "Opzionale"
+msgstr ""
+
+#: templates/activity-admin.php:264
+msgid "Opzioni (aggiungi le scelte disponibili):"
+msgstr ""
+
+#: templates/dive-form.php:237 templates/dive-form.php:249
+msgid "Ora"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:90
+msgid "ora fa"
+msgstr ""
+
+#: templates/profile.php:860
+msgid "Ora lettura"
+msgstr ""
+
+#: templates/diabetic-registry.php:56
+msgid "Orale"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:128
+msgid "Ordine profili aggiornato."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:669
+msgid "Ordine profili non valido."
+msgstr ""
+
+#: templates/activity-admin.php:252
+msgid "Ordine sezione"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:91
+msgid "ore fa"
+msgstr ""
+
+#: templates/membership-edit.php:383
+msgid "Osservazioni / Note"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:196
+msgid "Paese del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:173
+msgid "Paese di nascita dichiarato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:182
+msgid "Paese di residenza."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:604
+msgid "Paesi Bassi"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:89
+msgid "Paga con Carta / Apple Pay / Google Pay / TWINT"
+msgstr ""
+
+#: templates/payment-checkout.php:81
+msgid "Paga con Carta / TWINT / Apple Pay / Google Pay"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:96 templates/payment-checkout.php:88
+msgid "Paga con PayPal"
+msgstr ""
+
+#: templates/activity-admin.php:24 templates/membership-edit.php:75
+msgid "Pagamenti"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:33
+#: includes/class-sd-payment-settings.php:34
+msgid "Pagamenti Soci"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:448
+msgid "Pagamenti Soci - Impostazioni"
+msgstr ""
+
+#: templates/membership-edit.php:331
+#, php-format
+msgid "Pagamento %s"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:816
+msgid "Pagamento aggiornato da pannello staff."
+msgstr ""
+
+#: templates/activity-payment-checkout.php:81 templates/payment-checkout.php:73
+msgid "Pagamento annullato. Puoi riprovare o scegliere un altro metodo."
+msgstr ""
+
+#: templates/payment-confirmation.php:5
+msgid "Pagamento approvato e iscrizione attivata."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:568
+#: includes/class-sd-activity-payment-flow.php:617
+msgid "Pagamento attività confermato"
+msgstr ""
+
+#: includes/class-sd-payment-flow.php:207
+msgid "Pagamento confermato da PayPal."
+msgstr ""
+
+#: includes/class-sd-payment-flow.php:338
+msgid "Pagamento confermato da Stripe Checkout."
+msgstr ""
+
+#: includes/class-sd-payment-flow.php:482
+msgid "Pagamento confermato da webhook Stripe."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:491
+msgid "Pagamento confermato — Iscrizione attivata!"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:549
+#, php-format
+msgid "Pagamento confermato: %s"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:171
+msgid "Pagamento elaborato e confermato"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:399
+msgid "Pagamento già registrato come pagato."
+msgstr ""
+
+#: templates/membership-edit.php:678
+msgid "Pagamento in attesa"
+msgstr ""
+
+#: templates/payment-confirmation.php:9
+msgid "Pagamento in elaborazione."
+msgstr ""
+
+#: templates/activity-payment-checkout.php:24
+msgid "Pagamento Iscrizione Attività"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:79 templates/payment-checkout.php:71
+msgid "Pagamento non disponibile al momento. Riprova o usa Fattura."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:39
+msgid "Pagamento non trovato."
+msgstr ""
+
+#: templates/activity-payment-checkout.php:69 templates/payment-checkout.php:61
+msgid "Pagamento PayPal annullato. Puoi riprovare o scegliere un altro metodo."
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:20
+msgid "Pagamento ricevuto"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:355 templates/payment-checkout.php:23
+msgid "Pagamento Tassa Sociale"
+msgstr ""
+
+#: templates/activity-admin.php:468
+msgid "Pagati"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:977
+#: includes/class-sd-membership-admin.php:1277
+#: templates/membership-admin.php:127 templates/membership-admin.php:254
+#: templates/membership-edit.php:346 templates/membership-edit.php:353
+msgid "Pagato"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:152
+msgid "Pagina di conferma dopo il pagamento (da configurare sopra)"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:148
+msgid "Pagina di scelta metodo pagamento (da configurare sopra)"
+msgstr ""
+
+#. %d=HTTP code
+#: includes/class-sd-carelink.php:332
+msgid "Pagina login CareLink non raggiungibile (HTTP %d)."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:450
+msgid "Pagine checkout/conferma create o aggiornate con successo."
+msgstr ""
+
+#: templates/cgm-medical.php:26
+msgid "Pannello CGM — Dati Pazienti"
+msgstr ""
+
+#: templates/profile.php:917
+msgid "Parametri OAuth mancanti."
+msgstr ""
+
+#: templates/membership-form.php:327
+msgid "Parente"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:620
+#: includes/class-sd-activity-payment-flow.php:859
+msgid "Partecipante"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:488 templates/membership-admin.php:184
+#: templates/membership-edit.php:299
+msgid "Passivo"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:504
+msgid "Password"
+msgstr ""
+
+#: templates/profile.php:1122
+msgid "Password account CareLink"
+msgstr ""
+
+#: templates/profile.php:1009
+msgid "Password account LibreView"
+msgstr ""
+
+#: templates/profile.php:1256
+msgid "Password account Tidepool"
+msgstr ""
+
+#: templates/profile.php:1119
+msgid "Password CareLink"
+msgstr ""
+
+#: templates/profile.php:1006
+msgid "Password LibreView"
+msgstr ""
+
+#: templates/profile.php:1253
+msgid "Password Tidepool"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:203
+#: includes/class-sd-membership-helper.php:277
+msgid "Password:"
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:254
+msgid "Payload evento Stripe non valido."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:710
+#: templates/payment-confirmation.php:19
+msgid "PayPal"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:467
+msgid "PayPal Client ID"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:75 templates/payment-checkout.php:67
+msgid "PayPal non disponibile al momento. Usa Stripe o riprova."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:471
+msgid "PayPal Secret"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:405
+msgid "PayPal:"
+msgstr ""
+
+#: templates/cgm-medical.php:112
+msgid "Pazienti coinvolti"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1914
+msgid "Per completare il rinnovo, effettua il pagamento della tassa annuale:"
+msgstr ""
+
+#. URL to member management page
+#: includes/class-sd-membership-helper.php:382
+#, php-format
+msgid ""
+"Per gestire questa iscrizione accedi alla <a href=\"%s\">pagina di gestione "
+"soci</a>."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:126
+msgid ""
+"Per il testing, usa la modalità Sandbox. Per accesso utenti reali, richiedi "
+"a Dexcom lo status \"Limited Access\" o \"Full Access\"."
+msgstr ""
+
+#. admin email address
+#. secretariat email address
+#: includes/class-sd-membership-admin.php:1919
+#: includes/class-sd-membership-helper.php:240
+#: includes/class-sd-membership-helper.php:284
+#, php-format
+msgid ""
+"Per informazioni contatta il segretariato: <a href=\"mailto:%1$s\">%2$s</a>"
+msgstr ""
+
+#. secretariat email address
+#: includes/class-sd-membership-helper.php:308
+#, php-format
+msgid "Per informazioni: <a href=\"mailto:%1$s\">%2$s</a>"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:815
+msgid "Per qualsiasi domanda contatta il segretariato dell'associazione."
+msgstr ""
+
+#: templates/profile.php:1150
+msgid ""
+"Per utenti in Europa (inclusa Svizzera e Italia) seleziona EU. Per USA e "
+"Canada seleziona US."
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:71
+msgid "Periodo"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:993
+#: includes/class-sd-activity-payment-flow.php:1033
+#: includes/class-sd-currency-converter.php:322
+msgid "Permessi insufficienti"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:186 includes/class-sd-dive-form.php:266
+#: includes/class-sd-dive-form.php:447 includes/class-sd-dive-form.php:467
+#: includes/class-sd-dive-form.php:539 includes/class-sd-dive-form.php:582
+#: includes/class-sd-dive-form.php:664
+msgid "Permessi insufficienti."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:87
+#: includes/class-sd-membership-admin.php:1969
+#: includes/class-sd-payment-settings.php:348
+#: includes/class-sd-payment-settings.php:425
+msgid "Permesso negato."
+msgstr ""
+
+#: templates/membership-form.php:328
+msgid "Personale medico"
+msgstr ""
+
+#: templates/cgm-dashboard.php:129
+msgid "Personalizzato"
+msgstr ""
+
+#: templates/membership-form.php:296
+msgid "Persone autorizzate ad accompagnare il/la minore alle attività."
+msgstr ""
+
+#: templates/dive-form.php:568
+msgid "Pesci, coralli, relitti..."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:201
+msgid "Peso"
+msgstr ""
+
+#: templates/profile.php:110
+msgid "Peso (Kg)"
+msgstr ""
+
+#: templates/membership-edit.php:417 templates/membership-form.php:533
+msgid "Peso (kg)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:201
+msgid "Peso inserito nel modulo."
+msgstr ""
+
+#: templates/dive-form.php:516
+msgid "Pinna"
+msgstr ""
+
+#: templates/dive-form.php:376
+msgid "Pioggia"
+msgstr ""
+
+#: templates/dive-form.php:414
+msgid "Piscina"
+msgstr ""
+
+#: templates/dive-form.php:537
+msgid "Più di 6 ore"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:613
+msgid "Polonia"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:606
+msgid "Portogallo"
+msgstr ""
+
+#: templates/dashboard.php:179
+msgid "Posizione non disponibile"
+msgstr ""
+
+#: templates/activity-admin.php:48
+msgid "Posti"
+msgstr ""
+
+#: templates/activity-registration-form.php:56
+msgid "Posti Disponibili"
+msgstr ""
+
+#: templates/dive-import.php:137
+msgid "Potrebbe richiedere alcuni secondi per file grandi."
+msgstr ""
+
+#: templates/membership-admin.php:274
+msgid "Precedente"
+msgstr ""
+
+#: includes/class-sd-diver-profile.php:442
+msgid "Preferenza condivisione aggiornata."
+msgstr ""
+
+#: templates/membership-form.php:65
+msgid "Preferisco non indicare (U)"
+msgstr ""
+
+#: templates/email-templates.php:86
+msgid "Preset rapidi"
+msgstr ""
+
+#: templates/dive-import.php:189
+msgid "Pressioni"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:228
+msgid "Prezzo CHF"
+msgstr ""
+
+#: includes/class-sd-currency-converter.php:292
+msgid "Prezzo CHF non valido"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:229
+msgid "Prezzo EUR"
+msgstr ""
+
+#: templates/dive-form.php:492
+msgid "Problemi"
+msgstr ""
+
+#: templates/activity-registration-form.php:102
+msgid "Procedi al Pagamento"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:364
+msgid ""
+"Procedi con cautela. Rivaluta tra 15 minuti o consulta il tuo medico di "
+"riferimento."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:188
+msgid "Produzione (dati reali utenti)"
+msgstr ""
+
+#: templates/dive-form.php:294 templates/dive-form.php:305
+msgid "Prof. (m)"
+msgstr ""
+
+#: templates/dashboard.php:38
+msgid "Prof. massima"
+msgstr ""
+
+#: templates/dive-import.php:186
+msgid "Prof. max"
+msgstr ""
+
+#: templates/dive-form.php:262
+msgid "Prof. max (m)"
+msgstr ""
+
+#: templates/dive-form.php:266
+msgid "Prof. media (m)"
+msgstr ""
+
+#: templates/research-dashboard.php:154
+msgid "Prof/Tempo"
+msgstr ""
+
+#: templates/dive-form.php:133
+msgid "Profili attrezzatura riusabili"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:122
+msgid "Profilo attrezzatura applicato al form."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:126
+msgid "Profilo attrezzatura duplicato."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:121
+msgid "Profilo attrezzatura eliminato."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:120
+msgid "Profilo attrezzatura salvato."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:560 includes/class-sd-dive-form.php:601
+msgid "Profilo non trovato."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:544 includes/class-sd-dive-form.php:587
+msgid "Profilo non valido."
+msgstr ""
+
+#: templates/dive-form.php:136
+msgid "Profilo salvato"
+msgstr ""
+
+#: templates/dive-form.php:279
+msgid "Profondità (m)"
+msgstr ""
+
+#: templates/dive-form.php:195
+msgid "Protezione"
+msgstr ""
+
+#: templates/research-dashboard.php:155 templates/research-dashboard.php:156
+#: templates/research-dashboard.php:157 templates/research-dashboard.php:158
+msgid "Provv."
+msgstr ""
+
+#: templates/diabetes-form.php:158 templates/diabetes-form.php:258
+msgid "Provvedimenti"
+msgstr ""
+
+#: templates/activity-admin.php:33 templates/activity-admin.php:156
+msgid "Pubblicata"
+msgstr ""
+
+#: templates/diabetes-form.php:316
+msgid "Pump disconnesso"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:604
+msgid "QR immagine (jpg/jpeg/png URL)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:597
+msgid "QR pagamento (payload)"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:812
+#: includes/class-sd-payment-orchestrator.php:650
+msgid "QR pagamento:"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:617
+msgid ""
+"Questa azione crea o aggiorna automaticamente le pagine pubbliche del flusso "
+"pagamento."
+msgstr ""
+
+#: templates/dashboard.php:269
+msgid ""
+"Questa azione è irreversibile. Tutti i dati glicemici associati verranno "
+"eliminati definitivamente."
+msgstr ""
+
+#: templates/profile.php:535
+msgid ""
+"Questa preferenza verrà applicata alle nuove immersioni. Puoi modificarla "
+"per ogni singola immersione."
+msgstr ""
+
+#: templates/predive-check.php:106
+msgid ""
+"Questo strumento è un supporto decisionale e non sostituisce il giudizio "
+"clinico del tuo medico."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:103
+msgid "Questo template non è compatibile con il modulo selezionato."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:199
+msgid "Quota associativa"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:164
+#: includes/class-sd-payment-orchestrator.php:284
+msgid "Record pagamento non trovato."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:217
+msgid "Redirect URI"
+msgstr ""
+
+#: includes/class-sd-carelink.php:572
+msgid "Refresh token CareLink non disponibile. Riconnetti l'account."
+msgstr ""
+
+#: templates/dive-form.php:63
+msgid "Registra Immersione"
+msgstr ""
+
+#: templates/membership-edit.php:397
+msgid "Registrato da:"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1283
+msgid "Registrato il"
+msgstr ""
+
+#: templates/membership-edit.php:389
+msgid "Registrato il:"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:178
+msgid "Registrazione non trovata."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:142
+#: includes/class-sd-activity-payment-flow.php:998
+#: includes/class-sd-activity-payment-flow.php:1038
+msgid "Registrazione non valida."
+msgstr ""
+
+#: templates/activity-admin.php:23
+msgid "Registrazioni"
+msgstr ""
+
+#: templates/diabetic-registry.php:19
+msgid "Registro Soci Diabetici"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:607
+msgid "Regno Unito"
+msgstr ""
+
+#: templates/activity-registration-form.php:135
+msgid "Reindirizzamento al pagamento..."
+msgstr ""
+
+#: templates/profile.php:466
+msgid "Relazione"
+msgstr ""
+
+#: templates/email-templates.php:91
+msgid "Reminder rinnovo annuale"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:614
+msgid "Repubblica Ceca"
+msgstr ""
+
+#: templates/profile.php:278
+msgid "Rescue Diver"
+msgstr ""
+
+#: templates/research-dashboard.php:15
+msgid "Research Dashboard"
+msgstr ""
+
+#: templates/cgm-medical.php:95 templates/diabetic-registry.php:102
+#: templates/membership-admin.php:218 templates/research-dashboard.php:86
+msgid "Reset"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:450
+msgid "Revisione eliminata."
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:339
+#: includes/class-sd-medical-panel.php:441
+msgid "Revisione non trovata o non valida"
+msgstr ""
+
+#: templates/dive-edit.php:142
+msgid "Ricalcola decisioni storico"
+msgstr ""
+
+#: templates/dive-edit.php:139
+msgid ""
+"Ricalcola le decisioni di tutte le immersioni già salvate applicando le "
+"nuove soglie percentuali del Protocollo DS (Δ consecutivo >15%, Δ totale -"
+"60→-10 >20%)."
+msgstr ""
+
+#: templates/membership-admin.php:119
+msgid "Ricerca"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:123
+msgid "Riceverai la fattura via email nei prossimi giorni lavorativi."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:516
+msgid ""
+"Ricevuta di pagamento — valida per la detrazione fiscale in Svizzera (CH) e "
+"in Italia (IT)"
+msgstr ""
+
+#: templates/activity-payment-checkout.php:105
+#: templates/payment-checkout.php:95
+msgid "Richiedi Fattura"
+msgstr ""
+
+#: includes/class-sd-predive-check.php:350
+msgid ""
+"Ricorda: porta sempre zucchero a rapido assorbimento in superficie e informa "
+"il tuo buddy della tua condizione."
+msgstr ""
+
+#: templates/membership-form.php:384
+msgid "Ridotta"
+msgstr ""
+
+#: templates/diabetes-form.php:293
+msgid "Riduzione insulina"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:511
+msgid "Riepilogo dati iscrizione"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:638
+msgid "Riepilogo dati iscrizione ricevuta"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:797
+msgid "Riepilogo iscrizione"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:588
+#: includes/class-sd-activity-payment-flow.php:634
+msgid "Riferimento transazione"
+msgstr ""
+
+#: templates/profile.php:785
+msgid "Rigenera token"
+msgstr ""
+
+#: templates/membership-edit.php:681
+msgid "Rimborsato"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:583
+#: includes/class-sd-activity-payment-flow.php:629
+msgid "Rimborsato pagamento del"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:564
+#, php-format
+msgid "Rimborsato pagamento del: %s"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:616
+msgid "Rimborso attività confermato"
+msgstr ""
+
+#. %s: titolo attività
+#: includes/class-sd-activity-payment-flow.php:549
+#, php-format
+msgid "Rimborso confermato: %s"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:557
+msgid "Rimborso pagamento confermato"
+msgstr ""
+
+#: templates/membership-form.php:309 templates/membership-form.php:422
+msgid "Rimuovi"
+msgstr ""
+
+#. %s=error description
+#: includes/class-sd-carelink.php:607
+#, php-format
+msgid ""
+"Rinnovo token CareLink fallito: %s. Potrebbe essere necessario riconnettersi."
+msgstr ""
+
+#: templates/activity-admin.php:85
+msgid "Rinomina"
+msgstr ""
+
+#: templates/membership-form.php:107
+msgid "Ripeti l'indirizzo email per conferma"
+msgstr ""
+
+#: includes/class-sd-dexcom.php:227
+msgid "Risposta Dexcom non valida."
+msgstr ""
+
+#: includes/class-sd-carelink.php:218
+msgid "Risposta discovery CareLink non valida: dati SSO mancanti."
+msgstr ""
+
+#: includes/class-sd-dexcom.php:175
+msgid "Risposta login Dexcom non valida."
+msgstr ""
+
+#: includes/class-sd-nightscout.php:137
+msgid "Risposta non valida da Nightscout (JSON non parsabile)."
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:155
+msgid "Risposta sessione Stripe non valida."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:216
+msgid "Risposta Tidepool non valida."
+msgstr ""
+
+#: includes/class-sd-tidepool.php:163
+msgid "Risposta Tidepool non valida: token o user ID mancante."
+msgstr ""
+
+#: templates/dive-form.php:330
+msgid "Riva"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:617
+msgid "Romania"
+msgstr ""
+
+#: templates/predive-check.php:117
+msgid "ROSSO — sconsigliato immergersi"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1251
+msgid "Ruoli WP"
+msgstr ""
+
+#: templates/membership-edit.php:580 templates/membership-form.php:226
+#: templates/membership-form.php:321 templates/profile.php:64
+msgid "Ruolo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:187
+msgid "Ruolo del genitore/tutore legale."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:187
+msgid "Ruolo tutore"
+msgstr ""
+
+#: templates/membership-admin.php:202 templates/membership-edit.php:237
+msgid "Ruolo WordPress"
+msgstr ""
+
+#: templates/membership-admin.php:259
+msgid "Ruolo WP"
+msgstr ""
+
+#: templates/membership-edit.php:240
+msgid "Ruolo WP attuale"
+msgstr ""
+
+#: templates/membership-edit.php:524
+msgid "Ruolo:"
+msgstr ""
+
+#: templates/diabetes-form.php:122 templates/diabetes-form.php:222
+msgid "Salita"
+msgstr ""
+
+#: templates/diabetes-form.php:119 templates/diabetes-form.php:219
+msgid "Salita rapida"
+msgstr ""
+
+#: templates/profile.php:308 templates/profile.php:408
+#: templates/profile.php:488
+msgid "Salva"
+msgstr ""
+
+#: templates/activity-admin.php:170
+msgid "Salva Attivita"
+msgstr ""
+
+#: templates/dive-form.php:148
+msgid "Salva Configurazione"
+msgstr ""
+
+#: templates/profile.php:702
+msgid "Salva dati diabete"
+msgstr ""
+
+#: templates/profile.php:208
+msgid "Salva dati personali"
+msgstr ""
+
+#: templates/profile.php:1023 templates/profile.php:1163
+#: templates/profile.php:1270
+msgid "Salva e Connetti"
+msgstr ""
+
+#: templates/dive-form.php:609
+msgid "Salva Immersione"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:208
+#: includes/class-sd-payment-settings.php:611
+msgid "Salva impostazioni"
+msgstr ""
+
+#: templates/activity-admin.php:220
+msgid "Salva l'attivita per aggiungere tariffe."
+msgstr ""
+
+#: templates/activity-admin.php:175
+msgid "Salva l'attivita per ottenere lo shortcode."
+msgstr ""
+
+#: templates/email-templates.php:175
+msgid "Salva modello"
+msgstr ""
+
+#: templates/dashboard.php:203 templates/dive-edit.php:109
+msgid "Salva Modifiche"
+msgstr ""
+
+#: templates/membership-edit.php:743
+msgid "Salva modifiche"
+msgstr ""
+
+#: templates/profile.php:538
+msgid "Salva preferenza"
+msgstr ""
+
+#: templates/activity-admin.php:216
+msgid "Salva prima l'attivita per poter aggiungere tariffe."
+msgstr ""
+
+#: templates/activity-admin.php:489
+msgid "Salva prima l'attivita."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:111
+msgid "Salvataggio..."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:654
+msgid "San Gallo (SG)"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:192
+msgid "Sandbox (dati fittizi per sviluppo e test)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:493
+msgid "Sandbox Secret Key (sk_test_...)"
+msgstr ""
+
+#: templates/membership-form.php:102
+msgid "Sarà usata come username per accedere al portale"
+msgstr ""
+
+#: templates/membership-admin.php:98 templates/profile.php:379
+msgid "Scadenza"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1280
+msgid "Scadenza Cert. Medico"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1279
+msgid "Scadenza Iscrizione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:152 templates/membership-edit.php:318
+msgid "Scadenza iscrizione"
+msgstr ""
+
+#: templates/payment-confirmation.php:26
+msgid "Scadenza tessera"
+msgstr ""
+
+#: templates/profile.php:348
+msgid "SCADUTA"
+msgstr ""
+
+#. %1$d=HTTP code, %2$s=error
+#: includes/class-sd-carelink.php:549
+#, php-format
+msgid "Scambio token CareLink fallito (HTTP %1$d): %2$s"
+msgstr ""
+
+#: templates/payment-confirmation.php:37
+msgid "Scarica Fattura PDF"
+msgstr ""
+
+#: templates/dive-import.php:69
+msgid ""
+"Scarica il file .db dall'app Shearwater Cloud (Settings → Export → Download "
+"Cloud Backup). Contiene tutti i campi + pressione bombole in PSI."
+msgstr ""
+
+#: templates/payment-confirmation.php:37
+msgid "Scarica Ricevuta PDF"
+msgstr ""
+
+#: templates/payment-confirmation.php:40
+msgid "Scarica Tessera PDF"
+msgstr ""
+
+#: templates/dive-form.php:461
+msgid "Scarsa"
+msgstr ""
+
+#: templates/dive-import.php:101
+msgid "Scegli file"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:170
+msgid ""
+"Sceglie metodo: Stripe (carta/Apple Pay/Google Pay/TWINT), PayPal o Fattura"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:655
+msgid "Sciaffusa (SH)"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:225
+msgid "Scope richiesto"
+msgstr ""
+
+#: templates/membership-form.php:556
+msgid "Scrivi un'allergia e premi Invio"
+msgstr ""
+
+#. Name of the plugin
+msgid "ScubaDiabetes Logbook"
+msgstr ""
+
+#: templates/dive-form.php:599
+msgid "Se deselezionato, l'immersione sarà visibile solo a te."
+msgstr ""
+
+#: templates/predive-check.php:107
+msgid "Segui sempre le indicazioni del protocollo Diabete Sommerso."
+msgstr ""
+
+#. %s: user display name
+#: includes/class-sd-membership.php:69
+#, php-format
+msgid ""
+"Sei già iscritto come <strong>%s</strong>. Per modificare i tuoi dati accedi "
+"al tuo profilo."
+msgstr ""
+
+#. 1: head of family name, 2: year
+#: includes/class-sd-membership-helper.php:267
+#, php-format
+msgid ""
+"Sei stato/a iscritto/a come famigliare di <strong>%1$s</strong> "
+"all'Associazione ScubaDiabetes per l'anno <strong>%2$s</strong>."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1012
+msgid "Seleziona almeno una iscrizione da eliminare."
+msgstr ""
+
+#: includes/class-sd-membership.php:164
+msgid "Seleziona il genere."
+msgstr ""
+
+#: includes/class-sd-membership.php:170
+msgid "Seleziona il tipo di diabete."
+msgstr ""
+
+#: templates/membership-edit.php:632
+msgid "Seleziona iscrizione"
+msgstr ""
+
+#: includes/class-sd-membership.php:177
+msgid "Seleziona la nazione."
+msgstr ""
+
+#: includes/class-sd-membership.php:167
+msgid "Seleziona la taglia maglietta."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:123
+msgid "Seleziona prima un profilo attrezzatura."
+msgstr ""
+
+#: templates/profile.php:611
+msgid "Seleziona terapia prima"
+msgstr ""
+
+#: templates/membership-edit.php:620
+msgid "Seleziona tutti i famigliari"
+msgstr ""
+
+#: templates/membership-admin.php:249
+msgid "Seleziona tutti i soci"
+msgstr ""
+
+#: templates/email-templates.php:184
+msgid "Seleziona un modello dalla lista o crea un nuovo modello."
+msgstr ""
+
+#: templates/email-templates.php:90
+msgid "Seleziona un modello predefinito..."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:806
+msgid "Seleziona un modulo di iscrizione valido."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:102
+msgid "Seleziona un modulo per vedere le variabili disponibili."
+msgstr ""
+
+#: templates/dive-form.php:138
+msgid "Seleziona un profilo"
+msgstr ""
+
+#: templates/activity-admin.php:69
+msgid "Seleziona un'attività per vedere i pagamenti."
+msgstr ""
+
+#: templates/activity-admin.php:453 templates/activity-admin.php:493
+msgid "Seleziona un'attività per vedere il cruscotto."
+msgstr ""
+
+#: templates/activity-admin.php:62
+msgid "Seleziona un'attività per vedere le registrazioni."
+msgstr ""
+
+#: includes/class-sd-membership.php:161
+msgid "Seleziona una tassa associativa valida."
+msgstr ""
+
+#: templates/profile.php:123 templates/profile.php:132
+#: templates/profile.php:253 templates/profile.php:273
+#: templates/profile.php:387 templates/profile.php:468
+#: templates/profile.php:653 templates/profile.php:680
+msgid "Seleziona..."
+msgstr ""
+
+#: templates/activity-registration-form.php:84
+#: templates/activity-registration-form.php:85
+msgid "Selezione Tariffa"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1132
+msgid "Selezione tariffa"
+msgstr ""
+
+#: templates/dive-import.php:167
+msgid "Selezione:"
+msgstr ""
+
+#: templates/dive-form.php:203
+msgid "Semi"
+msgstr ""
+
+#: templates/dive-form.php:201
+msgid "Semistagna"
+msgstr ""
+
+#: templates/diabetes-form.php:107 templates/diabetes-form.php:207
+msgid "Sensore (mg/dL)"
+msgstr ""
+
+#: templates/diabetic-registry.php:68
+msgid "Senza CGM"
+msgstr ""
+
+#: templates/dive-form.php:368
+msgid "Sereno"
+msgstr ""
+
+#: templates/profile.php:1071
+msgid "Server"
+msgstr ""
+
+#: templates/profile.php:1137
+msgid "Server CareLink"
+msgstr ""
+
+#: templates/profile.php:723
+msgid "Server CGM ScubaDiabetes"
+msgstr ""
+
+#: includes/class-sd-dive-form.php:129
+msgid "Servono almeno 2 profili per poter cambiare ordine."
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:183
+msgid "Session ID Stripe mancante."
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:147
+#: includes/class-sd-cgm-dashboard.php:235 includes/class-sd-dive-form.php:442
+#: includes/class-sd-dive-form.php:462 includes/class-sd-dive-form.php:534
+#: includes/class-sd-dive-form.php:577 includes/class-sd-dive-form.php:659
+#: includes/class-sd-predive-check.php:129
+msgid "Sessione scaduta."
+msgstr ""
+
+#: includes/class-sd-dive-form.php:181 includes/class-sd-dive-form.php:897
+msgid "Sessione scaduta. Ricarica la pagina."
+msgstr ""
+
+#: templates/profile.php:916
+msgid "Sessione scaduta. Riprova."
+msgstr ""
+
+#: templates/profile.php:121
+msgid "Sesso"
+msgstr ""
+
+#: includes/class-sd-cgm-dashboard.php:102
+#: includes/class-sd-predive-check.php:111
+msgid "Sezione riservata ai subacquei diabetici."
+msgstr ""
+
+#: templates/activity-admin.php:249
+msgid "Sezione: Consensi"
+msgstr ""
+
+#: templates/activity-admin.php:246
+msgid "Sezione: Dati Attivita"
+msgstr ""
+
+#: templates/activity-admin.php:245
+msgid "Sezione: Dati Personali"
+msgstr ""
+
+#: templates/activity-admin.php:247
+msgid "Sezione: Informazioni Aggiuntive"
+msgstr ""
+
+#: templates/activity-admin.php:248
+msgid "Sezione: Selezione Tariffa"
+msgstr ""
+
+#: templates/activity-admin.php:375
+msgid "Sezioni Modulo"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:624
+msgid "Shortcode disponibili"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:137
+msgid "Shortcodes Disponibili"
+msgstr ""
+
+#: templates/activity-admin.php:490
+msgid "Si e verificato un errore."
+msgstr ""
+
+#: templates/activity-registration-form.php:133
+msgid "Si è verificato un errore"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:97
+msgid "Si è verificato un errore. Riprova."
+msgstr ""
+
+#: templates/activity-admin.php:324
+msgid "Sinistra"
+msgstr ""
+
+#: templates/dive-form.php:524
+msgid "Sintomi post-immersione"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:168
+msgid "Sistema crea registrazione e genera token pagamento (valido 48h)"
+msgstr ""
+
+#: templates/dashboard.php:56
+msgid "Siti visitati"
+msgstr ""
+
+#: templates/dive-import.php:185 templates/research-dashboard.php:153
+msgid "Sito"
+msgstr ""
+
+#: templates/dive-form.php:105
+msgid "Sito di immersione"
+msgstr ""
+
+#: includes/class-sd-dive-import.php:1797
+msgid "Sito importato"
+msgstr ""
+
+#: includes/class-sd-dive-import.php:500 includes/class-sd-dive-import.php:843
+#: includes/class-sd-dive-import.php:1391
+msgid "Sito sconosciuto"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:615
+msgid "Slovacchia"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:620
+msgid "Slovenia"
+msgstr ""
+
+#: templates/membership-admin.php:44
+msgid "Soci attivi"
+msgstr ""
+
+#: templates/membership-admin.php:48
+msgid "Soci non attivi"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:243
+#: includes/class-sd-email-templates.php:244
+msgid "Soci SDS"
+msgstr ""
+
+#: templates/membership-admin.php:24
+msgid "Soci totali"
+msgstr ""
+
+#: templates/membership-admin.php:95 templates/payment-confirmation.php:13
+msgid "Socio"
+msgstr ""
+
+#: templates/membership-form.php:359
+msgid "Socio Attivo"
+msgstr ""
+
+#: templates/membership-admin.php:193 templates/membership-admin.php:196
+#: templates/membership-edit.php:322 templates/membership-edit.php:625
+msgid "Socio attivo"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:261
+#: includes/class-sd-membership-admin.php:503
+#: includes/class-sd-membership-admin.php:530
+#: includes/class-sd-membership-admin.php:1604
+#: includes/class-sd-payment-orchestrator.php:152
+#: includes/class-sd-payment-orchestrator.php:274
+msgid "Socio non trovato."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1585
+#: includes/class-sd-membership-admin.php:1975
+#: includes/class-sd-payment-orchestrator.php:26
+#: includes/class-sd-payment-orchestrator.php:262
+msgid "Socio non valido."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:656
+msgid "Soletta (SO)"
+msgstr ""
+
+#: templates/email-templates.php:92
+msgid "Sollecito pagamento quota"
+msgstr ""
+
+#: templates/activity-admin.php:427 templates/membership-admin.php:86
+msgid "Solo con e-mail valida"
+msgstr ""
+
+#: templates/medical-panel.php:45
+msgid "Solo diabetici"
+msgstr ""
+
+#: templates/activity-admin.php:426
+msgid "Solo fattura richiesta"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1006
+msgid "Solo gli amministratori possono eliminare iscrizioni."
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:416
+msgid "Solo i medici possono eliminare le revisioni"
+msgstr ""
+
+#: includes/class-sd-medical-panel.php:290
+msgid "Solo i medici possono gestire le note di supervisione"
+msgstr ""
+
+#: templates/activity-admin.php:424
+msgid "Solo in attesa"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:165 templates/membership-admin.php:84
+msgid "Solo in scadenza"
+msgstr ""
+
+#: templates/cgm-medical.php:71
+msgid "Solo iperglicemia (&gt; 180)"
+msgstr ""
+
+#: templates/cgm-medical.php:70
+msgid "Solo ipoglicemia (&lt; 70)"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:166 templates/membership-admin.php:85
+msgid "Solo non pagati"
+msgstr ""
+
+#: templates/dive-import.php:168
+msgid "Solo nuove"
+msgstr ""
+
+#: templates/activity-admin.php:425
+msgid "Solo pagati"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:164 templates/membership-admin.php:83
+msgid "Solo scaduti"
+msgstr ""
+
+#: templates/membership-form.php:372
+msgid "Sono un subacqueo / pratico immersioni"
+msgstr ""
+
+#: templates/research-dashboard.php:68
+msgid "Sospesa"
+msgstr ""
+
+#: templates/research-dashboard.php:100
+msgid "Sospese"
+msgstr ""
+
+#: templates/membership-edit.php:485 templates/membership-form.php:599
+#: templates/profile.php:181
+msgid "Sospeso"
+msgstr ""
+
+#: templates/dive-form.php:276
+msgid "Soste di sicurezza"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:490 templates/membership-admin.php:186
+#: templates/membership-edit.php:301 templates/membership-form.php:361
+msgid "Sostenitore"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1262
+msgid "Sotto Tutela"
+msgstr ""
+
+#: templates/membership-edit.php:45 templates/membership-edit.php:111
+msgid "Sotto tutela"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:171 templates/membership-form.php:69
+msgid "Sotto tutela legale"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:605
+msgid "Spagna"
+msgstr ""
+
+#: templates/profile.php:388
+msgid "Sportiva agonistica"
+msgstr ""
+
+#: templates/profile.php:389
+msgid "Sportiva non agonistica"
+msgstr ""
+
+#: templates/dive-form.php:151
+msgid "Sposta Giù"
+msgstr ""
+
+#: templates/dive-form.php:150
+msgid "Sposta Su"
+msgstr ""
+
+#: includes/class-sd-dive-import.php:93
+msgid "SQLite non disponibile."
+msgstr ""
+
+#: includes/class-sd-dive-import.php:542
+msgid ""
+"SQLite3 non disponibile sul server. Contatta il supporto hosting per "
+"abilitare l'estensione php_sqlite3 o pdo_sqlite."
+msgstr ""
+
+#: templates/diabetes-form.php:125 templates/diabetes-form.php:225
+msgid "Stabile"
+msgstr ""
+
+#: includes/class-sd-roles.php:264 templates/membership-admin.php:207
+#: templates/membership-edit.php:260
+msgid "Staff"
+msgstr ""
+
+#: templates/dive-form.php:205 templates/dive-form.php:207
+msgid "Stagna"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:622
+msgid "Stati Uniti"
+msgstr ""
+
+#: templates/activity-admin.php:49 templates/activity-admin.php:153
+#: templates/activity-admin.php:443 templates/dive-import.php:180
+#: templates/membership-edit.php:670
+msgid "Stato"
+msgstr ""
+
+#: templates/membership-admin.php:97
+msgid "Stato Iscrizione"
+msgstr ""
+
+#: templates/membership-admin.php:56
+msgid "Stato iscrizione, scadenza e invio e-mail rapido ai soci attivi."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1289 templates/activity-admin.php:444
+msgid "Stato Pagamento"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:866
+#: templates/activity-payment-confirmation.php:104
+#: templates/membership-admin.php:124
+msgid "Stato pagamento"
+msgstr ""
+
+#: templates/activity-admin.php:390
+msgid ""
+"Stato pagamento e invio e-mail rapido alle persone iscritte all'attività "
+"selezionata."
+msgstr ""
+
+#: templates/dashboard.php:167 templates/dive-edit.php:85
+msgid "Storico"
+msgstr ""
+
+#: templates/cgm-dashboard.php:158
+msgid "Storico letture"
+msgstr ""
+
+#: templates/dashboard.php:165 templates/dashboard.php:216
+#: templates/dive-edit.php:122
+msgid "Storico modifiche"
+msgstr ""
+
+#: templates/membership-edit.php:662
+msgid "Storico pagamenti"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:715
+msgid "Stripe"
+msgstr ""
+
+#: templates/dive-edit.php:137
+msgid "Strumenti amministratore"
+msgstr ""
+
+#: templates/membership-admin.php:256 templates/research-dashboard.php:151
+msgid "Sub"
+msgstr ""
+
+#: templates/medical-panel.php:26
+msgid "Subacquei"
+msgstr ""
+
+#: templates/medical-panel.php:40
+msgid "Subacquei registrati"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:200
+#: includes/class-sd-membership-admin.php:1273
+#: includes/class-sd-membership-helper.php:349 includes/class-sd-roles.php:256
+#: templates/membership-admin.php:154 templates/membership-admin.php:157
+#: templates/membership-admin.php:206 templates/membership-edit.php:39
+#: templates/membership-edit.php:259 templates/membership-edit.php:275
+#: templates/membership-form.php:469 templates/research-dashboard.php:58
+msgid "Subacqueo"
+msgstr ""
+
+#: includes/class-sd-roles.php:252 templates/membership-admin.php:205
+#: templates/membership-edit.php:258
+msgid "Subacqueo Diabetico"
+msgstr ""
+
+#: templates/membership-admin.php:209 templates/membership-edit.php:262
+msgid "Subscriber"
+msgstr ""
+
+#: templates/membership-admin.php:278
+msgid "Successivo"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:629
+msgid "Sudafrica"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:609
+msgid "Svezia"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:657
+msgid "Svitto (SZ)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:596
+msgid "Svizzera"
+msgstr ""
+
+#: templates/profile.php:1391
+msgid "Svuota dati LibreView e riparti"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:589
+msgid "SWIFT Banca"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:807
+#: includes/class-sd-payment-orchestrator.php:647
+msgid "SWIFT/BIC:"
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:229
+msgid "Sync automatico"
+msgstr ""
+
+#. 1: number of CGM readings, 2: number of treatments
+#: includes/class-sd-nightscout.php:294
+#, php-format
+msgid "Sync completato: %1$d letture CGM, %2$d trattamenti importati."
+msgstr ""
+
+#: includes/class-sd-carelink.php:959
+msgid "Sync disabilitato o nessuna connessione CareLink."
+msgstr ""
+
+#: includes/class-sd-libreview.php:634
+msgid "Sync disabilitato o nessuna connessione LibreView."
+msgstr ""
+
+#: templates/profile.php:879 templates/profile.php:981
+#: templates/profile.php:1097 templates/profile.php:1232
+msgid "Sync Ora"
+msgstr ""
+
+#: templates/profile.php:1331
+msgid "Sync ora"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:953
+#: includes/class-sd-email-templates.php:609
+#: includes/class-sd-membership-helper.php:349
+#: includes/class-sd-membership-helper.php:354
+#: includes/class-sd-payment-documents.php:1265
+#: includes/class-sd-payment-documents.php:1342 templates/dive-form.php:528
+#: templates/membership-edit.php:114 templates/membership-edit.php:278
+#: templates/membership-edit.php:324 templates/membership-edit.php:639
+#: templates/membership-form.php:75
+msgid "Sì"
+msgstr ""
+
+#: templates/dive-form.php:538
+msgid "Sì (non specificato)"
+msgstr ""
+
+#: templates/dive-import.php:188
+msgid "T. acqua"
+msgstr ""
+
+#: templates/membership-admin.php:258
+msgid "Taglia"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1272
+#: includes/class-sd-membership-helper.php:353
+#: templates/membership-edit.php:195 templates/membership-form.php:117
+#: templates/membership-form.php:479
+msgid "Taglia Maglietta"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:176
+msgid "Taglia maglietta"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:176
+msgid "Taglia maglietta selezionata."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:218
+msgid "Taglia Maglietta:"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:862
+#: templates/activity-payment-confirmation.php:93
+msgid "Tariffa"
+msgstr ""
+
+#: templates/activity-admin.php:211
+msgid "Tariffa predefinita"
+msgstr ""
+
+#: templates/activity-admin.php:186
+msgid "Tariffe"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:936
+#: includes/class-sd-email-templates.php:226
+#: includes/class-sd-payment-documents.php:1132
+#: includes/class-sd-payment-documents.php:1229
+msgid "Tariffe selezionate"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:351
+#: includes/class-sd-membership-helper.php:376
+#: templates/membership-admin.php:144 templates/membership-admin.php:253
+msgid "Tassa"
+msgstr ""
+
+#: templates/membership-edit.php:314
+msgid "Tassa (CHF)"
+msgstr ""
+
+#. fee amount in CHF
+#: includes/class-sd-membership-helper.php:212
+#: includes/class-sd-membership-helper.php:215
+msgid "Tassa annuale:"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1276
+msgid "Tassa CHF"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:155
+msgid "Tassa/importo"
+msgstr ""
+
+#: includes/class-sd-currency-converter.php:334
+msgid "Tassi di cambio aggiornati"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:175
+#: includes/class-sd-membership-admin.php:1256
+#: includes/class-sd-membership-helper.php:346
+#: templates/membership-edit.php:142 templates/membership-edit.php:553
+#: templates/membership-edit.php:581 templates/membership-form.php:113
+#: templates/membership-form.php:261 templates/membership-form.php:339
+#: templates/membership-form.php:475 templates/profile.php:86
+#: templates/profile.php:456
+msgid "Telefono"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:562
+msgid "Telefono Associazione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:144
+msgid "Telefono associazione"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:935
+#: includes/class-sd-payment-documents.php:1226
+msgid "Telefono cellulare"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:192
+msgid "Telefono del genitore/tutore."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:192
+msgid "Telefono tutore"
+msgstr ""
+
+#: templates/membership-edit.php:532
+msgid "Telefono:"
+msgstr ""
+
+#: templates/dive-form.php:392
+msgid "Temp. acqua (°C)"
+msgstr ""
+
+#: templates/dive-form.php:388
+msgid "Temp. aria (°C)"
+msgstr ""
+
+#: templates/dive-form.php:270
+msgid "Tempo (min)"
+msgstr ""
+
+#: templates/dashboard.php:52
+msgid "Tempo totale"
+msgstr ""
+
+#: templates/diabetic-registry.php:50 templates/diabetic-registry.php:138
+#: templates/profile.php:592
+msgid "Terapia"
+msgstr ""
+
+#: templates/diabetes-form.php:275
+msgid "Terapia insulinica e chetonemia (avanzato)"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:517
+msgid "Tessera associativa"
+msgstr ""
+
+#: templates/profile.php:1328
+msgid "Test connessione"
+msgstr ""
+
+#: templates/profile.php:1026 templates/profile.php:1166
+#: templates/profile.php:1273
+msgid "Testa Connessione"
+msgstr ""
+
+#: templates/activity-admin.php:354
+msgid "Testo Alt (per accessibilità):"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:206
+#: includes/class-sd-membership-helper.php:280
+#: includes/class-sd-payment-orchestrator.php:509
+msgid "Ti consigliamo di cambiare la password al primo accesso."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:659
+msgid "Ticino (TI)"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1307
+#: includes/class-sd-payment-documents.php:1308
+#: includes/class-sd-payment-documents.php:1309
+#: templates/membership-admin.php:166 templates/membership-edit.php:223
+#: templates/membership-edit.php:440 templates/membership-form.php:147
+#: templates/membership-form.php:453 templates/profile.php:579
+msgid "Tipo 1"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1310
+#: includes/class-sd-payment-documents.php:1311
+#: includes/class-sd-payment-documents.php:1312
+#: templates/membership-admin.php:167 templates/membership-edit.php:224
+#: templates/membership-edit.php:441 templates/membership-form.php:148
+#: templates/membership-form.php:454 templates/profile.php:580
+msgid "Tipo 2"
+msgstr ""
+
+#: templates/membership-admin.php:168 templates/membership-edit.php:442
+msgid "Tipo 3c"
+msgstr ""
+
+#: includes/class-sd-payment-documents.php:1313
+#: includes/class-sd-payment-documents.php:1314
+#: includes/class-sd-payment-documents.php:1315
+msgid "Tipo 3C (Pancreasectomia, Pancreatite)"
+msgstr ""
+
+#: templates/membership-edit.php:225 templates/membership-form.php:149
+#: templates/membership-form.php:455 templates/profile.php:581
+msgid "Tipo 3c (pancreasectomia, pancreatite)"
+msgstr ""
+
+#: templates/cgm-medical.php:77
+msgid "Tipo di CGM"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:933
+#: includes/class-sd-email-templates.php:177
+#: includes/class-sd-payment-documents.php:1224
+msgid "Tipo di diabete"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:177
+msgid "Tipo di diabete indicato nel modulo."
+msgstr ""
+
+#: templates/membership-form.php:357
+msgid "Tipo di socio"
+msgstr ""
+
+#: templates/diabetic-registry.php:34 templates/diabetic-registry.php:137
+#: templates/membership-edit.php:220 templates/membership-edit.php:436
+#: templates/profile.php:575
+msgid "Tipo diabete"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:154
+msgid "Tipo iscrizione"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:198
+msgid "Tipo iscrizione tecnico"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:154
+msgid "Tipo iscrizione/membership (es. individuale, famiglia)."
+msgstr ""
+
+#: templates/email-templates.php:40 templates/email-templates.php:61
+msgid "Tipo mailing list"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1271
+msgid "Tipo Membership"
+msgstr ""
+
+#. Iscrizione
+#: includes/class-sd-membership-admin.php:1270
+msgid "Tipo Socio"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:153
+#: includes/class-sd-membership-helper.php:352
+#: includes/class-sd-membership-helper.php:375
+#: templates/diabetic-registry.php:74 templates/diabetic-registry.php:142
+#: templates/membership-admin.php:178 templates/membership-admin.php:256
+#: templates/membership-edit.php:292
+msgid "Tipo socio"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:153
+msgid "Tipo socio leggibile (es. Attivo Capo Famiglia)."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:197
+msgid "Tipo socio tecnico"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:809
+msgid "Tipo template non valido."
+msgstr ""
+
+#: templates/profile.php:385
+msgid "Tipo visita"
+msgstr ""
+
+#: templates/activity-admin.php:289
+msgid "Tipo:"
+msgstr ""
+
+#: templates/cgm-dashboard.php:110
+msgid "TIR 7 giorni (70–180)"
+msgstr ""
+
+#: templates/activity-admin.php:45 templates/activity-admin.php:95
+msgid "Titolo"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:523
+msgid "Titolo associazione (PDF)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:221
+msgid "Titolo attività"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:221
+msgid "Titolo dell’attività selezionata."
+msgstr ""
+
+#: templates/activity-admin.php:259
+msgid "Titolo nuova sezione"
+msgstr ""
+
+#: includes/class-sd-nightscout.php:196
+msgid "Token API obbligatorio."
+msgstr ""
+
+#: includes/class-sd-libreview.php:350
+msgid "Token LibreView non ricevuto."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:84
+#: includes/class-sd-payment-orchestrator.php:99
+msgid "Token mancante."
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:117
+msgid "Token non valido o scaduto."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:114
+msgid "Token non valido."
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:118
+msgid "Token scaduto."
+msgstr ""
+
+#: templates/payment-confirmation.php:42
+msgid "Torna alla Homepage"
+msgstr ""
+
+#: templates/membership-edit.php:31
+msgid "Torna alla lista"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:228
+msgid "Totale o prezzo registrato in CHF."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:229
+msgid "Totale o prezzo registrato in EUR."
+msgstr ""
+
+#: templates/activity-admin.php:467
+msgid "Totale Registrazioni"
+msgstr ""
+
+#: templates/dive-import.php:92
+msgid "Trascina qui il tuo file"
+msgstr ""
+
+#: templates/diabetes-form.php:334
+msgid "Trattamento effettuato"
+msgstr ""
+
+#: templates/predive-check.php:122
+msgid "Trend DoubleDown o TripleDown (calo rapido a qualsiasi valore)"
+msgstr ""
+
+#: templates/predive-check.php:133
+msgid "Trend SingleDown o FortyFiveDown con glicemia 130-180 mg/dL"
+msgstr ""
+
+#: templates/predive-check.php:123
+msgid "Trend SingleDown o FortyFiveDown con glicemia < 130 mg/dL"
+msgstr ""
+
+#: templates/dive-form.php:175
+msgid "Trimix"
+msgstr ""
+
+#: includes/class-sd-membership.php:96
+msgid "Troppi tentativi. Attendi 30 secondi prima di riprovare."
+msgstr ""
+
+#: includes/class-sd-dexcom-settings.php:163
+msgid "Trovalo nella sezione \"My Apps\" del portale developer Dexcom."
+msgstr ""
+
+#: templates/dive-import.php:151
+msgid "trovate"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:658
+msgid "Turgovia (TG)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:354
+#: templates/membership-form.php:325
+msgid "Tutore"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1299
+msgid "Tutore CAP"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1298
+msgid "Tutore Città"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1292
+msgid "Tutore Cognome"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1294
+msgid "Tutore Data Nascita"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1295
+msgid "Tutore Email"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1297
+msgid "Tutore Indirizzo"
+msgstr ""
+
+#: templates/membership-form.php:230
+msgid "Tutore legale"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1300
+msgid "Tutore Nazione"
+msgstr ""
+
+#. Tutore
+#: includes/class-sd-membership-admin.php:1291
+msgid "Tutore Nome"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1293
+msgid "Tutore Ruolo"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1296
+msgid "Tutore Telefono"
+msgstr ""
+
+#: templates/dive-import.php:169 templates/research-dashboard.php:66
+msgid "Tutte"
+msgstr ""
+
+#: templates/dashboard.php:69
+msgid "Tutte le immersioni"
+msgstr ""
+
+#: templates/cgm-medical.php:67
+msgid "Tutte le letture"
+msgstr ""
+
+#: templates/membership-admin.php:146
+msgid "Tutte le tasse"
+msgstr ""
+
+#: templates/activity-admin.php:360
+msgid "Tutte vere (AND)"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:163 templates/activity-admin.php:423
+#: templates/cgm-medical.php:80 templates/diabetic-registry.php:36
+#: templates/diabetic-registry.php:52 templates/diabetic-registry.php:66
+#: templates/diabetic-registry.php:76 templates/diabetic-registry.php:88
+#: templates/medical-panel.php:44 templates/membership-admin.php:82
+#: templates/research-dashboard.php:60
+msgid "Tutti"
+msgstr ""
+
+#: templates/membership-admin.php:195
+msgid "Tutti (attivo)"
+msgstr ""
+
+#: templates/membership-admin.php:165
+msgid "Tutti (diabete)"
+msgstr ""
+
+#: templates/membership-admin.php:126
+msgid "Tutti (pagato)"
+msgstr ""
+
+#: templates/membership-admin.php:156
+msgid "Tutti (sub)"
+msgstr ""
+
+#: templates/activity-admin.php:31
+msgid "Tutti gli stati"
+msgstr ""
+
+#: templates/membership-admin.php:204
+msgid "Tutti i ruoli WP"
+msgstr ""
+
+#: templates/membership-admin.php:180
+msgid "Tutti i tipi"
+msgstr ""
+
+#: includes/class-sd-activity-payment-flow.php:711
+#: templates/payment-confirmation.php:20
+msgid "TWINT"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:402
+msgid "TWINT:"
+msgstr ""
+
+#: templates/membership-form.php:246
+msgid "U"
+msgstr ""
+
+#: templates/profile.php:124
+msgid "U (Non specificato)"
+msgstr ""
+
+#: templates/medical-panel.php:82
+msgid "ultima"
+msgstr ""
+
+#: templates/activity-admin.php:447 templates/membership-admin.php:100
+msgid "Ultima e-mail"
+msgstr ""
+
+#: templates/cgm-dashboard.php:86
+msgid "Ultima glicemia"
+msgstr ""
+
+#: templates/dashboard.php:60
+msgid "Ultima immersione"
+msgstr ""
+
+#: templates/cgm-dashboard.php:58 templates/profile.php:741
+#: templates/profile.php:852 templates/profile.php:960
+#: templates/profile.php:1076 templates/profile.php:1211
+msgid "Ultima lettura"
+msgstr ""
+
+#. %d minutes
+#: includes/class-sd-predive-check.php:282
+msgid ""
+"Ultima lettura %d minuti fa: considera di aggiornare la lettura prima di "
+"immergerti."
+msgstr ""
+
+#: templates/predive-check.php:134
+msgid "Ultima lettura 60-120 minuti fa (dati datati)"
+msgstr ""
+
+#. %d minutes
+#: includes/class-sd-predive-check.php:220
+msgid ""
+"Ultima lettura CGM %d minuti fa: i dati sono troppo datati per una "
+"valutazione sicura."
+msgstr ""
+
+#: templates/predive-check.php:142
+msgid "Ultima lettura entro 60 minuti"
+msgstr ""
+
+#: templates/profile.php:870 templates/profile.php:972
+#: templates/profile.php:1088 templates/profile.php:1223
+msgid "Ultimo sync"
+msgstr ""
+
+#. %s: relative time string
+#: templates/profile.php:1319
+#, php-format
+msgid "Ultimo sync: %s"
+msgstr ""
+
+#: templates/dive-form.php:197 templates/dive-form.php:199
+msgid "Umida"
+msgstr ""
+
+#: templates/email-templates.php:108
+msgid "Un template può essere duplicato e poi adattato a una nuova variante."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:616
+msgid "Ungheria"
+msgstr ""
+
+#: templates/membership-edit.php:484 templates/membership-form.php:586
+msgid "Unità"
+msgstr ""
+
+#: templates/diabetes-form.php:47
+msgid "Unità di misura:"
+msgstr ""
+
+#: templates/profile.php:621
+msgid "Unità glicemia"
+msgstr ""
+
+#: templates/profile.php:640
+msgid "Unità HbA1c"
+msgstr ""
+
+#: templates/activity-admin.php:297
+msgid "Upload (utente carica file)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:660
+msgid "Uri (UR)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:629
+msgid "URL checkout attuale:"
+msgstr ""
+
+#: templates/profile.php:1347
+msgid ""
+"URL completo del tuo server Nightscout (es. Fly.io, Render, Railway). Si "
+"raccomanda HTTPS."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:630
+msgid "URL conferma attuale:"
+msgstr ""
+
+#: templates/profile.php:1343
+msgid "URL del server Nightscout"
+msgstr ""
+
+#. %s: default URL
+#: includes/class-sd-activity-settings.php:98
+#, php-format
+msgid ""
+"URL della pagina con lo shortcode <code>[sd_activity_payment_checkout]</code>"
+". Se vuota, usa: <code>%s</code>"
+msgstr ""
+
+#. %s: default URL
+#: includes/class-sd-activity-settings.php:127
+#, php-format
+msgid ""
+"URL della pagina con lo shortcode <code>[sd_activity_payment_confirmation]"
+"</code>. Se vuota, usa: <code>%s</code>"
+msgstr ""
+
+#: includes/class-sd-payment-paypal.php:138
+msgid "URL di approvazione PayPal non disponibile."
+msgstr ""
+
+#: templates/activity-admin.php:302
+msgid "URL Immagine (per Display):"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:519
+msgid "URL login"
+msgstr ""
+
+#: includes/class-sd-nightscout.php:179
+msgid "URL Nightscout non valido."
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:511
+msgid "URL pagina checkout"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:81
+msgid "URL Pagina Checkout Pagamento"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:515
+msgid "URL pagina conferma"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:110
+msgid "URL Pagina Conferma Pagamento"
+msgstr ""
+
+#: templates/profile.php:753
+msgid "URL server (Nightscout URL)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:505
+msgid "URL webhook da configurare in Stripe Dashboard:"
+msgstr ""
+
+#: templates/profile.php:1147
+msgid "USA / Canada (US)"
+msgstr ""
+
+#: includes/class-sd-payment-orchestrator.php:501
+msgid "Username"
+msgstr ""
+
+#: templates/profile.php:1112
+msgid "Username CareLink"
+msgstr ""
+
+#: includes/class-sd-dexcom.php:493
+msgid "Username e password sono obbligatori."
+msgstr ""
+
+#: templates/profile.php:1115
+msgid "Username o email CareLink"
+msgstr ""
+
+#: includes/class-sd-carelink.php:466
+msgid "Username o password CareLink errati. Verifica le credenziali."
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:202
+#: includes/class-sd-membership-helper.php:276
+msgid "Username:"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:167
+msgid ""
+"Utente compila modulo iscrizione [sd_iscrizione_attivita activity_id=\"X\"]"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:169
+msgid "Utente reindirizzato automaticamente a pagina checkout"
+msgstr ""
+
+#: includes/class-sd-activity-settings.php:139
+msgid "Utilizza questi shortcode nelle tue pagine:"
+msgstr ""
+
+#: templates/profile.php:648
+msgid "Utilizzo CGM"
+msgstr ""
+
+#: templates/dive-import.php:237
+msgid "Vai a Dashboard immersioni"
+msgstr ""
+
+#: templates/dive-import.php:233
+msgid "Vai al logbook"
+msgstr ""
+
+#: templates/payment-confirmation.php:43
+msgid "Vai al Login"
+msgstr ""
+
+#. %s = URL portale Dexcom
+#: includes/class-sd-dexcom-settings.php:109
+#, php-format
+msgid "Vai su %s e accedi con il tuo account developer."
+msgstr ""
+
+#: templates/profile.php:352
+msgid "VALIDA"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:662
+msgid "Vallese (VS)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:328
+#: includes/class-sd-membership-helper.php:372
+msgid "Valore"
+msgstr ""
+
+#: templates/diabetes-form.php:287
+msgid "Valore (mmol/L)"
+msgstr ""
+
+#: templates/activity-admin.php:267
+msgid "Valore (slug)"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:198
+msgid "Valore tecnico del tipo iscrizione."
+msgstr ""
+
+#: includes/class-sd-email-templates.php:197
+msgid "Valore tecnico del tipo socio."
+msgstr ""
+
+#: includes/class-sd-predive-check.php:86 templates/predive-check.php:49
+msgid "Valutazione in corso…"
+msgstr ""
+
+#: templates/email-templates.php:70
+msgid "Variabili disponibili"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:661
+msgid "Vaud (VD)"
+msgstr ""
+
+#: templates/predive-check.php:139
+msgid "VERDE — condizioni favorevoli"
+msgstr ""
+
+#: templates/profile.php:893
+msgid ""
+"Verrai reindirizzato al sito Dexcom per autenticarti e autorizzare l'accesso."
+" Torna qui al termine."
+msgstr ""
+
+#: templates/profile.php:91
+msgid "Via"
+msgstr ""
+
+#. Indirizzo
+#: includes/class-sd-membership-admin.php:1264
+#: templates/membership-edit.php:149 templates/membership-form.php:166
+msgid "Via / Indirizzo"
+msgstr ""
+
+#: includes/class-sd-email-templates.php:179
+msgid "Via e numero civico."
+msgstr ""
+
+#: templates/dive-form.php:457
+msgid "Visibilità"
+msgstr ""
+
+#: templates/dive-form.php:501
+msgid "Visibilità scarsa"
+msgstr ""
+
+#: templates/activity-admin.php:293
+msgid "Visualizzazione (immagine statica)"
+msgstr ""
+
+#: includes/class-sd-payment-settings.php:501
+msgid "Webhook Secret (whsec_...)"
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:221
+msgid "Webhook secret Stripe non configurato."
+msgstr ""
+
+#: includes/class-sd-payment-stripe.php:242
+msgid "Webhook Stripe scaduto (timestamp troppo vecchio)."
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1249
+msgid "WP User ID"
+msgstr ""
+
+#: includes/class-sd-membership-admin.php:1250
+msgid "WP Username"
+msgstr ""
+
+#: templates/dive-form.php:191
+msgid "Zavorra (kg)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:663
+msgid "Zugo (ZG)"
+msgstr ""
+
+#: includes/class-sd-membership-helper.php:664
+msgid "Zurigo (ZH)"
+msgstr ""
+
+#: templates/dive-form.php:472 templates/dive-form.php:483
+#: templates/dive-form.php:494 templates/dive-form.php:508
+#: templates/dive-form.php:526 templates/dive-form.php:534
+msgid "— Non specificato —"
+msgstr ""
+
+#: templates/diabetes-form.php:186
+msgid "— Seleziona quando —"
+msgstr ""
+
+#: templates/activity-admin.php:408 templates/membership-admin.php:69
+msgid "— Testo predefinito —"
+msgstr ""
+
+#: templates/activity-payment-confirmation.php:135
+msgid "← Torna alla home"
+msgstr ""
+
+#: templates/profile.php:895
+msgid "⚠ Modalità Sandbox attiva (dati di test)"
+msgstr ""

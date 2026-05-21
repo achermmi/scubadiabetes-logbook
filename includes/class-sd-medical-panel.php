@@ -49,7 +49,8 @@ class SD_Medical_Panel {
 		wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', array(), '1.9.4' );
 		wp_enqueue_script( 'leaflet', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', array(), '1.9.4', true );
-		wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery', 'leaflet' ), $medical_js_ver, true );
+		wp_enqueue_script( 'sd-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/medical-panel.js', array( 'jquery', 'leaflet', 'wp-i18n' ), $medical_js_ver, true );
+		wp_set_script_translations( 'sd-medical', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 		wp_localize_script(
 			'sd-medical',
 			'sdMedical',

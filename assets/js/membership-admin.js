@@ -5,6 +5,7 @@
  */
 (function ($) {
 	'use strict';
+	var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
 	var state = {
 		paged:   1,
@@ -518,7 +519,7 @@
 				return;
 			}
 
-			var ok = window.confirm('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?');
+			var ok = window.confirm(__('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?', 'sd-logbook'));
 			if (!ok) {
 				return;
 			}
@@ -735,7 +736,7 @@
 				return;
 			}
 
-			if (!confirm('ATTENZIONE: stai per eliminare in modo irreversibile questa iscrizione, inclusi utente WordPress e dati collegati. Vuoi continuare?')) {
+			if (!confirm(__('ATTENZIONE: stai per eliminare in modo irreversibile questa iscrizione, inclusi utente WordPress e dati collegati. Vuoi continuare?', 'sd-logbook'))) {
 				return;
 			}
 
@@ -797,7 +798,7 @@
 				return;
 			}
 
-			var ok = window.confirm('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?');
+			var ok = window.confirm(__('ATTENZIONE: stai per eliminare in modo irreversibile le iscrizioni selezionate, inclusi utenti WordPress e dati collegati. Vuoi continuare?', 'sd-logbook'));
 			if (!ok) {
 				return;
 			}

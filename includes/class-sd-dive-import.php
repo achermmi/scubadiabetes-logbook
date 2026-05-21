@@ -43,7 +43,8 @@ class SD_Dive_Import {
 		}
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-dive-import', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-import.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-dive-import', SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-import.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-dive-import', SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-import.js', array( 'jquery', 'wp-i18n' ), SD_LOGBOOK_VERSION, true );
+		wp_set_script_translations( 'sd-dive-import', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 		wp_localize_script(
 			'sd-dive-import',
 			'sdImport',

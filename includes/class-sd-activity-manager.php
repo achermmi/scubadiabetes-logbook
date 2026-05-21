@@ -1,19 +1,213 @@
 <?php
-/**
- * Gestione Attività ScubaDiabetes
- *
- * Gestisce la creazione, modifica, eliminazione e iscrizioni alle attività.
- * Include gestione moduli dinamici, tariffe e iscrizioni.
- *
- * @package SD_Logbook
- * @since 3.7.0
- */
+	/**
+	 * Gestione attività e iscrizioni - ScubaDiabetes Logbook
+	 */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+	class SD_Activity_Manager {
 
-class SD_Activity_Manager {
+		/**
+		 * Aggiorna una registrazione (usato dal modal admin)
+		 * @param int $registration_id
+		 * @param array $data
+		 * @return bool
+		 */
+		public function update_registration( $registration_id, $data = array() ) {
+			global $wpdb;
+			if ( $registration_id <= 0 ) return false;
+
+			$update_data = array();
+			if ( isset( $data['first_name'] ) ) {
+				$update_data['first_name'] = sanitize_text_field( $data['first_name'] );
+			}
+			if ( isset( $data['last_name'] ) ) {
+				$update_data['last_name'] = sanitize_text_field( $data['last_name'] );
+			}
+			if ( isset( $data['email'] ) ) {
+				$update_data['email'] = sanitize_email( $data['email'] );
+			}
+			if ( isset( $data['price_id'] ) ) {
+				$update_data['price_id'] = intval( $data['price_id'] );
+			}
+			if ( isset( $data['status'] ) ) {
+				$update_data['status'] = sanitize_text_field( $data['status'] );
+			}
+			if ( isset( $data['payment_status'] ) ) {
+				$update_data['payment_status'] = sanitize_text_field( $data['payment_status'] );
+			}
+			if ( isset( $data['fields'] ) ) {
+				$update_data['registration_data'] = wp_json_encode( $data['fields'] );
+			}
+			$update_data['updated_at'] = current_time( 'mysql' );
+
+			if ( empty( $update_data ) ) return false;
+
+			$result = $wpdb->update(
+				$wpdb->prefix . 'sd_activity_registrations',
+				$update_data,
+				array( 'id' => intval( $registration_id ) ),
+				null,
+				array( '%d' )
+			);
+			return false !== $result;
+		}
+
+	/**
+	 * AJAX: Restituisce la lista delle registrazioni per una attività (compatibilità vecchio flusso JS).
+	 * Risponde a sd_activity_registration_list.
+	 */
+	public function ajax_registration_list() {
+		error_log( 'SD_LOGBOOK AJAX: sd_activity_registration_list chiamato, activity_id=' . ( $_POST['activity_id'] ?? 'N/D' ) );
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		if ( $activity_id <= 0 ) {
+			wp_send_json_success( array( 'registrations' => array(), 'activity_id' => 0 ) );
+			return;
+		}
+
+		// Recupera le registrazioni per l'attività
+		$registrations = $this->get_registrations( $activity_id );
+		if ( ! is_array( $registrations ) ) {
+			$registrations = array();
+		}
+		error_log( 'SD_LOGBOOK AJAX: sd_activity_registration_list - trovate ' . count( $registrations ) . ' registrazioni per activity_id=' . $activity_id );
+
+		// Puoi aggiungere qui eventuale mapping/campionamento campi per compatibilità JS
+		wp_send_json_success( array(
+			'registrations' => $registrations,
+			'activity_id' => $activity_id,
+		) );
+	}
+
+	/**
+	 * Costruttore
+	 */
+	public function __construct() {
+		$this->init_hooks();
+	}
+
+	/**
+	 * Registra tutti gli hook AJAX e WP
+	 */
+	public function init_hooks() {
+		add_action( 'wp_ajax_sd_activity_get_activities_list', array( $this, 'ajax_get_activities_list' ) );
+		add_action( 'wp_ajax_nopriv_sd_activity_get_activities_list', array( $this, 'ajax_get_activities_list' ) );
+		add_action( 'wp_ajax_sd_activity_export_registrations_excel', array( $this, 'ajax_export_registrations_excel' ) );
+		add_action( 'wp_ajax_sd_activity_registrations_dashboard', array( $this, 'ajax_registrations_dashboard' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_email_single', array( $this, 'ajax_send_registration_email_single' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_emails_bulk', array( $this, 'ajax_send_registration_emails_bulk' ) );
+		add_action( 'wp_ajax_sd_activity_send_registration_emails_all_paid', array( $this, 'ajax_send_registration_emails_all_paid' ) );
+				// AGGIUNTA: handler per salvataggio registrazione dal modal
+				add_action( 'wp_ajax_sd_activity_registration_update', array( $this, 'ajax_registration_update' ) );
+		// AGGIUNTA: tutte le azioni AJAX usate dal JS
+		add_action( 'wp_ajax_sd_activity_get', array( $this, 'ajax_get_activity_details' ) );
+		add_action( 'wp_ajax_sd_activity_save', array( $this, 'ajax_save_activity' ) );
+		add_action( 'wp_ajax_sd_activity_delete', array( $this, 'ajax_delete_activity' ) );
+		add_action( 'wp_ajax_sd_activity_price_save', array( $this, 'ajax_save_activity_price' ) );
+		add_action( 'wp_ajax_sd_activity_price_delete', array( $this, 'ajax_delete_activity_price' ) );
+		add_action( 'wp_ajax_sd_activity_price_set_default', array( $this, 'ajax_set_default_activity_price' ) );
+		add_action( 'wp_ajax_sd_activity_update_form_field', array( $this, 'ajax_update_form_field' ) );
+		add_action( 'wp_ajax_sd_activity_delete_form_field', array( $this, 'ajax_delete_form_field' ) );
+		add_action( 'wp_ajax_sd_activity_move_form_field', array( $this, 'ajax_move_form_field' ) );
+		add_action( 'wp_ajax_sd_activity_delete_all_prices', array( $this, 'ajax_delete_all_prices' ) );
+		add_action( 'wp_ajax_sd_activity_registration_list', array( $this, 'ajax_registration_list' ) );
+		add_action( 'wp_ajax_sd_activity_registration_update_status', array( $this, 'ajax_update_registration_status' ) );
+		add_action( 'wp_ajax_sd_activity_registration_update_payment', array( $this, 'ajax_update_registration_payment' ) );
+		// Fallback AJAX per modale modifica registrazione
+		add_action( 'wp_ajax_sd_activity_registration_get', array( $this, 'ajax_registration_get' ) );
+		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_registration_delete' ) );
+		add_shortcode( 'sd_gestione_attivita', array( $this, 'shortcode_activity_admin_dashboard' ) );
+		add_shortcode( 'sd_iscrizione_attivita', array( $this, 'shortcode_activity_registration_form' ) );
+		add_action( 'wp_ajax_sd_activity_get_details', array( $this, 'ajax_activity_get_details' ) );
+		add_action( 'wp_ajax_nopriv_sd_activity_get_details', array( $this, 'ajax_activity_get_details' ) );
+		add_action( 'wp_ajax_sd_activity_register', array( $this, 'ajax_register_for_activity' ) );
+		add_action( 'wp_ajax_nopriv_sd_activity_register', array( $this, 'ajax_register_for_activity' ) );
+	}
+
+	/**
+	 * AJAX: Elimina una registrazione (admin)
+	 * Action: sd_activity_registration_delete
+	 */
+	public function ajax_registration_delete() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+			return;
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID registrazione non valido', 'sd-logbook' ) ) );
+			return;
+		}
+
+		global $wpdb;
+		$deleted = $wpdb->delete(
+			$wpdb->prefix . 'sd_activity_registrations',
+			array( 'id' => $registration_id ),
+			array( '%d' )
+		);
+
+		if ( false === $deleted ) {
+			error_log( 'SD_LOGBOOK: Errore DB eliminazione registrazione ' . $registration_id . ': ' . $wpdb->last_error );
+			wp_send_json_error( array( 'message' => __( 'Errore durante l\'eliminazione della registrazione.', 'sd-logbook' ) ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Registrazione eliminata correttamente.', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX: Aggiorna una registrazione (modifica da modal admin)
+	 * Action: sd_activity_registration_update
+	 */
+	public function ajax_registration_update() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID registrazione non valido', 'sd-logbook' ) ) );
+		}
+
+		// Recupera dati inviati
+		$first_name = sanitize_text_field( $_POST['first_name'] ?? '' );
+		$last_name = sanitize_text_field( $_POST['last_name'] ?? '' );
+		$email = sanitize_email( $_POST['email'] ?? '' );
+		$price_id = intval( $_POST['price_id'] ?? 0 );
+		$status = sanitize_text_field( $_POST['status'] ?? '' );
+		$payment_status = sanitize_text_field( $_POST['payment_status'] ?? '' );
+		$registration_data = array();
+		if ( ! empty( $_POST['registration_data'] ) ) {
+			$registration_data = json_decode( stripslashes( $_POST['registration_data'] ), true );
+			if ( ! is_array( $registration_data ) ) {
+				$registration_data = array();
+			}
+		}
+
+		$updated = $this->update_registration( $registration_id, array(
+			'first_name'     => $first_name,
+			'last_name'      => $last_name,
+			'email'          => $email,
+			'price_id'       => $price_id,
+			'status'         => $status,
+			'payment_status' => $payment_status,
+			'fields'         => $registration_data,
+		) );
+
+		if ( ! $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Errore durante il salvataggio della registrazione.', 'sd-logbook' ) ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Registrazione aggiornata correttamente.', 'sd-logbook' ) ) );
+	}
 
 	/**
 	 * Istanza singleton
@@ -31,51 +225,133 @@ class SD_Activity_Manager {
 	}
 
 	/**
-	 * Costruttore
+	 * AJAX (Admin): Esporta iscrizioni filtrate in Excel (.xlsx)
 	 */
-	private function __construct() {
-		$this->init_hooks();
-	}
+	public function ajax_export_registrations_excel() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
 
-	/**
-	 * Inizializza gli hook
-	 */
-	private function init_hooks() {
-		// Shortcodes
-		add_shortcode( 'sd_gestione_attivita', array( $this, 'shortcode_activity_admin_dashboard' ) );
-		add_shortcode( 'sd_iscrizione_attivita', array( $this, 'shortcode_activity_registration_form' ) );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
 
-		// Public AJAX (nopriv)
-		add_action( 'wp_ajax_nopriv_sd_activities_list', array( $this, 'ajax_get_activities_list' ) );
-		add_action( 'wp_ajax_sd_activities_list', array( $this, 'ajax_get_activities_list' ) );
-		add_action( 'wp_ajax_nopriv_sd_activity_get_details', array( $this, 'ajax_activity_get_details' ) );
-		add_action( 'wp_ajax_sd_activity_get_details', array( $this, 'ajax_activity_get_details' ) );
-		add_action( 'wp_ajax_nopriv_sd_activity_get', array( $this, 'ajax_get_activity_details' ) );
-		add_action( 'wp_ajax_sd_activity_get', array( $this, 'ajax_get_activity_details' ) );
-		add_action( 'wp_ajax_nopriv_sd_activity_register', array( $this, 'ajax_register_for_activity' ) );
-		add_action( 'wp_ajax_sd_activity_register', array( $this, 'ajax_register_for_activity' ) );
+		$activity_id = intval( $_POST['activity_id'] ?? 0 );
+		if ( $activity_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID attività non valido', 'sd-logbook' ) ) );
+		}
 
-		// Admin AJAX
-		add_action( 'wp_ajax_sd_activity_save', array( $this, 'ajax_save_activity' ) );
-		add_action( 'wp_ajax_sd_activity_delete', array( $this, 'ajax_delete_activity' ) );
-		add_action( 'wp_ajax_sd_activity_update_form_field', array( $this, 'ajax_update_form_field' ) );
-		add_action( 'wp_ajax_sd_activity_delete_form_field', array( $this, 'ajax_delete_form_field' ) );
-		add_action( 'wp_ajax_sd_activity_move_form_field', array( $this, 'ajax_move_form_field' ) );
-		add_action( 'wp_ajax_sd_activity_price_save', array( $this, 'ajax_save_activity_price' ) );
-		add_action( 'wp_ajax_sd_activity_price_delete', array( $this, 'ajax_delete_activity_price' ) );
-		add_action( 'wp_ajax_sd_activity_price_set_default', array( $this, 'ajax_set_default_activity_price' ) );
-		add_action( 'wp_ajax_sd_activity_delete_all_prices', array( $this, 'ajax_delete_all_prices' ) );
-		add_action( 'wp_ajax_sd_activity_registration_list', array( $this, 'ajax_get_registrations_list' ) );
-		add_action( 'wp_ajax_sd_activity_registration_update_status', array( $this, 'ajax_update_registration_status' ) );
-		add_action( 'wp_ajax_sd_activity_registration_update_payment', array( $this, 'ajax_update_registration_payment' ) );
-		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_delete_registration' ) );
-		add_action( 'wp_ajax_sd_activity_registration_update', array( $this, 'ajax_update_registration' ) );
+		// Filtri opzionali
+		$payment_status = sanitize_text_field( $_POST['payment_status'] ?? '' );
+		$search         = sanitize_text_field( $_POST['search'] ?? '' );
 
-		// Cruscotto Registrazioni (email broadcasting)
-		add_action( 'wp_ajax_sd_activity_registrations_dashboard', array( $this, 'ajax_registrations_dashboard' ) );
-		add_action( 'wp_ajax_sd_activity_send_registration_email_single', array( $this, 'ajax_send_registration_email_single' ) );
-		add_action( 'wp_ajax_sd_activity_send_registration_emails_bulk', array( $this, 'ajax_send_registration_emails_bulk' ) );
-		add_action( 'wp_ajax_sd_activity_send_registration_emails_all_paid', array( $this, 'ajax_send_registration_emails_all_paid' ) );
+		$args = array(
+			'per_page'       => 9999, // Nessun limite reale
+			'page'           => 1,
+			'payment_status' => $payment_status,
+			'search'         => $search,
+		);
+
+		$registrations = $this->get_registrations( $activity_id, $args );
+
+		if ( empty( $registrations ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nessuna iscrizione trovata.', 'sd-logbook' ) ) );
+		}
+
+		// Campi fissi della tabella registrazioni
+		$fixed_columns = array(
+			'first_name'     => __( 'Nome', 'sd-logbook' ),
+			'last_name'      => __( 'Cognome', 'sd-logbook' ),
+			'email'          => __( 'Email', 'sd-logbook' ),
+			'birth_date'     => __( 'Data di nascita', 'sd-logbook' ),
+			'status'         => __( 'Stato iscrizione', 'sd-logbook' ),
+			'payment_status' => __( 'Stato pagamento', 'sd-logbook' ),
+			'payment_method' => __( 'Metodo pagamento', 'sd-logbook' ),
+			'price_chf'      => __( 'Prezzo CHF', 'sd-logbook' ),
+			'price_eur'      => __( 'Prezzo EUR', 'sd-logbook' ),
+			'invoice_number' => __( 'N. Fattura', 'sd-logbook' ),
+			'created_at'     => __( 'Data iscrizione', 'sd-logbook' ),
+		);
+
+		// Campi dinamici del modulo (esclude i campi già nei fixed_columns)
+		$form_fields = $this->get_form_fields( $activity_id );
+		$skip_names  = array( 'first_name', 'last_name', 'email', 'birth_date' );
+		$dynamic_fields = array(); // [ field_name => field_label ]
+		foreach ( $form_fields as $ff ) {
+			$fname = sanitize_key( $ff['field_name'] ?? '' );
+			if ( '' === $fname || in_array( $fname, $skip_names, true ) || 'content' === ( $ff['field_type'] ?? '' ) ) {
+				continue;
+			}
+			$dynamic_fields[ $fname ] = sanitize_text_field( $ff['field_label'] ?? $fname );
+		}
+
+		$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$sheet       = $spreadsheet->getActiveSheet();
+
+		// Riga intestazioni
+		$col = 1;
+		foreach ( $fixed_columns as $label ) {
+			$coord = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col ) . '1';
+			$cell  = $sheet->getCell( $coord );
+			$cell->setValue( $label );
+			$cell->getStyle()->getFont()->setBold( true );
+			$col++;
+		}
+		foreach ( $dynamic_fields as $label ) {
+			$coord = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col ) . '1';
+			$cell  = $sheet->getCell( $coord );
+			$cell->setValue( $label );
+			$cell->getStyle()->getFont()->setBold( true );
+			$col++;
+		}
+		$total_cols = $col - 1;
+
+		// Righe dati
+		$row = 2;
+		foreach ( $registrations as $reg ) {
+			$rd  = is_array( $reg['registration_data'] ) ? $reg['registration_data'] : array();
+			$col = 1;
+
+			// Campi fissi
+			foreach ( array_keys( $fixed_columns ) as $key ) {
+				if ( 'birth_date' === $key ) {
+					$value = $rd['birth_date'] ?? '';
+				} elseif ( in_array( $key, array( 'price_chf', 'price_eur' ), true ) ) {
+					$value = number_format( floatval( $reg[ $key ] ?? 0 ), 2, ',', '' );
+				} else {
+					$value = $reg[ $key ] ?? '';
+				}
+				$coord = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col ) . $row;
+				$sheet->setCellValue( $coord, $value );
+				$col++;
+			}
+
+			// Campi dinamici
+			foreach ( array_keys( $dynamic_fields ) as $fname ) {
+				$value = $rd[ $fname ] ?? '';
+				if ( is_array( $value ) ) {
+					$value = implode( ', ', $value );
+				}
+				$coord = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col ) . $row;
+				$sheet->setCellValue( $coord, (string) $value );
+				$col++;
+			}
+
+			$row++;
+		}
+
+		// Auto-larghezza colonne
+		for ( $c = 1; $c <= $total_cols; $c++ ) {
+			$sheet->getColumnDimensionByColumn( $c )->setAutoSize( true );
+		}
+
+		// Output
+		$filename = 'iscrizioni_attivita_' . $activity_id . '_' . date( 'Ymd_His' ) . '.xlsx';
+		headers_sent() || header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+		headers_sent() || header( 'Content-Disposition: attachment;filename="' . $filename . '"' );
+		headers_sent() || header( 'Cache-Control: max-age=0' );
+
+		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
+		$writer->save( 'php://output' );
+		exit;
 	}
 
 	// ======================================================================
@@ -1252,10 +1528,60 @@ class SD_Activity_Manager {
 	// ======================================================================
 
 	/**
+	 * AJAX (Admin): Recupera i dettagli di una registrazione per il modal di modifica.
+	 * Risponde a sd_activity_registration_get
+	 */
+	public function ajax_registration_get() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID registrazione non valido', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'sd_activity_registrations';
+		$registration = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $registration_id ),
+			ARRAY_A
+		);
+
+		if ( ! $registration ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non trovata', 'sd-logbook' ) ) );
+		}
+
+		// Decodifica registration_data se presente
+		$registration['registration_data'] = json_decode( $registration['registration_data'], true ) ?: array();
+
+		// Recupera dettagli tariffa se presente
+		if ( ! empty( $registration['price_id'] ) ) {
+			$registration['price'] = $this->get_price( $registration['price_id'] );
+		} else {
+			$registration['price'] = null;
+		}
+
+		wp_send_json_success( $registration );
+	}
+
+	/**
 	 * AJAX: Recupera lista attività
 	 */
 	public function ajax_get_activities_list() {
 		global $wpdb;
+
+		// DEBUG: logga tutto il payload ricevuto
+		error_log('SD_LOGBOOK AJAX PAYLOAD: ' . print_r($_POST, true));
+		// DEBUG: logga il nonce ricevuto e quello atteso
+		error_log('SD_LOGBOOK: Nonce ricevuto: ' . ($_POST['nonce'] ?? 'N/D'));
+		error_log('SD_LOGBOOK: Nonce atteso (nuovo): ' . wp_create_nonce('sd_nonce'));
+		// DEBUG: logga utente corrente
+		error_log('SD_LOGBOOK: Utente corrente: ' . print_r(wp_get_current_user(), true));
+
+		check_ajax_referer( 'sd_nonce', 'nonce' );
 
 		$per_page = intval( $_POST['per_page'] ?? 10 );
 		$page     = max( 1, intval( $_POST['page'] ?? 1 ) );
@@ -2127,7 +2453,19 @@ class SD_Activity_Manager {
 		}
 
 		wp_enqueue_style( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/css/activity-admin.css', array(), $activity_admin_css_version );
-		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable' ), $activity_admin_js_version, true );
+		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable', 'wp-i18n' ), $activity_admin_js_version, true );
+		wp_set_script_translations( 'sd-activity-admin', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
+		// Localizzazione custom messaggi JS
+		wp_localize_script( 'sd-activity-admin', 'sdActivityAdmin', array_merge(
+			isset( $GLOBALS['sdActivityAdmin'] ) && is_array( $GLOBALS['sdActivityAdmin'] ) ? $GLOBALS['sdActivityAdmin'] : array(),
+			array(
+				'ajaxUrl' => admin_url('admin-ajax.php'),
+				'nonce' => wp_create_nonce('sd_nonce'),
+				'i18n' => array(
+					'registration_not_found' => esc_html__( 'Registrazione non trovata', 'sd-logbook' ),
+				),
+			)
+		) );
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/activity-admin.php';
@@ -2175,6 +2513,26 @@ class SD_Activity_Manager {
 			$registration_js_version .= '.' . md5_file( $registration_js_file );
 		}
 		wp_enqueue_script( 'sd-activity-registration', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-registration.js', array( 'jquery' ), $registration_js_version, true );
+		wp_localize_script(
+			'sd-activity-registration',
+			'sdActivityRegistration',
+			array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'detailsNonce' => wp_create_nonce( 'sd_activity_nonce' ),
+				'actionNonce'  => wp_create_nonce( 'sd_nonce' ),
+				'activityId'   => $activity_id,
+				'i18n'         => array(
+					'error'             => __( 'Si è verificato un errore. Riprova.', 'sd-logbook' ),
+					'selectPrice'       => __( '--Seleziona--', 'sd-logbook' ),
+					'loadingPrice'      => __( 'Caricamento prezzo...', 'sd-logbook' ),
+					'fieldRequired'     => __( 'Campo obbligatorio', 'sd-logbook' ),
+					'invalidEmail'      => __( 'Inserisci un indirizzo email valido', 'sd-logbook' ),
+					'birthDateRequired' => __( 'Data di nascita obbligatoria', 'sd-logbook' ),
+					'redirecting'       => __( 'Reindirizzamento...', 'sd-logbook' ),
+					'success'           => __( 'Iscrizione completata con successo!', 'sd-logbook' ),
+				),
+			)
+		);
 
 		// Render template
 		ob_start();

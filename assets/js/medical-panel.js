@@ -3,6 +3,7 @@
  */
 (function($) {
     'use strict';
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
     var currentDiverId = null;
     var currentDiverData = {};
@@ -367,7 +368,7 @@
             diverId = parseInt(currentDiverData.dives[0].dive_user_id || currentDiverData.dives[0].user_id, 10) || 0;
         }
         if (!diverId || !diveId) {
-            alert('Impossibile identificare immersione o subacqueo. Ricarica la pagina e riprova.');
+            alert(__('Impossibile identificare immersione o subacqueo. Ricarica la pagina e riprova.', 'sd-logbook'));
             return;
         }
 
@@ -384,7 +385,7 @@
                 var latestType = String(latestReview.supervision_type || 'review');
                 var latestStatus = String(latestReview.status || 'in_revisione');
                 if (latestText === text && latestType === noteType && latestStatus === noteStatus) {
-                    alert('Revisione identica all\'ultima gia salvata: nessun duplicato creato.');
+                    alert(__('Revisione identica all\'ultima gia salvata: nessun duplicato creato.', 'sd-logbook'));
                     return;
                 }
             }
@@ -477,11 +478,11 @@
             diverId = parseInt(currentDiverData.dives[0].dive_user_id || currentDiverData.dives[0].user_id, 10) || 0;
         }
         if (!diverId || !diveId) {
-            alert('Impossibile eliminare: dati immersione non validi.');
+            alert(__('Impossibile eliminare: dati immersione non validi.', 'sd-logbook'));
             return;
         }
 
-        if (!window.confirm('Confermi eliminazione della revisione selezionata?')) {
+        if (!window.confirm(__('Confermi eliminazione della revisione selezionata?', 'sd-logbook'))) {
             return;
         }
 
@@ -543,7 +544,7 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                alert('Esportati ' + resp.data.count + ' record.');
+                alert(__('Esportati %d record.', 'sd-logbook').replace('%d', resp.data.count));
             } else {
                 alert(resp.data.message || 'Nessun dato');
             }

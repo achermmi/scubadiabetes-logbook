@@ -134,12 +134,12 @@ $role_badges_html = SD_Roles::render_badges_html( $user_id );
     <!-- STRUMENTI AMMINISTRATORE (visibile solo agli admin via JS)  -->
     <!-- ============================================================ -->
     <div class="sd-admin-tools" id="sd-admin-tools" style="display:none;margin-top:24px;padding:16px;background:#fff8e1;border:1px solid #f59e0b;border-radius:8px;">
-        <strong style="display:block;margin-bottom:8px;">🛠 Strumenti amministratore</strong>
+        <strong style="display:block;margin-bottom:8px;">🛠 <?php esc_html_e( 'Strumenti amministratore', 'sd-logbook' ); ?></strong>
         <p style="margin:0 0 10px;font-size:0.88em;color:#555;">
-            Ricalcola le decisioni di tutte le immersioni già salvate applicando le nuove soglie percentuali del Protocollo DS (Δ consecutivo &gt;15%, Δ totale -60→-10 &gt;20%).
+            <?php esc_html_e( 'Ricalcola le decisioni di tutte le immersioni già salvate applicando le nuove soglie percentuali del Protocollo DS (Δ consecutivo >15%, Δ totale -60→-10 >20%).', 'sd-logbook' ); ?>
         </p>
         <button type="button" id="sd-btn-recalc-decisions" class="sd-btn-secondary">
-            ↻ Ricalcola decisioni storico
+            ↻ <?php esc_html_e( 'Ricalcola decisioni storico', 'sd-logbook' ); ?>
         </button>
         <span id="sd-recalc-result" style="margin-left:12px;font-size:0.9em;"></span>
     </div>

@@ -1,3 +1,21 @@
+/* Filtro attività: layout orizzontale */
+.sd-activity-filters-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.7rem;
+	align-items: center;
+	margin-bottom: 1.1rem;
+}
+
+.sd-activity-filters-row .sd-input,
+.sd-activity-filters-row .sd-select {
+	min-width: 200px;
+	flex: 1 1 200px;
+}
+
+.sd-activity-filters-row button {
+	flex: 0 0 auto;
+}
 /**
  * Dashboard Admin Attivita - ScubaDiabetes
  */

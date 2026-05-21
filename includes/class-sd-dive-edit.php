@@ -33,7 +33,8 @@ class SD_Dive_Edit {
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-logbook-diabetes', SD_LOGBOOK_PLUGIN_URL . 'assets/css/diabetes-form.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-dive-edit', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-edit.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-dive-edit', SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-edit.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-dive-edit', SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-edit.js', array( 'jquery', 'wp-i18n' ), SD_LOGBOOK_VERSION, true );
+		wp_set_script_translations( 'sd-dive-edit', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 
 		// User glycemia unit
 		$glycemia_unit = 'mg/dl';

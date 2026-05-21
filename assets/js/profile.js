@@ -6,6 +6,7 @@
  */
 (function($) {
     'use strict';
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
     // ============================================================
     // MESSAGE TOAST
@@ -583,7 +584,7 @@
             'emergency_contact': 'questo contatto'
         };
 
-        if (!confirm('Eliminare ' + (labels[type] || 'questo record') + '?')) return;
+        if (!confirm(__('Eliminare %s?', 'sd-logbook').replace('%s', (labels[type] || __('questo record', 'sd-logbook'))))) return;
 
         $card.addClass('sd-removing');
 
@@ -763,11 +764,10 @@
 
         // Update delete button handler
         $('#sd-btn-record-modal-delete').off('click').on('click', function() {
-            if (confirm('Eliminare ' + (
-                type === 'certification' ? 'questa certificazione' :
-                type === 'medical_clearance' ? 'questa idoneità medica' :
-                'questo contatto'
-            ) + '?')) {
+            var what = type === 'certification' ? __('questa certificazione', 'sd-logbook') :
+                       type === 'medical_clearance' ? __('questa idoneità medica', 'sd-logbook') :
+                       __('questo contatto', 'sd-logbook');
+            if (confirm(__('Eliminare %s?', 'sd-logbook').replace('%s', what))) {
                 closeRecordModal();
                 $card.find('.sd-rec-delete').trigger('click');
             }
@@ -937,7 +937,7 @@
 
     // --- Disconnetti ---
     $(document).on('click', '#sd-ns-btn-disconnect', function() {
-        if (!confirm('Rimuovere la connessione Nightscout e i dati locali sincronizzati?')) return;
+        if (!confirm(__('Rimuovere la connessione Nightscout e i dati locali sincronizzati?', 'sd-logbook'))) return;
         var $btn = $(this);
         nsBtnLoading($btn, true);
 
@@ -1006,7 +1006,7 @@
 
     // Rigenera token
     $(document).on('click', '#sd-ns-btn-regen-token', function() {
-        if (!confirm('Rigenerare il token? Le app CGM dovranno essere riconfigurate con il nuovo token.')) return;
+        if (!confirm(__('Rigenerare il token? Le app CGM dovranno essere riconfigurate con il nuovo token.', 'sd-logbook'))) return;
         var $btn = $(this);
         nsBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {
@@ -1145,7 +1145,7 @@
 
     // Disconnetti account Dexcom
     $(document).on('click', '#sd-dx-btn-disconnect', function() {
-        if (!confirm('Disconnettere l\'account Dexcom? Le letture già salvate non vengono eliminate.')) return;
+        if (!confirm(__('Disconnettere l\'account Dexcom? Le letture già salvate non vengono eliminate.', 'sd-logbook'))) return;
         var $btn = $(this);
         dxBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {
@@ -1269,7 +1269,7 @@
 
     // Disconnetti
     $(document).on('click', '#sd-tp-btn-disconnect', function() {
-        if (!confirm('Disconnettere l\'account Tidepool? Le letture già salvate non vengono eliminate.')) return;
+        if (!confirm(__('Disconnettere l\'account Tidepool? Le letture già salvate non vengono eliminate.', 'sd-logbook'))) return;
         var $btn = $(this);
         tpBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {
@@ -1393,7 +1393,7 @@
 
     // Fix timestamp (admin one-time)
     $(document).on('click', '#sd-lv-btn-fix-timestamps', function() {
-        if (!confirm('Correggere i timestamp di tutte le letture LibreView già salvate? Questa operazione è irreversibile e può essere eseguita una sola volta.')) return;
+        if (!confirm(__('Correggere i timestamp di tutte le letture LibreView già salvate? Questa operazione è irreversibile e può essere eseguita una sola volta.', 'sd-logbook'))) return;
         var $btn = $(this).prop('disabled', true).text('Correzione in corso…');
         $.post(sdProfile.ajaxUrl, {
             action: 'sd_libreview_fix_timestamps',
@@ -1415,7 +1415,7 @@
 
     // Svuota dati LibreView (admin)
     $(document).on('click', '#sd-lv-btn-delete-readings', function() {
-        if (!confirm('ATTENZIONE: Eliminare TUTTE le letture LibreView dal database?\n\nQuesta operazione è irreversibile. Dopo dovrai cliccare "Sync Ora" per reimportare le ultime 24h di dati.')) return;
+        if (!confirm(__('ATTENZIONE: Eliminare TUTTE le letture LibreView dal database?\n\nQuesta operazione è irreversibile. Dopo dovrai cliccare "Sync Ora" per reimportare le ultime 24h di dati.', 'sd-logbook'))) return;
         var $btn = $(this).prop('disabled', true).text('Eliminazione in corso…');
         $.post(sdProfile.ajaxUrl, {
             action: 'sd_libreview_delete_readings',
@@ -1448,7 +1448,7 @@
 
     // Disconnetti
     $(document).on('click', '#sd-lv-btn-disconnect', function() {
-        if (!confirm('Disconnettere l\'account LibreView? Le letture già salvate non vengono eliminate.')) return;
+        if (!confirm(__('Disconnettere l\'account LibreView? Le letture già salvate non vengono eliminate.', 'sd-logbook'))) return;
         var $btn = $(this);
         lvBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {
@@ -1582,7 +1582,7 @@
 
     // Disconnetti
     $(document).on('click', '#sd-cl-btn-disconnect', function() {
-        if (!confirm('Disconnettere l\'account CareLink? Le letture già salvate non vengono eliminate.')) return;
+        if (!confirm(__('Disconnettere l\'account CareLink? Le letture già salvate non vengono eliminate.', 'sd-logbook'))) return;
         var $btn = $(this);
         clBtnLoading($btn, true);
         $.post(sdProfile.ajaxUrl, {

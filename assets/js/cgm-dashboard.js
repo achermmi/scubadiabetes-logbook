@@ -7,6 +7,7 @@
  */
 (function ($) {
     'use strict';
+    var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
     if (typeof sdCgmDash === 'undefined') { return; }
 
@@ -387,7 +388,7 @@
         var from = $('#sd-cgm-from').val();
         var to   = $('#sd-cgm-to').val();
         if (!from || !to) {
-            alert('Seleziona entrambe le date.');
+            alert(__('Seleziona entrambe le date.', 'sd-logbook'));
             return;
         }
         state.period   = 'custom';

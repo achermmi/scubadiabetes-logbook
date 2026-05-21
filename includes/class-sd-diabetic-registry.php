@@ -37,7 +37,8 @@ class SD_Diabetic_Registry {
 		}
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-diabetic-registry', SD_LOGBOOK_PLUGIN_URL . 'assets/css/diabetic-registry.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-diabetic-registry', SD_LOGBOOK_PLUGIN_URL . 'assets/js/diabetic-registry.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-diabetic-registry', SD_LOGBOOK_PLUGIN_URL . 'assets/js/diabetic-registry.js', array( 'jquery', 'wp-i18n' ), SD_LOGBOOK_VERSION, true );
+		wp_set_script_translations( 'sd-diabetic-registry', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 		wp_localize_script(
 			'sd-diabetic-registry',
 			'sdDiabeticRegistry',

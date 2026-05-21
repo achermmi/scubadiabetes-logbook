@@ -3,7 +3,19 @@
  */
 (function ($) {
 	'use strict';
+	var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
+	// Inizializza sempre sdActivityAdmin.strings e ajaxUrl per evitare errori JS/AJAX
+	if (!window.sdActivityAdmin) window.sdActivityAdmin = {};
+	if (!sdActivityAdmin.strings) {
+		sdActivityAdmin.strings = {
+			loading: typeof __ === 'function' ? __('Caricamento...', 'sd-logbook') : 'Caricamento...',
+			error: typeof __ === 'function' ? __('Errore', 'sd-logbook') : 'Errore',
+			saveFirst: typeof __ === 'function' ? __('Salva prima l\'attività', 'sd-logbook') : 'Salva prima l\'attività',
+			confirmDelete: typeof __ === 'function' ? __('Sei sicuro di voler eliminare?', 'sd-logbook') : 'Sei sicuro di voler eliminare?',
+		};
+	}
+	// ajaxUrl viene ora sempre passato da PHP come assoluto
 	var state = {
 		activities: [],
 		selectedActivityId: 0,
@@ -154,9 +166,10 @@
 			return;
 		}
 
-		if ($('.sd-admin-panel[data-panel="modifica"]').hasClass('is-active')) {
-			initActivityDescriptionEditor();
-		}
+		   if ($('.sd-admin-panel[data-panel="modifica"]').hasClass('is-active')) {
+			   initActivityDescriptionEditor();
+			   $('#sd-activities-table-wrap').hide();
+		   }
 		bindTabs();
 		bindActions();
 		loadActivities();
@@ -167,10 +180,28 @@
 			var tab = $(this).data('tab');
 			$('.sd-admin-tab').removeClass('is-active');
 			$(this).addClass('is-active');
-			$('.sd-admin-panel').removeClass('is-active');
-			$('.sd-admin-panel[data-panel="' + tab + '"]').addClass('is-active');
+			   $('.sd-admin-panel').removeClass('is-active');
+			   $('.sd-admin-panel[data-panel="' + tab + '"]').addClass('is-active');
+			   // Mostra/nasconde la tabella attività in base al tab attivo
+			   if (tab === 'modifica') {
+				   $('#sd-activities-table-wrap').hide();
+			   } else {
+				   $('#sd-activities-table-wrap').show();
+			   }
 			if (tab === 'pagamenti' && typeof updatePaymentsStats === 'function') {
 				updatePaymentsStats();
+			}
+			if (tab === 'registrazioni' && typeof loadRegistrations === 'function') {
+				var $regSel = $('#sd-reg-activity-id');
+				if (!$regSel.val()) {
+					// Preferisce l'attività in stato (da modifica), altrimenti la prima disponibile
+					if (state.selectedActivityId) {
+						$regSel.val(String(state.selectedActivityId));
+					} else if (state.activities && state.activities.length > 0) {
+						$regSel.val(String(parseInt(state.activities[0].id, 10)));
+					}
+				}
+				loadRegistrations();
 			}
 		});
 	}
@@ -350,7 +381,7 @@
 			method: 'POST',
 			dataType: 'json',
 			data: {
-				action: 'sd_activities_list',
+				   action: 'sd_activity_get_activities_list',
 				search: search,
 				status: status,
 				per_page: 100,
@@ -412,6 +443,20 @@
 		$regSelect.html(html);
 		if (state.selectedActivityId) {
 			$regSelect.val(String(state.selectedActivityId));
+		}
+
+		// Se il tab Registrazioni è attivo, assicurati che ci sia un'attività selezionata e carica
+		if ($('.sd-admin-panel[data-panel="registrazioni"]').hasClass('is-active') && typeof loadRegistrations === 'function') {
+			if (!$regSelect.val()) {
+				if (state.selectedActivityId) {
+					$regSelect.val(String(state.selectedActivityId));
+				} else if (state.activities && state.activities.length > 0) {
+					$regSelect.val(String(parseInt(state.activities[0].id, 10)));
+				}
+			}
+			if ($regSelect.val()) {
+				loadRegistrations();
+			}
 		}
 	}
 
@@ -1598,7 +1643,7 @@
 			return;
 		}
 
-		if (!window.confirm('Eliminare questa tariffa?')) {
+		if (!window.confirm(__('Eliminare questa tariffa?', 'sd-logbook'))) {
 			return;
 		}
 
@@ -2440,7 +2485,7 @@
 	}
 
 	function deleteField(fieldId) {
-		if (!fieldId || !window.confirm('Eliminare questo campo?')) {
+		if (!fieldId || !window.confirm(__('Eliminare questo campo?', 'sd-logbook'))) {
 			return;
 		}
 
@@ -4039,7 +4084,7 @@
 
 		if (section.virtual) {
 			if (sectionKey === 'tariffe') {
-				if (!window.confirm('Eliminare tutte le tariffe dalla sezione Tariffe?')) {
+				if (!window.confirm(__('Eliminare tutte le tariffe dalla sezione Tariffe?', 'sd-logbook'))) {
 					return;
 				}
 
@@ -4066,7 +4111,7 @@
 			}
 
 			if (sectionKey === 'activity_data') {
-				if (!window.confirm('Eliminare i dati della sezione Dati Attivita?')) {
+				if (!window.confirm(__('Eliminare i dati della sezione Dati Attivita?', 'sd-logbook'))) {
 					return;
 				}
 
@@ -4104,7 +4149,7 @@
 			return;
 		}
 
-		if (!window.confirm('Eliminare la sezione "' + section.label + '" e tutti i suoi campi?')) {
+		if (!window.confirm(__('Eliminare la sezione "%s" e tutti i suoi campi?', 'sd-logbook').replace('%s', section.label))) {
 			return;
 		}
 
@@ -4123,7 +4168,7 @@
 	function loadRegistrations() {
 		var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
 		if (!activityId) {
-			setTableEmpty('#sd-reg-tbody', 7, 'Seleziona una attivita.');
+			setTableEmpty('#sd-reg-dashboard-tbody', 8, sdActivityAdmin.regSelectActivity);
 			$('#sd-reg-minor-alert').hide().empty();
 			return;
 		}
@@ -4138,7 +4183,7 @@
 			page: 1,
 		}, function (resp) {
 			if (!resp || !resp.success) {
-				setTableError('#sd-reg-tbody', 7, (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
+				setTableError('#sd-reg-dashboard-tbody', 8, (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
 				return;
 			}
 
@@ -4151,7 +4196,7 @@
 	function renderRegistrationsTable() {
 		var rows = state.registrations;
 		if (!rows.length) {
-			setTableEmpty('#sd-reg-tbody', 7, 'Nessuna registrazione trovata.');
+			setTableEmpty('#sd-reg-dashboard-tbody', 8, 'Nessuna registrazione trovata.');
 			$('#sd-reg-minor-alert').hide().empty();
 			return;
 		}
@@ -4183,18 +4228,22 @@
 			if (minorInfo.isMinor) {
 				nameHtml += ' <span class="sd-status-badge sd-status-draft">MINORENNE (' + esc(String(minorInfo.age)) + ' anni)</span>';
 			}
+			var lastEmailHtml = r.last_email_at
+				? '<span title="' + esc(r.last_email_subject || '') + '">' + formatDate(r.last_email_at) + '</span>'
+				: '-';
 			html += '<tr>' +
 				'<td>' + nameHtml + '</td>' +
 				'<td>' + esc(r.email || '-') + '</td>' +
 				'<td>' + statusSelect + '</td>' +
 				'<td>' + paymentSelect + '</td>' +
-				'<td>CHF ' + num(r.price_chf) + ' / EUR ' + num(eurAmount) + '</td>' +
 				'<td>' + formatDate(r.created_at) + '</td>' +
+				'<td>CHF ' + num(r.price_chf) + ' / EUR ' + num(eurAmount) + '</td>' +
+				'<td>' + lastEmailHtml + '</td>' +
 				'<td>' + (actionsHtml.length ? actionsHtml.join(' ') : '<span class="sd-field-note">-</span>') + '</td>' +
 			'</tr>';
 		});
 
-		$('#sd-reg-tbody').html(html);
+		$('#sd-reg-dashboard-tbody').html(html);
 
 		if (minorCount > 0) {
 			$('#sd-reg-minor-alert').html('<strong>Attenzione:</strong> rilevate ' + esc(String(minorCount)) + ' iscrizioni di minorenni. Verifica autorizzazione genitore/tutore.').show();
@@ -4206,27 +4255,29 @@
 	function buildStatusSelect(registrationId, currentStatus) {
 		var options = ['registered', 'waitlist', 'cancelled'];
 		var statusClass = getStatusCssClass(currentStatus);
-		var html = '<select class="sd-select sd-reg-inline-select sd-reg-status-select' + statusClass + '" data-id="' + registrationId + '">';
-
+		var label = getRegistrationStatusLabel(currentStatus);
+		var optHtml = '';
 		options.forEach(function (value) {
-			html += '<option value="' + esc(value) + '"' + (value === currentStatus ? ' selected' : '') + '>' + esc(getRegistrationStatusLabel(value)) + '</option>';
+			optHtml += '<option value="' + esc(value) + '"' + (value === currentStatus ? ' selected' : '') + '>' + esc(getRegistrationStatusLabel(value)) + '</option>';
 		});
-
-		html += '</select>';
-		return html;
+		return '<span class="sd-status-pill-wrap">' +
+			'<span class="sd-renewal-status' + statusClass + '">' + esc(label) + '</span>' +
+			'<select class="sd-status-pill-select sd-reg-status-select" data-id="' + registrationId + '">' + optHtml + '</select>' +
+			'</span>';
 	}
 
 	function buildPaymentStatusSelect(registrationId, currentStatus) {
 		var options = ['pending', 'paid', 'invoice_requested', 'invoice_sent', 'invoice_error', 'cancelled', 'free'];
 		var statusClass = getStatusCssClass(currentStatus);
-		var html = '<select class="sd-select sd-reg-inline-select sd-reg-payment-select' + statusClass + '" data-id="' + registrationId + '">';
-
+		var label = getPaymentStatusLabel(currentStatus);
+		var optHtml = '';
 		options.forEach(function (value) {
-			html += '<option value="' + esc(value) + '"' + (value === currentStatus ? ' selected' : '') + '>' + esc(getPaymentStatusLabel(value)) + '</option>';
+			optHtml += '<option value="' + esc(value) + '"' + (value === currentStatus ? ' selected' : '') + '>' + esc(getPaymentStatusLabel(value)) + '</option>';
 		});
-
-		html += '</select>';
-		return html;
+		return '<span class="sd-status-pill-wrap">' +
+			'<span class="sd-renewal-status' + statusClass + '">' + esc(label) + '</span>' +
+			'<select class="sd-status-pill-select sd-reg-payment-select" data-id="' + registrationId + '">' + optHtml + '</select>' +
+			'</span>';
 	}
 
 	function getStatusCssClass(status) {
@@ -4299,8 +4350,16 @@
 				showMessage('error', (resp && resp.data && resp.data.message) ? resp.data.message : sdActivityAdmin.strings.error);
 				return;
 			}
-			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : 'Registrazione eliminata.');
+			showMessage('success', (resp && resp.data && resp.data.message) ? resp.data.message : __('Registrazione eliminata.', 'sd-logbook'), 'top');
 			loadRegistrations();
+			loadRegDashboard();
+		}).fail(function (xhr) {
+			var msg = sdActivityAdmin.strings.error || 'Errore di comunicazione con il server.';
+			try {
+				var body = xhr.responseJSON || JSON.parse(xhr.responseText || '{}');
+				if (body && body.data && body.data.message) { msg = body.data.message; }
+			} catch (e) {}
+			showMessage('error', msg, 'top');
 		});
 	}
 
@@ -4315,10 +4374,48 @@
 			if (parseInt(r.id, 10) === parseInt(registrationId, 10)) { reg = r; return true; }
 			return false;
 		});
-		if (!reg) { return; }
-
+		if (!reg) {
+			// Fallback multilanguage: recupera la registrazione via AJAX se non presente in state.registrations
+			$.post(sdActivityAdmin.ajaxUrl, {
+				action: 'sd_activity_registration_get',
+				nonce: sdActivityAdmin.nonce,
+				registration_id: registrationId
+			}, function (resp) {
+				if (resp && resp.success && resp.data) {
+					reg = resp.data;
+					buildRegistrationEditModal(reg, null);
+					var activityId = parseInt(reg.activity_id, 10) || 0;
+					if (activityId && registrationEditCache[activityId]) {
+						renderRegistrationEditFields(reg, registrationEditCache[activityId]);
+						return;
+					}
+					if (!activityId) {
+						renderRegistrationEditFields(reg, { prices: [], form_fields: [] });
+						return;
+					}
+					$.post(sdActivityAdmin.ajaxUrl, {
+						action: 'sd_activity_get',
+						activity_id: activityId,
+						nonce: sdActivityAdmin.nonce,
+					}, function (resp2) {
+						if (resp2 && resp2.success) {
+							registrationEditCache[activityId] = {
+								prices: resp2.data.prices || [],
+								form_fields: resp2.data.form_fields || [],
+							};
+							renderRegistrationEditFields(reg, registrationEditCache[activityId]);
+						} else {
+							renderRegistrationEditFields(reg, { prices: [], form_fields: [] });
+						}
+					});
+				} else {
+					var msg = (resp && resp.data && resp.data.message) ? resp.data.message : (window.sdActivityAdmin && sdActivityAdmin.i18n && sdActivityAdmin.i18n.registration_not_found) ? sdActivityAdmin.i18n.registration_not_found : 'Registrazione non trovata';
+					alert(msg);
+				}
+			});
+			return;
+		}
 		buildRegistrationEditModal(reg, null);
-
 		var activityId = parseInt(reg.activity_id, 10) || 0;
 		if (activityId && registrationEditCache[activityId]) {
 			renderRegistrationEditFields(reg, registrationEditCache[activityId]);
@@ -4637,7 +4734,7 @@
 	}
 
 	function resendInvoiceEmail(registrationId) {
-		if (!window.confirm('Reinviare l\'email di richiesta fattura a questo partecipante?')) {
+		if (!window.confirm(__('Reinviare l\'email di richiesta fattura a questo partecipante?', 'sd-logbook'))) {
 			return;
 		}
 
@@ -4657,7 +4754,7 @@
 	}
 
 	function sendPaymentConfirmationEmail(registrationId, onSuccess, skipConfirm) {
-		if (!skipConfirm && !window.confirm('Inviare la conferma pagamento con PDF allegato a questa iscrizione?')) {
+		if (!skipConfirm && !window.confirm(__('Inviare la conferma pagamento con PDF allegato a questa iscrizione?', 'sd-logbook'))) {
 			return false;
 		}
 
@@ -4811,7 +4908,7 @@
 	}
 
 	function showMessage(type, message, scrollTarget) {
-		var $msg = $('#sd-activity-admin-message');
+		var $msg = $('#sd-global-message');
 		var cssClass = 'sd-notice-info';
 		if (type === 'error')   { cssClass = 'sd-notice-error'; }
 		else if (type === 'success') { cssClass = 'sd-notice-success'; }
@@ -5903,7 +6000,7 @@
 			var $btn = $(this);
 			var regId = parseInt($btn.data('id') || $btn.data('reg-id'), 10) || 0;
 			if (!regId || $btn.prop('disabled')) { return; }
-			if (!window.confirm('Inviare la conferma pagamento con PDF allegato a questa iscrizione?')) { return; }
+			if (!window.confirm(__('Inviare la conferma pagamento con PDF allegato a questa iscrizione?', 'sd-logbook'))) { return; }
 
 			var originalLabel = $btn.text();
 			$btn.prop('disabled', true).text(regStrings().regPaymentConfirmationSending || 'Invio conferma...');
@@ -5917,6 +6014,55 @@
 
 		$('#sd-reg-bulk-email').on('click', sendRegEmailsBulk);
 		$('#sd-reg-email-all-paid').on('click', sendRegEmailsAllPaid);
+
+		// Esporta Excel iscrizioni filtrate
+		$('#sd-reg-export-excel').on('click', function () {
+			var $btn = $(this);
+			var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+			var paymentStatus = $('#sd-reg-payment-filter').val() || '';
+			var search = $('#sd-reg-search').val() || '';
+			var filterType = $('.sd-reg-filter.is-active').data('reg-filter') || 'all';
+			if (!activityId) {
+				alert('Seleziona un\'attività.');
+				return;
+			}
+			$btn.prop('disabled', true).text('Esportazione...');
+			$.ajax({
+				url: sdActivityAdmin.ajaxUrl,
+				method: 'POST',
+				data: {
+					action: 'sd_activity_export_registrations_excel',
+					nonce: sdActivityAdmin.nonce,
+					activity_id: activityId,
+					payment_status: paymentStatus,
+					search: search,
+					filter_type: filterType
+				},
+				xhrFields: {
+					responseType: 'blob'
+				},
+				success: function (data, status, xhr) {
+					var filename = '';
+					var disposition = xhr.getResponseHeader('Content-Disposition');
+					if (disposition && disposition.indexOf('attachment') !== -1) {
+						var matches = /filename="?([^";]+)"?/.exec(disposition);
+						if (matches != null && matches[1]) filename = matches[1];
+					}
+					var blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+					var link = document.createElement('a');
+					link.href = window.URL.createObjectURL(blob);
+					link.download = filename || 'iscrizioni.xlsx';
+					document.body.appendChild(link);
+					link.click();
+					document.body.removeChild(link);
+					$btn.prop('disabled', false).text('Esporta Excel');
+				},
+				error: function (xhr) {
+					alert('Errore durante l\'esportazione.');
+					$btn.prop('disabled', false).text('Esporta Excel');
+				}
+			});
+		});
 
 		$(document).on('change', '.sd-reg-status-select', function () {
 			var $sel = $(this);

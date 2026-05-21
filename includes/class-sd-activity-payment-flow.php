@@ -616,9 +616,9 @@ class SD_Activity_Payment_Flow {
 			? '<h2 style="color:#b91c1c">' . esc_html__( 'Rimborso attività confermato', 'sd-logbook' ) . '</h2>'
 			: '<h2 style="color:#0055a5">' . esc_html__( 'Pagamento attività confermato', 'sd-logbook' ) . '</h2>';
 		$secretariat_body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
-		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>ID registrazione</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'ID registrazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Partecipante', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
-		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Email</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
+		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Email', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
 		$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . '</td></tr>';
 		if ( '' !== $activity_date ) {
 			$secretariat_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Data attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_date ) . '</td></tr>';
@@ -845,7 +845,8 @@ class SD_Activity_Payment_Flow {
 			get_option( 'admin_email' )
 		);
 		$admin_subject = sprintf(
-			'[%s] Nuova iscrizione con richiesta fattura: %s',
+			/* translators: 1: site name, 2: titolo attività */
+			__( '[%1$s] Nuova iscrizione con richiesta fattura: %2$s', 'sd-logbook' ),
 			get_bloginfo( 'name' ),
 			$activity_title
 		);
@@ -853,21 +854,21 @@ class SD_Activity_Payment_Flow {
 		$admin_body  = '<html><body style="font-family:Arial,sans-serif;color:#333;max-width:680px;margin:auto">';
 		$admin_body .= '<h2 style="color:#0055a5">' . esc_html__( 'Nuova iscrizione con richiesta fattura', 'sd-logbook' ) . '</h2>';
 		$admin_body .= '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px">';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>ID registrazione</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Attività</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . ( $activity_date ? ' (' . esc_html( $activity_date ) . ')' : '' ) . '</td></tr>';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Partecipante</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Email</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'ID registrazione', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">#' . (int) $ctx->registration_id . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Attività', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $activity_title ) . ( $activity_date ? ' (' . esc_html( $activity_date ) . ')' : '' ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Partecipante', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $participant_name ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Email', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( (string) $ctx->email ) . '</td></tr>';
 		if ( '' !== $price_name ) {
-			$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Tariffa</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $price_name ) . '</td></tr>';
+			$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Tariffa', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $price_name ) . '</td></tr>';
 		}
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Importo</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Metodo pagamento</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">Fattura</td></tr>';
-		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>Stato pagamento</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $this->payment_status_label( (string) ( $ctx->payment_status ?? 'invoice_requested' ) ) ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Importo', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">CHF ' . esc_html( $amount_chf ) . ' / EUR ' . esc_html( $amount_eur ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Metodo pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html__( 'Fattura', 'sd-logbook' ) . '</td></tr>';
+		$admin_body .= '<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;background:#f8fafc"><strong>' . esc_html__( 'Stato pagamento', 'sd-logbook' ) . '</strong></td><td style="padding:6px 10px;border:1px solid #e2e8f0">' . esc_html( $this->payment_status_label( (string) ( $ctx->payment_status ?? 'invoice_requested' ) ) ) . '</td></tr>';
 		$admin_body .= '</table>';
 
 		$admin_body .= '<h3 style="color:#0055a5">' . esc_html__( 'Dati modulo di iscrizione', 'sd-logbook' ) . '</h3>';
 		$admin_body .= $this->build_registration_data_html( $ctx );
-		$admin_body .= '<p style="color:#666;font-size:12px">In allegato la stessa fattura PDF inviata al partecipante.</p>';
+		$admin_body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'In allegato la stessa fattura PDF inviata al partecipante.', 'sd-logbook' ) . '</p>';
 		$admin_body .= '</body></html>';
 
 		$admin_sent = wp_mail(

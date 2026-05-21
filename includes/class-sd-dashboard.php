@@ -58,10 +58,11 @@ class SD_Dashboard {
 			wp_enqueue_script(
 				'sd-dashboard',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/js/dashboard.js',
-				array( 'jquery', 'leaflet' ),
+				array( 'jquery', 'leaflet', 'wp-i18n' ),
 				SD_LOGBOOK_VERSION,
 				true
 			);
+			wp_set_script_translations( 'sd-dashboard', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 			wp_enqueue_script(
 				'sd-dive-edit',
 				SD_LOGBOOK_PLUGIN_URL . 'assets/js/dive-edit.js',

@@ -57,7 +57,8 @@ class SD_CGM_Dashboard {
 		if ( $has_patient ) {
 			$js_path = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/cgm-dashboard.js';
 			$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : SD_LOGBOOK_VERSION;
-			wp_enqueue_script( 'sd-cgm-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/js/cgm-dashboard.js', array( 'jquery' ), $js_ver, true );
+			wp_enqueue_script( 'sd-cgm-dashboard', SD_LOGBOOK_PLUGIN_URL . 'assets/js/cgm-dashboard.js', array( 'jquery', 'wp-i18n' ), $js_ver, true );
+			wp_set_script_translations( 'sd-cgm-dashboard', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 			wp_localize_script(
 				'sd-cgm-dashboard',
 				'sdCgmDash',
@@ -72,7 +73,8 @@ class SD_CGM_Dashboard {
 		if ( $has_medical ) {
 			$js_path = SD_LOGBOOK_PLUGIN_DIR . 'assets/js/cgm-medical.js';
 			$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : SD_LOGBOOK_VERSION;
-			wp_enqueue_script( 'sd-cgm-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/cgm-medical.js', array( 'jquery' ), $js_ver, true );
+			wp_enqueue_script( 'sd-cgm-medical', SD_LOGBOOK_PLUGIN_URL . 'assets/js/cgm-medical.js', array( 'jquery', 'wp-i18n' ), $js_ver, true );
+			wp_set_script_translations( 'sd-cgm-medical', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 			wp_localize_script(
 				'sd-cgm-medical',
 				'sdCgmMedical',

@@ -5,6 +5,9 @@
       "ScubaDiabetes\\Logbook\\": "src/"
     }
   },
+  "require": {
+    "phpoffice/phpspreadsheet": "^4.0"
+  },
   "require-dev": {
     "squizlabs/php_codesniffer": "3.11.3",
     "wp-coding-standards/wpcs": "3.0.1",
@@ -14,6 +17,7 @@
   "config": {
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
-    }
+    },
+    "cafile": "C:\\xampp\\php\\extras\\ssl\\cacert.pem"
   }
 }

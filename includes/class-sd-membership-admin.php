@@ -131,7 +131,8 @@ class SD_Membership_Admin {
 		wp_enqueue_style( 'sd-membership-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/css/membership-admin.css', array( 'sd-membership' ), SD_LOGBOOK_VERSION );
 
 		wp_enqueue_script( 'sd-membership', SD_LOGBOOK_PLUGIN_URL . 'assets/js/membership.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
-		wp_enqueue_script( 'sd-membership-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/membership-admin.js', array( 'jquery', 'sd-membership' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-membership-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/membership-admin.js', array( 'jquery', 'sd-membership', 'wp-i18n' ), SD_LOGBOOK_VERSION, true );
+		wp_set_script_translations( 'sd-membership-admin', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 
 		// Cerca la pagina di modifica iscrizione
 		$edit_page = get_page_by_path( 'modifica-socio' );

@@ -3,7 +3,7 @@
  * Plugin Name: ScubaDiabetes Logbook
  * Plugin URI: https://scubadiabetes.ch
  * Description: Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
- * Version: 1.3.77
+ * Version: 1.3.78
  * Author: Mirko Achermann
  * Author URI: https://m-achermann.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.77' );
+define( 'SD_LOGBOOK_VERSION', '1.3.83' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -62,6 +62,12 @@ final class SD_Logbook {
 	 * Carica i file necessari
 	 */
 	private function load_dependencies() {
+		// Vendor autoloader (PhpSpreadsheet e dipendenze)
+		$vendor_autoload = SD_LOGBOOK_PLUGIN_DIR . 'vendor/autoload.php';
+		if ( file_exists( $vendor_autoload ) ) {
+			require_once $vendor_autoload;
+		}
+
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-database.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-roles.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-currency-converter.php';
@@ -231,12 +237,28 @@ final class SD_Logbook {
 	}
 
 	/**
-	 * Forza la lingua italiana per il text domain del plugin
+	 * Forza la lingua italiana per il text domain del plugin.
+	 *
+	 * Comportamento controllabile via:
+	 *  - option booleana `sd_logbook_force_italian` (default: false, in modo da
+	 *    consentire WPML/Polylang/Loco Translate di servire traduzioni reali);
+	 *  - filtro `sd_logbook_force_italian` per override programmatico.
+	 *
+	 * Prima della 1.3.78 la lingua era forzata sempre a it_IT, rendendo di fatto
+	 * impossibile tradurre il plugin in altre lingue.
 	 */
 	public function force_italian_locale( $locale, $domain ) {
-		if ( 'sd-logbook' === $domain ) {
+		if ( 'sd-logbook' !== $domain ) {
+			return $locale;
+		}
+
+		$force = (bool) get_option( 'sd_logbook_force_italian', false );
+		$force = (bool) apply_filters( 'sd_logbook_force_italian', $force, $locale );
+
+		if ( $force ) {
 			return 'it_IT';
 		}
+
 		return $locale;
 	}
 
@@ -313,7 +335,7 @@ final class SD_Logbook {
 		if ( ! is_a( $post, 'WP_Post' ) ) {
 			return false;
 		}
-		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_diabetic_registry', 'sd_dive_edit', 'sd_iscrizione', 'sd_gestione_soci', 'sd_iscrizione_edit' );
+		$shortcodes = array( 'sd_dive_form', 'sd_dashboard', 'sd_diver_profile', 'sd_medical_panel', 'sd_research_dashboard', 'sd_diabetic_registry', 'sd_dive_edit', 'sd_iscrizione', 'sd_gestione_soci', 'sd_iscrizione_edit', 'sd_gestione_attivita' );
 		foreach ( $shortcodes as $sc ) {
 			if ( has_shortcode( $post->post_content, $sc ) ) {
 				return true;

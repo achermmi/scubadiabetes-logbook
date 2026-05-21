@@ -40,7 +40,8 @@ class SD_Diver_Profile {
 	public function enqueue_assets() {
 		wp_enqueue_style( 'sd-logbook-form', SD_LOGBOOK_PLUGIN_URL . 'assets/css/dive-form.css', array(), SD_LOGBOOK_VERSION );
 		wp_enqueue_style( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/css/profile.css', array( 'sd-logbook-form' ), SD_LOGBOOK_VERSION );
-		wp_enqueue_script( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/js/profile.js', array( 'jquery' ), SD_LOGBOOK_VERSION, true );
+		wp_enqueue_script( 'sd-profile', SD_LOGBOOK_PLUGIN_URL . 'assets/js/profile.js', array( 'jquery', 'wp-i18n' ), SD_LOGBOOK_VERSION, true );
+		wp_set_script_translations( 'sd-profile', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 		wp_localize_script(
 			'sd-profile',
 			'sdProfile',

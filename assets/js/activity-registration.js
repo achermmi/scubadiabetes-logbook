@@ -1517,17 +1517,22 @@
 			}
 
 			// Validate dynamic required fields (gestione gruppi checkbox/radio inclusa)
-			const validatedNames = {};
+			// Deduplicazione per data-field-id (non per name) per supportare campi diversi con stesso field_name.
+			const validatedFieldIds = {};
 			$('.sd-dynamic-field[required]').each((i, el) => {
 				const $el = $(el);
-				if (!$el.closest('.sd-field-row').is(':visible')) {
+				const $row = $el.closest('.sd-field-row');
+				if (!$row.is(':visible')) {
 					return;
 				}
+				const fieldRowId = $row.data('field-id');
 				const name = $el.attr('name');
-				if (!name || validatedNames[name]) {
+				// Usa fieldRowId come chiave primaria; fallback al name per campi senza sd-field-row.
+				const dedupKey = fieldRowId != null ? 'row_' + fieldRowId : name;
+				if (!dedupKey || validatedFieldIds[dedupKey]) {
 					return;
 				}
-				validatedNames[name] = true;
+				validatedFieldIds[dedupKey] = true;
 
 				if ($el.is(':checkbox')) {
 					const selector = name.endsWith('[]') ? 'input[name="' + name + '"]' : 'input[name="' + name + '"]';
