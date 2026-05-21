@@ -1,55 +1,59 @@
 <?php
+/**
+ * Gestione attività e iscrizioni - ScubaDiabetes Logbook
+ */
+
+class SD_Activity_Manager {
+
 	/**
-	 * Gestione attività e iscrizioni - ScubaDiabetes Logbook
+	 * Aggiorna una registrazione (usato dal modal admin)
+	 * @param int $registration_id
+	 * @param array $data
+	 * @return bool
 	 */
-
-	class SD_Activity_Manager {
-
-		/**
-		 * Aggiorna una registrazione (usato dal modal admin)
-		 * @param int $registration_id
-		 * @param array $data
-		 * @return bool
-		 */
-		public function update_registration( $registration_id, $data = array() ) {
-			global $wpdb;
-			if ( $registration_id <= 0 ) return false;
-
-			$update_data = array();
-			if ( isset( $data['first_name'] ) ) {
-				$update_data['first_name'] = sanitize_text_field( $data['first_name'] );
-			}
-			if ( isset( $data['last_name'] ) ) {
-				$update_data['last_name'] = sanitize_text_field( $data['last_name'] );
-			}
-			if ( isset( $data['email'] ) ) {
-				$update_data['email'] = sanitize_email( $data['email'] );
-			}
-			if ( isset( $data['price_id'] ) ) {
-				$update_data['price_id'] = intval( $data['price_id'] );
-			}
-			if ( isset( $data['status'] ) ) {
-				$update_data['status'] = sanitize_text_field( $data['status'] );
-			}
-			if ( isset( $data['payment_status'] ) ) {
-				$update_data['payment_status'] = sanitize_text_field( $data['payment_status'] );
-			}
-			if ( isset( $data['fields'] ) ) {
-				$update_data['registration_data'] = wp_json_encode( $data['fields'] );
-			}
-			$update_data['updated_at'] = current_time( 'mysql' );
-
-			if ( empty( $update_data ) ) return false;
-
-			$result = $wpdb->update(
-				$wpdb->prefix . 'sd_activity_registrations',
-				$update_data,
-				array( 'id' => intval( $registration_id ) ),
-				null,
-				array( '%d' )
-			);
-			return false !== $result;
+	public function update_registration( $registration_id, $data = array() ) {
+		global $wpdb;
+		if ( $registration_id <= 0 ) {
+			return false;
 		}
+
+		$update_data = array();
+		if ( isset( $data['first_name'] ) ) {
+			$update_data['first_name'] = sanitize_text_field( $data['first_name'] );
+		}
+		if ( isset( $data['last_name'] ) ) {
+			$update_data['last_name'] = sanitize_text_field( $data['last_name'] );
+		}
+		if ( isset( $data['email'] ) ) {
+			$update_data['email'] = sanitize_email( $data['email'] );
+		}
+		if ( isset( $data['price_id'] ) ) {
+			$update_data['price_id'] = intval( $data['price_id'] );
+		}
+		if ( isset( $data['status'] ) ) {
+			$update_data['status'] = sanitize_text_field( $data['status'] );
+		}
+		if ( isset( $data['payment_status'] ) ) {
+			$update_data['payment_status'] = sanitize_text_field( $data['payment_status'] );
+		}
+		if ( isset( $data['fields'] ) ) {
+			$update_data['registration_data'] = wp_json_encode( $data['fields'] );
+		}
+		$update_data['updated_at'] = current_time( 'mysql' );
+
+		if ( empty( $update_data ) ) {
+			return false;
+		}
+
+		$result = $wpdb->update(
+			$wpdb->prefix . 'sd_activity_registrations',
+			$update_data,
+			array( 'id' => intval( $registration_id ) ),
+			null,
+			array( '%d' )
+		);
+		return false !== $result;
+	}
 
 	/**
 	 * AJAX: Restituisce la lista delle registrazioni per una attività (compatibilità vecchio flusso JS).
@@ -65,7 +69,12 @@
 
 		$activity_id = intval( $_POST['activity_id'] ?? 0 );
 		if ( $activity_id <= 0 ) {
-			wp_send_json_success( array( 'registrations' => array(), 'activity_id' => 0 ) );
+			wp_send_json_success(
+				array(
+					'registrations' => array(),
+					'activity_id'   => 0,
+				)
+			);
 			return;
 		}
 
@@ -77,10 +86,12 @@
 		error_log( 'SD_LOGBOOK AJAX: sd_activity_registration_list - trovate ' . count( $registrations ) . ' registrazioni per activity_id=' . $activity_id );
 
 		// Puoi aggiungere qui eventuale mapping/campionamento campi per compatibilità JS
-		wp_send_json_success( array(
-			'registrations' => $registrations,
-			'activity_id' => $activity_id,
-		) );
+		wp_send_json_success(
+			array(
+				'registrations' => $registrations,
+				'activity_id'   => $activity_id,
+			)
+		);
 	}
 
 	/**
@@ -192,15 +203,18 @@
 			}
 		}
 
-		$updated = $this->update_registration( $registration_id, array(
-			'first_name'     => $first_name,
-			'last_name'      => $last_name,
-			'email'          => $email,
-			'price_id'       => $price_id,
-			'status'         => $status,
-			'payment_status' => $payment_status,
-			'fields'         => $registration_data,
-		) );
+		$updated = $this->update_registration(
+			$registration_id,
+			array(
+				'first_name'     => $first_name,
+				'last_name'      => $last_name,
+				'email'          => $email,
+				'price_id'       => $price_id,
+				'status'         => $status,
+				'payment_status' => $payment_status,
+				'fields'         => $registration_data,
+			)
+		);
 
 		if ( ! $updated ) {
 			wp_send_json_error( array( 'message' => __( 'Errore durante il salvataggio della registrazione.', 'sd-logbook' ) ) );
@@ -344,7 +358,7 @@
 		}
 
 		// Output
-		$filename = 'iscrizioni_attivita_' . $activity_id . '_' . date( 'Ymd_His' ) . '.xlsx';
+		$filename = 'iscrizioni_attivita_' . $activity_id . '_' . gmdate( 'Ymd_His' ) . '.xlsx';
 		headers_sent() || header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
 		headers_sent() || header( 'Content-Disposition: attachment;filename="' . $filename . '"' );
 		headers_sent() || header( 'Cache-Control: max-age=0' );
@@ -1574,12 +1588,12 @@
 		global $wpdb;
 
 		// DEBUG: logga tutto il payload ricevuto
-		error_log('SD_LOGBOOK AJAX PAYLOAD: ' . print_r($_POST, true));
+		error_log( 'SD_LOGBOOK AJAX PAYLOAD: ' . print_r( $_POST, true ) );
 		// DEBUG: logga il nonce ricevuto e quello atteso
-		error_log('SD_LOGBOOK: Nonce ricevuto: ' . ($_POST['nonce'] ?? 'N/D'));
-		error_log('SD_LOGBOOK: Nonce atteso (nuovo): ' . wp_create_nonce('sd_nonce'));
+		error_log( 'SD_LOGBOOK: Nonce ricevuto: ' . ( $_POST['nonce'] ?? 'N/D' ) );
+		error_log( 'SD_LOGBOOK: Nonce atteso (nuovo): ' . wp_create_nonce( 'sd_nonce' ) );
 		// DEBUG: logga utente corrente
-		error_log('SD_LOGBOOK: Utente corrente: ' . print_r(wp_get_current_user(), true));
+		error_log( 'SD_LOGBOOK: Utente corrente: ' . print_r( wp_get_current_user(), true ) );
 
 		check_ajax_referer( 'sd_nonce', 'nonce' );
 
@@ -2456,16 +2470,20 @@
 		wp_enqueue_script( 'sd-activity-admin', SD_LOGBOOK_PLUGIN_URL . 'assets/js/activity-admin.js', array( 'jquery', 'jquery-ui-sortable', 'wp-i18n' ), $activity_admin_js_version, true );
 		wp_set_script_translations( 'sd-activity-admin', 'sd-logbook', SD_LOGBOOK_PLUGIN_DIR . 'languages' );
 		// Localizzazione custom messaggi JS
-		wp_localize_script( 'sd-activity-admin', 'sdActivityAdmin', array_merge(
-			isset( $GLOBALS['sdActivityAdmin'] ) && is_array( $GLOBALS['sdActivityAdmin'] ) ? $GLOBALS['sdActivityAdmin'] : array(),
-			array(
-				'ajaxUrl' => admin_url('admin-ajax.php'),
-				'nonce' => wp_create_nonce('sd_nonce'),
-				'i18n' => array(
-					'registration_not_found' => esc_html__( 'Registrazione non trovata', 'sd-logbook' ),
-				),
+		wp_localize_script(
+			'sd-activity-admin',
+			'sdActivityAdmin',
+			array_merge(
+				isset( $GLOBALS['sdActivityAdmin'] ) && is_array( $GLOBALS['sdActivityAdmin'] ) ? $GLOBALS['sdActivityAdmin'] : array(),
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'sd_nonce' ),
+					'i18n'    => array(
+						'registration_not_found' => esc_html__( 'Registrazione non trovata', 'sd-logbook' ),
+					),
+				)
 			)
-		) );
+		);
 
 		ob_start();
 		include SD_LOGBOOK_PLUGIN_DIR . 'templates/activity-admin.php';
