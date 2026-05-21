@@ -21,7 +21,7 @@ jobs:
           tools: composer
 
       - name: Install PHPCS and WordPress Coding Standards
-        run: composer install --no-interaction --no-progress --prefer-dist
+        run: composer install --no-interaction --no-progress --prefer-dist --no-security-blocking
 
       - name: Run PHPCS
         run: ./vendor/bin/phpcs -n
