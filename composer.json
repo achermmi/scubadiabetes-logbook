@@ -17,7 +17,6 @@
   "config": {
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
-    },
-    "cafile": "C:\\xampp\\php\\extras\\ssl\\cacert.pem"
+    }
   }
 }
