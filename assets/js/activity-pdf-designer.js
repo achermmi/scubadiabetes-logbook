@@ -1,0 +1,775 @@
+/* global sdPdfDesigner, jQuery */
+(function ($) {
+	'use strict';
+
+	// =========================================================================
+	// COSTANTI
+	// =========================================================================
+
+	// Canvas A4 portrait a 3.78 px/mm
+	var PX_PER_MM    = 794 / 210;   // ~3.781
+	var PAGE_W_MM    = 210;
+	var PAGE_H_MM    = 297;
+	var CANVAS_W_PX  = 794;
+	var CANVAS_H_PX  = 1123;
+
+	// =========================================================================
+	// STATO
+	// =========================================================================
+
+	var state = {
+		templateId:    0,
+		orientation:   'portrait',
+		elements:      [],          // array di oggetti elemento
+		selectedId:    null,
+		nextId:        1,
+		activityId:    0,
+		dynamicFields: {},
+		isDragging:    false,
+		dragOffsetX:   0,
+		dragOffsetY:   0,
+		isResizing:    false,
+		resizeStartX:  0,
+		resizeStartW:  0,
+	};
+
+	// =========================================================================
+	// UTILS
+	// =========================================================================
+
+	function pxToMm(px) { return parseFloat((px / PX_PER_MM).toFixed(2)); }
+	function mmToPx(mm) { return Math.round(mm * PX_PER_MM); }
+
+	function clamp(val, min, max) { return Math.min(max, Math.max(min, val)); }
+
+	function esc(str) {
+		return String(str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	function showStatus(msg, type) {
+		var $s = $('#sd-pdf-status');
+		$s.removeClass('ok error info').addClass(type || 'info').html(esc(msg)).show();
+		clearTimeout($s.data('timer'));
+		$s.data('timer', setTimeout(function () { $s.fadeOut(); }, 4000));
+	}
+
+	function generateId() {
+		return 'el_' + (state.nextId++);
+	}
+
+	function getPageDims() {
+		if (state.orientation === 'landscape') {
+			return { w: 297, h: 210, canvasW: 1123, canvasH: 794 };
+		}
+		return { w: 210, h: 297, canvasW: 794, canvasH: 1123 };
+	}
+
+	// =========================================================================
+	// ELEMENTI: CREAZIONE / RENDERING
+	// =========================================================================
+
+	function defaultElement(type, label) {
+		return {
+			id:          generateId(),
+			type:        type,
+			label:       label || type,
+			x:           20,
+			y:           20,
+			width:       80,
+			font_size:   11,
+			font_bold:   false,
+			font_italic: false,
+			color:       '#000000',
+			prefix:      '',
+			suffix:      '',
+			label_show:  false,
+			custom_text: '',
+		};
+	}
+
+	function previewValue(el) {
+		var allFields = $.extend({}, sdPdfDesigner.fixedFields, sdPdfDesigner.activityFields, state.dynamicFields);
+		if (el.type === 'text_label') {
+			return el.custom_text || '(testo libero)';
+		}
+		var label = allFields[el.type] || el.type;
+		return '{ ' + label + ' }';
+	}
+
+	function buildElementDOM(el) {
+		var dims  = getPageDims();
+		var xPx   = mmToPx(el.x);
+		var yPx   = mmToPx(el.y);
+		var wPx   = mmToPx(el.width);
+
+		var style = [
+			'left:'   + xPx + 'px',
+			'top:'    + yPx + 'px',
+			'width:'  + wPx + 'px',
+			'font-size:' + el.font_size + 'pt',
+			'color:' + el.color,
+		];
+		if (el.font_bold)   { style.push('font-weight:bold'); }
+		if (el.font_italic) { style.push('font-style:italic'); }
+
+		var labelHtml = '';
+		if (el.label_show) {
+			labelHtml = '<span class="sd-el-label">' + esc(el.label) + '</span>';
+		}
+		var valueHtml = '<span class="sd-el-value">' + esc(el.prefix + previewValue(el) + el.suffix) + '</span>';
+
+		return $('<div>')
+			.addClass('sd-canvas-element')
+			.attr('data-id', el.id)
+			.css('display', 'block')
+			.attr('style', style.join(';') + ';' + ($('<div>').css('display', 'block').attr('style', '').attr('style', null), ''))
+			.html(labelHtml + valueHtml + '<div class="sd-el-resize"></div>')
+			.attr('style', style.join(';'));
+	}
+
+	function renderAllElements() {
+		var $canvas = $('#sd-pdf-canvas');
+		$canvas.find('.sd-canvas-element').remove();
+		state.elements.forEach(function (el) {
+			var $el = buildElementDOM(el);
+			bindElementEvents($el);
+			$canvas.append($el);
+		});
+		updateSelectionDOM();
+	}
+
+	function renderElement(el) {
+		var $existing = $('#sd-pdf-canvas').find('[data-id="' + el.id + '"]');
+		if ($existing.length) {
+			var $new = buildElementDOM(el);
+			bindElementEvents($new);
+			$existing.replaceWith($new);
+		} else {
+			var $new2 = buildElementDOM(el);
+			bindElementEvents($new2);
+			$('#sd-pdf-canvas').append($new2);
+		}
+		updateSelectionDOM();
+	}
+
+	function updateSelectionDOM() {
+		$('#sd-pdf-canvas .sd-canvas-element').each(function () {
+			$(this).toggleClass('selected', $(this).data('id') === state.selectedId);
+		});
+	}
+
+	// =========================================================================
+	// SELEZIONE ELEMENTO
+	// =========================================================================
+
+	function selectElement(id) {
+		state.selectedId = id;
+		updateSelectionDOM();
+		if (id === null) {
+			$('#sd-props-empty').show();
+			$('#sd-props-form').hide();
+			return;
+		}
+		var el = state.elements.find(function (e) { return e.id === id; });
+		if (!el) { return; }
+		$('#sd-props-empty').hide();
+		$('#sd-props-form').show();
+		$('#sd-prop-label').val(el.label);
+		$('#sd-prop-label-show').prop('checked', el.label_show);
+		$('#sd-prop-custom-text').val(el.custom_text).closest('label').toggle(el.type === 'text_label');
+		$('#sd-prop-prefix').val(el.prefix);
+		$('#sd-prop-suffix').val(el.suffix);
+		$('#sd-prop-width').val(el.width);
+		$('#sd-prop-fontsize').val(el.font_size);
+		$('#sd-prop-bold').prop('checked', el.font_bold);
+		$('#sd-prop-italic').prop('checked', el.font_italic);
+		$('#sd-prop-color').val(el.color);
+		$('#sd-prop-x').val(el.x);
+		$('#sd-prop-y').val(el.y);
+	}
+
+	function updateSelectedFromProps() {
+		if (!state.selectedId) { return; }
+		var el = state.elements.find(function (e) { return e.id === state.selectedId; });
+		if (!el) { return; }
+		el.label       = $('#sd-prop-label').val();
+		el.label_show  = $('#sd-prop-label-show').is(':checked');
+		el.custom_text = $('#sd-prop-custom-text').val();
+		el.prefix      = $('#sd-prop-prefix').val();
+		el.suffix      = $('#sd-prop-suffix').val();
+		el.width       = parseFloat($('#sd-prop-width').val()) || 60;
+		el.font_size   = parseInt($('#sd-prop-fontsize').val(), 10) || 11;
+		el.font_bold   = $('#sd-prop-bold').is(':checked');
+		el.font_italic = $('#sd-prop-italic').is(':checked');
+		el.color       = $('#sd-prop-color').val();
+		el.x           = parseFloat($('#sd-prop-x').val()) || 0;
+		el.y           = parseFloat($('#sd-prop-y').val()) || 0;
+		renderElement(el);
+	}
+
+	// =========================================================================
+	// DRAG DAL CANVAS (mousedown → mousemove → mouseup)
+	// =========================================================================
+
+	function bindElementEvents($el) {
+		// Click → seleziona
+		$el.on('mousedown', function (e) {
+			if ($(e.target).hasClass('sd-el-resize')) { return; } // gestito dal resize handler
+			e.preventDefault();
+			e.stopPropagation();
+
+			var id = $(this).data('id');
+			selectElement(id);
+
+			var el    = state.elements.find(function (el) { return el.id === id; });
+			if (!el) { return; }
+
+			var $canvas    = $('#sd-pdf-canvas');
+			var canvasRect = $canvas[0].getBoundingClientRect();
+			var elLeft     = mmToPx(el.x);
+			var elTop      = mmToPx(el.y);
+
+			state.isDragging  = true;
+			state.dragOffsetX = e.clientX - canvasRect.left - elLeft;
+			state.dragOffsetY = e.clientY - canvasRect.top  - elTop;
+
+			var dims = getPageDims();
+
+			$(document).on('mousemove.sddrag', function (ev) {
+				if (!state.isDragging) { return; }
+				var nx = ev.clientX - canvasRect.left - state.dragOffsetX;
+				var ny = ev.clientY - canvasRect.top  - state.dragOffsetY;
+				// Limita ai bordi canvas
+				nx = clamp(nx, 0, dims.canvasW - mmToPx(el.width));
+				ny = clamp(ny, 0, dims.canvasH - 16);
+				el.x = pxToMm(nx);
+				el.y = pxToMm(ny);
+				$el.css({ left: nx + 'px', top: ny + 'px' });
+				// Aggiorna pannello props X/Y in tempo reale
+				$('#sd-prop-x').val(el.x);
+				$('#sd-prop-y').val(el.y);
+			});
+
+			$(document).on('mouseup.sddrag', function () {
+				state.isDragging = false;
+				$(document).off('mousemove.sddrag mouseup.sddrag');
+			});
+		});
+
+		// Resize handle
+		$el.find('.sd-el-resize').on('mousedown', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			var id = $el.data('id');
+			var el = state.elements.find(function (el) { return el.id === id; });
+			if (!el) { return; }
+
+			state.isResizing   = true;
+			state.resizeStartX = e.clientX;
+			state.resizeStartW = el.width;
+
+			$(document).on('mousemove.sdresize', function (ev) {
+				if (!state.isResizing) { return; }
+				var deltaX = ev.clientX - state.resizeStartX;
+				var newW   = Math.max(10, state.resizeStartW + pxToMm(deltaX));
+				el.width   = parseFloat(newW.toFixed(2));
+				$el.css('width', mmToPx(el.width) + 'px');
+				$('#sd-prop-width').val(el.width);
+			});
+
+			$(document).on('mouseup.sdresize', function () {
+				state.isResizing = false;
+				$(document).off('mousemove.sdresize mouseup.sdresize');
+			});
+		});
+	}
+
+	// =========================================================================
+	// DROP DAL SIDEBAR ONTO CANVAS
+	// =========================================================================
+
+	function initCanvasDrop() {
+		var $canvas = $('#sd-pdf-canvas');
+
+		// HTML5 DnD
+		$canvas.on('dragover', function (e) {
+			e.preventDefault();
+			$(this).addClass('drag-over');
+		});
+
+		$canvas.on('dragleave', function () {
+			$(this).removeClass('drag-over');
+		});
+
+		$canvas.on('drop', function (e) {
+			e.preventDefault();
+			$(this).removeClass('drag-over');
+
+			var type  = e.originalEvent.dataTransfer.getData('text/plain');
+			var label = e.originalEvent.dataTransfer.getData('application/sd-label');
+
+			if (!type) { return; }
+
+			var canvasRect = $canvas[0].getBoundingClientRect();
+			var xPx = e.originalEvent.clientX - canvasRect.left;
+			var yPx = e.originalEvent.clientY - canvasRect.top;
+
+			var el    = defaultElement(type, label);
+			el.x      = pxToMm(clamp(xPx - mmToPx(el.width / 2), 0, canvasRect.width - mmToPx(el.width)));
+			el.y      = pxToMm(clamp(yPx - 12, 0, canvasRect.height - 20));
+
+			addElement(el);
+			selectElement(el.id);
+		});
+	}
+
+	// =========================================================================
+	// CHIP DRAG FROM SIDEBAR
+	// =========================================================================
+
+	function initChipDrag() {
+		$(document).on('dragstart', '.sd-field-chip', function (e) {
+			var type  = $(this).data('type');
+			var label = $(this).data('label') || type;
+			e.originalEvent.dataTransfer.setData('text/plain', type);
+			e.originalEvent.dataTransfer.setData('application/sd-label', label);
+			e.originalEvent.dataTransfer.effectAllowed = 'copy';
+		});
+
+		// Doppio click → aggiunge al centro del canvas
+		$(document).on('dblclick', '.sd-field-chip', function () {
+			var type  = $(this).data('type');
+			var label = $(this).data('label') || type;
+			var dims  = getPageDims();
+			var el    = defaultElement(type, label);
+			el.x = parseFloat((dims.w / 2 - el.width / 2).toFixed(2));
+			el.y = 60;
+			addElement(el);
+			selectElement(el.id);
+		});
+	}
+
+	// =========================================================================
+	// GESTIONE LISTA ELEMENTI
+	// =========================================================================
+
+	function addElement(el) {
+		state.elements.push(el);
+		renderElement(el);
+	}
+
+	function removeElement(id) {
+		state.elements = state.elements.filter(function (el) { return el.id !== id; });
+		$('#sd-pdf-canvas').find('[data-id="' + id + '"]').remove();
+		if (state.selectedId === id) {
+			selectElement(null);
+		}
+	}
+
+	// =========================================================================
+	// CANVAS CLICK → DESELEZIONA
+	// =========================================================================
+
+	function initCanvasClick() {
+		$('#sd-pdf-canvas').on('mousedown', function (e) {
+			if ($(e.target).is('#sd-pdf-canvas')) {
+				selectElement(null);
+			}
+		});
+	}
+
+	// =========================================================================
+	// ORIENTAMENTO
+	// =========================================================================
+
+	function applyOrientation(orientation) {
+		state.orientation = orientation;
+		var $c = $('#sd-pdf-canvas');
+		if (orientation === 'landscape') {
+			$c.addClass('landscape');
+		} else {
+			$c.removeClass('landscape');
+		}
+	}
+
+	// =========================================================================
+	// AJAX: SALVA TEMPLATE
+	// =========================================================================
+
+	function saveTemplate() {
+		var name = $('#sd-tpl-name').val().trim();
+		if (!name) {
+			showStatus('Inserisci un nome per il template.', 'error');
+			return;
+		}
+
+		$.post(sdPdfDesigner.ajaxUrl, {
+			action:        'sd_pdf_tpl_save',
+			nonce:         sdPdfDesigner.nonce,
+			template_id:   state.templateId,
+			name:          name,
+			orientation:   state.orientation,
+			activity_id:   state.activityId,
+			elements_json: JSON.stringify(state.elements),
+		}, function (resp) {
+			if (resp.success) {
+				state.templateId = resp.data.template_id;
+				showStatus(resp.data.message, 'ok');
+			} else {
+				showStatus(resp.data.message || 'Errore salvataggio.', 'error');
+			}
+		}).fail(function () {
+			showStatus('Errore di rete.', 'error');
+		});
+	}
+
+	// =========================================================================
+	// AJAX: LISTA TEMPLATE → MODAL
+	// =========================================================================
+
+	function openLoadModal() {
+		$.post(sdPdfDesigner.ajaxUrl, {
+			action: 'sd_pdf_tpl_list',
+			nonce:  sdPdfDesigner.nonce,
+		}, function (resp) {
+			if (!resp.success) {
+				showStatus(resp.data.message || 'Errore caricamento lista.', 'error');
+				return;
+			}
+			var rows = resp.data.templates;
+			var html = '';
+			if (!rows.length) {
+				html = '<tr><td colspan="4" style="color:#999;text-align:center;">Nessun template salvato.</td></tr>';
+			} else {
+				rows.forEach(function (t) {
+					html += '<tr>';
+					html += '<td>' + esc(t.name) + '</td>';
+					html += '<td>' + esc(t.orientation === 'landscape' ? 'Orizzontale' : 'Verticale') + '</td>';
+					html += '<td>' + esc((t.updated_at || '').substring(0, 16)) + '</td>';
+					html += '<td><button class="sd-pdf-btn sd-pdf-btn-primary sd-btn-tpl-load" data-id="' + esc(t.id) + '">Carica</button></td>';
+					html += '</tr>';
+				});
+			}
+			$('#sd-tpl-modal-rows').html(html);
+			$('#sd-tpl-modal').show();
+		}).fail(function () {
+			showStatus('Errore di rete.', 'error');
+		});
+	}
+
+	// =========================================================================
+	// AJAX: CARICA TEMPLATE
+	// =========================================================================
+
+	function loadTemplate(id) {
+		$.post(sdPdfDesigner.ajaxUrl, {
+			action:      'sd_pdf_tpl_load',
+			nonce:       sdPdfDesigner.nonce,
+			template_id: id,
+		}, function (resp) {
+			if (!resp.success) {
+				showStatus(resp.data.message || 'Errore caricamento.', 'error');
+				return;
+			}
+			var tpl = resp.data.template;
+			state.templateId  = tpl.id;
+			state.orientation = tpl.orientation || 'portrait';
+			state.elements    = tpl.elements || [];
+			state.activityId  = parseInt(tpl.activity_id, 10) || 0;
+			// Ricalcola nextId
+			state.nextId = 1;
+			state.elements.forEach(function (el) {
+				var num = parseInt((el.id || '').replace('el_', ''), 10);
+				if (num >= state.nextId) { state.nextId = num + 1; }
+			});
+
+			$('#sd-tpl-name').val(tpl.name);
+			$('#sd-tpl-orientation').val(state.orientation);
+			applyOrientation(state.orientation);
+			if (state.activityId > 0) {
+				$('#sd-activity-select').val(state.activityId);
+				loadDynamicFields(state.activityId);
+			}
+			renderAllElements();
+			selectElement(null);
+			$('#sd-tpl-modal').hide();
+			showStatus('Template "' + tpl.name + '" caricato.', 'ok');
+		}).fail(function () {
+			showStatus('Errore di rete.', 'error');
+		});
+	}
+
+	// =========================================================================
+	// AJAX: ELIMINA TEMPLATE
+	// =========================================================================
+
+	function deleteTemplate() {
+		if (!state.templateId) {
+			showStatus('Nessun template da eliminare (non ancora salvato).', 'error');
+			return;
+		}
+		if (!window.confirm('Eliminare questo template?')) { return; }
+
+		$.post(sdPdfDesigner.ajaxUrl, {
+			action:      'sd_pdf_tpl_delete',
+			nonce:       sdPdfDesigner.nonce,
+			template_id: state.templateId,
+		}, function (resp) {
+			if (resp.success) {
+				resetDesigner();
+				showStatus('Template eliminato.', 'ok');
+			} else {
+				showStatus(resp.data.message || 'Errore eliminazione.', 'error');
+			}
+		}).fail(function () {
+			showStatus('Errore di rete.', 'error');
+		});
+	}
+
+	// =========================================================================
+	// AJAX: CAMPI DINAMICI
+	// =========================================================================
+
+	function loadDynamicFields(activityId) {
+		if (!activityId) {
+			state.dynamicFields = {};
+			$('#sd-dyn-fields-section').hide();
+			$('#sd-fields-dynamic').empty();
+			return;
+		}
+
+		$.post(sdPdfDesigner.ajaxUrl, {
+			action:      'sd_pdf_tpl_fields',
+			nonce:       sdPdfDesigner.nonce,
+			activity_id: activityId,
+		}, function (resp) {
+			if (!resp.success) { return; }
+			state.dynamicFields = resp.data.dynamic_fields || {};
+			var $list = $('#sd-fields-dynamic').empty();
+			var hasFields = false;
+			$.each(state.dynamicFields, function (key, label) {
+				hasFields = true;
+				$list.append(
+					$('<div>')
+						.addClass('sd-field-chip')
+						.attr({ 'data-type': key, 'data-label': label, draggable: true })
+						.html('<span class="sd-chip-icon">📝</span> ' + esc(label))
+				);
+			});
+			$('#sd-dyn-fields-section').toggle(hasFields);
+			// Aggiorna preview degli elementi già sul canvas
+			renderAllElements();
+		});
+	}
+
+	// =========================================================================
+	// AJAX: GENERA PDF (anteprima)
+	// =========================================================================
+
+	function generatePreview() {
+		if (!state.templateId) {
+			showStatus('Salva prima il template.', 'error');
+			return;
+		}
+		downloadPdf({
+			action:          'sd_pdf_tpl_generate',
+			nonce:           sdPdfDesigner.nonce,
+			template_id:     state.templateId,
+			activity_id:     state.activityId,
+			registration_id: 0,
+		}, 'anteprima_template.pdf');
+	}
+
+	// =========================================================================
+	// AJAX: GENERA PDF (tutti)
+	// =========================================================================
+
+	function generateAll() {
+		if (!state.templateId) {
+			showStatus('Salva prima il template.', 'error');
+			return;
+		}
+		if (!state.activityId) {
+			showStatus('Seleziona un\'attività prima di generare i PDF.', 'error');
+			return;
+		}
+		downloadPdf({
+			action:      'sd_pdf_tpl_gen_all',
+			nonce:       sdPdfDesigner.nonce,
+			template_id: state.templateId,
+			activity_id: state.activityId,
+		}, 'iscrizioni_template.pdf');
+	}
+
+	// =========================================================================
+	// HELPER: DOWNLOAD PDF BLOB
+	// =========================================================================
+
+	function downloadPdf(postData, fallbackFilename) {
+		showStatus('Generazione PDF in corso…', 'info');
+		var xhr = new XMLHttpRequest();
+		xhr.open('POST', sdPdfDesigner.ajaxUrl, true);
+		xhr.responseType = 'blob';
+		xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+		xhr.onload = function () {
+			var contentType = xhr.getResponseHeader('Content-Type') || '';
+			if (xhr.status === 200 && contentType.indexOf('application/pdf') !== -1) {
+				var url  = URL.createObjectURL(xhr.response);
+				var link = document.createElement('a');
+				link.href     = url;
+				link.download = fallbackFilename;
+				link.click();
+				URL.revokeObjectURL(url);
+				showStatus('PDF generato.', 'ok');
+			} else {
+				// JSON error
+				var reader = new FileReader();
+				reader.onload = function () {
+					try {
+						var json = JSON.parse(reader.result);
+						showStatus((json.data && json.data.message) || 'Errore generazione PDF.', 'error');
+					} catch (err) {
+						showStatus('Errore generazione PDF.', 'error');
+					}
+				};
+				reader.readAsText(xhr.response);
+			}
+		};
+		xhr.onerror = function () { showStatus('Errore di rete.', 'error'); };
+
+		// Serializza postData
+		var params = [];
+		for (var k in postData) {
+			if (Object.prototype.hasOwnProperty.call(postData, k)) {
+				params.push(encodeURIComponent(k) + '=' + encodeURIComponent(postData[k]));
+			}
+		}
+		xhr.send(params.join('&'));
+	}
+
+	// =========================================================================
+	// RESET DESIGNER
+	// =========================================================================
+
+	function resetDesigner() {
+		state.templateId  = 0;
+		state.elements    = [];
+		state.selectedId  = null;
+		state.activityId  = 0;
+		state.nextId      = 1;
+		state.orientation = 'portrait';
+		$('#sd-tpl-name').val('');
+		$('#sd-tpl-orientation').val('portrait');
+		applyOrientation('portrait');
+		renderAllElements();
+		selectElement(null);
+	}
+
+	// =========================================================================
+	// SHORTCUTS TASTIERA (frecce per micro-spostamenti)
+	// =========================================================================
+
+	function initKeyboard() {
+		$(document).on('keydown', function (e) {
+			if (!state.selectedId) { return; }
+			if ($(e.target).is('input, textarea, select')) { return; }
+
+			var el   = state.elements.find(function (el) { return el.id === state.selectedId; });
+			if (!el) { return; }
+
+			var step = e.shiftKey ? 0.5 : 2; // mm
+			var moved = false;
+			var dims = getPageDims();
+
+			switch (e.which) {
+				case 37: el.x = Math.max(0, el.x - step); moved = true; break; // ←
+				case 39: el.x = Math.min(dims.w - el.width, el.x + step); moved = true; break; // →
+				case 38: el.y = Math.max(0, el.y - step); moved = true; break; // ↑
+				case 40: el.y = Math.min(dims.h - 5, el.y + step); moved = true; break; // ↓
+				case 46: removeElement(state.selectedId); return; // DEL
+			}
+
+			if (moved) {
+				e.preventDefault();
+				el.x = parseFloat(el.x.toFixed(2));
+				el.y = parseFloat(el.y.toFixed(2));
+				var $el = $('#sd-pdf-canvas').find('[data-id="' + el.id + '"]');
+				$el.css({ left: mmToPx(el.x) + 'px', top: mmToPx(el.y) + 'px' });
+				$('#sd-prop-x').val(el.x);
+				$('#sd-prop-y').val(el.y);
+			}
+		});
+	}
+
+	// =========================================================================
+	// INIT
+	// =========================================================================
+
+	$(function () {
+		// Canvas drop
+		initCanvasDrop();
+		// Chip drag
+		initChipDrag();
+		// Canvas click deselect
+		initCanvasClick();
+		// Keyboard
+		initKeyboard();
+
+		// Bottoni toolbar
+		$('#sd-tpl-btn-new').on('click', function () {
+			if (state.elements.length > 0) {
+				if (!window.confirm('Creare un nuovo template? Le modifiche non salvate andranno perse.')) { return; }
+			}
+			resetDesigner();
+		});
+
+		$('#sd-tpl-btn-save').on('click', saveTemplate);
+
+		$('#sd-tpl-btn-load').on('click', openLoadModal);
+
+		$('#sd-tpl-btn-delete').on('click', deleteTemplate);
+
+		$('#sd-tpl-btn-preview').on('click', generatePreview);
+
+		$('#sd-tpl-btn-gen-all').on('click', generateAll);
+
+		// Carica template dal modal
+		$(document).on('click', '.sd-btn-tpl-load', function () {
+			var id = parseInt($(this).data('id'), 10);
+			loadTemplate(id);
+		});
+
+		// Chiudi modal
+		$('#sd-tpl-modal-close').on('click', function () { $('#sd-tpl-modal').hide(); });
+		$('#sd-tpl-modal').on('click', function (e) {
+			if ($(e.target).is('#sd-tpl-modal')) { $('#sd-tpl-modal').hide(); }
+		});
+
+		// Orientamento
+		$('#sd-tpl-orientation').on('change', function () {
+			applyOrientation($(this).val());
+		});
+
+		// Attività select
+		$('#sd-activity-select').on('change', function () {
+			state.activityId = parseInt($(this).val(), 10) || 0;
+			loadDynamicFields(state.activityId);
+		});
+
+		// Pannello props: aggiorna su change
+		$('#sd-props-form').on('input change', 'input, select', function () {
+			updateSelectedFromProps();
+		});
+
+		// Rimuovi elemento selezionato
+		$('#sd-prop-delete').on('click', function () {
+			if (state.selectedId) { removeElement(state.selectedId); }
+		});
+	});
+
+})(jQuery);

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.84' );
+define( 'SD_LOGBOOK_VERSION', '1.3.85' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.7.2';
+	const DB_VERSION = '3.8.0';
 
 	/**
 	 * Ottieni istanza singleton
@@ -82,6 +82,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-manager.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-pdf.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-pdf-template-designer.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-payment-flow.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-form.php';
@@ -272,6 +273,7 @@ final class SD_Logbook {
 		new SD_Payment_Settings();
 		SD_Activity_Manager::get_instance();
 		new SD_Activity_PDF();
+		new SD_PDF_Template_Designer();
 		new SD_Activity_Settings();
 		new SD_Activity_Payment_Flow();
 		new SD_Dive_Form();

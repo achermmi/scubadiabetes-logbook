@@ -1386,6 +1386,26 @@ class SD_Database {
 			UNIQUE KEY idx_rate_date (rate_date)
 		) {$charset_collate};";
 		dbDelta( $sql_currency_rates );
+
+		// =====================================================================
+		// TABELLA: TEMPLATE PDF DESIGNER (sd_pdf_templates)
+		// Layout dei template creati con il designer drag-and-drop
+		// =====================================================================
+		$table_pdf_templates = $this->table( 'pdf_templates' );
+		$sql_pdf_templates   = "CREATE TABLE {$table_pdf_templates} (
+			id int(11) NOT NULL AUTO_INCREMENT,
+			name varchar(255) NOT NULL,
+			orientation varchar(10) DEFAULT 'portrait',
+			elements_json longtext DEFAULT NULL,
+			activity_id int(11) DEFAULT NULL,
+			created_by int(11) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY idx_activity_id (activity_id),
+			KEY idx_created_by (created_by)
+		) {$charset_collate};";
+		dbDelta( $sql_pdf_templates );
 	}
 
 	/**

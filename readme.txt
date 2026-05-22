@@ -4,7 +4,7 @@ Tags: diving, diabetes, logbook, scuba, medical
 Requires at least: 6.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.82
+Stable tag: 1.3.85
 License: GPLv2 or later
 
 Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
@@ -20,6 +20,14 @@ Plugin per WordPress che permette la registrazione e il monitoraggio delle immer
 3. Assegnare i ruoli appropriati agli utenti
 
 == Changelog ==
+
+= 1.3.85 =
+* Nuovo: Designer PDF drag-and-drop per template attività/registrazioni (shortcode [sd_pdf_template_designer]).
+  Permette di creare layout A4 posizionando liberamente i campi sul canvas, salvare i template su DB, generare PDF con dompdf.
+* DB: aggiunta tabella sd_pdf_templates (bump DB_VERSION 3.8.0).
+
+= 1.3.84 =
+* Generazione PDF base per attività e registrazioni (PDF lista, scheda attività, scheda singola registrazione).
 
 = 1.3.83 =
 * Fix: badge stato e stato pagamento nella tabella registrazioni attività ora usano il pattern pill-wrap compatto (come la tabella rinnovi soci)

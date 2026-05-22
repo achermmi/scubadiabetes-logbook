@@ -1,0 +1,404 @@
+/* =============================================================================
+   SD PDF Template Designer — Styles
+   ============================================================================= */
+
+/* ----- Layout generale ----- */
+.sd-pdf-designer-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	font-size: 13px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	background: #f0f2f5;
+	min-height: 100vh;
+}
+
+/* ----- Toolbar ----- */
+.sd-pdf-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: #1e2a3a;
+	color: #fff;
+	padding: 10px 16px;
+	flex-wrap: wrap;
+}
+
+.sd-pdf-toolbar-left,
+.sd-pdf-toolbar-center,
+.sd-pdf-toolbar-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.sd-pdf-tpl-name-input {
+	padding: 6px 10px;
+	border: 1px solid #3d5063;
+	border-radius: 4px;
+	background: #2c3e50;
+	color: #fff;
+	font-size: 13px;
+	width: 200px;
+}
+
+.sd-pdf-tpl-name-input::placeholder { color: #7f8c8d; }
+
+.sd-pdf-select {
+	padding: 6px 8px;
+	border: 1px solid #3d5063;
+	border-radius: 4px;
+	background: #2c3e50;
+	color: #fff;
+	font-size: 13px;
+}
+
+/* ----- Bottoni ----- */
+.sd-pdf-btn {
+	padding: 6px 14px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	transition: opacity 0.15s, transform 0.1s;
+	white-space: nowrap;
+}
+
+.sd-pdf-btn:hover { opacity: 0.88; }
+.sd-pdf-btn:active { transform: scale(0.97); }
+
+.sd-pdf-btn-primary  { background: #2980b9; color: #fff; }
+.sd-pdf-btn-secondary { background: #7f8c8d; color: #fff; }
+.sd-pdf-btn-success  { background: #27ae60; color: #fff; }
+.sd-pdf-btn-danger   { background: #c0392b; color: #fff; }
+.sd-pdf-btn-info     { background: #16a085; color: #fff; }
+
+/* ----- Status bar ----- */
+.sd-pdf-status {
+	padding: 8px 16px;
+	font-size: 13px;
+	border-left: 4px solid transparent;
+}
+.sd-pdf-status.ok    { background: #d4edda; border-color: #27ae60; color: #155724; }
+.sd-pdf-status.error { background: #f8d7da; border-color: #c0392b; color: #721c24; }
+.sd-pdf-status.info  { background: #d1ecf1; border-color: #2980b9; color: #0c5460; }
+
+/* ----- Body (3 colonne) ----- */
+.sd-pdf-body {
+	display: flex;
+	gap: 0;
+	flex: 1;
+	min-height: 800px;
+}
+
+/* ----- Sidebar sinistra ----- */
+.sd-pdf-sidebar {
+	width: 220px;
+	min-width: 220px;
+	background: #fff;
+	border-right: 1px solid #dce1e7;
+	padding: 12px 8px;
+	overflow-y: auto;
+	max-height: calc(100vh - 60px);
+	position: sticky;
+	top: 0;
+}
+
+.sd-pdf-sidebar-section {
+	margin-bottom: 14px;
+}
+
+.sd-pdf-sidebar-section h4 {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #7f8c8d;
+	margin: 0 0 6px 0;
+	padding-bottom: 4px;
+	border-bottom: 1px solid #ecf0f1;
+}
+
+.sd-pdf-full-width { width: 100%; }
+
+/* ----- Field chips (draggable) ----- */
+.sd-field-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.sd-field-chip {
+	padding: 6px 8px;
+	background: #eaf2fb;
+	border: 1px solid #aed6f1;
+	border-radius: 4px;
+	cursor: grab;
+	font-size: 12px;
+	color: #1a5276;
+	user-select: none;
+	transition: background 0.15s, transform 0.1s;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.sd-field-chip:hover {
+	background: #2980b9;
+	color: #fff;
+	border-color: #2980b9;
+}
+
+.sd-field-chip:active { cursor: grabbing; }
+
+.sd-chip-icon { font-size: 11px; }
+
+/* ----- Canvas A4 ----- */
+.sd-pdf-canvas-wrap {
+	flex: 1;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	background: #b0b8c1;
+	padding: 24px 16px;
+	overflow: auto;
+}
+
+/* A4 portrait: 210mm × 297mm @ 3.78px/mm → 794×1123px */
+.sd-pdf-canvas {
+	position: relative;
+	width: 794px;
+	min-width: 794px;
+	height: 1123px;
+	background: #fff;
+	box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+
+	/* Griglia 10mm ≈ 37.8px */
+	background-image:
+		repeating-linear-gradient(0deg, transparent, transparent 36.8px, rgba(0,120,255,0.07) 36.8px, rgba(0,120,255,0.07) 37.8px),
+		repeating-linear-gradient(90deg, transparent, transparent 36.8px, rgba(0,120,255,0.07) 36.8px, rgba(0,120,255,0.07) 37.8px);
+}
+
+.sd-pdf-canvas.landscape {
+	width: 1123px;
+	min-width: 1123px;
+	height: 794px;
+}
+
+.sd-pdf-canvas.drag-over {
+	outline: 3px dashed #2980b9;
+}
+
+/* ----- Elementi sul canvas ----- */
+.sd-canvas-element {
+	position: absolute;
+	border: 1px dashed #aed6f1;
+	background: rgba(41, 128, 185, 0.06);
+	cursor: move;
+	min-width: 20px;
+	min-height: 16px;
+	user-select: none;
+	box-sizing: border-box;
+	display: flex;
+	align-items: flex-start;
+	padding: 2px 4px;
+	transition: border-color 0.1s;
+}
+
+.sd-canvas-element:hover {
+	border-color: #2980b9;
+	background: rgba(41, 128, 185, 0.12);
+	z-index: 10;
+}
+
+.sd-canvas-element.selected {
+	border: 2px solid #e74c3c;
+	background: rgba(231, 76, 60, 0.08);
+	z-index: 20;
+}
+
+.sd-canvas-element .sd-el-label {
+	display: block;
+	font-size: 8px;
+	color: #7f8c8d;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+	line-height: 1.1;
+	margin-bottom: 1px;
+}
+
+.sd-canvas-element .sd-el-value {
+	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+	color: #2c3e50;
+	width: 100%;
+}
+
+/* Resize handle (bottom-right) */
+.sd-canvas-element .sd-el-resize {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: 10px;
+	height: 10px;
+	background: #2980b9;
+	cursor: se-resize;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.sd-canvas-element:hover .sd-el-resize,
+.sd-canvas-element.selected .sd-el-resize {
+	opacity: 1;
+}
+
+/* ----- Pannello proprietà ----- */
+.sd-pdf-props {
+	width: 210px;
+	min-width: 210px;
+	background: #fff;
+	border-left: 1px solid #dce1e7;
+	padding: 12px 10px;
+	overflow-y: auto;
+	max-height: calc(100vh - 60px);
+	position: sticky;
+	top: 0;
+}
+
+.sd-pdf-props h4 {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #7f8c8d;
+	margin: 0 0 10px 0;
+	padding-bottom: 4px;
+	border-bottom: 1px solid #ecf0f1;
+}
+
+.sd-props-empty {
+	color: #95a5a6;
+	font-size: 12px;
+	font-style: italic;
+	line-height: 1.5;
+}
+
+#sd-props-form label {
+	display: block;
+	font-size: 11px;
+	color: #555;
+	margin-bottom: 8px;
+	font-weight: 600;
+}
+
+.sd-prop-checkbox {
+	display: flex !important;
+	align-items: center;
+	gap: 6px;
+	font-weight: 400 !important;
+}
+
+.sd-prop-checkbox input { margin: 0; }
+
+.sd-pdf-input {
+	display: block;
+	width: 100%;
+	padding: 5px 7px;
+	border: 1px solid #dce1e7;
+	border-radius: 3px;
+	font-size: 12px;
+	margin-top: 3px;
+	box-sizing: border-box;
+	color: #2c3e50;
+}
+
+.sd-pdf-input:focus { outline: none; border-color: #2980b9; }
+
+.sd-input-short { width: 80px !important; display: inline-block !important; }
+
+.sd-input-color {
+	padding: 2px !important;
+	height: 30px;
+	cursor: pointer;
+}
+
+/* ----- Modal ----- */
+.sd-pdf-modal {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,0.5);
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sd-pdf-modal-inner {
+	background: #fff;
+	border-radius: 6px;
+	width: 680px;
+	max-width: 95vw;
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.sd-pdf-modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 14px 18px;
+	border-bottom: 1px solid #ecf0f1;
+}
+
+.sd-pdf-modal-header h3 { margin: 0; font-size: 16px; }
+
+.sd-pdf-modal-close {
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	color: #7f8c8d;
+	line-height: 1;
+}
+
+.sd-pdf-modal-body {
+	overflow-y: auto;
+	padding: 16px 18px;
+}
+
+.sd-pdf-tpl-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.sd-pdf-tpl-table th,
+.sd-pdf-tpl-table td {
+	padding: 8px 10px;
+	text-align: left;
+	border-bottom: 1px solid #ecf0f1;
+}
+
+.sd-pdf-tpl-table th {
+	font-size: 11px;
+	text-transform: uppercase;
+	color: #7f8c8d;
+}
+
+.sd-pdf-tpl-table tr:hover td { background: #f8f9fa; }
+
+/* Ruler markers */
+.sd-pdf-canvas::before {
+	content: '';
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	pointer-events: none;
+}
