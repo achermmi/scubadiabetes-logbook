@@ -5,6 +5,50 @@
 	'use strict';
 	var __ = (window.wp && window.wp.i18n) ? window.wp.i18n.__ : function (s) { return s; };
 
+	/**
+	 * Helper condiviso: esegue una richiesta AJAX che ritorna un blob PDF e lo scarica.
+	 * @param {Object}   data      Dati POST (devono includere action e nonce)
+	 * @param {string}   filename  Nome file suggerito per il download
+	 * @param {Function} onDone    Callback invocata al termine (successo o errore)
+	 */
+	function sdDownloadPdfBlob(data, filename, onDone) {
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			method: 'POST',
+			data: data,
+			xhrFields: { responseType: 'blob' },
+			success: function (blob, status, xhr) {
+				var contentType = xhr.getResponseHeader('Content-Type') || '';
+				if (contentType.indexOf('application/pdf') === -1) {
+					// Potrebbe essere un JSON di errore: leggiamolo
+					var reader = new FileReader();
+					reader.onload = function () {
+						try {
+							var json = JSON.parse(reader.result);
+							alert((json.data && json.data.message) || 'Errore durante la generazione del PDF.');
+						} catch (e) {
+							alert('Errore durante la generazione del PDF.');
+						}
+					};
+					reader.readAsText(blob);
+					if (typeof onDone === 'function') { onDone(false); }
+					return;
+				}
+				var link = document.createElement('a');
+				link.href = window.URL.createObjectURL(blob);
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				if (typeof onDone === 'function') { onDone(true); }
+			},
+			error: function () {
+				alert('Errore durante la generazione del PDF.');
+				if (typeof onDone === 'function') { onDone(false); }
+			}
+		});
+	}
+
 	// Inizializza sempre sdActivityAdmin.strings e ajaxUrl per evitare errori JS/AJAX
 	if (!window.sdActivityAdmin) window.sdActivityAdmin = {};
 	if (!sdActivityAdmin.strings) {
@@ -343,6 +387,22 @@
 				return;
 			}
 			resendInvoiceEmail(registrationId);
+		});
+
+		// PDF singola registrazione
+		$(document).on('click', '.sd-reg-pdf-single', function () {
+			var $btn = $(this);
+			var registrationId = parseInt($btn.data('id'), 10) || 0;
+			if (!registrationId) { return; }
+			var origHtml = $btn.html();
+			$btn.prop('disabled', true).text('...');
+			sdDownloadPdfBlob({
+				action: 'sd_activity_pdf_single_registration',
+				nonce: sdActivityAdmin.nonce,
+				registration_id: registrationId
+			}, 'registrazione_' + registrationId + '.pdf', function () {
+				$btn.prop('disabled', false).html(origHtml);
+			});
 		});
 
 		$(document).on('click', '.sd-reg-delete', function () {
@@ -6064,6 +6124,40 @@
 			});
 		});
 
+		// ── PDF Attività ────────────────────────────────────────────────────
+		$('#sd-reg-pdf-activity').on('click', function () {
+			var $btn = $(this);
+			var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+			if (!activityId) { alert('Seleziona un\'attività.'); return; }
+			$btn.prop('disabled', true).text('Generazione...');
+			sdDownloadPdfBlob({
+				action: 'sd_activity_pdf_activity',
+				nonce: sdActivityAdmin.nonce,
+				activity_id: activityId
+			}, 'attivita_' + activityId + '.pdf', function () {
+				$btn.prop('disabled', false).html('📄 PDF Attività');
+			});
+		});
+
+		// ── PDF Lista registrazioni ─────────────────────────────────────────
+		$('#sd-reg-pdf-list').on('click', function () {
+			var $btn = $(this);
+			var activityId    = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+			var paymentStatus = $('#sd-reg-payment-filter').val() || '';
+			var search        = $('#sd-reg-search').val() || '';
+			if (!activityId) { alert('Seleziona un\'attività.'); return; }
+			$btn.prop('disabled', true).text('Generazione...');
+			sdDownloadPdfBlob({
+				action: 'sd_activity_pdf_registrations',
+				nonce: sdActivityAdmin.nonce,
+				activity_id: activityId,
+				payment_status: paymentStatus,
+				search: search
+			}, 'registrazioni_' + activityId + '.pdf', function () {
+				$btn.prop('disabled', false).html('📋 PDF Lista');
+			});
+		});
+
 		$(document).on('change', '.sd-reg-status-select', function () {
 			var $sel = $(this);
 			var regId = parseInt($sel.data('reg-id'), 10) || 0;
@@ -6343,6 +6437,7 @@
 				actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + esc(r.id) + '" title="Reinvia fattura">Reinvia fattura</button>');
 			}
 			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-edit" data-id="' + esc(r.id) + '" title="Modifica iscrizione">Modifica</button>');
+			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-pdf-single" data-id="' + esc(r.id) + '" title="Scarica PDF scheda">📄 PDF</button>');
 			actions.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + esc(r.id) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
 
 			html += '<tr>' +

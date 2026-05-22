@@ -6,7 +6,8 @@
     }
   },
   "require": {
-    "phpoffice/phpspreadsheet": "^5.7"
+    "phpoffice/phpspreadsheet": "^5.7",
+    "dompdf/dompdf": "^3.1"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "3.11.3",

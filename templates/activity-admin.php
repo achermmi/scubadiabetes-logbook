@@ -432,6 +432,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<button type="button" class="sd-btn sd-btn-success sd-btn-sm" id="sd-reg-export-excel">
 								<?php esc_html_e( 'Esporta Excel', 'sd-logbook' ); ?>
 							</button>
+							<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-activity" title="<?php esc_attr_e( 'Scheda PDF attività selezionata', 'sd-logbook' ); ?>">
+								📄 <?php esc_html_e( 'PDF Attività', 'sd-logbook' ); ?>
+							</button>
+							<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-list" title="<?php esc_attr_e( 'PDF lista registrazioni (filtro corrente)', 'sd-logbook' ); ?>">
+								📋 <?php esc_html_e( 'PDF Lista', 'sd-logbook' ); ?>
+							</button>
 					</div>
 				</div>
 				<div class="sd-renewals-table-wrap">

@@ -3,7 +3,7 @@
  * Plugin Name: ScubaDiabetes Logbook
  * Plugin URI: https://scubadiabetes.ch
  * Description: Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
- * Version: 1.3.78
+ * Version: 1.3.84
  * Author: Mirko Achermann
  * Author URI: https://m-achermann.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.83' );
+define( 'SD_LOGBOOK_VERSION', '1.3.84' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -81,6 +81,7 @@ final class SD_Logbook {
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-flow.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-payment-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-manager.php';
+		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-pdf.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-settings.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-activity-payment-flow.php';
 		require_once SD_LOGBOOK_PLUGIN_DIR . 'includes/class-sd-dive-form.php';
@@ -270,6 +271,7 @@ final class SD_Logbook {
 		new SD_Payment_Flow();
 		new SD_Payment_Settings();
 		SD_Activity_Manager::get_instance();
+		new SD_Activity_PDF();
 		new SD_Activity_Settings();
 		new SD_Activity_Payment_Flow();
 		new SD_Dive_Form();
