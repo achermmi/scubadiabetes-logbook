@@ -25,6 +25,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Composer dependencies (no-dev)
+        uses: php-actions/composer@v6
+        with:
+          php_version: "8.2"
+          args: --no-dev --optimize-autoloader
+
       - name: Validate default deploy path secret
         if: ${{ matrix.target == 'default' }}
         run: |
