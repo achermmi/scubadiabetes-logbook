@@ -19,9 +19,9 @@ class SD_Activity_PDF {
 	}
 
 	public function init_hooks() {
-		add_action( 'wp_ajax_sd_activity_pdf_activity',             array( $this, 'ajax_pdf_activity' ) );
-		add_action( 'wp_ajax_sd_activity_pdf_registrations',        array( $this, 'ajax_pdf_registrations' ) );
-		add_action( 'wp_ajax_sd_activity_pdf_single_registration',  array( $this, 'ajax_pdf_single_registration' ) );
+		add_action( 'wp_ajax_sd_activity_pdf_activity', array( $this, 'ajax_pdf_activity' ) );
+		add_action( 'wp_ajax_sd_activity_pdf_registrations', array( $this, 'ajax_pdf_registrations' ) );
+		add_action( 'wp_ajax_sd_activity_pdf_single_registration', array( $this, 'ajax_pdf_single_registration' ) );
 	}
 
 	// ── helpers ──────────────────────────────────────────────────────────────
@@ -299,8 +299,8 @@ class SD_Activity_PDF {
 	}
 
 	private function build_html_activity( $activity ) {
-		$start  = ! empty( $activity['start_date'] ) ? date_i18n( 'd/m/Y', strtotime( $activity['start_date'] ) ) : '-';
-		$end    = ! empty( $activity['end_date'] )   ? date_i18n( 'd/m/Y', strtotime( $activity['end_date'] ) )   : '-';
+		$start = ! empty( $activity['start_date'] ) ? date_i18n( 'd/m/Y', strtotime( $activity['start_date'] ) ) : '-';
+		$end   = ! empty( $activity['end_date'] ) ? date_i18n( 'd/m/Y', strtotime( $activity['end_date'] ) ) : '-';
 		$status_labels = array(
 			'draft'     => 'Bozza',
 			'published' => 'Pubblicata',
