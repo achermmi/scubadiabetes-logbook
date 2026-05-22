@@ -29,7 +29,7 @@ jobs:
         uses: php-actions/composer@v6
         with:
           php_version: "8.2"
-          args: --no-dev --optimize-autoloader
+          args: --no-dev --optimize-autoloader --ignore-platform-reqs
 
       - name: Validate default deploy path secret
         if: ${{ matrix.target == 'default' }}
