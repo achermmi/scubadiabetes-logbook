@@ -374,5 +374,3 @@ final class SD_Logbook {
 
 // Avvia il plugin
 SD_Logbook::get_instance();
-
-
