@@ -114,6 +114,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="checkbox" id="sd-prop-label-show">
 					<?php esc_html_e( 'Mostra etichetta', 'sd-logbook' ); ?>
 				</label>
+				<div id="sd-prop-label-pos-wrap" style="display:none;">
+					<label><?php esc_html_e( 'Posizione etichetta', 'sd-logbook' ); ?>
+						<select id="sd-prop-label-pos" class="sd-pdf-input">
+							<option value="above"><?php esc_html_e( 'Sopra', 'sd-logbook' ); ?></option>
+							<option value="below"><?php esc_html_e( 'Sotto', 'sd-logbook' ); ?></option>
+							<option value="before"><?php esc_html_e( 'Prima (inline)', 'sd-logbook' ); ?></option>
+							<option value="after"><?php esc_html_e( 'Dopo (inline)', 'sd-logbook' ); ?></option>
+						</select>
+					</label>
+				</div>
 				<label><?php esc_html_e( 'Testo (solo tipo Testo fisso)', 'sd-logbook' ); ?>
 					<input type="text" id="sd-prop-custom-text" class="sd-pdf-input">
 				</label>

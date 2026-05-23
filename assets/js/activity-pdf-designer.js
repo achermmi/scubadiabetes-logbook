@@ -85,9 +85,10 @@
 			font_italic: false,
 			color:       '#000000',
 			prefix:      '',
-			suffix:      '',
-			label_show:  false,
-			custom_text: '',
+			suffix:         '',
+			label_show:     false,
+			label_position: 'above',
+			custom_text:    '',
 		};
 	}
 
@@ -116,18 +117,32 @@
 		if (el.font_bold)   { style.push('font-weight:bold'); }
 		if (el.font_italic) { style.push('font-style:italic'); }
 
-		var labelHtml = '';
-		if (el.label_show) {
-			labelHtml = '<span class="sd-el-label">' + esc(el.label) + '</span>';
+		var valText  = esc(el.prefix + previewValue(el) + el.suffix);
+		var pos      = el.label_position || 'above';
+		var lblBlock = el.label_show ? '<span class="sd-el-label">' + esc(el.label) + '</span>' : '';
+		var valBlock = '<span class="sd-el-value">' + valText + '</span>';
+		var innerHtml;
+
+		if (!el.label_show) {
+			innerHtml = valBlock;
+		} else if (pos === 'above') {
+			innerHtml = lblBlock + valBlock;
+		} else if (pos === 'below') {
+			innerHtml = valBlock + lblBlock;
+		} else if (pos === 'before') {
+			innerHtml = '<span class="sd-el-label" style="display:inline;">' + esc(el.label) + ': </span>' +
+				'<span class="sd-el-value" style="display:inline;">' + valText + '</span>';
+		} else if (pos === 'after') {
+			innerHtml = '<span class="sd-el-value" style="display:inline;">' + valText + '</span>' +
+				'<span class="sd-el-label" style="display:inline;margin-left:3px;">' + esc(el.label) + '</span>';
+		} else {
+			innerHtml = valBlock;
 		}
-		var valueHtml = '<span class="sd-el-value">' + esc(el.prefix + previewValue(el) + el.suffix) + '</span>';
 
 		return $('<div>')
 			.addClass('sd-canvas-element')
 			.attr('data-id', el.id)
-			.css('display', 'block')
-			.attr('style', style.join(';') + ';' + ($('<div>').css('display', 'block').attr('style', '').attr('style', null), ''))
-			.html(labelHtml + valueHtml + '<div class="sd-el-resize"></div>')
+			.html(innerHtml + '<div class="sd-el-resize"></div>')
 			.attr('style', style.join(';'));
 	}
 
@@ -180,6 +195,8 @@
 		$('#sd-props-form').show();
 		$('#sd-prop-label').val(el.label);
 		$('#sd-prop-label-show').prop('checked', el.label_show);
+		$('#sd-prop-label-pos').val(el.label_position || 'above');
+		$('#sd-prop-label-pos-wrap').toggle(!!el.label_show);
 		$('#sd-prop-custom-text').val(el.custom_text).closest('label').toggle(el.type === 'text_label');
 		$('#sd-prop-prefix').val(el.prefix);
 		$('#sd-prop-suffix').val(el.suffix);
@@ -198,6 +215,8 @@
 		if (!el) { return; }
 		el.label       = $('#sd-prop-label').val();
 		el.label_show  = $('#sd-prop-label-show').is(':checked');
+		el.label_position = $('#sd-prop-label-pos').val() || 'above';
+		$('#sd-prop-label-pos-wrap').toggle(el.label_show);
 		el.custom_text = $('#sd-prop-custom-text').val();
 		el.prefix      = $('#sd-prop-prefix').val();
 		el.suffix      = $('#sd-prop-suffix').val();

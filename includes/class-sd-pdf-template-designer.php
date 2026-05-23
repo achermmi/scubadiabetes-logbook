@@ -331,7 +331,7 @@ class SD_PDF_Template_Designer {
 			}
 		}
 
-		$html     = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration );
+		$html     = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, 0 === $registration_id );
 		$filename = 'template_' . $template_id . ( $registration_id > 0 ? '_reg_' . $registration_id : '_anteprima' ) . '_' . gmdate( 'Ymd_His' ) . '.pdf';
 
 		$this->stream_pdf( $html, $filename, $tpl['orientation'] );
@@ -403,26 +403,27 @@ class SD_PDF_Template_Designer {
 	// HELPER: COSTRUISCE HTML PDF
 	// =========================================================================
 
-	private function build_pdf_html( $elements, $orientation, $activity, $registration ) {
-		$content = $this->build_page_content( $elements, $activity, $registration );
+	private function build_pdf_html( $elements, $orientation, $activity, $registration, $is_preview = false ) {
+		$content = $this->build_page_content( $elements, $activity, $registration, $is_preview );
 		return $this->wrap_pdf_html( $content, $orientation );
 	}
 
-	private function build_page_content( $elements, $activity, $registration ) {
+	private function build_page_content( $elements, $activity, $registration, $is_preview = false ) {
 		$html = '<div class="sd-pdf-page">';
 		foreach ( $elements as $el ) {
-			$type        = sanitize_key( $el['type'] ?? '' );
-			$x           = floatval( $el['x'] ?? 0 );
-			$y           = floatval( $el['y'] ?? 0 );
-			$width       = floatval( $el['width'] ?? 60 );
-			$font_size   = intval( $el['font_size'] ?? 11 );
-			$font_bold   = ! empty( $el['font_bold'] );
-			$font_italic = ! empty( $el['font_italic'] );
-			$color       = sanitize_hex_color( $el['color'] ?? '' ) ?: '#000000';
-			$prefix      = esc_html( $el['prefix'] ?? '' );
-			$suffix      = esc_html( $el['suffix'] ?? '' );
-			$label_show  = ! empty( $el['label_show'] );
-			$label_text  = esc_html( $el['label'] ?? '' );
+			$type           = sanitize_key( $el['type'] ?? '' );
+			$x              = floatval( $el['x'] ?? 0 );
+			$y              = floatval( $el['y'] ?? 0 );
+			$width          = floatval( $el['width'] ?? 60 );
+			$font_size      = intval( $el['font_size'] ?? 11 );
+			$font_bold      = ! empty( $el['font_bold'] );
+			$font_italic    = ! empty( $el['font_italic'] );
+			$color          = sanitize_hex_color( $el['color'] ?? '' ) ?: '#000000';
+			$prefix         = esc_html( $el['prefix'] ?? '' );
+			$suffix         = esc_html( $el['suffix'] ?? '' );
+			$label_show     = ! empty( $el['label_show'] );
+			$label_text     = esc_html( $el['label'] ?? '' );
+			$label_position = in_array( $el['label_position'] ?? 'above', array( 'above', 'below', 'before', 'after' ), true ) ? $el['label_position'] : 'above';
 
 			$value = $this->resolve_field_value( $type, $el, $activity, $registration );
 
@@ -438,12 +439,27 @@ class SD_PDF_Template_Designer {
 			if ( $font_italic ) {
 				$style .= 'font-style:italic;';
 			}
-
-			$inner = '';
-			if ( $label_show && '' !== $label_text ) {
-				$inner .= '<span style="font-size:' . max( 7, $font_size - 2 ) . 'pt;opacity:0.6;">' . $label_text . '</span><br>';
+			if ( $is_preview ) {
+				$style .= 'border:1px dashed #bbb;box-sizing:border-box;padding:1px 2px;';
 			}
-			$inner .= esc_html( $prefix . $value . $suffix );
+
+			$lbl_style = 'font-size:' . max( 7, $font_size - 2 ) . 'pt;opacity:0.6;';
+			$val_text  = esc_html( $prefix . $value . $suffix );
+			$lbl_span  = '<span style="' . $lbl_style . '">' . $label_text . '</span>';
+
+			if ( ! $label_show || '' === $label_text ) {
+				$inner = $val_text;
+			} elseif ( 'above' === $label_position ) {
+				$inner = $lbl_span . '<br>' . $val_text;
+			} elseif ( 'below' === $label_position ) {
+				$inner = $val_text . '<br>' . $lbl_span;
+			} elseif ( 'before' === $label_position ) {
+				$inner = '<span style="' . $lbl_style . '">' . $label_text . ': </span>' . $val_text;
+			} elseif ( 'after' === $label_position ) {
+				$inner = $val_text . '<span style="' . $lbl_style . '"> ' . $label_text . '</span>';
+			} else {
+				$inner = $val_text;
+			}
 
 			$html .= '<div style="' . $style . '">' . $inner . '</div>';
 		}
@@ -598,6 +614,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			'prefix'      => sanitize_text_field( $el['prefix'] ?? '' ),
 			'suffix'      => sanitize_text_field( $el['suffix'] ?? '' ),
 			'label_show'  => ! empty( $el['label_show'] ),
+			'label_position' => in_array( $el['label_position'] ?? 'above', array( 'above', 'below', 'before', 'after' ), true ) ? sanitize_key( $el['label_position'] ) : 'above',
 			'custom_text' => sanitize_text_field( $el['custom_text'] ?? '' ),
 		);
 	}
