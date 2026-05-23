@@ -433,8 +433,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="sd-renewals-bulk-group sd-bulk-export">
 						<span class="sd-action-group-icon" title="<?php esc_attr_e( 'Esportazione e PDF', 'sd-logbook' ); ?>">📤</span>
 						<button type="button" class="sd-btn sd-btn-success sd-btn-sm" id="sd-reg-export-excel"><?php esc_html_e( 'Esporta Excel', 'sd-logbook' ); ?></button>
-						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-activity" title="<?php esc_attr_e( 'Scheda PDF attività selezionata', 'sd-logbook' ); ?>">📄 <?php esc_html_e( 'PDF Attività', 'sd-logbook' ); ?></button>
-						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-list" title="<?php esc_attr_e( 'PDF lista registrazioni (filtro corrente)', 'sd-logbook' ); ?>">📋 <?php esc_html_e( 'PDF Lista', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-pdf sd-btn-sm" id="sd-reg-pdf-activity" title="<?php esc_attr_e( 'Scheda PDF attività selezionata', 'sd-logbook' ); ?>">📄 <?php esc_html_e( 'PDF Attività', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-pdf sd-btn-sm" id="sd-reg-pdf-list" title="<?php esc_attr_e( 'PDF lista registrazioni (filtro corrente)', 'sd-logbook' ); ?>">📋 <?php esc_html_e( 'PDF Lista', 'sd-logbook' ); ?></button>
 						<span class="sd-group-sep"></span>
 						<select id="sd-reg-tpl-select" class="sd-select sd-tpl-select-inline">
 							<option value=""><?php esc_html_e( '— Template PDF —', 'sd-logbook' ); ?></option>

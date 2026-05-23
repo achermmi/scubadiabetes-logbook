@@ -322,29 +322,81 @@
 	font-size: 0.86rem;
 	font-weight: 700;
 	cursor: pointer;
-	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
 }
 
 .sd-btn:hover {
 	transform: translateY(-1px);
 }
 
+/* ── Blu primario: azioni principali e-mail ── */
 .sd-btn-primary {
 	background: #0055a5;
 	color: #fff;
-	box-shadow: 0 8px 16px rgba(0, 85, 165, 0.22);
+	box-shadow: 0 2px 8px rgba(0, 85, 165, 0.25);
+}
+.sd-btn-primary:hover {
+	background: #003d7a;
+	box-shadow: 0 4px 14px rgba(0, 85, 165, 0.4);
 }
 
+/* ── Grigio: azioni secondarie / neutre ── */
 .sd-btn-secondary {
 	background: #eef2f7;
 	color: #334155;
-	border: 1px solid #d9e2ec;
+	border: 1px solid #c8d5e8;
+}
+.sd-btn-secondary:hover {
+	background: #dbeafe;
+	color: #1d4ed8;
+	border-color: #93c5fd;
+	box-shadow: 0 2px 8px rgba(29, 78, 216, 0.15);
 }
 
+/* ── Verde: esportazione dati (Excel) ── */
+.sd-btn-success {
+	background: #15803d;
+	color: #fff;
+	box-shadow: 0 2px 8px rgba(21, 128, 61, 0.25);
+}
+.sd-btn-success:hover {
+	background: #166534;
+	box-shadow: 0 4px 14px rgba(21, 128, 61, 0.4);
+}
+
+/* ── Rosso documento: PDF classici (Attività, Lista) ── */
+.sd-btn-pdf {
+	background: #c0392b;
+	color: #fff;
+	box-shadow: 0 2px 8px rgba(192, 57, 43, 0.22);
+}
+.sd-btn-pdf:hover {
+	background: #96281b;
+	box-shadow: 0 4px 14px rgba(192, 57, 43, 0.38);
+}
+
+/* ── Azzurro: PDF con template / azioni template ── */
+.sd-btn-info {
+	background: #0369a1;
+	color: #fff;
+	box-shadow: 0 2px 8px rgba(3, 105, 161, 0.22);
+}
+.sd-btn-info:hover {
+	background: #075985;
+	box-shadow: 0 4px 14px rgba(3, 105, 161, 0.38);
+}
+
+/* ── Rosso pieno: azioni distruttive ── */
 .sd-btn-danger {
 	background: #fee2e2;
 	color: #991b1b;
 	border: 1px solid #fecaca;
+}
+.sd-btn-danger:hover {
+	background: #dc2626;
+	color: #fff;
+	border-color: #dc2626;
+	box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
 .sd-btn-sm {
@@ -1316,12 +1368,15 @@ align-items: center;
 }
 
 .sd-tpl-select-inline {
-flex: 0 1 180px;
-min-width: 120px;
-max-width: 220px;
-font-size: 12px;
-padding: 3px 6px;
-height: 28px;
+flex: 1 1 200px;
+min-width: 140px;
+max-width: 300px;
+font-size: 0.83rem;
+padding: 4px 8px;
+height: 30px;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+background: #fff;
 }
 
 .sd-renewals-table-wrap {
