@@ -1310,11 +1310,18 @@ align-self: center;
 flex-shrink: 0;
 }
 
+.sd-bulk-export {
+flex-wrap: nowrap;
+align-items: center;
+}
+
 .sd-tpl-select-inline {
+flex: 0 1 180px;
+min-width: 120px;
+max-width: 220px;
 font-size: 12px;
 padding: 3px 6px;
 height: 28px;
-min-width: 155px;
 }
 
 .sd-renewals-table-wrap {

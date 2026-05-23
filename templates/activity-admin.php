@@ -429,8 +429,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
 					</div>
 
-					<!-- Gruppo azioni: esportazione e PDF -->
-					<div class="sd-renewals-bulk-group">
+					<!-- Riga 4: esportazione e PDF -->
+					<div class="sd-renewals-bulk-group sd-bulk-export">
 						<span class="sd-action-group-icon" title="<?php esc_attr_e( 'Esportazione e PDF', 'sd-logbook' ); ?>">📤</span>
 						<button type="button" class="sd-btn sd-btn-success sd-btn-sm" id="sd-reg-export-excel"><?php esc_html_e( 'Esporta Excel', 'sd-logbook' ); ?></button>
 						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-activity" title="<?php esc_attr_e( 'Scheda PDF attività selezionata', 'sd-logbook' ); ?>">📄 <?php esc_html_e( 'PDF Attività', 'sd-logbook' ); ?></button>
