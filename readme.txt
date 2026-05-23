@@ -61,3 +61,4 @@ Plugin per WordPress che permette la registrazione e il monitoraggio delle immer
 
 = 1.0.0 =
 * Prima release - Struttura database e ruoli utente
+

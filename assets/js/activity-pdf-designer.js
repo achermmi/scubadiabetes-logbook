@@ -633,20 +633,6 @@
 	}
 
 	// =========================================================================
-	// ALTEZZA DESIGNER (viewport-fit)
-	// =========================================================================
-
-	function fitDesignerHeight() {
-		var $wrap = $('#sd-pdf-designer-wrap');
-		if ( !$wrap.length ) { return; }
-		var offsetTop = $wrap[0].getBoundingClientRect().top + window.scrollY;
-		// Lascia 12px di margine inferiore
-		var available = window.innerHeight - offsetTop - 12;
-		if ( available < 400 ) { available = 400; }
-		$wrap.css('height', available + 'px');
-	}
-
-	// =========================================================================
 	// DROP DAL SIDEBAR ONTO CANVAS
 	// =========================================================================
 
@@ -1135,10 +1121,6 @@
 	// =========================================================================
 
 	$(function () {
-		// Adatta l'altezza del designer alla viewport
-		fitDesignerHeight();
-		$(window).on('resize', fitDesignerHeight);
-
 		// Canvas drop
 		initCanvasDrop();
 		// Chip drag
