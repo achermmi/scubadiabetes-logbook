@@ -390,6 +390,40 @@
 
 .sd-pdf-tpl-table tr:hover td { background: #f8f9fa; }
 
+/* ----- Box selection (rubber band) ----- */
+#sd-box-select {
+	position: absolute;
+	border: 1.5px dashed #2980b9;
+	background: rgba(41, 128, 185, 0.08);
+	pointer-events: none;
+	z-index: 50;
+	box-sizing: border-box;
+}
+
+/* ----- Multi-select panel ----- */
+.sd-multi-align-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 3px;
+	margin-bottom: 10px;
+}
+
+.sd-align-btn {
+	font-size: 10px !important;
+	padding: 5px 3px !important;
+	text-align: center;
+}
+
+.sd-multi-input-row {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
+.sd-multi-input-row .sd-pdf-input { flex: 1; }
+.sd-multi-input-row .sd-pdf-btn   { flex-shrink: 0; padding: 4px 8px; }
+
 /* Ruler markers */
 .sd-pdf-canvas::before {
 	content: '';

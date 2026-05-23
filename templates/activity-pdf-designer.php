@@ -158,6 +158,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</label>
 				<button id="sd-prop-delete" class="sd-pdf-btn sd-pdf-btn-danger sd-pdf-full-width"><?php esc_html_e( '🗑 Rimuovi elemento', 'sd-logbook' ); ?></button>
 			</div>
+
+			<!-- Multi-selezione -->
+			<div id="sd-props-multi" style="display:none;">
+				<div id="sd-multi-count" style="font-size:12px;font-weight:700;color:#2980b9;margin-bottom:6px;"></div>
+				<p style="font-size:10px;color:#95a5a6;margin:0 0 10px 0;"><?php esc_html_e( 'Ctrl+clic per aggiungere/rimuovere. Trascina l\'area vuota per selezionare.', 'sd-logbook' ); ?></p>
+				<h4><?php esc_html_e( 'Allineamento', 'sd-logbook' ); ?></h4>
+				<div class="sd-multi-align-grid">
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="left">&#8592; <?php esc_html_e( 'Sin.', 'sd-logbook' ); ?></button>
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="centerH">&#8596; <?php esc_html_e( 'C.H', 'sd-logbook' ); ?></button>
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="right">&#8594; <?php esc_html_e( 'Des.', 'sd-logbook' ); ?></button>
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="top">&#8593; <?php esc_html_e( 'Alto', 'sd-logbook' ); ?></button>
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="centerV">&#8597; <?php esc_html_e( 'C.V', 'sd-logbook' ); ?></button>
+					<button class="sd-pdf-btn sd-pdf-btn-secondary sd-align-btn" data-align="bottom">&#8595; <?php esc_html_e( 'Basso', 'sd-logbook' ); ?></button>
+				</div>
+				<h4><?php esc_html_e( 'Stessa dimensione', 'sd-logbook' ); ?></h4>
+				<label><?php esc_html_e( 'Larghezza (mm)', 'sd-logbook' ); ?>
+					<div class="sd-multi-input-row">
+						<input type="number" id="sd-multi-width" class="sd-pdf-input" min="5" max="280" step="1">
+						<button id="sd-multi-apply-width" class="sd-pdf-btn sd-pdf-btn-primary">&#10003;</button>
+					</div>
+				</label>
+				<label><?php esc_html_e( 'Font (pt)', 'sd-logbook' ); ?>
+					<div class="sd-multi-input-row">
+						<input type="number" id="sd-multi-fontsize" class="sd-pdf-input" min="6" max="72" step="1">
+						<button id="sd-multi-apply-fontsize" class="sd-pdf-btn sd-pdf-btn-primary">&#10003;</button>
+					</div>
+				</label>
+				<button id="sd-multi-deselect" class="sd-pdf-btn sd-pdf-btn-secondary sd-pdf-full-width"><?php esc_html_e( 'Deseleziona tutti', 'sd-logbook' ); ?></button>
+				<button id="sd-multi-delete" class="sd-pdf-btn sd-pdf-btn-danger sd-pdf-full-width"><?php esc_html_e( '🗑 Elimina selezionati', 'sd-logbook' ); ?></button>
+			</div>
 		</div>
 
 	</div><!-- /.sd-pdf-body -->
