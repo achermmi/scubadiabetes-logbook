@@ -246,6 +246,7 @@
 					}
 				}
 				loadRegistrations();
+				if (typeof loadPdfTemplates === 'function') { loadPdfTemplates(); }
 			}
 		});
 	}
@@ -291,6 +292,7 @@
 
 		$('#sd-reg-filter-btn').on('click', loadRegistrations);
 		$('#sd-reg-activity-id').on('change', loadRegistrations);
+		$('#sd-reg-activity-id').on('change', loadPdfTemplates);
 		$('#sd-reg-payment-filter').on('change', loadRegistrations);
 
 		$(document).on('click', '.sd-activity-edit', function () {
@@ -4225,6 +4227,32 @@
 		});
 	}
 
+	function loadPdfTemplates() {
+		var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+		var $sel = $('#sd-reg-tpl-select');
+		if (!$sel.length) { return; }
+		$.post(sdActivityAdmin.ajaxUrl, {
+			action: 'sd_pdf_tpl_list',
+			nonce: sdActivityAdmin.nonce
+		}, function (resp) {
+			if (!resp || !resp.success) {
+				$sel.html('<option value="">— Template PDF —</option>');
+				return;
+			}
+			var templates = resp.data.templates || [];
+			var filtered = templates.filter(function (t) {
+				return !parseInt(t.activity_id, 10) || parseInt(t.activity_id, 10) === activityId;
+			});
+			var html = '<option value="">— Template PDF —</option>';
+			filtered.forEach(function (t) {
+				html += '<option value="' + parseInt(t.id, 10) + '">' + esc(t.name) + '</option>';
+			});
+			$sel.html(html);
+		}).fail(function () {
+			$sel.html('<option value="">— Template PDF —</option>');
+		});
+	}
+
 	function loadRegistrations() {
 		var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
 		if (!activityId) {
@@ -4281,6 +4309,7 @@
 			}
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-edit" data-id="' + parseInt(r.id, 10) + '" title="Modifica iscrizione">Modifica</button>');
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + parseInt(r.id, 10) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-info sd-btn-sm sd-reg-tpl-pdf-row" data-id="' + parseInt(r.id, 10) + '" title="PDF con template selezionato">📑 PDF</button>');
 			if (minorInfo.isMinor) {
 				minorCount += 1;
 			}
@@ -6155,6 +6184,45 @@
 				search: search
 			}, 'registrazioni_' + activityId + '.pdf', function () {
 				$btn.prop('disabled', false).html('📋 PDF Lista');
+			});
+		});
+
+		// ── PDF Template (tutti) ────────────────────────────────────────────
+		$('#sd-reg-tpl-pdf-all').on('click', function () {
+			var $btn       = $(this);
+			var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+			var templateId = parseInt($('#sd-reg-tpl-select').val(), 10) || 0;
+			if (!activityId) { alert('Seleziona un\'attività.'); return; }
+			if (!templateId) { alert('Seleziona un template PDF.'); return; }
+			$btn.prop('disabled', true).text('Generazione...');
+			sdDownloadPdfBlob({
+				action: 'sd_pdf_tpl_gen_all',
+				nonce: sdActivityAdmin.nonce,
+				template_id: templateId,
+				activity_id: activityId,
+				payment_status: $('#sd-reg-payment-filter').val() || ''
+			}, 'template_' + templateId + '_attivita_' + activityId + '.pdf', function () {
+				$btn.prop('disabled', false).html('📑 PDF Template (tutti)');
+			});
+		});
+
+		// ── PDF Template singola registrazione ─────────────────────────────
+		$(document).on('click', '.sd-reg-tpl-pdf-row', function () {
+			var $btn           = $(this);
+			var registrationId = parseInt($btn.data('id'), 10) || 0;
+			var templateId     = parseInt($('#sd-reg-tpl-select').val(), 10) || 0;
+			if (!registrationId) { return; }
+			if (!templateId) { alert('Seleziona un template PDF dal menu in alto.'); return; }
+			var origHtml = $btn.html();
+			$btn.prop('disabled', true).text('...');
+			sdDownloadPdfBlob({
+				action: 'sd_pdf_tpl_generate',
+				nonce: sdActivityAdmin.nonce,
+				template_id: templateId,
+				registration_id: registrationId,
+				activity_id: parseInt($('#sd-reg-activity-id').val(), 10) || 0
+			}, 'template_' + templateId + '_reg_' + registrationId + '.pdf', function () {
+				$btn.prop('disabled', false).html(origHtml);
 			});
 		});
 

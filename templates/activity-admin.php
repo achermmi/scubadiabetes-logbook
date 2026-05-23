@@ -437,8 +437,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</button>
 							<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-pdf-list" title="<?php esc_attr_e( 'PDF lista registrazioni (filtro corrente)', 'sd-logbook' ); ?>">
 								📋 <?php esc_html_e( 'PDF Lista', 'sd-logbook' ); ?>
-							</button>
-					</div>
+							</button>						<select id="sd-reg-tpl-select" class="sd-select" style="min-width:150px;font-size:12px;padding:4px 6px;">
+							<option value=""><?php esc_html_e( '— Template PDF —', 'sd-logbook' ); ?></option>
+						</select>
+						<button type="button" class="sd-btn sd-btn-info sd-btn-sm" id="sd-reg-tpl-pdf-all" title="<?php esc_attr_e( 'PDF tutte le registrazioni con il template selezionato', 'sd-logbook' ); ?>">
+							📑 <?php esc_html_e( 'PDF Template (tutti)', 'sd-logbook' ); ?>
+						</button>					</div>
 				</div>
 				<div class="sd-renewals-table-wrap">
 					<table class="sd-renewals-table" id="sd-reg-dashboard-table">
