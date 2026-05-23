@@ -1210,8 +1210,30 @@ background: #fff;
 display: flex;
 flex-direction: column;
 align-items: stretch;
-gap: 0.55rem;
-margin-bottom: 0.85rem;
+gap: 0.85rem;
+margin-bottom: 1rem;
+}
+
+.sd-reg-search-inline {
+margin-left: auto;
+flex: 0 1 260px;
+min-width: 160px;
+padding: 5px 10px;
+font-size: 0.82rem;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+background: #fff;
+}
+
+.sd-tpl-email-select {
+flex: 1 1 200px;
+min-width: 180px;
+max-width: 340px;
+padding: 5px 10px;
+font-size: 0.85rem;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+background: #fff;
 }
 
 .sd-renewals-quick-filters {
