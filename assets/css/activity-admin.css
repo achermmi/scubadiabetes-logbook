@@ -1271,6 +1271,28 @@ cursor: not-allowed;
 display: flex;
 gap: 0.45rem;
 flex-wrap: wrap;
+align-items: center;
+}
+
+.sd-action-group-icon {
+font-size: 1rem;
+opacity: 0.7;
+line-height: 1;
+flex-shrink: 0;
+}
+
+.sd-group-sep {
+border-left: 1px solid #c8ccd0;
+height: 22px;
+align-self: center;
+flex-shrink: 0;
+}
+
+.sd-tpl-select-inline {
+font-size: 12px;
+padding: 3px 6px;
+height: 28px;
+min-width: 155px;
 }
 
 .sd-renewals-table-wrap {
