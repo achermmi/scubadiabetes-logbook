@@ -64,14 +64,14 @@ class SD_PDF_Template_Designer {
 
 		wp_enqueue_style(
 			'sd-pdf-template-designer',
-			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/css/activity-pdf-designer.css',
+			plugin_dir_url( __DIR__ ) . 'assets/css/activity-pdf-designer.css',
 			array(),
 			SD_LOGBOOK_VERSION
 		);
 
 		wp_enqueue_script(
 			'sd-pdf-template-designer',
-			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/js/activity-pdf-designer.js',
+			plugin_dir_url( __DIR__ ) . 'assets/js/activity-pdf-designer.js',
 			array( 'jquery' ),
 			SD_LOGBOOK_VERSION,
 			true
@@ -81,16 +81,16 @@ class SD_PDF_Template_Designer {
 			'sd-pdf-template-designer',
 			'sdPdfDesigner',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'sd_nonce' ),
-				'fixedFields'   => self::FIXED_FIELDS,
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce' => wp_create_nonce( 'sd_nonce' ),
+				'fixedFields' => self::FIXED_FIELDS,
 				'activityFields' => self::ACTIVITY_FIELDS,
-				'textDomain'    => 'sd-logbook',
+				'textDomain' => 'sd-logbook',
 			)
 		);
 
 		ob_start();
-		include plugin_dir_path( dirname( __FILE__ ) ) . 'templates/activity-pdf-designer.php';
+		include plugin_dir_path( __DIR__ ) . 'templates/activity-pdf-designer.php';
 		return ob_get_clean();
 	}
 
@@ -140,7 +140,12 @@ class SD_PDF_Template_Designer {
 				array( '%s', '%s', '%s', '%d', '%s' ),
 				array( '%d' )
 			);
-			wp_send_json_success( array( 'template_id' => $template_id, 'message' => __( 'Template salvato.', 'sd-logbook' ) ) );
+			wp_send_json_success(
+				array(
+					'template_id' => $template_id,
+					'message' => __( 'Template salvato.', 'sd-logbook' ),
+				)
+			);
 		} else {
 			$data['created_by'] = get_current_user_id();
 			$data['created_at'] = current_time( 'mysql' );
@@ -149,7 +154,12 @@ class SD_PDF_Template_Designer {
 				$data,
 				array( '%s', '%s', '%s', '%d', '%s', '%d', '%s' )
 			);
-			wp_send_json_success( array( 'template_id' => $wpdb->insert_id, 'message' => __( 'Template creato.', 'sd-logbook' ) ) );
+			wp_send_json_success(
+				array(
+					'template_id' => $wpdb->insert_id,
+					'message' => __( 'Template creato.', 'sd-logbook' ),
+				)
+			);
 		}
 	}
 
@@ -358,7 +368,10 @@ class SD_PDF_Template_Designer {
 		$manager  = SD_Activity_Manager::get_instance();
 		$activity = $manager->get_activity( $activity_id );
 
-		$args = array( 'per_page' => 9999, 'page' => 1 );
+		$args = array(
+			'per_page' => 9999,
+			'page' => 1,
+		);
 		if ( ! empty( $payment_status ) ) {
 			$args['payment_status'] = $payment_status;
 		}
@@ -527,7 +540,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 
 	private function stream_pdf( $html, $filename, $orientation ) {
 		if ( ! class_exists( '\\Dompdf\\Dompdf' ) ) {
-			$autoload = plugin_dir_path( dirname( __FILE__ ) ) . 'vendor/autoload.php';
+			$autoload = plugin_dir_path( __DIR__ ) . 'vendor/autoload.php';
 			if ( file_exists( $autoload ) ) {
 				require_once $autoload;
 			}
