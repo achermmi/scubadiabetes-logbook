@@ -4308,8 +4308,8 @@
 				actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + parseInt(r.id, 10) + '">Reinvia fattura</button>');
 			}
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-edit" data-id="' + parseInt(r.id, 10) + '" title="Modifica iscrizione">Modifica</button>');
-			actionsHtml.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + parseInt(r.id, 10) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-info sd-btn-sm sd-reg-tpl-pdf-row" data-id="' + parseInt(r.id, 10) + '" title="PDF con template selezionato">📑 PDF</button>');
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-danger sd-btn-sm sd-reg-delete" data-id="' + parseInt(r.id, 10) + '" data-name="' + esc((r.first_name || '') + ' ' + (r.last_name || '')) + '" title="Elimina iscrizione">Elimina</button>');
 			if (minorInfo.isMinor) {
 				minorCount += 1;
 			}
