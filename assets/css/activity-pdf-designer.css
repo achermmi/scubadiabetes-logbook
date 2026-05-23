@@ -254,8 +254,25 @@
 	transition: opacity 0.15s;
 }
 
+/* Resize handle altezza (bottom-center) */
+.sd-canvas-element .sd-el-resize-s {
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 16px;
+	height: 6px;
+	background: #27ae60;
+	cursor: s-resize;
+	border-radius: 3px 3px 0 0;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
 .sd-canvas-element:hover .sd-el-resize,
-.sd-canvas-element.selected .sd-el-resize {
+.sd-canvas-element.selected .sd-el-resize,
+.sd-canvas-element:hover .sd-el-resize-s,
+.sd-canvas-element.selected .sd-el-resize-s {
 	opacity: 1;
 }
 

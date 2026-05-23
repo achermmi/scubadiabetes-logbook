@@ -122,6 +122,7 @@
 		var xPx   = mmToPx(el.x);
 		var yPx   = mmToPx(el.y);
 		var wPx   = mmToPx(el.width);
+		var hPx   = el.height > 0 ? mmToPx(el.height) : 0;
 
 		var style = [
 			'left:'   + xPx + 'px',
@@ -130,6 +131,7 @@
 			'font-size:' + el.font_size + 'pt',
 			'color:' + el.color,
 		];
+		if (hPx > 0) { style.push('height:' + hPx + 'px', 'overflow:hidden'); }
 		if (el.font_bold)   { style.push('font-weight:bold'); }
 		if (el.font_italic) { style.push('font-style:italic'); }
 
@@ -158,7 +160,7 @@
 		return $('<div>')
 			.addClass('sd-canvas-element')
 			.attr('data-id', el.id)
-			.html(innerHtml + '<div class="sd-el-resize"></div>')
+			.html(innerHtml + '<div class="sd-el-resize"></div><div class="sd-el-resize-s"></div>')
 			.attr('style', style.join(';'));
 	}
 
@@ -280,6 +282,7 @@
 			$('#sd-prop-color').val(el.color);
 			$('#sd-prop-x').val(el.x);
 			$('#sd-prop-y').val(el.y);
+			$('#sd-prop-height').val(el.height || 0);
 			return;
 		}
 		// Multi-selezione
@@ -404,6 +407,7 @@
 		el.prefix         = $('#sd-prop-prefix').val();
 		el.suffix         = $('#sd-prop-suffix').val();
 		el.width          = parseFloat($('#sd-prop-width').val()) || 60;
+		el.height         = parseFloat($('#sd-prop-height').val()) || 0;
 		el.font_size      = parseInt($('#sd-prop-fontsize').val(), 10) || 11;
 		el.font_bold      = $('#sd-prop-bold').is(':checked');
 		el.font_italic    = $('#sd-prop-italic').is(':checked');
@@ -515,22 +519,26 @@
 			});
 		});
 
-		// Resize handle S (altezza — solo immagini)
+		// Resize handle S (altezza — immagini e campi testo con altezza impostata)
 		$el.find('.sd-el-resize-s').on('mousedown', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 			var id = $el.data('id');
 			var el = state.elements.find(function (el) { return el.id === id; });
-			if (!el || el.type !== 'image') { return; }
+			if (!el) { return; }
 			state.isResizing = true;
 			var startY       = e.clientY;
-			var startH       = el.height || 50;
+			var startH       = el.height || ( el.type === 'image' ? 50 : 10 );
 			$(document).on('mousemove.sdresizeh', function (ev) {
 				if (!state.isResizing) { return; }
 				var deltaY = ev.clientY - startY;
 				el.height  = parseFloat(Math.max(5, startH + pxToMm(deltaY)).toFixed(2));
 				$el.css('height', mmToPx(el.height) + 'px');
-				$('#sd-img-height').val(el.height);
+				if ( el.type === 'image' ) {
+					$('#sd-img-height').val(el.height);
+				} else {
+					$('#sd-prop-height').val(el.height);
+				}
 			});
 			$(document).on('mouseup.sdresizeh', function () {
 				state.isResizing = false;

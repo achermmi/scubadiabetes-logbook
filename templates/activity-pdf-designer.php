@@ -147,6 +147,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<label><?php esc_html_e( 'Larghezza (mm)', 'sd-logbook' ); ?>
 					<input type="number" id="sd-prop-width" class="sd-pdf-input" min="5" max="280" step="1">
 				</label>
+				<label><?php esc_html_e( 'Altezza (mm, 0 = auto)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-prop-height" class="sd-pdf-input" min="0" max="380" step="1">
+				</label>
 				<label><?php esc_html_e( 'Dimensione font (pt)', 'sd-logbook' ); ?>
 					<input type="number" id="sd-prop-fontsize" class="sd-pdf-input" min="6" max="72" step="1">
 				</label>

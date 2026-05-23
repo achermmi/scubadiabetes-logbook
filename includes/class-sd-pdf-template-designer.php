@@ -430,6 +430,7 @@ class SD_PDF_Template_Designer {
 			$x              = floatval( $el['x'] ?? 0 );
 			$y              = floatval( $el['y'] ?? 0 );
 			$width          = floatval( $el['width'] ?? 60 );
+			$height         = floatval( $el['height'] ?? 0 );
 			$font_size      = intval( $el['font_size'] ?? 11 );
 			$font_bold      = ! empty( $el['font_bold'] );
 			$font_italic    = ! empty( $el['font_italic'] );
@@ -442,12 +443,20 @@ class SD_PDF_Template_Designer {
 
 			$value = $this->resolve_field_value( $type, $el, $activity, $registration );
 
+			$is_html = $this->field_is_html( $type );
+
 			$style  = 'position:absolute;';
 			$style .= 'left:' . $x . 'mm;';
 			$style .= 'top:' . $y . 'mm;';
 			$style .= 'width:' . $width . 'mm;';
+			if ( $height > 0 ) {
+				$style .= 'height:' . $height . 'mm;overflow:hidden;';
+			}
 			$style .= 'font-size:' . $font_size . 'pt;';
 			$style .= 'color:' . $color . ';';
+			if ( $is_html ) {
+				$style .= 'word-wrap:break-word;';
+			}
 			if ( $font_bold ) {
 				$style .= 'font-weight:bold;';
 			}
@@ -459,7 +468,11 @@ class SD_PDF_Template_Designer {
 			}
 
 			$lbl_style = 'font-size:' . max( 7, $font_size - 2 ) . 'pt;opacity:0.6;';
-			$val_text  = esc_html( $prefix . $value . $suffix );
+			if ( $is_html ) {
+				$val_text = ( $prefix ? esc_html( $prefix ) : '' ) . wp_kses_post( $value ) . ( $suffix ? esc_html( $suffix ) : '' );
+			} else {
+				$val_text = esc_html( $prefix . $value . $suffix );
+			}
 			$lbl_span  = '<span style="' . $lbl_style . '">' . $label_text . '</span>';
 
 			if ( ! $label_show || '' === $label_text ) {
@@ -609,6 +622,14 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 	}
 
 	// =========================================================================
+	// HELPER: IL CAMPO CONTIENE HTML (non va escaped con esc_html)
+	// =========================================================================
+
+	private function field_is_html( $type ) {
+		return in_array( $type, array( 'act_description' ), true );
+	}
+
+	// =========================================================================
 	// HELPER: SANIFICA ELEMENTO TEMPLATE
 	// =========================================================================
 
@@ -633,6 +654,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			'label_show'     => ! empty( $el['label_show'] ),
 			'label_position' => in_array( $el['label_position'] ?? 'above', array( 'above', 'below', 'before', 'after' ), true ) ? sanitize_key( $el['label_position'] ) : 'above',
 			'custom_text'    => sanitize_text_field( $el['custom_text'] ?? '' ),
+			'height'         => round( max( 0.0, floatval( $el['height'] ?? 0 ) ), 2 ),
 		);
 		if ( 'image' === $type ) {
 			$base['url']           = esc_url_raw( $el['url'] ?? '' );
