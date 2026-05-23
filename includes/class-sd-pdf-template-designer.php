@@ -498,8 +498,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$key = substr( $type, 4 );
 			switch ( $key ) {
 				case 'birth_date':
-				$raw = $registration['registration_data']['birth_date'] ?? '';
-				$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
+					$raw = $registration['registration_data']['birth_date'] ?? '';
+					$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
 					break;
 				case 'price_chf':
 					$val = number_format( floatval( $registration['price_chf'] ?? 0 ), 2, '.', '\'' ) . ' CHF';
@@ -510,7 +510,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 				case 'created_at':
 				case 'payment_date':
 					$raw = $registration[ $key ] ?? '';
-				$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
+					$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
 					break;
 				default:
 					$val = $registration[ $key ] ?? '';
