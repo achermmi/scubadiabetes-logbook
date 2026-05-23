@@ -412,11 +412,14 @@ class SD_PDF_Template_Designer {
 
 	private function build_page_content( $elements, $activity, $registration, $is_preview = false ) {
 		// Sfondi (image con is_background) vengono renderizzati per primi
-		usort( $elements, function ( $a, $b ) {
-			$a_bg = ( 'image' === ( $a['type'] ?? '' ) ) && ! empty( $a['is_background'] );
-			$b_bg = ( 'image' === ( $b['type'] ?? '' ) ) && ! empty( $b['is_background'] );
-			return (int) $b_bg - (int) $a_bg;
-		} );
+		usort(
+			$elements,
+			function ( $a, $b ) {
+				$a_bg = ( 'image' === ( $a['type'] ?? '' ) ) && ! empty( $a['is_background'] );
+				$b_bg = ( 'image' === ( $b['type'] ?? '' ) ) && ! empty( $b['is_background'] );
+				return (int) $b_bg - (int) $a_bg;
+			}
+		);
 		$html = '<div class="sd-pdf-page">';
 		foreach ( $elements as $el ) {
 			$type = sanitize_key( $el['type'] ?? '' );
