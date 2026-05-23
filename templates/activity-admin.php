@@ -425,8 +425,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 							?>
 						</select>
 						<span class="sd-group-sep"></span>
-						<button type="button" class="sd-btn sd-btn-primary sd-btn-sm" id="sd-reg-bulk-email"><?php esc_html_e( 'Invia e-mail massivo', 'sd-logbook' ); ?></button>
-						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-reg-filter" id="sd-reg-bulk-email"><?php esc_html_e( 'Invia e-mail massivo', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-reg-filter" id="sd-reg-email-all-paid"><?php esc_html_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?></button>
 					</div>
 
 					<!-- Riga 4: esportazione e PDF -->
