@@ -92,6 +92,7 @@
 	gap: 0;
 	flex: 1;
 	min-height: 800px;
+	align-items: stretch;
 }
 
 /* ----- Sidebar sinistra ----- */
@@ -102,9 +103,6 @@
 	border-right: 1px solid #dce1e7;
 	padding: 12px 8px;
 	overflow-y: auto;
-	max-height: calc(100vh - 60px);
-	position: sticky;
-	top: 0;
 }
 
 .sd-pdf-sidebar-section {
@@ -267,9 +265,6 @@
 	border-left: 1px solid #dce1e7;
 	padding: 12px 10px;
 	overflow-y: auto;
-	max-height: calc(100vh - 60px);
-	position: sticky;
-	top: 0;
 }
 
 .sd-pdf-props h4 {

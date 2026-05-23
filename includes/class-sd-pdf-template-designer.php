@@ -36,6 +36,8 @@ class SD_PDF_Template_Designer {
 		'act_end_date' => 'Data fine',
 		'act_location' => 'Luogo',
 		'act_description' => 'Descrizione',
+		'act_max_participants' => 'Max partecipanti',
+		'act_event_status' => 'Stato evento',
 	);
 
 	public function __construct() {
@@ -267,11 +269,10 @@ class SD_PDF_Template_Designer {
 		$manager = SD_Activity_Manager::get_instance();
 		$form_fields = $manager->get_form_fields( $activity_id );
 
-		$skip = array( 'first_name', 'last_name', 'email', 'birth_date' );
 		$dynamic = array();
 		foreach ( $form_fields as $ff ) {
 			$fname = sanitize_key( $ff['field_name'] ?? '' );
-			if ( '' === $fname || in_array( $fname, $skip, true ) || 'content' === ( $ff['field_type'] ?? '' ) ) {
+			if ( '' === $fname || 'content' === ( $ff['field_type'] ?? '' ) ) {
 				continue;
 			}
 			$dynamic[ 'dyn_' . $fname ] = sanitize_text_field( $ff['field_label'] ?? $fname );
@@ -484,7 +485,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$key = substr( $type, 4 );
 			$val = $activity[ $key ] ?? '';
 			if ( in_array( $key, array( 'start_date', 'end_date' ), true ) && ! empty( $val ) ) {
-				$val = date_i18n( 'd/m/Y H:i', strtotime( $val ) );
+				$val = date_i18n( 'd.m.Y', strtotime( $val ) );
 			}
 			return $val;
 		}
@@ -497,7 +498,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$key = substr( $type, 4 );
 			switch ( $key ) {
 				case 'birth_date':
-					$val = $registration['registration_data']['birth_date'] ?? '';
+				$raw = $registration['registration_data']['birth_date'] ?? '';
+				$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
 					break;
 				case 'price_chf':
 					$val = number_format( floatval( $registration['price_chf'] ?? 0 ), 2, '.', '\'' ) . ' CHF';
@@ -508,7 +510,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 				case 'created_at':
 				case 'payment_date':
 					$raw = $registration[ $key ] ?? '';
-					$val = $raw ? date_i18n( 'd/m/Y H:i', strtotime( $raw ) ) : '';
+				$val = $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
 					break;
 				default:
 					$val = $registration[ $key ] ?? '';
@@ -525,6 +527,14 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$key = substr( $type, 4 );
 			$rd  = is_array( $registration['registration_data'] ) ? $registration['registration_data'] : array();
 			$val = $rd[ $key ] ?? '';
+			// Fallback a campo top-level per campi standard (first_name, last_name, email…)
+			if ( '' === (string) $val && array_key_exists( $key, $registration ) ) {
+				$val = $registration[ $key ] ?? '';
+			}
+			// Formattazione date
+			if ( in_array( $key, array( 'birth_date' ), true ) && ! empty( $val ) ) {
+				$val = date_i18n( 'd.m.Y', strtotime( $val ) );
+			}
 			if ( is_array( $val ) ) {
 				$val = implode( ', ', $val );
 			}
