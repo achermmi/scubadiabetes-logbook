@@ -64,6 +64,8 @@ class SD_PDF_Template_Designer {
 			return '<p>' . esc_html__( 'Accesso non autorizzato.', 'sd-logbook' ) . '</p>';
 		}
 
+		wp_enqueue_media();
+
 		wp_enqueue_style(
 			'sd-pdf-template-designer',
 			plugin_dir_url( __DIR__ ) . 'assets/css/activity-pdf-designer.css',
@@ -409,9 +411,19 @@ class SD_PDF_Template_Designer {
 	}
 
 	private function build_page_content( $elements, $activity, $registration, $is_preview = false ) {
+		// Sfondi (image con is_background) vengono renderizzati per primi
+		usort( $elements, function( $a, $b ) {
+			$a_bg = ( 'image' === ( $a['type'] ?? '' ) ) && ! empty( $a['is_background'] );
+			$b_bg = ( 'image' === ( $b['type'] ?? '' ) ) && ! empty( $b['is_background'] );
+			return (int) $b_bg - (int) $a_bg;
+		} );
 		$html = '<div class="sd-pdf-page">';
 		foreach ( $elements as $el ) {
-			$type           = sanitize_key( $el['type'] ?? '' );
+			$type = sanitize_key( $el['type'] ?? '' );
+			if ( 'image' === $type ) {
+				$html .= $this->render_image_element( $el, $is_preview );
+				continue;
+			}
 			$x              = floatval( $el['x'] ?? 0 );
 			$y              = floatval( $el['y'] ?? 0 );
 			$width          = floatval( $el['width'] ?? 60 );
@@ -576,6 +588,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$options->set( 'isHtml5ParserEnabled', true );
 		$options->set( 'isRemoteEnabled', false );
 		$options->set( 'defaultFont', 'DejaVu Sans' );
+		$options->set( 'chroot', array( ABSPATH, WP_CONTENT_DIR ) );
 
 		$dompdf = new \Dompdf\Dompdf( $options );
 		$dompdf->loadHtml( $html );
@@ -600,22 +613,93 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		if ( ! is_array( $el ) ) {
 			return array();
 		}
-		return array(
-			'id'          => sanitize_key( $el['id'] ?? '' ),
-			'type'        => sanitize_key( $el['type'] ?? '' ),
-			'label'       => sanitize_text_field( $el['label'] ?? '' ),
-			'x'           => round( floatval( $el['x'] ?? 0 ), 2 ),
-			'y'           => round( floatval( $el['y'] ?? 0 ), 2 ),
-			'width'       => round( floatval( $el['width'] ?? 60 ), 2 ),
-			'font_size'   => max( 6, min( 72, intval( $el['font_size'] ?? 11 ) ) ),
-			'font_bold'   => ! empty( $el['font_bold'] ),
-			'font_italic' => ! empty( $el['font_italic'] ),
-			'color'       => sanitize_hex_color( $el['color'] ?? '' ) ?: '#000000',
-			'prefix'      => sanitize_text_field( $el['prefix'] ?? '' ),
-			'suffix'      => sanitize_text_field( $el['suffix'] ?? '' ),
-			'label_show'  => ! empty( $el['label_show'] ),
+		$type = sanitize_key( $el['type'] ?? '' );
+		$base = array(
+			'id'             => sanitize_key( $el['id'] ?? '' ),
+			'type'           => $type,
+			'label'          => sanitize_text_field( $el['label'] ?? '' ),
+			'x'              => round( floatval( $el['x'] ?? 0 ), 2 ),
+			'y'              => round( floatval( $el['y'] ?? 0 ), 2 ),
+			'width'          => round( floatval( $el['width'] ?? 60 ), 2 ),
+			'font_size'      => max( 6, min( 72, intval( $el['font_size'] ?? 11 ) ) ),
+			'font_bold'      => ! empty( $el['font_bold'] ),
+			'font_italic'    => ! empty( $el['font_italic'] ),
+			'color'          => sanitize_hex_color( $el['color'] ?? '' ) ?: '#000000',
+			'prefix'         => sanitize_text_field( $el['prefix'] ?? '' ),
+			'suffix'         => sanitize_text_field( $el['suffix'] ?? '' ),
+			'label_show'     => ! empty( $el['label_show'] ),
 			'label_position' => in_array( $el['label_position'] ?? 'above', array( 'above', 'below', 'before', 'after' ), true ) ? sanitize_key( $el['label_position'] ) : 'above',
-			'custom_text' => sanitize_text_field( $el['custom_text'] ?? '' ),
+			'custom_text'    => sanitize_text_field( $el['custom_text'] ?? '' ),
 		);
+		if ( 'image' === $type ) {
+			$base['url']           = esc_url_raw( $el['url'] ?? '' );
+			$base['attachment_id'] = max( 0, intval( $el['attachment_id'] ?? 0 ) );
+			$base['height']        = round( max( 1.0, floatval( $el['height'] ?? 40 ) ), 2 );
+			$base['rotation']      = intval( $el['rotation'] ?? 0 ) % 360;
+			$base['flip_h']        = ! empty( $el['flip_h'] );
+			$base['flip_v']        = ! empty( $el['flip_v'] );
+			$base['opacity']       = round( max( 0.05, min( 1.0, floatval( $el['opacity'] ?? 1.0 ) ) ), 2 );
+			$base['is_background'] = ! empty( $el['is_background'] );
+		}
+		return $base;
+	}
+
+	// =========================================================================
+	// HELPER: RENDERIZZA ELEMENTO IMMAGINE
+	// =========================================================================
+
+	private function render_image_element( $el, $is_preview = false ) {
+		$x         = floatval( $el['x'] ?? 0 );
+		$y         = floatval( $el['y'] ?? 0 );
+		$width     = floatval( $el['width'] ?? 60 );
+		$height    = floatval( $el['height'] ?? 40 );
+		$rotation  = intval( $el['rotation'] ?? 0 );
+		$flip_h    = ! empty( $el['flip_h'] );
+		$flip_v    = ! empty( $el['flip_v'] );
+		$opacity   = round( max( 0.05, min( 1.0, floatval( $el['opacity'] ?? 1.0 ) ) ), 2 );
+		$attach_id = intval( $el['attachment_id'] ?? 0 );
+
+		// Preferisce il percorso fisico del file (dompdf non necessita HTTP)
+		$img_src = '';
+		if ( $attach_id > 0 ) {
+			$file = get_attached_file( $attach_id );
+			if ( $file && file_exists( $file ) ) {
+				$img_src = $file;
+			}
+		}
+		if ( empty( $img_src ) ) {
+			$img_src = esc_attr( $el['url'] ?? '' );
+		}
+
+		$style  = 'position:absolute;';
+		$style .= 'left:' . $x . 'mm;top:' . $y . 'mm;';
+		$style .= 'width:' . $width . 'mm;height:' . $height . 'mm;';
+		$style .= 'opacity:' . $opacity . ';overflow:hidden;';
+
+		$transforms = array();
+		if ( 0 !== $rotation ) {
+			$transforms[] = 'rotate(' . $rotation . 'deg)';
+		}
+		if ( $flip_h ) {
+			$transforms[] = 'scaleX(-1)';
+		}
+		if ( $flip_v ) {
+			$transforms[] = 'scaleY(-1)';
+		}
+		if ( ! empty( $transforms ) ) {
+			$style .= 'transform:' . implode( ' ', $transforms ) . ';';
+			$style .= 'transform-origin:center center;';
+		}
+
+		if ( $is_preview ) {
+			$style .= 'border:1px dashed #bbb;box-sizing:border-box;';
+		}
+
+		if ( empty( $img_src ) ) {
+			return '<div style="' . $style . 'background:#f0f0f0;"></div>';
+		}
+
+		$img_style = 'width:100%;height:100%;display:block;';
+		return '<div style="' . $style . '"><img src="' . esc_attr( $img_src ) . '" style="' . $img_style . '" alt=""></div>';
 	}
 }

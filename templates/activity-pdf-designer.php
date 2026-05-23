@@ -91,6 +91,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<span class="sd-chip-icon">✏️</span> <?php esc_html_e( 'Testo fisso', 'sd-logbook' ); ?>
 				</div>
 			</div>
+
+			<div class="sd-pdf-sidebar-section">
+				<h4><?php esc_html_e( 'Immagini', 'sd-logbook' ); ?></h4>
+				<div class="sd-field-chip sd-field-chip-action" id="sd-chip-image">
+					<span class="sd-chip-icon">📷</span> <?php esc_html_e( 'Aggiungi immagine', 'sd-logbook' ); ?>
+				</div>
+				<div class="sd-field-chip sd-field-chip-action" id="sd-chip-background" style="margin-top:4px;">
+					<span class="sd-chip-icon">🖼</span> <?php esc_html_e( 'Imposta sfondo pagina', 'sd-logbook' ); ?>
+				</div>
+				<p class="sd-sidebar-hint"><?php esc_html_e( 'Supporta JPG, PNG, GIF, WebP. Per PDF carica prima il file (richiede Ghostscript sul server).', 'sd-logbook' ); ?></p>
+			</div>
 		</div>
 
 		<!-- CANVAS A4 -->
@@ -157,6 +168,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="number" id="sd-prop-y" class="sd-pdf-input" min="0" max="380" step="0.5">
 				</label>
 				<button id="sd-prop-delete" class="sd-pdf-btn sd-pdf-btn-danger sd-pdf-full-width"><?php esc_html_e( '🗑 Rimuovi elemento', 'sd-logbook' ); ?></button>
+			</div>
+
+			<!-- Proprietà immagine -->
+			<div id="sd-props-image" style="display:none;">
+				<button id="sd-img-change" class="sd-pdf-btn sd-pdf-btn-secondary sd-pdf-full-width" style="margin-bottom:8px;"><?php esc_html_e( '🖼 Cambia immagine', 'sd-logbook' ); ?></button>
+				<label><?php esc_html_e( 'Larghezza (mm)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-img-width" class="sd-pdf-input" min="1" max="297" step="0.5">
+				</label>
+				<label><?php esc_html_e( 'Altezza (mm)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-img-height" class="sd-pdf-input" min="1" max="420" step="0.5">
+				</label>
+				<label><?php esc_html_e( 'X (mm)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-img-x" class="sd-pdf-input" min="0" max="297" step="0.5">
+				</label>
+				<label><?php esc_html_e( 'Y (mm)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-img-y" class="sd-pdf-input" min="0" max="420" step="0.5">
+				</label>
+				<hr style="margin:8px 0;border-color:#ecf0f1;">
+				<label><?php esc_html_e( 'Rotazione', 'sd-logbook' ); ?>
+					<select id="sd-img-rotation" class="sd-pdf-input">
+						<option value="0">0°</option>
+						<option value="45">45°</option>
+						<option value="90">90°</option>
+						<option value="135">135°</option>
+						<option value="180">180°</option>
+						<option value="270">270°</option>
+						<option value="315">315°</option>
+						<option value="-45">-45°</option>
+					</select>
+				</label>
+				<label class="sd-prop-checkbox">
+					<input type="checkbox" id="sd-img-flip-h"> <?php esc_html_e( 'Rifletti orizzontalmente', 'sd-logbook' ); ?>
+				</label>
+				<label class="sd-prop-checkbox">
+					<input type="checkbox" id="sd-img-flip-v"> <?php esc_html_e( 'Rifletti verticalmente', 'sd-logbook' ); ?>
+				</label>
+				<hr style="margin:8px 0;border-color:#ecf0f1;">
+				<label><?php esc_html_e( 'Opacità', 'sd-logbook' ); ?>: <span id="sd-img-opacity-val" style="font-weight:700;">100%</span>
+					<input type="range" id="sd-img-opacity" class="sd-pdf-input" min="5" max="100" step="5" value="100" style="width:100%;padding:4px 0;">
+				</label>
+				<label class="sd-prop-checkbox">
+					<input type="checkbox" id="sd-img-is-bg"> <?php esc_html_e( 'Sfondo (sotto i campi)', 'sd-logbook' ); ?>
+				</label>
+				<button id="sd-img-fullpage" class="sd-pdf-btn sd-pdf-btn-secondary sd-pdf-full-width" style="margin-top:6px;"><?php esc_html_e( '⬛ Adatta a tutta la pagina', 'sd-logbook' ); ?></button>
+				<button id="sd-img-delete" class="sd-pdf-btn sd-pdf-btn-danger sd-pdf-full-width" style="margin-top:4px;"><?php esc_html_e( '🗑 Rimuovi immagine', 'sd-logbook' ); ?></button>
 			</div>
 
 			<!-- Multi-selezione -->

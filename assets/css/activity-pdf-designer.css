@@ -431,3 +431,86 @@
 	top: 0; left: 0; right: 0; bottom: 0;
 	pointer-events: none;
 }
+
+/* ----- Elementi immagine canvas ----- */
+.sd-canvas-image {
+	cursor: move;
+}
+
+.sd-canvas-image img {
+	display: block;
+	user-select: none;
+	pointer-events: none;
+}
+
+.sd-img-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f0f4f8;
+	border: 2px dashed #b0bec5;
+	box-sizing: border-box;
+	font-size: 28px;
+	color: #90a4ae;
+}
+
+/* Handle resize S (altezza, centrato in basso) */
+.sd-el-resize-s {
+	position: absolute;
+	bottom: -5px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 10px;
+	height: 10px;
+	background: #27ae60;
+	border: 1.5px solid #fff;
+	border-radius: 50%;
+	cursor: s-resize;
+	z-index: 10;
+}
+
+/* Handle resize SE (angolo basso-destra) */
+.sd-el-resize-se {
+	position: absolute;
+	bottom: -5px;
+	right: -5px;
+	width: 10px;
+	height: 10px;
+	background: #e67e22;
+	border: 1.5px solid #fff;
+	border-radius: 2px;
+	cursor: se-resize;
+	z-index: 10;
+}
+
+/* Chip azione (immagini) — non draggable, solo click */
+.sd-field-chip-action {
+	cursor: pointer;
+	background: #eaf4fb;
+	border: 1px solid #aed6f1;
+	color: #1a5276;
+}
+
+.sd-field-chip-action:hover {
+	background: #d4e8f7;
+}
+
+/* Pannello props immagine: riusa stili form testo */
+#sd-props-image label {
+	display: block;
+	font-size: 11px;
+	color: #555;
+	margin-bottom: 8px;
+	font-weight: 600;
+}
+
+/* Nota informativa sidebar */
+.sd-sidebar-hint {
+	font-size: 10px;
+	color: #95a5a6;
+	line-height: 1.4;
+	margin: 4px 0 0 0;
+	font-style: italic;
+}

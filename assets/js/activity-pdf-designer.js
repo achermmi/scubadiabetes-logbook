@@ -75,7 +75,7 @@
 	// =========================================================================
 
 	function defaultElement(type, label) {
-		return {
+		var el = {
 			id:          generateId(),
 			type:        type,
 			label:       label || type,
@@ -92,6 +92,17 @@
 			label_position: 'above',
 			custom_text:    '',
 		};
+		if ( 'image' === type ) {
+			el.url           = '';
+			el.attachment_id = 0;
+			el.height        = 50;
+			el.rotation      = 0;
+			el.flip_h        = false;
+			el.flip_v        = false;
+			el.opacity       = 1.0;
+			el.is_background = false;
+		}
+		return el;
 	}
 
 	function previewValue(el) {
@@ -104,6 +115,9 @@
 	}
 
 	function buildElementDOM(el) {
+		if ( 'image' === el.type ) {
+			return buildImageDOM(el);
+		}
 		var dims  = getPageDims();
 		var xPx   = mmToPx(el.x);
 		var yPx   = mmToPx(el.y);
@@ -145,6 +159,39 @@
 			.addClass('sd-canvas-element')
 			.attr('data-id', el.id)
 			.html(innerHtml + '<div class="sd-el-resize"></div>')
+			.attr('style', style.join(';'));
+	}
+
+	function buildImageDOM(el) {
+		var xPx  = mmToPx(el.x);
+		var yPx  = mmToPx(el.y);
+		var wPx  = mmToPx(el.width);
+		var hPx  = mmToPx(el.height || 50);
+		var opacity = (el.opacity !== undefined) ? el.opacity : 1;
+		var transforms = [];
+		if ( el.rotation ) { transforms.push('rotate(' + el.rotation + 'deg)'); }
+		if ( el.flip_h )   { transforms.push('scaleX(-1)'); }
+		if ( el.flip_v )   { transforms.push('scaleY(-1)'); }
+		var style = [
+			'left:'   + xPx + 'px',
+			'top:'    + yPx + 'px',
+			'width:'  + wPx + 'px',
+			'height:' + hPx + 'px',
+			'opacity:' + opacity,
+			'overflow:hidden',
+		];
+		if ( transforms.length ) { style.push('transform:' + transforms.join(' ')); }
+		if ( el.is_background )  { style.push('z-index:0'); }
+		var inner;
+		if ( el.url ) {
+			inner = '<img src="' + esc(el.url) + '" style="width:100%;height:100%;object-fit:contain;display:block;" draggable="false">';
+		} else {
+			inner = '<div class="sd-img-placeholder"><span>\uD83D\uDCF7</span></div>';
+		}
+		return $('<div>')
+			.addClass('sd-canvas-element sd-canvas-image')
+			.attr('data-id', el.id)
+			.html(inner + '<div class="sd-el-resize"></div><div class="sd-el-resize-s"></div><div class="sd-el-resize-se"></div>')
 			.attr('style', style.join(';'));
 	}
 
@@ -192,6 +239,7 @@
 		if (count === 0) {
 			$('#sd-props-empty').show();
 			$('#sd-props-form').hide();
+			$('#sd-props-image').hide();
 			$('#sd-props-multi').hide();
 			return;
 		}
@@ -199,8 +247,25 @@
 			var el = state.elements.find(function (e) { return e.id === state.selectedIds[0]; });
 			if (!el) { return; }
 			$('#sd-props-empty').hide();
-			$('#sd-props-form').show();
 			$('#sd-props-multi').hide();
+			if ( 'image' === el.type ) {
+				$('#sd-props-form').hide();
+				$('#sd-props-image').show();
+				$('#sd-img-width').val(el.width);
+				$('#sd-img-height').val(el.height || 50);
+				$('#sd-img-x').val(el.x);
+				$('#sd-img-y').val(el.y);
+				$('#sd-img-rotation').val(el.rotation || 0);
+				$('#sd-img-flip-h').prop('checked', !!el.flip_h);
+				$('#sd-img-flip-v').prop('checked', !!el.flip_v);
+				var opPct = Math.round((el.opacity !== undefined ? el.opacity : 1) * 100);
+				$('#sd-img-opacity').val(opPct);
+				$('#sd-img-opacity-val').text(opPct + '%');
+				$('#sd-img-is-bg').prop('checked', !!el.is_background);
+				return;
+			}
+			$('#sd-props-form').show();
+			$('#sd-props-image').hide();
 			$('#sd-prop-label').val(el.label);
 			$('#sd-prop-label-show').prop('checked', el.label_show);
 			$('#sd-prop-label-pos').val(el.label_position || 'above');
@@ -220,6 +285,7 @@
 		// Multi-selezione
 		$('#sd-props-empty').hide();
 		$('#sd-props-form').hide();
+		$('#sd-props-image').hide();
 		$('#sd-props-multi').show();
 		$('#sd-multi-count').text(count + ' elementi selezionati');
 		var first = getSelectedEls()[0];
@@ -317,6 +383,19 @@
 		if (!state.selectedId) { return; }
 		var el = state.elements.find(function (e) { return e.id === state.selectedId; });
 		if (!el) { return; }
+		if ( 'image' === el.type ) {
+			el.width        = parseFloat($('#sd-img-width').val())  || 60;
+			el.height       = parseFloat($('#sd-img-height').val()) || 50;
+			el.x            = parseFloat($('#sd-img-x').val()) || 0;
+			el.y            = parseFloat($('#sd-img-y').val()) || 0;
+			el.rotation     = parseInt($('#sd-img-rotation').val(), 10) || 0;
+			el.flip_h       = $('#sd-img-flip-h').is(':checked');
+			el.flip_v       = $('#sd-img-flip-v').is(':checked');
+			el.opacity      = parseFloat($('#sd-img-opacity').val()) / 100 || 1.0;
+			el.is_background = $('#sd-img-is-bg').is(':checked');
+			renderElement(el);
+			return;
+		}
 		el.label          = $('#sd-prop-label').val();
 		el.label_show     = $('#sd-prop-label-show').is(':checked');
 		el.label_position = $('#sd-prop-label-pos').val() || 'above';
@@ -407,7 +486,7 @@
 			});
 		});
 
-		// Resize handle (solo selezione singola)
+		// Resize handle E (larghezza)
 		$el.find('.sd-el-resize').on('mousedown', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -427,6 +506,7 @@
 				el.width   = parseFloat(newW.toFixed(2));
 				$el.css('width', mmToPx(el.width) + 'px');
 				$('#sd-prop-width').val(el.width);
+				$('#sd-img-width').val(el.width);
 			});
 
 			$(document).on('mouseup.sdresize', function () {
@@ -434,6 +514,122 @@
 				$(document).off('mousemove.sdresize mouseup.sdresize');
 			});
 		});
+
+		// Resize handle S (altezza — solo immagini)
+		$el.find('.sd-el-resize-s').on('mousedown', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var id = $el.data('id');
+			var el = state.elements.find(function (el) { return el.id === id; });
+			if (!el || el.type !== 'image') { return; }
+			state.isResizing = true;
+			var startY       = e.clientY;
+			var startH       = el.height || 50;
+			$(document).on('mousemove.sdresizeh', function (ev) {
+				if (!state.isResizing) { return; }
+				var deltaY = ev.clientY - startY;
+				el.height  = parseFloat(Math.max(5, startH + pxToMm(deltaY)).toFixed(2));
+				$el.css('height', mmToPx(el.height) + 'px');
+				$('#sd-img-height').val(el.height);
+			});
+			$(document).on('mouseup.sdresizeh', function () {
+				state.isResizing = false;
+				$(document).off('mousemove.sdresizeh mouseup.sdresizeh');
+			});
+		});
+
+		// Resize handle SE (larghezza + altezza — solo immagini)
+		$el.find('.sd-el-resize-se').on('mousedown', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var id = $el.data('id');
+			var el = state.elements.find(function (el) { return el.id === id; });
+			if (!el || el.type !== 'image') { return; }
+			state.isResizing = true;
+			var startX       = e.clientX;
+			var startY       = e.clientY;
+			var startW       = el.width;
+			var startH       = el.height || 50;
+			$(document).on('mousemove.sdresizese', function (ev) {
+				if (!state.isResizing) { return; }
+				el.width  = parseFloat(Math.max(10, startW + pxToMm(ev.clientX - startX)).toFixed(2));
+				el.height = parseFloat(Math.max(5,  startH + pxToMm(ev.clientY - startY)).toFixed(2));
+				$el.css({ width: mmToPx(el.width) + 'px', height: mmToPx(el.height) + 'px' });
+				$('#sd-img-width').val(el.width);
+				$('#sd-img-height').val(el.height);
+			});
+			$(document).on('mouseup.sdresizese', function () {
+				state.isResizing = false;
+				$(document).off('mousemove.sdresizese mouseup.sdresizese');
+			});
+		});
+	}
+
+	// =========================================================================
+	// MEDIA LIBRARY WORDPRESS
+	// =========================================================================
+
+	function openMediaLibrary(callback) {
+		if ( typeof wp === 'undefined' || ! wp.media ) {
+			alert('La Media Library di WordPress non è disponibile in questa pagina.');
+			return;
+		}
+		var frame = wp.media({
+			title:    'Seleziona immagine',
+			button:   { text: 'Usa questa immagine' },
+			multiple: false,
+		});
+		frame.on('select', function () {
+			var att = frame.state().get('selection').first().toJSON();
+			// Per i PDF usa la preview generata da WP se disponibile
+			var imageUrl = att.url;
+			if ( att.mime === 'application/pdf' ) {
+				if ( att.sizes && att.sizes.full ) {
+					imageUrl = att.sizes.full.url;
+				} else if ( att.sizes && att.sizes.large ) {
+					imageUrl = att.sizes.large.url;
+				} else {
+					alert('Nessuna anteprima disponibile per questo PDF. Carica il PDF su WordPress (richiede Ghostscript sul server) oppure converti la pagina in PNG/JPEG prima di caricarla.');
+					return;
+				}
+			}
+			att.url = imageUrl;
+			callback(att);
+		});
+		frame.open();
+	}
+
+	function addImageElement(att) {
+		var dims = getPageDims();
+		var el   = defaultElement('image', att.filename || att.title || 'Immagine');
+		el.url           = att.url;
+		el.attachment_id = att.id || 0;
+		// Scala proporzionalmente per stare entro 80mm di larghezza
+		var maxWmm = 80;
+		var natWmm = ( att.width  || 500 ) / 3.7795;
+		var natHmm = ( att.height || 375 ) / 3.7795;
+		var scale  = Math.min(1, maxWmm / natWmm);
+		el.width  = parseFloat((natWmm * scale).toFixed(2));
+		el.height = parseFloat((natHmm * scale).toFixed(2));
+		el.x = parseFloat((dims.w / 2 - el.width / 2).toFixed(2));
+		el.y = 60;
+		addElement(el);
+		selectElement(el.id);
+	}
+
+	function addBackgroundElement(att) {
+		var dims = getPageDims();
+		var el   = defaultElement('image', 'Sfondo');
+		el.url           = att.url;
+		el.attachment_id = att.id || 0;
+		el.width         = dims.w;
+		el.height        = dims.h;
+		el.x             = 0;
+		el.y             = 0;
+		el.opacity       = 0.5;
+		el.is_background = true;
+		addElement(el);
+		selectElement(el.id);
 	}
 
 	// =========================================================================
@@ -1009,6 +1205,57 @@
 		$('#sd-multi-delete').on('click', function () {
 			var toDelete = state.selectedIds.slice();
 			toDelete.forEach(function (id) { removeElement(id); });
+		});
+
+		// ===== IMMAGINI =====
+
+		// Chip "Aggiungi immagine" (sidebar)
+		$('#sd-chip-image').on('click', function () {
+			openMediaLibrary(function (att) { addImageElement(att); });
+		});
+
+		// Chip "Imposta sfondo" (sidebar)
+		$('#sd-chip-background').on('click', function () {
+			openMediaLibrary(function (att) { addBackgroundElement(att); });
+		});
+
+		// Pannello immagine: aggiorna props su change
+		$('#sd-props-image').on('input change', 'input, select', function () {
+			updateSelectedFromProps();
+		});
+
+		// Bottone "Cambia immagine"
+		$('#sd-img-change').on('click', function () {
+			openMediaLibrary(function (att) {
+				var el = state.elements.find(function (e) { return e.id === state.selectedId; });
+				if (!el || el.type !== 'image') { return; }
+				el.url           = att.url;
+				el.attachment_id = att.id || 0;
+				renderElement(el);
+			});
+		});
+
+		// Bottone "Adatta a pagina intera"
+		$('#sd-img-fullpage').on('click', function () {
+			var el = state.elements.find(function (e) { return e.id === state.selectedId; });
+			if (!el || el.type !== 'image') { return; }
+			var dims = getPageDims();
+			el.x      = 0;
+			el.y      = 0;
+			el.width  = dims.w;
+			el.height = dims.h;
+			renderElement(el);
+			updatePropsPanel();
+		});
+
+		// Bottone "Rimuovi immagine"
+		$('#sd-img-delete').on('click', function () {
+			if (state.selectedId) { removeElement(state.selectedId); }
+		});
+
+		// Slider opacità immagine: aggiorna etichetta in tempo reale
+		$('#sd-img-opacity').on('input', function () {
+			$('#sd-img-opacity-val').text($(this).val() + '%');
 		});
 	});
 
