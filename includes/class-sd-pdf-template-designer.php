@@ -40,6 +40,34 @@ class SD_PDF_Template_Designer {
 		'act_event_status' => 'Stato evento',
 	);
 
+	// Campi fissi disponibili per i Soci
+	const MEMBER_FIELDS = array(
+		'mbr_first_name'       => 'Nome',
+		'mbr_last_name'        => 'Cognome',
+		'mbr_email'            => 'E-mail',
+		'mbr_date_of_birth'    => 'Data di nascita',
+		'mbr_member_number'    => 'Numero socio',
+		'mbr_member_type'      => 'Tipo socio',
+		'mbr_membership_type'  => 'Tipo iscrizione',
+		'mbr_fee_amount'       => 'Quota associativa',
+		'mbr_membership_expiry' => 'Scadenza iscrizione',
+		'mbr_phone'            => 'Telefono',
+		'mbr_address_street'   => 'Indirizzo',
+		'mbr_address_postal'   => 'CAP',
+		'mbr_address_city'     => 'Città',
+		'mbr_address_country'  => 'Nazione',
+		'mbr_taglia_maglietta' => 'Taglia maglietta',
+		'mbr_diabetes_type'    => 'Tipo diabete',
+		'mbr_blood_type'       => 'Gruppo sanguigno',
+		'mbr_weight'           => 'Peso',
+		'mbr_height'           => 'Altezza',
+		'mbr_is_scuba'         => 'Subacqueo',
+		'mbr_gender'           => 'Genere',
+		'mbr_birth_place'      => 'Luogo di nascita',
+		'mbr_fiscal_code'      => 'Codice fiscale / AVS',
+		'mbr_privacy_consent'  => 'Consenso privacy',
+	);
+
 	public function __construct() {
 		$this->init_hooks();
 	}
@@ -53,6 +81,8 @@ class SD_PDF_Template_Designer {
 		add_action( 'wp_ajax_sd_pdf_tpl_fields', array( $this, 'ajax_activity_fields' ) );
 		add_action( 'wp_ajax_sd_pdf_tpl_generate', array( $this, 'ajax_generate_pdf' ) );
 		add_action( 'wp_ajax_sd_pdf_tpl_gen_all', array( $this, 'ajax_generate_pdf_all' ) );
+		add_action( 'wp_ajax_sd_pdf_tpl_gen_member', array( $this, 'ajax_generate_member_pdf' ) );
+		add_action( 'wp_ajax_sd_pdf_tpl_gen_all_members', array( $this, 'ajax_generate_member_pdf_all' ) );
 	}
 
 	// =========================================================================
@@ -85,11 +115,12 @@ class SD_PDF_Template_Designer {
 			'sd-pdf-template-designer',
 			'sdPdfDesigner',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce' => wp_create_nonce( 'sd_nonce' ),
-				'fixedFields' => self::FIXED_FIELDS,
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'nonce'          => wp_create_nonce( 'sd_nonce' ),
+				'fixedFields'    => self::FIXED_FIELDS,
 				'activityFields' => self::ACTIVITY_FIELDS,
-				'textDomain' => 'sd-logbook',
+				'memberFields'   => self::MEMBER_FIELDS,
+				'textDomain'     => 'sd-logbook',
 			)
 		);
 
@@ -114,6 +145,10 @@ class SD_PDF_Template_Designer {
 		$orientation = sanitize_key( $_POST['orientation'] ?? 'portrait' );
 		$activity_id = intval( $_POST['activity_id'] ?? 0 );
 		$template_id = intval( $_POST['template_id'] ?? 0 );
+		$tpl_type    = sanitize_key( $_POST['template_type'] ?? 'activity' );
+		if ( ! in_array( $tpl_type, array( 'activity', 'member' ), true ) ) {
+			$tpl_type = 'activity';
+		}
 
 		if ( empty( $name ) ) {
 			wp_send_json_error( array( 'message' => __( 'Nome template richiesto.', 'sd-logbook' ) ) );
@@ -132,7 +167,8 @@ class SD_PDF_Template_Designer {
 			'name'          => $name,
 			'orientation'   => in_array( $orientation, array( 'portrait', 'landscape' ), true ) ? $orientation : 'portrait',
 			'elements_json' => wp_json_encode( $elements ),
-			'activity_id'   => $activity_id > 0 ? $activity_id : null,
+			'activity_id'   => ( 'activity' === $tpl_type && $activity_id > 0 ) ? $activity_id : null,
+			'template_type' => $tpl_type,
 			'updated_at'    => current_time( 'mysql' ),
 		);
 
@@ -141,7 +177,7 @@ class SD_PDF_Template_Designer {
 				$wpdb->prefix . 'sd_pdf_templates',
 				$data,
 				array( 'id' => $template_id ),
-				array( '%s', '%s', '%s', '%d', '%s' ),
+				array( '%s', '%s', '%s', '%d', '%s', '%s' ),
 				array( '%d' )
 			);
 			wp_send_json_success(
@@ -156,7 +192,7 @@ class SD_PDF_Template_Designer {
 			$wpdb->insert(
 				$wpdb->prefix . 'sd_pdf_templates',
 				$data,
-				array( '%s', '%s', '%s', '%d', '%s', '%d', '%s' )
+				array( '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s' )
 			);
 			wp_send_json_success(
 				array(
@@ -179,10 +215,19 @@ class SD_PDF_Template_Designer {
 
 		global $wpdb;
 
-		$rows = $wpdb->get_results(
-			'SELECT id, name, orientation, activity_id, created_at, updated_at FROM ' . $wpdb->prefix . 'sd_pdf_templates ORDER BY updated_at DESC',
-			ARRAY_A
-		);
+		$type_filter = sanitize_key( $_POST['template_type'] ?? '' );
+		$where       = '';
+		$params      = array();
+
+		if ( in_array( $type_filter, array( 'activity', 'member' ), true ) ) {
+			$where  = ' WHERE template_type = %s';
+			$params = array( $type_filter );
+		}
+
+		$sql  = 'SELECT id, name, orientation, activity_id, template_type, created_at, updated_at FROM ' . $wpdb->prefix . 'sd_pdf_templates' . $where . ' ORDER BY updated_at DESC';
+		$rows = empty( $params )
+			? $wpdb->get_results( $sql, ARRAY_A ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			: $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		wp_send_json_success( array( 'templates' => $rows ?: array() ) );
 	}
@@ -515,10 +560,37 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 	// HELPER: RISOLVE VALORE CAMPO
 	// =========================================================================
 
-	private function resolve_field_value( $type, $el, $activity, $registration ) {
+	private function resolve_field_value( $type, $el, $activity, $registration, $member = null ) {
 		// Testo libero
 		if ( 'text_label' === $type ) {
 			return esc_html( $el['custom_text'] ?? '' );
+		}
+
+		// Campi socio (mbr_*)
+		if ( 0 === strpos( $type, 'mbr_' ) ) {
+			if ( ! $member ) {
+				return '—';
+			}
+			$member = is_object( $member ) ? (array) $member : $member;
+			$key    = substr( $type, 4 );
+			switch ( $key ) {
+				case 'date_of_birth':
+					$raw = $member['date_of_birth'] ?? '';
+					return $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
+				case 'membership_expiry':
+					$raw = $member['membership_expiry'] ?? '';
+					return $raw ? date_i18n( 'd.m.Y', strtotime( $raw ) ) : '';
+				case 'fee_amount':
+					return ! empty( $member['fee_amount'] ) ? 'CHF ' . number_format( (float) $member['fee_amount'], 2, '.', '\'' ) : '';
+				case 'is_scuba':
+					return ! empty( $member['is_scuba'] ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+				case 'privacy_consent':
+					return ! empty( $member['privacy_consent'] ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+				case 'gender':
+					return esc_html( $member['gender'] ?? '' );
+				default:
+					return esc_html( (string) ( $member[ $key ] ?? '' ) );
+			}
 		}
 
 		// Campi attività
@@ -586,6 +658,244 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		}
 
 		return '';
+	}
+
+	// =========================================================================
+	// AJAX: GENERA PDF (singolo socio o anteprima socio)
+	// =========================================================================
+
+	public function ajax_generate_member_pdf() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$template_id = intval( $_POST['template_id'] ?? 0 );
+		$member_id   = intval( $_POST['member_id'] ?? 0 );
+
+		if ( $template_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID template non valido.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$tpl = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'sd_pdf_templates WHERE id = %d', $template_id ),
+			ARRAY_A
+		);
+
+		if ( ! $tpl ) {
+			wp_send_json_error( array( 'message' => __( 'Template non trovato.', 'sd-logbook' ) ) );
+		}
+
+		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
+
+		$member = null;
+		if ( $member_id > 0 ) {
+			$db     = new SD_Database();
+			$member = $wpdb->get_row(
+				$wpdb->prepare( 'SELECT * FROM ' . $db->table( 'members' ) . ' WHERE id = %d', $member_id ),
+				ARRAY_A
+			);
+		}
+
+		$html     = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member, 0 === $member_id );
+		$filename = 'socio_' . ( $member_id > 0 ? $member_id : 'anteprima' ) . '_tpl' . $template_id . '_' . gmdate( 'Ymd_His' ) . '.pdf';
+
+		$this->stream_pdf( $html, $filename, $tpl['orientation'] );
+	}
+
+	// =========================================================================
+	// AJAX: GENERA PDF PER TUTTI I SOCI
+	// =========================================================================
+
+	public function ajax_generate_member_pdf_all() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti.', 'sd-logbook' ) ) );
+		}
+
+		$template_id = intval( $_POST['template_id'] ?? 0 );
+		$filter_type = sanitize_key( $_POST['filter_type'] ?? 'all' );
+
+		if ( $template_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'ID template non valido.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$tpl = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'sd_pdf_templates WHERE id = %d', $template_id ),
+			ARRAY_A
+		);
+
+		if ( ! $tpl ) {
+			wp_send_json_error( array( 'message' => __( 'Template non trovato.', 'sd-logbook' ) ) );
+		}
+
+		$db    = new SD_Database();
+		$today = gmdate( 'Y-m-d' );
+		$soon  = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
+
+		$where = 'WHERE COALESCE(is_active,1) = 1';
+		$extra_params = array();
+
+		if ( 'in_scadenza' === $filter_type ) {
+			$where       .= ' AND membership_expiry BETWEEN %s AND %s';
+			$extra_params = array( $today, $soon );
+		} elseif ( 'scaduti' === $filter_type ) {
+			$where       .= ' AND membership_expiry < %s';
+			$extra_params = array( $today );
+		} elseif ( 'non_pagati' === $filter_type ) {
+			$where .= ' AND has_paid_fee = 0';
+		}
+
+		$sql     = 'SELECT * FROM ' . $db->table( 'members' ) . ' ' . $where . ' ORDER BY last_name ASC, first_name ASC';
+		$members = empty( $extra_params )
+			? $wpdb->get_results( $sql, ARRAY_A ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			: $wpdb->get_results( $wpdb->prepare( $sql, $extra_params ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( empty( $members ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nessun socio trovato.', 'sd-logbook' ) ) );
+		}
+
+		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
+		$all_html = '';
+
+		foreach ( $members as $idx => $member ) {
+			$page_html = $this->build_member_page_content( $elements, $member );
+			if ( $idx > 0 ) {
+				$all_html .= '<div style="page-break-before:always;"></div>';
+			}
+			$all_html .= $page_html;
+		}
+
+		$html     = $this->wrap_pdf_html( $all_html, $tpl['orientation'] );
+		$filename = 'soci_tpl' . $template_id . '_' . gmdate( 'Ymd_His' ) . '.pdf';
+
+		$this->stream_pdf( $html, $filename, $tpl['orientation'] );
+	}
+
+	// =========================================================================
+	// HELPER: GENERA PDF SOCIO COME STRINGA (per allegati email)
+	// =========================================================================
+
+	public function generate_member_pdf_string( $template_id, $member_data ) {
+		global $wpdb;
+
+		$tpl = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'sd_pdf_templates WHERE id = %d', $template_id ),
+			ARRAY_A
+		);
+
+		if ( ! $tpl ) {
+			return false;
+		}
+
+		$member_arr = is_object( $member_data ) ? (array) $member_data : (array) $member_data;
+		$elements   = json_decode( $tpl['elements_json'], true ) ?: array();
+		$html       = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member_arr, false );
+
+		return $this->generate_pdf_string( $html, $tpl['orientation'] );
+	}
+
+	// =========================================================================
+	// HELPER: COSTRUISCE HTML PDF SOCIO
+	// =========================================================================
+
+	private function build_member_pdf_html( $elements, $orientation, $member, $is_preview = false ) {
+		$content = $this->build_member_page_content( $elements, $member, $is_preview );
+		return $this->wrap_pdf_html( $content, $orientation );
+	}
+
+	private function build_member_page_content( $elements, $member, $is_preview = false ) {
+		usort(
+			$elements,
+			function ( $a, $b ) {
+				$a_bg = ( 'image' === ( $a['type'] ?? '' ) ) && ! empty( $a['is_background'] );
+				$b_bg = ( 'image' === ( $b['type'] ?? '' ) ) && ! empty( $b['is_background'] );
+				return (int) $b_bg - (int) $a_bg;
+			}
+		);
+
+		$html = '<div class="sd-pdf-page">';
+		foreach ( $elements as $el ) {
+			$type = sanitize_key( $el['type'] ?? '' );
+			if ( 'image' === $type ) {
+				$html .= $this->render_image_element( $el, $is_preview );
+				continue;
+			}
+
+			$x              = floatval( $el['x'] ?? 0 );
+			$y              = floatval( $el['y'] ?? 0 );
+			$width          = floatval( $el['width'] ?? 60 );
+			$height         = floatval( $el['height'] ?? 0 );
+			$font_size      = intval( $el['font_size'] ?? 11 );
+			$font_bold      = ! empty( $el['font_bold'] );
+			$font_italic    = ! empty( $el['font_italic'] );
+			$color          = sanitize_hex_color( $el['color'] ?? '' ) ?: '#000000';
+			$prefix         = esc_html( $el['prefix'] ?? '' );
+			$suffix         = esc_html( $el['suffix'] ?? '' );
+			$label_show     = ! empty( $el['label_show'] );
+			$label_text     = esc_html( $el['label'] ?? '' );
+			$label_position = in_array( $el['label_position'] ?? 'above', array( 'above', 'below', 'before', 'after' ), true ) ? $el['label_position'] : 'above';
+
+			$value = $this->resolve_field_value( $type, $el, null, null, $member );
+
+			$style  = 'position:absolute;';
+			$style .= 'left:' . $x . 'mm;top:' . $y . 'mm;width:' . $width . 'mm;';
+			if ( $height > 0 ) {
+				$style .= 'height:' . $height . 'mm;overflow:hidden;';
+			}
+			$style .= 'font-size:' . $font_size . 'pt;color:' . $color . ';';
+			if ( $font_bold )   { $style .= 'font-weight:bold;'; }
+			if ( $font_italic ) { $style .= 'font-style:italic;'; }
+			if ( $is_preview )  { $style .= 'border:1px dashed #bbb;box-sizing:border-box;padding:1px 2px;'; }
+
+			$lbl_style = 'font-size:' . max( 7, $font_size - 2 ) . 'pt;opacity:0.6;';
+			$val_text  = esc_html( $prefix . $value . $suffix );
+			$lbl_span  = '<span style="' . $lbl_style . '">' . $label_text . '</span>';
+
+			if ( ! $label_show || '' === $label_text ) {
+				$inner = $val_text;
+			} elseif ( 'above' === $label_position ) {
+				$inner = $lbl_span . '<br>' . $val_text;
+			} elseif ( 'below' === $label_position ) {
+				$inner = $val_text . '<br>' . $lbl_span;
+			} elseif ( 'before' === $label_position ) {
+				$inner = '<span style="' . $lbl_style . '">' . $label_text . ': </span>' . $val_text;
+			} else {
+				$inner = $val_text . '<span style="' . $lbl_style . '"> ' . $label_text . '</span>';
+			}
+
+			$html .= '<div style="' . $style . '">' . $inner . '</div>';
+		}
+		$html .= '</div>';
+		return $html;
+	}
+
+	// =========================================================================
+	// HELPER: GENERA PDF COME STRINGA (senza streaming)
+	// =========================================================================
+
+	private function generate_pdf_string( $html, $orientation ) {
+		if ( ! class_exists( '\\Dompdf\\Dompdf' ) ) {
+			$autoload = plugin_dir_path( __DIR__ ) . 'vendor/autoload.php';
+			if ( file_exists( $autoload ) ) {
+				require_once $autoload;
+			}
+		}
+
+		$options = new \Dompdf\Options();
+		$options->set( 'isHtml5ParserEnabled', true );
+		$options->set( 'isRemoteEnabled', false );
+		$options->set( 'defaultFont', 'DejaVu Sans' );
+		$options->set( 'chroot', array( ABSPATH, WP_CONTENT_DIR ) );
+
+		$dompdf = new \Dompdf\Dompdf( $options );
+		$dompdf->loadHtml( $html );
+		$dompdf->setPaper( 'A4', ( 'landscape' === $orientation ) ? 'landscape' : 'portrait' );
+		$dompdf->render();
+
+		return $dompdf->output();
 	}
 
 	// =========================================================================

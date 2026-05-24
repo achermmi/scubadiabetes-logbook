@@ -3,7 +3,7 @@
  * Plugin Name: ScubaDiabetes Logbook
  * Plugin URI: https://scubadiabetes.ch
  * Description: Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
- * Version: 1.3.90
+ * Version: 1.3.91
  * Author: Mirko Achermann
  * Author URI: https://m-achermann.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.90' );
+define( 'SD_LOGBOOK_VERSION', '1.3.91' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.8.0';
+	const DB_VERSION = '3.9.0';
 
 	/**
 	 * Ottieni istanza singleton

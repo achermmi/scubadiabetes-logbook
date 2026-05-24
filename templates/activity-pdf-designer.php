@@ -41,6 +41,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<!-- PANNELLO SINISTRO: campi disponibili -->
 		<div class="sd-pdf-sidebar">
+
+			<!-- Selettore tipo template -->
+			<div class="sd-pdf-sidebar-section sd-pdf-type-section">
+				<h4><?php esc_html_e( 'Tipo template', 'sd-logbook' ); ?></h4>
+				<div class="sd-pdf-type-toggle">
+					<button type="button" id="sd-tpl-type-activity" class="sd-pdf-btn sd-pdf-type-btn is-active" data-type="activity">
+						<?php esc_html_e( 'Attività', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" id="sd-tpl-type-member" class="sd-pdf-btn sd-pdf-type-btn" data-type="member">
+						<?php esc_html_e( 'Soci', 'sd-logbook' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<!-- Sezioni specifiche ATTIVITÀ -->
+			<div id="sd-sections-activity">
 			<div class="sd-pdf-sidebar-section">
 				<h4><?php esc_html_e( 'Attività', 'sd-logbook' ); ?></h4>
 				<select id="sd-activity-select" class="sd-pdf-select sd-pdf-full-width">
@@ -84,6 +100,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<h4><?php esc_html_e( 'Campi Modulo', 'sd-logbook' ); ?></h4>
 				<div id="sd-fields-dynamic" class="sd-field-list"></div>
 			</div>
+			</div><!-- /#sd-sections-activity -->
+
+			<!-- Sezioni specifiche SOCI -->
+			<div id="sd-sections-member" style="display:none;">
+			<div class="sd-pdf-sidebar-section">
+				<h4><?php esc_html_e( 'Campi Socio', 'sd-logbook' ); ?></h4>
+				<div id="sd-fields-member" class="sd-field-list">
+					<?php foreach ( SD_PDF_Template_Designer::MEMBER_FIELDS as $key => $label ) : ?>
+					<div class="sd-field-chip" data-type="<?php echo esc_attr( $key ); ?>" data-label="<?php echo esc_attr( $label ); ?>" draggable="true">
+						<span class="sd-chip-icon">🧑</span> <?php echo esc_html( $label ); ?>
+					</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+			</div><!-- /#sd-sections-member -->
 
 			<div class="sd-pdf-sidebar-section">
 				<h4><?php esc_html_e( 'Testo Libero', 'sd-logbook' ); ?></h4>

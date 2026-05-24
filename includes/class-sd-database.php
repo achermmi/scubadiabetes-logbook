@@ -762,6 +762,24 @@ class SD_Database {
 		}
 
 		// =====================================================================
+		// MIGRAZIONI v3.9.0: template_type per PDF designer
+		// =====================================================================
+
+		$table_pdf_tpl = $this->table( 'pdf_templates' );
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_pdf_tpl ) ) === $table_pdf_tpl ) { // phpcs:ignore
+			$col = $wpdb->get_results(
+				$wpdb->prepare(
+					'SHOW COLUMNS FROM ' . $table_pdf_tpl . ' LIKE %s', // phpcs:ignore
+					'template_type'
+				)
+			);
+			if ( empty( $col ) ) {
+				$wpdb->query( "ALTER TABLE {$table_pdf_tpl} ADD COLUMN template_type varchar(20) NOT NULL DEFAULT 'activity'" ); // phpcs:ignore
+				$wpdb->query( "ALTER TABLE {$table_pdf_tpl} ADD KEY idx_template_type (template_type)" ); // phpcs:ignore
+			}
+		}
+
+		// =====================================================================
 		// MIGRAZIONI v3.6.0: Numero socio dedicato + metadati pagamenti
 		// =====================================================================
 
@@ -1398,11 +1416,13 @@ class SD_Database {
 			orientation varchar(10) DEFAULT 'portrait',
 			elements_json longtext DEFAULT NULL,
 			activity_id int(11) DEFAULT NULL,
+			template_type varchar(20) NOT NULL DEFAULT 'activity',
 			created_by int(11) DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY idx_activity_id (activity_id),
+			KEY idx_template_type (template_type),
 			KEY idx_created_by (created_by)
 		) {$charset_collate};";
 		dbDelta( $sql_pdf_templates );
