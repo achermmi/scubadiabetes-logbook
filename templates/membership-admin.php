@@ -174,7 +174,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- Cruscotto rinnovi soci -->
 	<div class="sd-renewals-dashboard" id="sd-renewals-dashboard">
 		<div class="sd-renewals-header">
-			<h3><?php esc_html_e( 'Cruscotto mailing e rinnovi dei Soci', 'sd-logbook' ); ?></h3>
+			<h3><?php esc_html_e( 'Cruscotto mailing e rinnovo dei Soci', 'sd-logbook' ); ?></h3>
 			<p><?php esc_html_e( 'Stato iscrizione, scadenza e invio e-mail rapido ai soci attivi.', 'sd-logbook' ); ?></p>
 		</div>
 		<div class="sd-renewals-loading" id="sd-renewals-loading" style="display:none;">
