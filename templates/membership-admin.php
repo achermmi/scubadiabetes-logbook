@@ -58,10 +58,123 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- TAB 2: Mailing Soci -->
 	<div class="sd-tab-content" id="sd-tab-mailing">
 
+	<!-- Filtri Mailing Soci -->
+	<div class="sd-filter-bar" id="sd-mailing-filter-bar">
+		<form id="sd-mailing-filters" class="sd-filters-form">
+			<div class="sd-filter-row">
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-search"><?php esc_html_e( 'Ricerca', 'sd-logbook' ); ?></label>
+					<input type="text" id="sd-mailing-filter-search" name="search" class="sd-input sd-input-sm" placeholder="<?php esc_attr_e( 'Nome, Cognome, Email...', 'sd-logbook' ); ?>">
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-pagato"><?php esc_html_e( 'Stato pagamento', 'sd-logbook' ); ?></label>
+					<select name="pagato" id="sd-mailing-filter-pagato" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti (pagato)', 'sd-logbook' ); ?></option>
+						<option value="1"><?php esc_html_e( 'Pagato', 'sd-logbook' ); ?></option>
+						<option value="0"><?php esc_html_e( 'Non pagato', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-anno"><?php esc_html_e( 'Anno', 'sd-logbook' ); ?></label>
+					<select name="anno" id="sd-mailing-filter-anno" class="sd-select sd-select-sm">
+						<?php for ( $y = intval( $current_year ); $y >= intval( $current_year ) - 5; $y-- ) : ?>
+							<option value="<?php echo esc_attr( $y ); ?>" <?php selected( $current_year, $y ); ?>>
+								<?php echo esc_html( $y ); ?>
+							</option>
+						<?php endfor; ?>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-tassa"><?php esc_html_e( 'Tassa', 'sd-logbook' ); ?></label>
+					<select name="fee_amount" id="sd-mailing-filter-tassa" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutte le tasse', 'sd-logbook' ); ?></option>
+						<option value="30">CHF 30</option>
+						<option value="50">CHF 50</option>
+						<option value="75">CHF 75</option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-scuba"><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></label>
+					<select name="is_scuba" id="sd-mailing-filter-scuba" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti (sub)', 'sd-logbook' ); ?></option>
+						<option value="1"><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></option>
+						<option value="0"><?php esc_html_e( 'Non subacqueo', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-diabetes"><?php esc_html_e( 'Diabete', 'sd-logbook' ); ?></label>
+					<select name="diabetes_type" id="sd-mailing-filter-diabetes" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti (diabete)', 'sd-logbook' ); ?></option>
+						<option value="tipo_1"><?php esc_html_e( 'Tipo 1', 'sd-logbook' ); ?></option>
+						<option value="tipo_2"><?php esc_html_e( 'Tipo 2', 'sd-logbook' ); ?></option>
+						<option value="tipo_3c"><?php esc_html_e( 'Tipo 3c', 'sd-logbook' ); ?></option>
+						<option value="lada">LADA</option>
+						<option value="mody">MODY</option>
+						<option value="midd">MIDD</option>
+						<option value="non_diabetico"><?php esc_html_e( 'Non diabetico', 'sd-logbook' ); ?></option>
+						<option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-type"><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></label>
+					<select name="member_type" id="sd-mailing-filter-type" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti i tipi', 'sd-logbook' ); ?></option>
+						<option value="attivo"><?php esc_html_e( 'Attivo', 'sd-logbook' ); ?></option>
+						<option value="attivo_capo_famiglia"><?php esc_html_e( 'Attivo Capo Famiglia', 'sd-logbook' ); ?></option>
+						<option value="attivo_famigliare"><?php esc_html_e( 'Attivo Famigliare', 'sd-logbook' ); ?></option>
+						<option value="passivo"><?php esc_html_e( 'Passivo', 'sd-logbook' ); ?></option>
+						<option value="accompagnatore"><?php esc_html_e( 'Accompagnatore', 'sd-logbook' ); ?></option>
+						<option value="sostenitore"><?php esc_html_e( 'Sostenitore', 'sd-logbook' ); ?></option>
+						<option value="onorario"><?php esc_html_e( 'Onorario', 'sd-logbook' ); ?></option>
+						<option value="fondatore"><?php esc_html_e( 'Fondatore', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-active"><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></label>
+					<select name="is_active" id="sd-mailing-filter-active" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti (attivo)', 'sd-logbook' ); ?></option>
+						<option value="1"><?php esc_html_e( 'Socio attivo', 'sd-logbook' ); ?></option>
+						<option value="0"><?php esc_html_e( 'Non attivo', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group">
+					<label class="sd-filter-label" for="sd-mailing-filter-role"><?php esc_html_e( 'Ruolo WordPress', 'sd-logbook' ); ?></label>
+					<select name="wp_role" id="sd-mailing-filter-role" class="sd-select sd-select-sm">
+						<option value=""><?php esc_html_e( 'Tutti i ruoli WP', 'sd-logbook' ); ?></option>
+						<option value="sd_diver_diabetic"><?php esc_html_e( 'Subacqueo Diabetico', 'sd-logbook' ); ?></option>
+						<option value="sd_diver"><?php esc_html_e( 'Subacqueo', 'sd-logbook' ); ?></option>
+						<option value="sd_staff"><?php esc_html_e( 'Staff', 'sd-logbook' ); ?></option>
+						<option value="sd_medical"><?php esc_html_e( 'Medico', 'sd-logbook' ); ?></option>
+						<option value="subscriber"><?php esc_html_e( 'Subscriber', 'sd-logbook' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sd-filter-group sd-filter-actions">
+					<button type="submit" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" id="sd-mailing-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
+					</button>
+				</div>
+
+			</div>
+		</form>
+	</div>
+
 	<!-- Cruscotto rinnovi soci -->
 	<div class="sd-renewals-dashboard" id="sd-renewals-dashboard">
 		<div class="sd-renewals-header">
-			<h3><?php esc_html_e( 'Cruscotto Rinnovi Soci', 'sd-logbook' ); ?></h3>
+			<h3><?php esc_html_e( 'Cruscotto mailing e rinnovi dei Soci', 'sd-logbook' ); ?></h3>
 			<p><?php esc_html_e( 'Stato iscrizione, scadenza e invio e-mail rapido ai soci attivi.', 'sd-logbook' ); ?></p>
 		</div>
 		<div class="sd-renewals-loading" id="sd-renewals-loading" style="display:none;">

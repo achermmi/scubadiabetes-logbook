@@ -33,6 +33,7 @@
 			bindRenewalsQuickFilters();
 			bindRenewalsBulkReminder();
 			bindRenewalsAllActiveEmail();
+			bindMailingFilters();
 			bindTabs();
 		}
 
@@ -144,9 +145,17 @@
 			type: 'POST',
 			dataType: 'json',
 			data: {
-				action: 'sd_members_renewals_dashboard',
-				nonce: sdMembAdmin.nonce,
-				anno: $('#sd-filter-anno').val() || sdMembAdmin.currentYear
+				action:       'sd_members_renewals_dashboard',
+				nonce:        sdMembAdmin.nonce,
+				anno:         $('#sd-mailing-filter-anno').val() || sdMembAdmin.currentYear,
+				search:       $('#sd-mailing-filter-search').val() || '',
+				pagato:       $('#sd-mailing-filter-pagato').val() || '',
+				fee_amount:   $('#sd-mailing-filter-tassa').val() || '',
+				is_scuba:     $('#sd-mailing-filter-scuba').val() || '',
+				diabetes_type: $('#sd-mailing-filter-diabetes').val() || '',
+				member_type:  $('#sd-mailing-filter-type').val() || '',
+				is_active:    $('#sd-mailing-filter-active').val() || '',
+				wp_role:      $('#sd-mailing-filter-role').val() || ''
 			},
 			success: function(resp) {
 				$loading.hide();
@@ -600,6 +609,18 @@
 			$('.sd-stat-card').removeClass('sd-stat-active');
 			state.paged = 1;
 			loadMembers();
+		});
+	}
+
+	function bindMailingFilters() {
+		$('#sd-mailing-filters').on('submit', function (e) {
+			e.preventDefault();
+			loadRenewalsDashboard();
+		});
+
+		$('#sd-mailing-btn-reset').on('click', function () {
+			$('#sd-mailing-filters')[0].reset();
+			loadRenewalsDashboard();
 		});
 	}
 

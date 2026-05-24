@@ -1498,9 +1498,66 @@ class SD_Membership_Admin {
 		$today    = gmdate( 'Y-m-d' );
 		$soon     = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
 
-		$rows = $wpdb->get_results(
-			"SELECT m.id, m.first_name, m.last_name, m.email, m.membership_expiry,
-			        m.fee_amount, m.parent_member_id, COALESCE(m.is_active,1) AS is_active,
+		// Filtri aggiuntivi
+		$search           = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
+		$pagato           = isset( $_POST['pagato'] ) && '' !== $_POST['pagato'] ? absint( $_POST['pagato'] ) : null;
+		$is_scuba         = isset( $_POST['is_scuba'] ) && '' !== $_POST['is_scuba'] ? absint( $_POST['is_scuba'] ) : null;
+		$is_active_filter = isset( $_POST['is_active'] ) && '' !== $_POST['is_active'] ? absint( $_POST['is_active'] ) : null;
+		$diabetes         = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
+		$member_type      = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? '' ) );
+		$wp_role          = sanitize_text_field( wp_unslash( $_POST['wp_role'] ?? '' ) );
+		$fee_filter       = sanitize_text_field( wp_unslash( $_POST['fee_amount'] ?? '' ) );
+
+		$member_type_expr = "CASE
+			WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+			WHEN EXISTS (
+				SELECT 1 FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id LIMIT 1
+			) THEN 'attivo_capo_famiglia'
+			ELSE COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo')
+			END";
+
+		$where  = array();
+		$params = array();
+
+		if ( ! empty( $search ) ) {
+			$like    = '%' . $wpdb->esc_like( $search ) . '%';
+			$where[] = '(m.first_name LIKE %s OR m.last_name LIKE %s OR m.email LIKE %s)';
+			$params  = array_merge( $params, array( $like, $like, $like ) );
+		}
+		if ( null !== $pagato ) {
+			$where[]  = '(CASE WHEN m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d';
+			$params[] = $pagato;
+		}
+		if ( null !== $is_scuba ) {
+			$where[]  = 'm.is_scuba = %d';
+			$params[] = $is_scuba;
+		}
+		if ( ! empty( $diabetes ) ) {
+			$where[]  = 'm.diabetes_type = %s';
+			$params[] = $diabetes;
+		}
+		if ( ! empty( $member_type ) ) {
+			$normalized_type = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
+			if ( 'attivo_famigliare' === $normalized_type ) {
+				$where[] = 'm.parent_member_id IS NOT NULL';
+			} else {
+				$where[]  = $member_type_expr . ' = %s';
+				$params[] = $normalized_type;
+			}
+		}
+		if ( ! empty( $fee_filter ) ) {
+			$where[]  = 'm.fee_amount = %f';
+			$params[] = floatval( $fee_filter );
+		}
+		if ( null !== $is_active_filter ) {
+			$where[]  = 'COALESCE(m.is_active, 1) = %d';
+			$params[] = $is_active_filter;
+		}
+
+		$where_sql = ! empty( $where ) ? 'AND ' . implode( ' AND ', $where ) : '';
+
+		$query_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.membership_expiry,
+			        m.fee_amount, m.parent_member_id, m.wp_user_id, COALESCE(m.is_active,1) AS is_active,
 			        CASE
 			            WHEN m.parent_member_id IS NOT NULL
 			            THEN COALESCE(pm.has_paid_fee, 0)
@@ -1521,8 +1578,12 @@ class SD_Membership_Admin {
 			     ) al2 ON al2.max_id = al1.id
 			 ) al ON al.record_id = m.id
 			 WHERE COALESCE(m.is_active,1) = 1
-			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC"
-		);
+			 {$where_sql}
+			 ORDER BY m.membership_expiry ASC, m.last_name ASC, m.first_name ASC";
+
+		$rows = ! empty( $params )
+			? $wpdb->get_results( $wpdb->prepare( $query_sql, $params ) ) // phpcs:ignore
+			: $wpdb->get_results( $query_sql ); // phpcs:ignore
 
 		$result = array();
 		foreach ( (array) $rows as $row ) {
@@ -1546,6 +1607,14 @@ class SD_Membership_Admin {
 				$decoded = json_decode( (string) $row->last_reminder_data, true );
 				if ( is_array( $decoded ) && ! empty( $decoded['subject'] ) ) {
 					$last_reminder_subject = (string) $decoded['subject'];
+				}
+			}
+
+			// Filtro ruolo WP (applicato in PHP)
+			if ( ! empty( $wp_role ) ) {
+				$wp_user = ! empty( $row->wp_user_id ) ? get_userdata( (int) $row->wp_user_id ) : false;
+				if ( ! $wp_user || ! in_array( $wp_role, (array) $wp_user->roles, true ) ) {
+					continue;
 				}
 			}
 
