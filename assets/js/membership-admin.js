@@ -23,6 +23,7 @@
 		if ($('#sd-management-page').length) {
 			loadMembers();
 			loadRenewalsDashboard();
+			loadMemberPdfTemplates();
 			bindFilters();
 			bindStatCards();
 			bindExport();
@@ -41,6 +42,24 @@
 			bindEditBulkDelete();
 		}
 	});
+
+	// ===== CARICAMENTO TEMPLATE PDF SOCI =====
+	function loadMemberPdfTemplates() {
+		var $sel = $('#sd-renewals-pdf-template-id');
+		if (!$sel.length) { return; }
+		$.post(sdMembAdmin.ajaxUrl, {
+			action:        'sd_pdf_tpl_list',
+			nonce:         sdMembAdmin.pdfNonce,
+			template_type: 'member',
+		}, function (resp) {
+			if (!resp.success) { return; }
+			var html = '<option value="0">— Nessun PDF —</option>';
+			(resp.data.templates || []).forEach(function (t) {
+				html += '<option value="' + parseInt(t.id, 10) + '">' + escapeHtml(t.name) + '</option>';
+			});
+			$sel.html(html);
+		});
+	}
 
 	// ===== CARICAMENTO LISTA =====
 	function loadStats() {
@@ -218,7 +237,8 @@
 					action: 'sd_members_send_renewal_reminder',
 					nonce: sdMembAdmin.nonce,
 					member_id: memberId,
-					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
 				},
 				success: function(resp) {
 					if (!resp.success) {
@@ -276,7 +296,8 @@
 					action: 'sd_members_send_renewal_reminders_bulk',
 					nonce: sdMembAdmin.nonce,
 					filter_type: renewalsState.quickFilter || 'in_scadenza',
-					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
 				},
 				success: function(resp) {
 					if (!resp.success) {
@@ -316,7 +337,8 @@
 				data: {
 					action: 'sd_members_send_renewal_emails_all_active',
 					nonce: sdMembAdmin.nonce,
-					template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
 				},
 				success: function(resp) {
 					if (!resp.success) {

@@ -75,6 +75,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 				}
 				?>
 			</select>
+			<label class="sd-renewals-template-label" for="sd-renewals-pdf-template-id" style="margin-left:12px;">
+				<?php esc_html_e( 'Modello PDF da allegare:', 'sd-logbook' ); ?>
+			</label>
+			<select id="sd-renewals-pdf-template-id" class="sd-field-input sd-renewals-template-select">
+				<option value="0"><?php esc_html_e( '— Nessun PDF —', 'sd-logbook' ); ?></option>
+			</select>
 		</div>
 
 		<div class="sd-renewals-tools">

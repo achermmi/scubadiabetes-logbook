@@ -19,6 +19,7 @@
 
 	var state = {
 		templateId:     0,
+		templateType:   'activity',   // 'activity' | 'member'
 		orientation:    'portrait',
 		elements:       [],          // array di oggetti elemento
 		selectedId:     null,
@@ -106,7 +107,7 @@
 	}
 
 	function previewValue(el) {
-		var allFields = $.extend({}, sdPdfDesigner.fixedFields, sdPdfDesigner.activityFields, state.dynamicFields);
+		var allFields = $.extend({}, sdPdfDesigner.fixedFields, sdPdfDesigner.activityFields, sdPdfDesigner.memberFields, state.dynamicFields);
 		if (el.type === 'text_label') {
 			return el.custom_text || '(testo libero)';
 		}
@@ -820,13 +821,14 @@
 		}
 
 		$.post(sdPdfDesigner.ajaxUrl, {
-			action:        'sd_pdf_tpl_save',
-			nonce:         sdPdfDesigner.nonce,
-			template_id:   state.templateId,
-			name:          name,
-			orientation:   state.orientation,
-			activity_id:   state.activityId,
-			elements_json: JSON.stringify(state.elements),
+			action:          'sd_pdf_tpl_save',
+			nonce:           sdPdfDesigner.nonce,
+			template_id:     state.templateId,
+			name:            name,
+			orientation:     state.orientation,
+			template_type:   state.templateType,
+			activity_id:     state.activityId,
+			elements_json:   JSON.stringify(state.elements),
 		}, function (resp) {
 			if (resp.success) {
 				state.templateId = resp.data.template_id;
@@ -888,10 +890,11 @@
 				return;
 			}
 			var tpl = resp.data.template;
-			state.templateId  = tpl.id;
-			state.orientation = tpl.orientation || 'portrait';
-			state.elements    = tpl.elements || [];
-			state.activityId  = parseInt(tpl.activity_id, 10) || 0;
+			state.templateId   = tpl.id;
+			state.orientation  = tpl.orientation || 'portrait';
+			state.templateType = tpl.template_type || 'activity';
+			state.elements     = tpl.elements || [];
+			state.activityId   = parseInt(tpl.activity_id, 10) || 0;
 			// Ricalcola nextId
 			state.nextId = 1;
 			state.elements.forEach(function (el) {
@@ -902,6 +905,7 @@
 			$('#sd-tpl-name').val(tpl.name);
 			$('#sd-tpl-orientation').val(state.orientation);
 			applyOrientation(state.orientation);
+			applyTemplateType(state.templateType);
 			if (state.activityId > 0) {
 				$('#sd-activity-select').val(state.activityId);
 				loadDynamicFields(state.activityId);
@@ -987,13 +991,22 @@
 			showStatus('Salva prima il template.', 'error');
 			return;
 		}
-		downloadPdf({
-			action:          'sd_pdf_tpl_generate',
-			nonce:           sdPdfDesigner.nonce,
-			template_id:     state.templateId,
-			activity_id:     state.activityId,
-			registration_id: 0,
-		}, 'anteprima_template.pdf');
+		if (state.templateType === 'member') {
+			downloadPdf({
+				action:       'sd_pdf_tpl_gen_member',
+				nonce:        sdPdfDesigner.nonce,
+				template_id:  state.templateId,
+				member_id:    0,
+			}, 'anteprima_socio.pdf');
+		} else {
+			downloadPdf({
+				action:          'sd_pdf_tpl_generate',
+				nonce:           sdPdfDesigner.nonce,
+				template_id:     state.templateId,
+				activity_id:     state.activityId,
+				registration_id: 0,
+			}, 'anteprima_template.pdf');
+		}
 	}
 
 	// =========================================================================
@@ -1005,16 +1018,25 @@
 			showStatus('Salva prima il template.', 'error');
 			return;
 		}
-		if (!state.activityId) {
-			showStatus('Seleziona un\'attività prima di generare i PDF.', 'error');
-			return;
+		if (state.templateType === 'member') {
+			downloadPdf({
+				action:      'sd_pdf_tpl_gen_all_members',
+				nonce:       sdPdfDesigner.nonce,
+				template_id: state.templateId,
+				filter_type: 'all',
+			}, 'soci_template.pdf');
+		} else {
+			if (!state.activityId) {
+				showStatus('Seleziona un\'attività prima di generare i PDF.', 'error');
+				return;
+			}
+			downloadPdf({
+				action:      'sd_pdf_tpl_gen_all',
+				nonce:       sdPdfDesigner.nonce,
+				template_id: state.templateId,
+				activity_id: state.activityId,
+			}, 'iscrizioni_template.pdf');
 		}
-		downloadPdf({
-			action:      'sd_pdf_tpl_gen_all',
-			nonce:       sdPdfDesigner.nonce,
-			template_id: state.templateId,
-			activity_id: state.activityId,
-		}, 'iscrizioni_template.pdf');
 	}
 
 	// =========================================================================
@@ -1068,16 +1090,18 @@
 	// =========================================================================
 
 	function resetDesigner() {
-		state.templateId  = 0;
-		state.elements    = [];
-		state.selectedId  = null;
-		state.selectedIds = [];
-		state.activityId  = 0;
-		state.nextId      = 1;
-		state.orientation = 'portrait';
+		state.templateId   = 0;
+		state.templateType = 'activity';
+		state.elements     = [];
+		state.selectedId   = null;
+		state.selectedIds  = [];
+		state.activityId   = 0;
+		state.nextId       = 1;
+		state.orientation  = 'portrait';
 		$('#sd-tpl-name').val('');
 		$('#sd-tpl-orientation').val('portrait');
 		applyOrientation('portrait');
+		applyTemplateType('activity');
 		renderAllElements();
 		selectElement(null);
 	}
@@ -1127,6 +1151,23 @@
 	}
 
 	// =========================================================================
+	// TIPO TEMPLATE (activity / member)
+	// =========================================================================
+
+	function applyTemplateType(type) {
+		state.templateType = type || 'activity';
+		$('.sd-pdf-type-btn').removeClass('is-active');
+		$('.sd-pdf-type-btn[data-type="' + state.templateType + '"]').addClass('is-active');
+		if (state.templateType === 'member') {
+			$('#sd-sections-activity').hide();
+			$('#sd-sections-member').show();
+		} else {
+			$('#sd-sections-activity').show();
+			$('#sd-sections-member').hide();
+		}
+	}
+
+	// =========================================================================
 
 	$(function () {
 		// Canvas drop
@@ -1144,6 +1185,11 @@
 				if (!window.confirm('Creare un nuovo template? Le modifiche non salvate andranno perse.')) { return; }
 			}
 			resetDesigner();
+		});
+
+		// Tipo template (Attività / Soci)
+		$(document).on('click', '.sd-pdf-type-btn', function () {
+			applyTemplateType($(this).data('type'));
 		});
 
 		$('#sd-tpl-btn-save').on('click', saveTemplate);

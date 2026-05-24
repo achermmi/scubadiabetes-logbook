@@ -144,6 +144,7 @@ class SD_Membership_Admin {
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'sd_membership_admin_nonce' ),
+				'pdfNonce'   => wp_create_nonce( 'sd_nonce' ),
 				'editUrl'    => $edit_url,
 				'currentYear' => gmdate( 'Y' ),
 				'membNonce'  => wp_create_nonce( 'sd_membership_nonce' ),
@@ -1610,7 +1611,7 @@ class SD_Membership_Admin {
 			wp_send_json_error( array( 'message' => __( 'Email socio non valida.', 'sd-logbook' ) ) );
 		}
 
-		$sent = $this->send_renewal_email_for_member( $member, absint( $_POST['template_id'] ?? 0 ) );
+		$sent = $this->send_renewal_email_for_member( $member, absint( $_POST['template_id'] ?? 0 ), absint( $_POST['pdf_template_id'] ?? 0 ) );
 		if ( ! $sent ) {
 			wp_send_json_error( array( 'message' => $this->build_reminder_mail_error_message() ) );
 		}
@@ -1634,6 +1635,7 @@ class SD_Membership_Admin {
 		$soon        = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
 		$filter_type = sanitize_text_field( wp_unslash( $_POST['filter_type'] ?? 'in_scadenza' ) );
 		$template_id = absint( $_POST['template_id'] ?? 0 );
+		$pdf_template_id = absint( $_POST['pdf_template_id'] ?? 0 );
 		$allowed_filters = array( 'all', 'scaduti', 'in_scadenza', 'non_pagati' );
 		if ( ! in_array( $filter_type, $allowed_filters, true ) ) {
 			$filter_type = 'in_scadenza';
@@ -1682,7 +1684,7 @@ class SD_Membership_Admin {
 				continue;
 			}
 
-			$sent = $this->send_renewal_email_for_member( $member, $template_id );
+			$sent = $this->send_renewal_email_for_member( $member, $template_id, $pdf_template_id );
 			if ( $sent ) {
 				$sent_count++;
 			} else {
@@ -1733,6 +1735,7 @@ class SD_Membership_Admin {
 		global $wpdb;
 		$db          = new SD_Database();
 		$template_id = absint( $_POST['template_id'] ?? 0 );
+		$pdf_template_id = absint( $_POST['pdf_template_id'] ?? 0 );
 
 		$members = $wpdb->get_results(
 			"SELECT m.id, m.member_number, m.first_name, m.last_name, m.email, m.membership_expiry, m.fee_amount,
@@ -1758,7 +1761,7 @@ class SD_Membership_Admin {
 				continue;
 			}
 
-			$sent = $this->send_renewal_email_for_member( $member, $template_id );
+			$sent = $this->send_renewal_email_for_member( $member, $template_id, $pdf_template_id );
 			if ( $sent ) {
 				$sent_count++;
 			} else {
@@ -1830,7 +1833,7 @@ class SD_Membership_Admin {
 	 * @param int    $template_id  ID modello email (0 = testo predefinito).
 	 * @return bool
 	 */
-	private function send_renewal_email_for_member( $member, int $template_id = 0 ) {
+	private function send_renewal_email_for_member( $member, int $template_id = 0, int $pdf_template_id = 0 ) {
 		$this->last_mail_error = '';
 
 		if ( empty( $member ) || empty( $member->email ) || ! is_email( (string) $member->email ) ) {
@@ -1858,16 +1861,20 @@ class SD_Membership_Admin {
 				}
 				$html_body .= '</body></html>';
 
+				$attachments = $this->build_pdf_attachments_for_member( $member, $pdf_template_id );
+
 				add_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 				add_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
 				$sent = wp_mail(
 					(string) $member->email,
 					$subject,
 					$html_body,
-					$headers
+					$headers,
+					$attachments
 				);
 				remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 				remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+				foreach ( $attachments as $f ) { @unlink( $f ); }
 
 				if ( $sent ) {
 					SD_Membership_Helper::log_audit(
@@ -1877,10 +1884,11 @@ class SD_Membership_Admin {
 						(int) $member->id,
 						null,
 						array(
-							'expiry'      => $member->membership_expiry,
-							'template_id' => $template_id,
-							'subject'     => (string) $subject,
-							'email'       => (string) $member->email,
+							'expiry'          => $member->membership_expiry,
+							'template_id'     => $template_id,
+							'pdf_template_id' => $pdf_template_id,
+							'subject'         => (string) $subject,
+							'email'           => (string) $member->email,
 						)
 					);
 				}
@@ -1920,16 +1928,20 @@ class SD_Membership_Admin {
 		$body .= '<p>' . __( 'Cordiali saluti,', 'sd-logbook' ) . '<br>ScubaDiabetes</p>';
 		$body .= '</body></html>';
 
+		$attachments = $this->build_pdf_attachments_for_member( $member, $pdf_template_id );
+
 		add_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 		add_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
 		$sent = wp_mail(
 			(string) $member->email,
 			$subject,
 			$body,
-			$headers
+			$headers,
+			$attachments
 		);
 		remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
+		foreach ( $attachments as $f ) { @unlink( $f ); }
 
 		if ( $sent ) {
 			SD_Membership_Helper::log_audit(
@@ -1939,14 +1951,36 @@ class SD_Membership_Admin {
 				(int) $member->id,
 				null,
 				array(
-					'expiry'  => $member->membership_expiry,
-					'subject' => (string) $subject,
-					'email'   => (string) $member->email,
+					'expiry'          => $member->membership_expiry,
+					'pdf_template_id' => $pdf_template_id,
+					'subject'         => (string) $subject,
+					'email'           => (string) $member->email,
 				)
 			);
 		}
 
 		return (bool) $sent;
+	}
+
+	/**
+	 * Genera un allegato PDF per il socio e restituisce l'array degli allegati.
+	 *
+	 * @param object $member          Dati socio.
+	 * @param int    $pdf_template_id ID template PDF (0 = nessuno).
+	 * @return array Elenco path file temporanei da passare a wp_mail.
+	 */
+	private function build_pdf_attachments_for_member( $member, int $pdf_template_id ) : array {
+		if ( $pdf_template_id <= 0 || ! class_exists( 'SD_PDF_Template_Designer' ) ) {
+			return array();
+		}
+		$designer = new SD_PDF_Template_Designer();
+		$pdf_str  = $designer->generate_member_pdf_string( $pdf_template_id, $member );
+		if ( ! $pdf_str ) {
+			return array();
+		}
+		$tmp = wp_tempnam( 'sd_member_' . (int) $member->id . '_' );
+		file_put_contents( $tmp, $pdf_str );
+		return array( $tmp );
 	}
 
 	/**

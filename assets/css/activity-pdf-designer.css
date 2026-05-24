@@ -419,6 +419,34 @@
 	box-sizing: border-box;
 }
 
+/* ----- Tipo template toggle ----- */
+.sd-pdf-type-section {
+	background: #f0f4f8;
+	border-radius: 4px;
+	padding: 8px !important;
+	margin-bottom: 12px;
+}
+
+.sd-pdf-type-toggle {
+	display: flex;
+	gap: 4px;
+}
+
+.sd-pdf-type-btn {
+	flex: 1;
+	font-size: 12px;
+	padding: 5px 8px;
+	background: #fff;
+	color: #2c3e50;
+	border: 1px solid #dce1e7;
+}
+
+.sd-pdf-type-btn.is-active {
+	background: #2980b9;
+	color: #fff;
+	border-color: #2980b9;
+}
+
 /* ----- Multi-select panel ----- */
 .sd-multi-align-grid {
 	display: grid;
