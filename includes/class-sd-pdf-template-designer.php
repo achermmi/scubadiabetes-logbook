@@ -846,9 +846,15 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 				$style .= 'height:' . $height . 'mm;overflow:hidden;';
 			}
 			$style .= 'font-size:' . $font_size . 'pt;color:' . $color . ';';
-			if ( $font_bold )   { $style .= 'font-weight:bold;'; }
-			if ( $font_italic ) { $style .= 'font-style:italic;'; }
-			if ( $is_preview )  { $style .= 'border:1px dashed #bbb;box-sizing:border-box;padding:1px 2px;'; }
+			if ( $font_bold ) {
+				$style .= 'font-weight:bold;';
+			}
+			if ( $font_italic ) {
+				$style .= 'font-style:italic;';
+			}
+			if ( $is_preview ) {
+				$style .= 'border:1px dashed #bbb;box-sizing:border-box;padding:1px 2px;';
+			}
 
 			$lbl_style = 'font-size:' . max( 7, $font_size - 2 ) . 'pt;opacity:0.6;';
 			$val_text  = esc_html( $prefix . $value . $suffix );

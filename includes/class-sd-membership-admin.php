@@ -1874,7 +1874,9 @@ class SD_Membership_Admin {
 				);
 				remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 				remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
-				foreach ( $attachments as $f ) { @unlink( $f ); }
+				foreach ( $attachments as $f ) {
+					@unlink( $f );
+				}
 
 				if ( $sent ) {
 					SD_Membership_Helper::log_audit(
@@ -1941,7 +1943,9 @@ class SD_Membership_Admin {
 		);
 		remove_action( 'wp_mail_failed', array( $this, 'capture_wp_mail_failed' ) );
 		remove_action( 'phpmailer_init', array( $this, 'relax_phpmailer_tls_for_local' ) );
-		foreach ( $attachments as $f ) { @unlink( $f ); }
+		foreach ( $attachments as $f ) {
+			@unlink( $f );
+		}
 
 		if ( $sent ) {
 			SD_Membership_Helper::log_audit(
@@ -1969,7 +1973,7 @@ class SD_Membership_Admin {
 	 * @param int    $pdf_template_id ID template PDF (0 = nessuno).
 	 * @return array Elenco path file temporanei da passare a wp_mail.
 	 */
-	private function build_pdf_attachments_for_member( $member, int $pdf_template_id ) : array {
+	private function build_pdf_attachments_for_member( $member, int $pdf_template_id ): array {
 		if ( $pdf_template_id <= 0 || ! class_exists( 'SD_PDF_Template_Designer' ) ) {
 			return array();
 		}
