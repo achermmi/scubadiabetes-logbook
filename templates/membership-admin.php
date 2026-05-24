@@ -49,6 +49,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 	</div>
 
+	<!-- Navigazione tab -->
+	<div class="sd-tabs" id="sd-mgmt-tabs" role="tablist">
+		<button type="button" class="sd-tab-btn active" data-tab="gestione" role="tab"><?php esc_html_e( 'Gestione Soci', 'sd-logbook' ); ?></button>
+		<button type="button" class="sd-tab-btn" data-tab="mailing" role="tab"><?php esc_html_e( 'Mailing Soci', 'sd-logbook' ); ?></button>
+	</div>
+
+	<!-- TAB 2: Mailing Soci -->
+	<div class="sd-tab-content" id="sd-tab-mailing">
+
 	<!-- Cruscotto rinnovi soci -->
 	<div class="sd-renewals-dashboard" id="sd-renewals-dashboard">
 		<div class="sd-renewals-header">
@@ -115,6 +124,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</table>
 		</div>
 	</div>
+
+	</div><!-- /sd-tab-mailing -->
+
+	<!-- TAB 1: Gestione Soci -->
+	<div class="sd-tab-content active" id="sd-tab-gestione">
 
 	<!-- Barra filtri -->
 	<div class="sd-filter-bar">
@@ -284,5 +298,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php esc_html_e( 'Successivo', 'sd-logbook' ); ?> &raquo;
 		</button>
 	</div>
+
+	</div><!-- /sd-tab-gestione -->
 
 </div>

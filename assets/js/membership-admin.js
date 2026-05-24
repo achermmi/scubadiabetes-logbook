@@ -33,6 +33,7 @@
 			bindRenewalsQuickFilters();
 			bindRenewalsBulkReminder();
 			bindRenewalsAllActiveEmail();
+			bindTabs();
 		}
 
 		// Pagina modifica socio
