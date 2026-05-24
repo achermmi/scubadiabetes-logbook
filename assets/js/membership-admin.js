@@ -627,24 +627,33 @@
 	// ===== STAT CARD FILTER =====
 	function bindStatCards() {
 		$('.sd-stat-clickable').on('click', function () {
-			var $card   = $(this);
-			var field   = $card.data('filter-field');
-			var value   = $card.data('filter-value');
-			var isReset = $card.data('filter-reset');
-			var anno    = $('#sd-filter-anno').val();
-
-			$('#sd-member-filters')[0].reset();
-			$('#sd-filter-anno').val(anno);
-
-			if (!isReset && field !== undefined) {
-				$('#sd-member-filters').find('[name="' + field + '"]').val(String(value));
-			}
+			var $card        = $(this);
+			var field        = $card.data('filter-field');
+			var value        = $card.data('filter-value');
+			var isReset      = $card.data('filter-reset');
+			var mailingActive = $('#sd-tab-mailing').hasClass('active');
 
 			$('.sd-stat-card').removeClass('sd-stat-active');
 			$card.addClass('sd-stat-active');
 
-			state.paged = 1;
-			loadMembers();
+			if (mailingActive) {
+				var annoM = $('#sd-mailing-filter-anno').val();
+				$('#sd-mailing-filters')[0].reset();
+				$('#sd-mailing-filter-anno').val(annoM);
+				if (!isReset && field !== undefined) {
+					$('#sd-mailing-filters').find('[name="' + field + '"]').val(String(value));
+				}
+				loadRenewalsDashboard();
+			} else {
+				var annoG = $('#sd-filter-anno').val();
+				$('#sd-member-filters')[0].reset();
+				$('#sd-filter-anno').val(annoG);
+				if (!isReset && field !== undefined) {
+					$('#sd-member-filters').find('[name="' + field + '"]').val(String(value));
+				}
+				state.paged = 1;
+				loadMembers();
+			}
 		});
 	}
 
