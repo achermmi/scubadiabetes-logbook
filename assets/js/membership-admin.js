@@ -34,6 +34,7 @@
 			bindRenewalsBulkReminder();
 			bindRenewalsAllActiveEmail();
 			bindMailingFilters();
+			bindEmailPreviewModal();
 			bindTabs();
 		}
 
@@ -208,11 +209,17 @@
 			var dueLabel = 'CHF ' + due.toFixed(2);
 			var dueClass = due > 0 ? 'sd-renewal-due-open' : 'sd-renewal-due-clear';
 
-			var actionHtml = '<span class="sd-renewal-disabled">—</span>';
+		var actionHtml = '<span class="sd-renewal-disabled">—</span>';
+			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">&#128269; ' + escapeHtml((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '</button>';
 			if (r.can_remind) {
-				actionHtml = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '">' +
+				actionHtml = '<div class="sd-renewal-action-cell">' +
+					'<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '">' +
 					((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') +
-				'</button>';
+					'</button>' +
+					previewBtn +
+					'</div>';
+			} else {
+				actionHtml = '<div class="sd-renewal-action-cell"><span class="sd-renewal-disabled">—</span>' + previewBtn + '</div>';
 			}
 
 			html += '<tr>' +
@@ -269,6 +276,108 @@
 		$('#sd-filter-anno').on('change', function() {
 			loadRenewalsDashboard();
 		});
+	}
+
+	// ===== MODAL ANTEPRIMA EMAIL =====
+	var previewZoom = 100;
+
+	function bindEmailPreviewModal() {
+		var $modal = $('#sd-email-preview-modal');
+		if (!$modal.length) { return; }
+
+		// Apri modal al click su Anteprima.
+		$(document).on('click', '.sd-preview-renewal-email', function () {
+			var memberId   = parseInt($(this).data('member-id'), 10) || 0;
+			var templateId = parseInt($('#sd-renewals-template-id').val(), 10) || 0;
+			openEmailPreviewModal(memberId, templateId);
+		});
+
+		// Chiudi.
+		$modal.on('click', '#sd-email-preview-close, .sd-email-preview-backdrop', function () {
+			closeEmailPreviewModal();
+		});
+
+		// ESC chiude.
+		$(document).on('keydown.sdEmailPreview', function (e) {
+			if (e.key === 'Escape' && $modal.is(':visible')) {
+				closeEmailPreviewModal();
+			}
+		});
+
+		// Zoom.
+		$modal.on('click', '#sd-email-preview-zoom-in', function () { setPreviewZoom(previewZoom + 10); });
+		$modal.on('click', '#sd-email-preview-zoom-out', function () { setPreviewZoom(previewZoom - 10); });
+		$modal.on('click', '#sd-email-preview-zoom-reset', function () { setPreviewZoom(100); });
+
+		// Fullscreen toggle.
+		$modal.on('click', '#sd-email-preview-fullscreen', function () {
+			$modal.find('.sd-email-preview-dialog').toggleClass('is-fullscreen');
+			var $btn = $(this);
+			$btn.html($modal.find('.sd-email-preview-dialog').hasClass('is-fullscreen') ? '&#x2715;' : '&#x26F6;');
+		});
+	}
+
+	function openEmailPreviewModal(memberId, templateId) {
+		var $modal = $('#sd-email-preview-modal');
+		if (!$modal.length) { return; }
+
+		$('#sd-email-preview-to').text('');
+		$('#sd-email-preview-subject').text('');
+		$('#sd-email-preview-body').html('');
+		$('#sd-email-preview-loading').show();
+		$('#sd-email-preview-error').hide();
+		previewZoom = 100;
+		$('#sd-email-preview-body-scaler').css('transform', 'scale(1)');
+		$('#sd-email-preview-zoom-label').text('100%');
+		$modal.find('.sd-email-preview-dialog').removeClass('is-fullscreen');
+		$('#sd-email-preview-fullscreen').html('&#x26F6;');
+		$modal.fadeIn(180);
+		$('body').addClass('sd-modal-open');
+
+		$.ajax({
+			url: sdMembAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action:      'sd_members_preview_renewal_email',
+				nonce:       sdMembAdmin.nonce,
+				member_id:   memberId,
+				template_id: templateId
+			},
+			success: function (resp) {
+				$('#sd-email-preview-loading').hide();
+				if (!resp.success || !resp.data) {
+					$('#sd-email-preview-error').text((resp.data && resp.data.message) || ((sdMembAdmin.strings && sdMembAdmin.strings.previewError) || 'Impossibile caricare l\'anteprima.')).show();
+					return;
+				}
+				$('#sd-email-preview-to').text(resp.data.to || '');
+				$('#sd-email-preview-subject').text(resp.data.subject || '');
+				$('#sd-email-preview-body').html(resp.data.body || '');
+			},
+			error: function () {
+				$('#sd-email-preview-loading').hide();
+				$('#sd-email-preview-error').text((sdMembAdmin.strings && sdMembAdmin.strings.previewError) || 'Impossibile caricare l\'anteprima.').show();
+			}
+		});
+	}
+
+	function closeEmailPreviewModal() {
+		$('#sd-email-preview-modal').fadeOut(150);
+		$('body').removeClass('sd-modal-open');
+	}
+
+	function setPreviewZoom(val) {
+		previewZoom = Math.min(200, Math.max(40, val));
+		var ratio = previewZoom / 100;
+		$('#sd-email-preview-body-scaler').css({
+			'transform': 'scale(' + ratio + ')',
+			'transform-origin': 'top center'
+		});
+		$('#sd-email-preview-zoom-label').text(previewZoom + '%');
+		// Aggiusta altezza wrapper per contenere il contenuto scalato.
+		var $scaler = $('#sd-email-preview-body-scaler');
+		var naturalH = $scaler[0] ? $scaler[0].scrollHeight : 0;
+		$('#sd-email-preview-body-wrap').css('min-height', Math.ceil(naturalH * ratio) + 'px');
 	}
 
 	function bindRenewalsQuickFilters() {

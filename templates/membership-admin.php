@@ -415,3 +415,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div><!-- /sd-tab-gestione -->
 
 </div>
+
+<!-- Modal anteprima e-mail -->
+<div id="sd-email-preview-modal" class="sd-email-preview-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sd-email-preview-modal-title">
+	<div class="sd-email-preview-backdrop"></div>
+	<div class="sd-email-preview-dialog">
+		<div class="sd-email-preview-header">
+			<div class="sd-email-preview-title-wrap">
+				<span class="sd-email-preview-icon">&#9993;</span>
+				<span id="sd-email-preview-modal-title" class="sd-email-preview-title"><?php esc_html_e( 'Anteprima e-mail', 'sd-logbook' ); ?></span>
+			</div>
+			<div class="sd-email-preview-controls">
+				<button type="button" id="sd-email-preview-zoom-out" class="sd-email-preview-ctrl-btn" title="<?php esc_attr_e( 'Riduci zoom', 'sd-logbook' ); ?>">&#8722;</button>
+				<span id="sd-email-preview-zoom-label" class="sd-email-preview-zoom-label">100%</span>
+				<button type="button" id="sd-email-preview-zoom-in" class="sd-email-preview-ctrl-btn" title="<?php esc_attr_e( 'Aumenta zoom', 'sd-logbook' ); ?>">&#43;</button>
+				<button type="button" id="sd-email-preview-zoom-reset" class="sd-email-preview-ctrl-btn" title="<?php esc_attr_e( 'Reimposta zoom', 'sd-logbook' ); ?>">&#10006;&nbsp;100%</button>
+				<button type="button" id="sd-email-preview-fullscreen" class="sd-email-preview-ctrl-btn" title="<?php esc_attr_e( 'Ingrandisci finestra', 'sd-logbook' ); ?>">&#x26F6;</button>
+				<button type="button" id="sd-email-preview-close" class="sd-email-preview-close-btn" title="<?php esc_attr_e( 'Chiudi', 'sd-logbook' ); ?>" aria-label="<?php esc_attr_e( 'Chiudi anteprima', 'sd-logbook' ); ?>">&times;</button>
+			</div>
+		</div>
+		<div class="sd-email-preview-meta" id="sd-email-preview-meta">
+			<span class="sd-email-preview-meta-row"><strong><?php esc_html_e( 'A:', 'sd-logbook' ); ?></strong> <span id="sd-email-preview-to"></span></span>
+			<span class="sd-email-preview-meta-row"><strong><?php esc_html_e( 'Oggetto:', 'sd-logbook' ); ?></strong> <span id="sd-email-preview-subject"></span></span>
+		</div>
+		<div class="sd-email-preview-body-wrap" id="sd-email-preview-body-wrap">
+			<div id="sd-email-preview-loading" class="sd-email-preview-loading"><?php esc_html_e( 'Caricamento anteprima...', 'sd-logbook' ); ?></div>
+			<div id="sd-email-preview-error" class="sd-email-preview-error" style="display:none;"></div>
+			<div id="sd-email-preview-body-scaler" class="sd-email-preview-body-scaler">
+				<div id="sd-email-preview-body" class="sd-email-preview-body"></div>
+			</div>
+		</div>
+	</div>
+</div>

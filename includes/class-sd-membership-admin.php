@@ -84,6 +84,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_send_renewal_reminder', array( $this, 'send_renewal_reminder_single' ) );
 		add_action( 'wp_ajax_sd_members_send_renewal_reminders_bulk', array( $this, 'send_renewal_reminders_bulk' ) );
 		add_action( 'wp_ajax_sd_members_send_renewal_emails_all_active', array( $this, 'send_renewal_emails_all_active' ) );
+		add_action( 'wp_ajax_sd_members_preview_renewal_email', array( $this, 'preview_renewal_email' ) );
 
 		// WP Cron per reminder rinnovo
 		add_action( 'sd_membership_renewal_check', array( $this, 'send_renewal_reminders' ) );
@@ -165,6 +166,10 @@ class SD_Membership_Admin {
 					'quickFilterExpired' => __( 'Solo scaduti', 'sd-logbook' ),
 					'quickFilterSoon' => __( 'Solo in scadenza', 'sd-logbook' ),
 					'quickFilterUnpaid' => __( 'Solo non pagati', 'sd-logbook' ),
+					'previewLabel'      => __( 'Anteprima', 'sd-logbook' ),
+					'previewTitle'      => __( 'Anteprima e-mail', 'sd-logbook' ),
+					'previewLoading'    => __( 'Caricamento anteprima...', 'sd-logbook' ),
+					'previewError'      => __( 'Impossibile caricare l\'anteprima.', 'sd-logbook' ),
 				),
 			)
 		);
@@ -2059,6 +2064,65 @@ class SD_Membership_Admin {
 		$pdf_path = get_temp_dir() . $label . '-' . $now->format( 'Ymd' ) . '-' . $now->format( 'His' ) . '.pdf';
 		file_put_contents( $pdf_path, $pdf_str ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		return array( $pdf_path );
+	}
+
+	/**
+	 * AJAX: restituisce anteprima HTML dell'email per un socio.
+	 */
+	public function preview_renewal_email() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_send_json_error( array( 'message' => __( 'Accesso negato.', 'sd-logbook' ) ) );
+		}
+
+		$member_id   = absint( $_POST['member_id'] ?? 0 );
+		$template_id = absint( $_POST['template_id'] ?? 0 );
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Socio non valido.', 'sd-logbook' ) ) );
+		}
+
+		$member = SD_Membership_Helper::get_member_full( $member_id );
+		if ( ! $member ) {
+			wp_send_json_error( array( 'message' => __( 'Socio non trovato.', 'sd-logbook' ) ) );
+		}
+
+		$subject = '';
+		$body    = '';
+
+		if ( $template_id > 0 && class_exists( 'SD_Email_Templates' ) ) {
+			$built = SD_Email_Templates::build( $template_id, $member, array( 'form_key' => 'membership:association' ) );
+			if ( $built ) {
+				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );
+				$body    = $built['body'];
+				if ( ! empty( $built['signature'] ) ) {
+					$body .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0">' . $built['signature'];
+				}
+			}
+		}
+
+		if ( '' === $body ) {
+			$subject = sprintf(
+				/* translators: 1: year, 2: expiry date */
+				__( '[ScubaDiabetes] Rinnovo iscrizione %1$s - Scadenza %2$s', 'sd-logbook' ),
+				gmdate( 'Y' ),
+				! empty( $member->membership_expiry ) ? (string) $member->membership_expiry : '—'
+			);
+			$body = '<p>' . sprintf(
+				/* translators: member full name */
+				__( 'Caro/a <strong>%s</strong>,', 'sd-logbook' ),
+				esc_html( (string) $member->first_name . ' ' . (string) $member->last_name )
+			) . '</p>';
+		}
+
+		wp_send_json_success(
+			array(
+				'subject' => $subject,
+				'body'    => $body,
+				'to'      => (string) $member->email,
+			)
+		);
 	}
 
 	/**

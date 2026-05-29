@@ -548,6 +548,8 @@ class SD_Email_Templates {
 		$tshirt_size_val     = '';
 		$birth_country_label = '';
 		$guardian_country_label = '';
+		$address_country_label = '';
+		$has_guardian        = false;
 		$weight_val          = '';
 		$height_val          = '';
 		$blood_type_val      = '';
@@ -652,16 +654,20 @@ class SD_Email_Templates {
 				$guardian_dob_formatted = $dt_gdob ? $dt_gdob->format( 'd.m.Y' ) : (string) $context->guardian_dob;
 			}
 
-			// guardian_country: mostrare solo se esiste effettivamente un tutore.
+			// Campi tutore: valorizzare solo se esiste effettivamente un tutore.
 			$has_guardian = ! empty( $context->guardian_first_name ) || ! empty( $context->guardian_last_name );
 			if ( $has_guardian ) {
-				$gc_code            = strtoupper( trim( (string) ( $context->guardian_country ?? '' ) ) );
+				$gc_code                = strtoupper( trim( (string) ( $context->guardian_country ?? '' ) ) );
 				$guardian_country_label = $country_names[ $gc_code ] ?? $gc_code;
 			}
 
 			// Nazione di nascita.
-			$bc_code            = strtoupper( trim( (string) ( $context->birth_country ?? '' ) ) );
+			$bc_code             = strtoupper( trim( (string) ( $context->birth_country ?? '' ) ) );
 			$birth_country_label = $country_names[ $bc_code ] ?? $bc_code;
+
+			// Nazione di residenza.
+			$ac_code               = strtoupper( trim( (string) ( $context->address_country ?? '' ) ) );
+			$address_country_label = $country_names[ $ac_code ] ?? $ac_code;
 
 			// Taglia maglietta (colonna DB = taglia_maglietta).
 			$tshirt_size_val = (string) ( $context->taglia_maglietta ?? $context->tshirt_size ?? '' );
@@ -765,9 +771,22 @@ class SD_Email_Templates {
 			'{{sotto_tutela}}'      => $sotto_tutela_label,
 			'{{is_scuba}}'          => $is_scuba_label,
 			'{{privacy_consent}}'   => $privacy_consent_label,
-			'{{guardian_dob}}'      => $guardian_dob_formatted,
-			'{{guardian_country}}'  => $guardian_country_label,
-			'{{birth_country}}'     => $birth_country_label,
+			'{{guardian_dob}}'           => $guardian_dob_formatted,
+			'{{guardian_country}}'       => $guardian_country_label,
+			// Campi tutore: svuotati quando il socio non è sotto tutela legale.
+			'{{guardian_first_name}}'    => $has_guardian && $context ? (string) ( $context->guardian_first_name ?? '' ) : '',
+			'{{guardian_last_name}}'     => $has_guardian && $context ? (string) ( $context->guardian_last_name ?? '' ) : '',
+			'{{guardian_role}}'          => $has_guardian && $context ? (string) ( $context->guardian_role ?? '' ) : '',
+			'{{guardian_birth_place}}'   => $has_guardian && $context ? (string) ( $context->guardian_birth_place ?? '' ) : '',
+			'{{guardian_birth_country}}' => $has_guardian && $context ? (string) ( $context->guardian_birth_country ?? '' ) : '',
+			'{{guardian_gender}}'        => $has_guardian && $context ? (string) ( $context->guardian_gender ?? '' ) : '',
+			'{{guardian_email}}'         => $has_guardian && $context ? (string) ( $context->guardian_email ?? '' ) : '',
+			'{{guardian_phone}}'         => $has_guardian && $context ? (string) ( $context->guardian_phone ?? '' ) : '',
+			'{{guardian_address}}'       => $has_guardian && $context ? (string) ( $context->guardian_address ?? '' ) : '',
+			'{{guardian_city}}'          => $has_guardian && $context ? (string) ( $context->guardian_city ?? '' ) : '',
+			'{{guardian_postal}}'        => $has_guardian && $context ? (string) ( $context->guardian_postal ?? '' ) : '',
+			'{{birth_country}}'          => $birth_country_label,
+			'{{address_country}}'        => $address_country_label,
 			'{{tshirt_size}}'       => $tshirt_size_val,
 			'{{taglia_maglietta}}'  => $tshirt_size_val,
 			'{{weight}}'            => $weight_val,
@@ -805,7 +824,8 @@ class SD_Email_Templates {
 		$resolved = preg_replace_callback(
 			'/<li>(.*?)<\/li>/si',
 			function ( $m ) {
-				$text_only = trim( wp_strip_all_tags( $m[1] ) );
+				// Decodifica entità HTML (&nbsp; ecc.) prima del confronto.
+				$text_only = trim( html_entity_decode( wp_strip_all_tags( $m[1] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 				if ( '' === $text_only || preg_match( '/:\s*$/', $text_only ) ) {
 					return '';
 				}
