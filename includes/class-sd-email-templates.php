@@ -174,7 +174,7 @@ class SD_Email_Templates {
 			self::make_variable( 'email', __( 'E-mail', 'sd-logbook' ), __( 'E-mail della persona iscritta.', 'sd-logbook' ), 'mario.rossi@example.com' ),
 			self::make_variable( 'phone', __( 'Telefono', 'sd-logbook' ), __( 'Numero di telefono principale.', 'sd-logbook' ), '+41 79 000 00 00' ),
 			self::make_variable( 'tshirt_size', __( 'Taglia maglietta', 'sd-logbook' ), __( 'Taglia maglietta selezionata.', 'sd-logbook' ), 'M' ),
-			self::make_variable( 'diabetes_type', __( 'Tipo di diabete', 'sd-logbook' ), __( 'Tipo di diabete indicato nel modulo.', 'sd-logbook' ), 'tipo_1' ),
+			self::make_variable( 'diabetes_type', __( 'Tipo di diabete', 'sd-logbook' ), __( 'Tipo di diabete indicato nel modulo.', 'sd-logbook' ), 'Tipo 1' ),
 			self::make_variable( 'diabetology_center', __( 'Centro diabetologico', 'sd-logbook' ), __( 'Centro diabetologico di riferimento.', 'sd-logbook' ), 'Ospedale Regionale Lugano' ),
 			self::make_variable( 'address_street', __( 'Indirizzo', 'sd-logbook' ), __( 'Via e numero civico.', 'sd-logbook' ), 'Via Esempio 10' ),
 			self::make_variable( 'address_postal', __( 'CAP', 'sd-logbook' ), __( 'Codice postale.', 'sd-logbook' ), '6900' ),
@@ -505,6 +505,7 @@ class SD_Email_Templates {
 		$nome_completo      = '';
 		$email_socio        = '';
 		$dob_formatted      = '';
+		$diabetes_type_label = '';
 		$email_associazione = (string) ( get_option( 'sd_secretariat_email' ) ?: get_option( 'admin_email' ) );
 
 		if ( $context ) {
@@ -533,6 +534,19 @@ class SD_Email_Templates {
 				$dt_dob       = DateTime::createFromFormat( 'Y-m-d', (string) $context->date_of_birth );
 				$dob_formatted = $dt_dob ? $dt_dob->format( 'd.m.Y' ) : (string) $context->date_of_birth;
 			}
+			$diabetes_type_labels = array(
+				'tipo_1'          => __( 'Tipo 1', 'sd-logbook' ),
+				'tipo_2'          => __( 'Tipo 2', 'sd-logbook' ),
+				'tipo_3c'         => __( 'Tipo 3c', 'sd-logbook' ),
+				'lada'            => 'LADA',
+				'mody'            => 'MODY',
+				'midd'            => 'MIDD',
+				'altro'           => __( 'Altro', 'sd-logbook' ),
+				'non_diabetico'   => __( 'Non diabetico', 'sd-logbook' ),
+				'non_specificato' => __( 'Non specificato', 'sd-logbook' ),
+			);
+			$dt_key = sanitize_key( (string) ( $context->diabetes_type ?? '' ) );
+			$diabetes_type_label = $diabetes_type_labels[ $dt_key ] ?? ucfirst( str_replace( '_', ' ', $dt_key ) );
 		}
 
 		$map = array(
@@ -556,6 +570,7 @@ class SD_Email_Templates {
 			'{{logo}}'              => self::get_logo_markup( false ),
 			'{{logo_esteso}}'       => self::get_logo_markup( true ),
 			'{{date_of_birth}}'     => $dob_formatted,
+			'{{diabetes_type}}'     => $diabetes_type_label,
 		);
 
 		return str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
