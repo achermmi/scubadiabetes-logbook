@@ -6059,6 +6059,7 @@
 			return;
 		}
 		bindRegDashboardEvents();
+		bindRegEmailPreviewModal();
 		// Carica una volta all'avvio se c'è già un'attività selezionata
 		setTimeout(loadRegDashboard, 300);
 	});
@@ -6363,6 +6364,102 @@
 		});
 	}
 
+	// ===== MODAL ANTEPRIMA EMAIL REGISTRAZIONE =====
+	var regPreviewZoom = 100;
+
+	function bindRegEmailPreviewModal() {
+		var $modal = $('#sd-email-preview-modal');
+		if (!$modal.length) { return; }
+
+		$(document).on('click', '.sd-activity-preview-email', function () {
+			var regId      = parseInt($(this).data('reg-id'), 10) || 0;
+			var templateId = parseInt($('#sd-reg-template-id').val(), 10) || 0;
+			openRegEmailPreviewModal(regId, templateId);
+		});
+
+		$modal.on('click', '#sd-email-preview-close, .sd-email-preview-backdrop', function () {
+			closeRegEmailPreviewModal();
+		});
+
+		$(document).on('keydown.sdRegEmailPreview', function (e) {
+			if (e.key === 'Escape' && $modal.is(':visible')) {
+				closeRegEmailPreviewModal();
+			}
+		});
+
+		$modal.on('click', '#sd-email-preview-zoom-in', function () { setRegPreviewZoom(regPreviewZoom + 10); });
+		$modal.on('click', '#sd-email-preview-zoom-out', function () { setRegPreviewZoom(regPreviewZoom - 10); });
+		$modal.on('click', '#sd-email-preview-zoom-reset', function () { setRegPreviewZoom(100); });
+
+		$modal.on('click', '#sd-email-preview-fullscreen', function () {
+			$modal.find('.sd-email-preview-dialog').toggleClass('is-fullscreen');
+			var $btn = $(this);
+			$btn.html($modal.find('.sd-email-preview-dialog').hasClass('is-fullscreen') ? '&#x2715;' : '&#x26F6;');
+		});
+	}
+
+	function openRegEmailPreviewModal(regId, templateId) {
+		var $modal = $('#sd-email-preview-modal');
+		if (!$modal.length) { return; }
+
+		$('#sd-email-preview-to').text('');
+		$('#sd-email-preview-subject').text('');
+		$('#sd-email-preview-body').html('');
+		$('#sd-email-preview-loading').show();
+		$('#sd-email-preview-error').hide();
+		regPreviewZoom = 100;
+		$('#sd-email-preview-body-scaler').css('transform', 'scale(1)');
+		$('#sd-email-preview-zoom-label').text('100%');
+		$modal.find('.sd-email-preview-dialog').removeClass('is-fullscreen');
+		$('#sd-email-preview-fullscreen').html('&#x26F6;');
+		$modal.fadeIn(180);
+		$('body').addClass('sd-modal-open');
+
+		$.ajax({
+			url: sdActivityAdmin.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action:          'sd_activity_preview_email',
+				nonce:           sdActivityAdmin.nonce,
+				registration_id: regId,
+				template_id:     templateId
+			},
+			success: function (resp) {
+				$('#sd-email-preview-loading').hide();
+				if (!resp.success || !resp.data) {
+					$('#sd-email-preview-error').text((resp.data && resp.data.message) || (regStrings().previewError || 'Impossibile caricare l\'anteprima.')).show();
+					return;
+				}
+				$('#sd-email-preview-to').text(resp.data.to || '');
+				$('#sd-email-preview-subject').text(resp.data.subject || '');
+				$('#sd-email-preview-body').html(resp.data.body || '');
+			},
+			error: function () {
+				$('#sd-email-preview-loading').hide();
+				$('#sd-email-preview-error').text(regStrings().previewError || 'Impossibile caricare l\'anteprima.').show();
+			}
+		});
+	}
+
+	function closeRegEmailPreviewModal() {
+		$('#sd-email-preview-modal').fadeOut(150);
+		$('body').removeClass('sd-modal-open');
+	}
+
+	function setRegPreviewZoom(val) {
+		regPreviewZoom = Math.min(200, Math.max(40, val));
+		var ratio = regPreviewZoom / 100;
+		$('#sd-email-preview-body-scaler').css({
+			'transform': 'scale(' + ratio + ')',
+			'transform-origin': 'top center'
+		});
+		$('#sd-email-preview-zoom-label').text(regPreviewZoom + '%');
+		var $scaler = $('#sd-email-preview-body-scaler');
+		var naturalH = $scaler[0] ? $scaler[0].scrollHeight : 0;
+		$('#sd-email-preview-body-wrap').css('min-height', Math.ceil(naturalH * ratio) + 'px');
+	}
+
 	function loadRegDashboard() {
 		var $tbody = $('#sd-reg-dashboard-tbody');
 		var $loading = $('#sd-reg-dashboard-loading');
@@ -6497,9 +6594,9 @@
 
 			var actions = [];
 			if (r.can_remind) {
-				actions.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-send-reg-email" data-reg-id="' + esc(r.id) + '">' +
-					esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '</button>');
+				actions.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-btn-icon-only sd-send-reg-email" data-reg-id="' + esc(r.id) + '" title="' + esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '" aria-label="' + esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '">&#9993;</button>');
 			}
+			actions.push('<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-activity-preview-email" data-reg-id="' + esc(r.id) + '" title="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '" aria-label="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '">&#128269;</button>');
 			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-send-payment-confirmation" data-reg-id="' + esc(r.id) + '"' + (canSendPaymentConfirmation ? '' : ' disabled') + '>' + esc(regStrings().regPaymentConfirmationLabel || 'Invia conferma pagamento') + '</button>');
 			if (rawPay === 'invoice_requested' || rawPay === 'invoice_error') {
 				actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + esc(r.id) + '" title="Reinvia fattura">Reinvia fattura</button>');

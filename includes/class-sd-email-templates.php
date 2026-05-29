@@ -345,7 +345,7 @@ class SD_Email_Templates {
 			$forms[ 'activity:' . $activity_id ] = array(
 				'key'       => 'activity:' . $activity_id,
 				'type'      => 'activity',
-				'group'     => __( 'Iscrizionii attività', 'sd-logbook' ),
+				'group'     => __( 'Iscrizioni attività', 'sd-logbook' ),
 				'label'     => $label,
 				'color'     => 'teal',
 				'variables' => self::dedupe_variables( $variables ),

@@ -131,6 +131,7 @@ class SD_Activity_Manager {
 		// Fallback AJAX per modale modifica registrazione
 		add_action( 'wp_ajax_sd_activity_registration_get', array( $this, 'ajax_registration_get' ) );
 		add_action( 'wp_ajax_sd_activity_registration_delete', array( $this, 'ajax_registration_delete' ) );
+		add_action( 'wp_ajax_sd_activity_preview_email', array( $this, 'ajax_preview_email' ) );
 		add_shortcode( 'sd_gestione_attivita', array( $this, 'shortcode_activity_admin_dashboard' ) );
 		add_shortcode( 'sd_iscrizione_attivita', array( $this, 'shortcode_activity_registration_form' ) );
 		add_action( 'wp_ajax_sd_activity_get_details', array( $this, 'ajax_activity_get_details' ) );
@@ -2760,6 +2761,83 @@ class SD_Activity_Manager {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'E-mail inviata con successo.', 'sd-logbook' ) ) );
+	}
+
+	/**
+	 * AJAX: anteprima email per una registrazione attività.
+	 */
+	public function ajax_preview_email() {
+		check_ajax_referer( 'sd_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
+		}
+
+		$registration_id = intval( $_POST['registration_id'] ?? 0 );
+		$template_id     = intval( $_POST['template_id'] ?? 0 );
+
+		if ( $registration_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non valida.', 'sd-logbook' ) ) );
+		}
+
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . $wpdb->prefix . 'sd_activity_registrations WHERE id = %d',
+				$registration_id
+			)
+		);
+
+		if ( ! $row ) {
+			wp_send_json_error( array( 'message' => __( 'Registrazione non trovata.', 'sd-logbook' ) ) );
+		}
+
+		if ( ! class_exists( 'SD_Email_Templates' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Modulo email non disponibile.', 'sd-logbook' ) ) );
+		}
+
+		$ctx                    = new \stdClass();
+		$ctx->id                = (int) $row->id;
+		$ctx->first_name        = (string) $row->first_name;
+		$ctx->last_name         = (string) $row->last_name;
+		$ctx->email             = (string) $row->email;
+		$ctx->member_number     = (string) $row->id;
+		$ctx->fee_amount        = (float) $row->price_chf;
+		$ctx->price_chf         = (float) $row->price_chf;
+		$ctx->price_eur         = isset( $row->price_eur ) ? (float) $row->price_eur : 0;
+		$ctx->member_type       = 'attivo';
+		$ctx->membership_expiry = '';
+		$ctx->registration_data = isset( $row->registration_data ) ? (string) $row->registration_data : '';
+
+		$activity = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT title, location, start_date, end_date, description FROM ' . $wpdb->prefix . 'sd_activities WHERE id = %d',
+				(int) $row->activity_id
+			)
+		);
+		$ctx->activity_title       = ! empty( $activity->title ) ? (string) $activity->title : '';
+		$ctx->activity_location    = ! empty( $activity->location ) ? (string) $activity->location : '';
+		$ctx->activity_start_date  = ! empty( $activity->start_date ) ? (string) $activity->start_date : '';
+		$ctx->activity_end_date    = ! empty( $activity->end_date ) ? (string) $activity->end_date : '';
+		$ctx->activity_description = ! empty( $activity->description ) ? (string) $activity->description : '';
+
+		$built = SD_Email_Templates::build( $template_id, $ctx, array( 'form_key' => 'activity:' . (int) $row->activity_id ) );
+		if ( ! $built ) {
+			wp_send_json_error( array( 'message' => __( 'Impossibile generare l\'anteprima.', 'sd-logbook' ) ) );
+		}
+
+		$body = $built['body'];
+		if ( ! empty( $built['signature'] ) ) {
+			$body .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0">' . $built['signature'];
+		}
+
+		wp_send_json_success(
+			array(
+				'to'      => (string) $row->email,
+				'subject' => $built['subject'],
+				'body'    => $body,
+			)
+		);
 	}
 
 	/**

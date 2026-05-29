@@ -210,12 +210,10 @@
 			var dueClass = due > 0 ? 'sd-renewal-due-open' : 'sd-renewal-due-clear';
 
 		var actionHtml = '<span class="sd-renewal-disabled">—</span>';
-			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">&#128269; ' + escapeHtml((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '</button>';
+			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">&#128269;</button>';
 			if (r.can_remind) {
 				actionHtml = '<div class="sd-renewal-action-cell">' +
-					'<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '">' +
-					((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') +
-					'</button>' +
+					'<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-btn-icon-only sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '">&#9993;</button>' +
 					previewBtn +
 					'</div>';
 			} else {

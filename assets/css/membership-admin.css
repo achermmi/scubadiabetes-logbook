@@ -642,6 +642,18 @@
 	color: #fff;
 }
 
+.sd-btn-icon-only {
+	padding: 0.28rem 0.55rem;
+	font-size: 1rem;
+	line-height: 1;
+	min-width: 0;
+	width: 2rem;
+	height: 2rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
 /* ============================================================
    Modal anteprima e-mail
    ============================================================ */
