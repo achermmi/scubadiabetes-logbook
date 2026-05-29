@@ -13,7 +13,8 @@
 		dirty: false,
 		activeField: 'subject',
 		previewOpen: false,
-		currentVariables: []
+		currentVariables: [],
+		varFormatOverrides: {}
 	};
 
 	var presets = {
@@ -533,15 +534,25 @@
 	// INSERT VARIABILE
 	// =========================================================================
 
-	function insertVariable(target, variable) {
+	function insertVariable(target, varTag, varLabel, format) {
 		var actualTarget = target || state.activeField || 'subject';
+		var isHtml = (actualTarget === 'body' || actualTarget === 'signature');
+		var toInsert;
+
+		if (format === 'inline' && varLabel) {
+			toInsert = varLabel + ': ' + varTag;
+		} else if (format === 'multiline' && varLabel) {
+			toInsert = isHtml ? varLabel + ':<br>' + varTag : varLabel + ':\n' + varTag;
+		} else {
+			toInsert = varTag;
+		}
 
 		if (actualTarget === 'body') {
-			insertIntoVisualEditor('sd-tpl-body', variable);
+			insertIntoVisualEditor('sd-tpl-body', toInsert);
 		} else if (actualTarget === 'signature') {
-			insertIntoVisualEditor('sd-tpl-signature', variable);
+			insertIntoVisualEditor('sd-tpl-signature', toInsert);
 		} else {
-			insertIntoInput($('#sd-tpl-subject'), variable);
+			insertIntoInput($('#sd-tpl-subject'), toInsert);
 		}
 		state.dirty = true;
 
@@ -646,6 +657,7 @@
 			}
 
 			state.selectedFormKey = nextKey;
+			state.varFormatOverrides = {};
 			$('#sd-tpl-form-key').val(state.selectedFormKey);
 			$('#sd-tpl-form-key-select, #sd-tpl-form-key-filter').val(state.selectedFormKey);
 			renderVariables();
@@ -677,11 +689,43 @@
 			if (state.previewOpen) { updatePreview(); }
 		});
 
-		// Insert variabile
-		$(document).on('click', '.sd-var-chip', function () {
+		// Insert variabile (o imposta formato per-variabile se click sul badge)
+		$(document).on('click', '.sd-var-chip', function (e) {
 			var varTag = $(this).data('var');
-			var target = $(this).data('target');
-			insertVariable(target, varTag);
+
+			// Click sul badge formato: cicla override per questa variabile
+			if ($(e.target).hasClass('sd-var-chip-fmt-badge')) {
+				var cycleMap = { 'none': 'inline', 'inline': 'multiline', 'multiline': 'none' };
+				var current  = state.varFormatOverrides[varTag] || 'none';
+				var next     = cycleMap[current] || 'none';
+				if (next === 'none') {
+					delete state.varFormatOverrides[varTag];
+				} else {
+					state.varFormatOverrides[varTag] = next;
+				}
+				var $badge = $(e.target);
+				if (next === 'inline') {
+					$badge.attr('class', 'sd-var-chip-fmt-badge sd-var-chip-fmt-badge--inline')
+					      .attr('title', 'Formato specifico: etichetta: {{var}} \u2014 clicca per cambiare')
+					      .text('\u2192');
+				} else if (next === 'multiline') {
+					$badge.attr('class', 'sd-var-chip-fmt-badge sd-var-chip-fmt-badge--multiline')
+					      .attr('title', 'Formato specifico: etichetta:\u21B5{{var}} \u2014 clicca per cambiare')
+					      .text('\u21B5');
+				} else {
+					$badge.attr('class', 'sd-var-chip-fmt-badge')
+					      .attr('title', 'Formato specifico: clicca per impostare')
+					      .text('\u2261');
+				}
+				return;
+			}
+
+			// Click normale: inserisce la variabile
+			var varLabel = $(this).data('label') || '';
+			var target   = $(this).data('target');
+			// Override per-variabile ha precedenza sul formato globale
+			var format   = state.varFormatOverrides[varTag] || $('input[name="sd-var-format"]:checked').val() || 'none';
+			insertVariable(target, varTag, varLabel, format);
 		});
 	}
 
@@ -732,6 +776,9 @@
 		var form = state.forms[state.selectedFormKey] || {};
 		state.currentVariables = Array.isArray(form.variables) ? form.variables : [];
 
+		var formColor = form.color || 'indigo';
+		$('#sd-var-chips-main').attr('data-theme', formColor);
+
 		var chipsHtml = '';
 		var rowsHtml = '';
 		if (!state.currentVariables.length) {
@@ -739,9 +786,24 @@
 			rowsHtml = '<tr><td colspan="2" class="sd-email-tpl-empty">' + escHtml(sdEmailTpl.strings.emptyVariables || '') + '</td></tr>';
 		} else {
 			state.currentVariables.forEach(function (variable) {
-				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
+				var varLabel = variable.label || variable.description || '';
+				var fmtOvr = state.varFormatOverrides[variable.tag] || '';
+				var badgeClass = 'sd-var-chip-fmt-badge';
+				var badgeIcon  = '\u2261'; // ≡
+				var badgeTip   = 'Formato specifico: clicca per impostare';
+				if (fmtOvr === 'inline') {
+					badgeClass += ' sd-var-chip-fmt-badge--inline';
+					badgeIcon   = '\u2192'; // →
+					badgeTip    = 'Formato specifico: etichetta: {{var}} — clicca per cambiare';
+				} else if (fmtOvr === 'multiline') {
+					badgeClass += ' sd-var-chip-fmt-badge--multiline';
+					badgeIcon   = '\u21B5'; // ↵
+					badgeTip    = 'Formato specifico: etichetta:\u21B5{{var}} — clicca per cambiare';
+				}
+				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" data-label="' + escAttr(varLabel) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
 				chipsHtml += '<span class="sd-var-chip-tag">' + escHtml(variable.tag) + '</span>';
 				chipsHtml += '<span class="sd-var-chip-desc">' + escHtml(variable.description || variable.label || '') + '</span>';
+				chipsHtml += '<span class="' + badgeClass + '" title="' + escAttr(badgeTip) + '">' + badgeIcon + '</span>';
 				chipsHtml += '</button>';
 				rowsHtml += '<tr><td><code>' + escHtml(variable.tag) + '</code></td><td>' + escHtml(variable.description || variable.label || '') + '</td></tr>';
 			});

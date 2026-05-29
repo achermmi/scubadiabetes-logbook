@@ -242,6 +242,7 @@ class SD_Email_Templates {
 			'type'      => 'membership',
 			'group'     => __( 'Soci SDS', 'sd-logbook' ),
 			'label'     => __( 'Soci SDS', 'sd-logbook' ),
+			'color'     => 'indigo',
 			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables() ),
 		);
 
@@ -295,6 +296,7 @@ class SD_Email_Templates {
 				'type'      => 'activity',
 				'group'     => __( 'Iscrizionii attività', 'sd-logbook' ),
 				'label'     => $label,
+				'color'     => 'teal',
 				'variables' => self::dedupe_variables( $variables ),
 			);
 		}

@@ -452,6 +452,55 @@
 	box-shadow: 0 1px 5px rgba(79, 110, 247, 0.2);
 }
 
+/* Badge formato per-variabile */
+.sd-var-chip {
+	position: relative;
+	padding-right: 22px;
+}
+
+.sd-var-chip-fmt-badge {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	width: 14px;
+	height: 14px;
+	border-radius: 3px;
+	font-size: 0.65rem;
+	font-family: sans-serif;
+	line-height: 14px;
+	text-align: center;
+	background: transparent;
+	color: #9ca3af;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s, background 0.15s, color 0.15s;
+	pointer-events: auto;
+}
+
+.sd-var-chip:hover .sd-var-chip-fmt-badge {
+	opacity: 1;
+}
+
+.sd-var-chip-fmt-badge--inline {
+	opacity: 1;
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
+.sd-var-chip-fmt-badge--inline:hover {
+	background: #bfdbfe;
+}
+
+.sd-var-chip-fmt-badge--multiline {
+	opacity: 1;
+	background: #ede9fe;
+	color: #7c3aed;
+}
+
+.sd-var-chip-fmt-badge--multiline:hover {
+	background: #ddd6fe;
+}
+
 .sd-var-chip-tag {
 	font-family: monospace;
 	font-size: 0.95rem;
@@ -464,6 +513,86 @@
 	font-size: 0.74rem;
 	font-weight: 500;
 	color: #4d5f7b;
+}
+
+/* ============================================================
+   Radio "Formato inserimento" variabili
+   ============================================================ */
+
+.sd-var-label-toggle-wrap {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px 14px;
+	margin-bottom: 10px;
+	padding: 8px 12px;
+	background: #fff;
+	border: 1px solid #dde3ec;
+	border-radius: 6px;
+}
+
+.sd-var-format-title {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #374151;
+	white-space: nowrap;
+	margin-right: 4px;
+}
+
+.sd-var-label-radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: #374151;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.sd-var-label-radio input[type="radio"] {
+	accent-color: #4f6ef7;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.sd-var-format-preview {
+	font-family: monospace;
+	font-size: 0.78rem;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 4px;
+	padding: 1px 5px;
+	color: #334155;
+	line-height: 1.4;
+}
+
+/* ============================================================
+   Chip variabili — tema per Tipo mailing list
+   ============================================================ */
+
+/* Tema indigo (default — Soci SDS): usa gli stili base sopra */
+
+/* Tema teal — Iscrizioni attività */
+#sd-var-chips-main[data-theme="teal"] .sd-var-chip {
+	background: #f0fdf4;
+	border-color: #86efac;
+	color: #166534;
+}
+
+#sd-var-chips-main[data-theme="teal"] .sd-var-chip:hover {
+	background: #dcfce7;
+	border-color: #4ade80;
+	box-shadow: 0 1px 5px rgba(22, 163, 74, 0.2);
+}
+
+#sd-var-chips-main[data-theme="teal"] .sd-var-chip-tag {
+	color: #14532d;
+}
+
+#sd-var-chips-main[data-theme="teal"] .sd-var-chip-desc {
+	color: #166534;
 }
 
 /* ============================================================

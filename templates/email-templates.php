@@ -69,9 +69,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<div class="sd-email-tpl-vars-section">
 					<h4 class="sd-email-tpl-vars-title"><?php esc_html_e( 'Variabili disponibili', 'sd-logbook' ); ?></h4>
 					<p class="sd-email-tpl-vars-help"><?php esc_html_e( 'Cambiando modulo si aggiornano sia le variabili sia l’elenco dei template relativi.', 'sd-logbook' ); ?></p>
+					<div class="sd-var-label-toggle-wrap">
+						<span class="sd-var-format-title"><?php esc_html_e( 'Formato inserimento:', 'sd-logbook' ); ?></span>
+						<label class="sd-var-label-radio">
+							<input type="radio" name="sd-var-format" value="none" checked>
+							<?php esc_html_e( 'Solo variabile', 'sd-logbook' ); ?>
+						</label>
+						<label class="sd-var-label-radio">
+							<input type="radio" name="sd-var-format" value="inline">
+							<code class="sd-var-format-preview">etichetta: {{var}}</code>
+						</label>
+						<label class="sd-var-label-radio">
+							<input type="radio" name="sd-var-format" value="multiline">
+							<code class="sd-var-format-preview">etichetta:<br>{{var}}</code>
+						</label>
+					</div>
 					<div class="sd-var-chips sd-var-chips-main" id="sd-var-chips-main">
 						<?php foreach ( $vars as $v ) : ?>
 							<button type="button" class="sd-var-chip" data-var="<?php echo esc_attr( $v['tag'] ); ?>"
+								data-label="<?php echo esc_attr( $v['label'] ?? '' ); ?>"
 								title="<?php echo esc_attr( $v['description'] ?? $v['label'] ); ?>">
 								<span class="sd-var-chip-tag"><?php echo esc_html( $v['tag'] ); ?></span>
 								<span class="sd-var-chip-desc"><?php echo esc_html( $v['description'] ?? $v['label'] ?? '' ); ?></span>
