@@ -2054,7 +2054,9 @@ class SD_Membership_Admin {
 		$first    = sanitize_file_name( (string) ( $member->first_name ?? '' ) );
 		$last     = sanitize_file_name( (string) ( $member->last_name ?? '' ) );
 		$label    = trim( $first . '-' . $last, '-' ) ?: ( 'socio-' . (int) $member->id );
-		$pdf_path = get_temp_dir() . $label . '-' . gmdate( 'Ymd' ) . '-' . gmdate( 'His' ) . '.pdf';
+		$tz       = new DateTimeZone( 'Europe/Zurich' );
+		$now      = new DateTime( 'now', $tz );
+		$pdf_path = get_temp_dir() . $label . '-' . $now->format( 'Ymd' ) . '-' . $now->format( 'His' ) . '.pdf';
 		file_put_contents( $pdf_path, $pdf_str ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		return array( $pdf_path );
 	}
