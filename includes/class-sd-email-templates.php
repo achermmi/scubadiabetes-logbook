@@ -166,7 +166,7 @@ class SD_Email_Templates {
 		return array(
 			self::make_variable( 'first_name', __( 'Nome', 'sd-logbook' ), __( 'Nome della persona che compila il modulo.', 'sd-logbook' ), 'Mario' ),
 			self::make_variable( 'last_name', __( 'Cognome', 'sd-logbook' ), __( 'Cognome della persona che compila il modulo.', 'sd-logbook' ), 'Rossi' ),
-			self::make_variable( 'date_of_birth', __( 'Data di nascita', 'sd-logbook' ), __( 'Data di nascita inserita nel modulo.', 'sd-logbook' ), '1990-04-12' ),
+			self::make_variable( 'date_of_birth', __( 'Data di nascita', 'sd-logbook' ), __( 'Data di nascita inserita nel modulo.', 'sd-logbook' ), '12.04.1990' ),
 			self::make_variable( 'gender', __( 'Genere', 'sd-logbook' ), __( 'Genere selezionato nel modulo.', 'sd-logbook' ), 'M' ),
 			self::make_variable( 'sotto_tutela', __( 'Sotto tutela legale', 'sd-logbook' ), __( 'Indica se la persona è sotto tutela legale.', 'sd-logbook' ), 'No' ),
 			self::make_variable( 'birth_place', __( 'Luogo di nascita', 'sd-logbook' ), __( 'Luogo di nascita dichiarato.', 'sd-logbook' ), 'Lugano' ),
@@ -504,6 +504,7 @@ class SD_Email_Templates {
 		$cognome            = '';
 		$nome_completo      = '';
 		$email_socio        = '';
+		$dob_formatted      = '';
 		$email_associazione = (string) ( get_option( 'sd_secretariat_email' ) ?: get_option( 'admin_email' ) );
 
 		if ( $context ) {
@@ -528,6 +529,10 @@ class SD_Email_Templates {
 			$cognome       = (string) ( $context->last_name ?? '' );
 			$nome_completo = trim( $nome . ' ' . $cognome );
 			$email_socio   = (string) ( $context->email ?? '' );
+			if ( ! empty( $context->date_of_birth ) ) {
+				$dt_dob       = DateTime::createFromFormat( 'Y-m-d', (string) $context->date_of_birth );
+				$dob_formatted = $dt_dob ? $dt_dob->format( 'd.m.Y' ) : (string) $context->date_of_birth;
+			}
 		}
 
 		$map = array(
@@ -550,6 +555,7 @@ class SD_Email_Templates {
 			'{{indirizzo_associazione}}' => self::get_association_address(),
 			'{{logo}}'              => self::get_logo_markup( false ),
 			'{{logo_esteso}}'       => self::get_logo_markup( true ),
+			'{{date_of_birth}}'     => $dob_formatted,
 		);
 
 		return str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
