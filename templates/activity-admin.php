@@ -533,6 +533,7 @@ window.sdActivityAdmin = {
 		regSelectActivity: '<?php esc_attr_e( 'Seleziona un\'attività per vedere il cruscotto.', 'sd-logbook' ); ?>',
 		regEmailSent: '<?php esc_attr_e( 'E-mail inviata con successo.', 'sd-logbook' ); ?>',
 		regEmailError: '<?php esc_attr_e( 'Invio e-mail non riuscito.', 'sd-logbook' ); ?>',
+		previewLabel: '<?php esc_attr_e( 'Anteprima e-mail', 'sd-logbook' ); ?>',
 		regSendEmailLabel: '<?php esc_attr_e( 'Invia e-mail', 'sd-logbook' ); ?>',
 		regSendingLabel: '<?php esc_attr_e( 'Invio...', 'sd-logbook' ); ?>',
 		regBulkSendingLabel: '<?php esc_attr_e( 'Invio massivo...', 'sd-logbook' ); ?>',
