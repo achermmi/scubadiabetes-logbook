@@ -1362,7 +1362,7 @@ class SD_Email_Templates {
 	 * @param int         $template_id  ID del modello.
 	 * @param object|null $member       Dati socio/registrazione per la sostituzione variabili.
 	 * @param array       $args         Argomenti opzionali, es. form_key per compatibilità.
-	 * @return array{subject:string, body:string, signature:string}|null
+	 * @return array|null Array con chiavi 'subject', 'body', 'signature', oppure null se il template non esiste.
 	 */
 	public static function build( int $template_id, ?object $member = null, array $args = array() ): ?array {
 		global $wpdb;

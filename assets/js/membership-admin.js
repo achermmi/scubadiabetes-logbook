@@ -210,15 +210,9 @@
 			var dueClass = due > 0 ? 'sd-renewal-due-open' : 'sd-renewal-due-clear';
 
 		var actionHtml = '<span class="sd-renewal-disabled">—</span>';
-			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">&#128269;</button>';
-			if (r.can_remind) {
-				actionHtml = '<div class="sd-renewal-action-cell">' +
-					'<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-btn-icon-only sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '">&#9993;</button>' +
-					previewBtn +
-					'</div>';
-			} else {
-				actionHtml = '<div class="sd-renewal-action-cell"><span class="sd-renewal-disabled">—</span>' + previewBtn + '</div>';
-			}
+			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">\uD83D\uDD0D</button>';
+			var sendBtn = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-btn-icon-only sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '"' + (r.can_remind ? '' : ' disabled') + '>\u2709</button>';
+			actionHtml = '<div class="sd-renewal-action-cell">' + previewBtn + sendBtn + '</div>';
 
 			html += '<tr>' +
 				'<td><strong>' + escapeHtml(r.name || '') + '</strong></td>' +
