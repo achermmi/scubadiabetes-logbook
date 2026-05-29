@@ -1,5 +1,6 @@
 /**
  * Dashboard Admin Attivita - ScubaDiabetes
+ * v: 2026-05-29a
  */
 (function ($) {
 	'use strict';
@@ -6593,10 +6594,10 @@
 			var amount = 'CHF ' + chf.toFixed(2) + (eur > 0 ? ' / EUR ' + eur.toFixed(2) : '');
 
 			var actions = [];
+			actions.push('<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-activity-preview-email" data-reg-id="' + esc(r.id) + '" title="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '" aria-label="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '">&#128269;</button>');
 			if (r.can_remind) {
 				actions.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-btn-icon-only sd-send-reg-email" data-reg-id="' + esc(r.id) + '" title="' + esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '" aria-label="' + esc(regStrings().regSendEmailLabel || 'Invia e-mail') + '">&#9993;</button>');
 			}
-			actions.push('<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-activity-preview-email" data-reg-id="' + esc(r.id) + '" title="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '" aria-label="' + esc(regStrings().previewLabel || 'Anteprima e-mail') + '">&#128269;</button>');
 			actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-send-payment-confirmation" data-reg-id="' + esc(r.id) + '"' + (canSendPaymentConfirmation ? '' : ' disabled') + '>' + esc(regStrings().regPaymentConfirmationLabel || 'Invia conferma pagamento') + '</button>');
 			if (rawPay === 'invoice_requested' || rawPay === 'invoice_error') {
 				actions.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + esc(r.id) + '" title="Reinvia fattura">Reinvia fattura</button>');

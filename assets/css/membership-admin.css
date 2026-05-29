@@ -620,9 +620,11 @@
    ============================================================ */
 .sd-renewal-action-cell {
 	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	align-items: flex-start;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	justify-content: flex-end;
 }
 
 .sd-btn-outline {
