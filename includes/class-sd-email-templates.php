@@ -117,15 +117,20 @@ class SD_Email_Templates {
 	 * @param string $label       Etichetta breve.
 	 * @param string $description Descrizione per la UI.
 	 * @param string $sample      Valore di esempio per preview.
+	 * @param string $group       Gruppo opzionale (es. 'medical').
 	 * @return array<string,string>
 	 */
-	private static function make_variable( string $name, string $label, string $description, string $sample = '' ): array {
-		return array(
+	private static function make_variable( string $name, string $label, string $description, string $sample = '', string $group = '' ): array {
+		$var = array(
 			'tag'         => '{{' . sanitize_key( $name ) . '}}',
 			'label'       => $label,
 			'description' => $description,
 			'sample'      => $sample,
 		);
+		if ( '' !== $group ) {
+			$var['group'] = $group;
+		}
+		return $var;
 	}
 
 	/**
@@ -231,6 +236,34 @@ class SD_Email_Templates {
 	}
 
 	/**
+	 * Variabili mediche/profilo subacqueo (da sd_diver_profiles).
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	private static function get_medical_variables(): array {
+		return array(
+			self::make_variable( 'med_hba1c_last', __( 'HbA1c', 'sd-logbook' ), __( 'Ultimo valore HbA1c del profilo subacqueo.', 'sd-logbook' ), '7.2', 'medical' ),
+			self::make_variable( 'med_hba1c_date', __( 'Data HbA1c', 'sd-logbook' ), __( 'Data ultima misurazione HbA1c.', 'sd-logbook' ), '15.03.2026', 'medical' ),
+			self::make_variable( 'med_hba1c_unit', __( 'Unità HbA1c', 'sd-logbook' ), __( 'Unità di misura HbA1c (%, mmol/mol).', 'sd-logbook' ), '%', 'medical' ),
+			self::make_variable( 'med_uses_cgm', __( 'Usa CGM', 'sd-logbook' ), __( 'Indica se il subacqueo usa un CGM.', 'sd-logbook' ), 'Sì', 'medical' ),
+			self::make_variable( 'med_cgm_device', __( 'Dispositivo CGM', 'sd-logbook' ), __( 'Modello CGM utilizzato.', 'sd-logbook' ), 'Dexcom G7', 'medical' ),
+			self::make_variable( 'med_therapy_type', __( 'Tipo terapia', 'sd-logbook' ), __( 'Tipo di terapia insulinica.', 'sd-logbook' ), 'Penna insulinica', 'medical' ),
+			self::make_variable( 'med_therapy_detail', __( 'Dettaglio terapia', 'sd-logbook' ), __( 'Dettaglio della terapia.', 'sd-logbook' ), 'Rapida + basale', 'medical' ),
+			self::make_variable( 'med_insulin_pump_model', __( 'Modello microinfusore', 'sd-logbook' ), __( 'Modello del microinfusore, se applicabile.', 'sd-logbook' ), 'Omnipod 5', 'medical' ),
+			self::make_variable( 'med_certification_level', __( 'Brevetto sub', 'sd-logbook' ), __( 'Livello di brevetto subacqueo.', 'sd-logbook' ), 'OWD', 'medical' ),
+			self::make_variable( 'med_certification_agency', __( 'Ente brevetto', 'sd-logbook' ), __( 'Ente emittente il brevetto.', 'sd-logbook' ), 'PADI', 'medical' ),
+			self::make_variable( 'med_certification_date', __( 'Data brevetto', 'sd-logbook' ), __( 'Data di conseguimento del brevetto.', 'sd-logbook' ), '10.06.2018', 'medical' ),
+			self::make_variable( 'med_medical_clearance_date', __( 'Data visita medica', 'sd-logbook' ), __( 'Data ultima visita medica subacquea.', 'sd-logbook' ), '05.01.2026', 'medical' ),
+			self::make_variable( 'med_medical_clearance_expiry', __( 'Scadenza visita medica', 'sd-logbook' ), __( 'Scadenza del certificato medico.', 'sd-logbook' ), '05.01.2027', 'medical' ),
+			self::make_variable( 'med_allergies', __( 'Allergie', 'sd-logbook' ), __( 'Allergie dichiarate nel profilo.', 'sd-logbook' ), 'Nessuna', 'medical' ),
+			self::make_variable( 'med_medications', __( 'Farmaci', 'sd-logbook' ), __( 'Farmaci regolari dichiarati nel profilo.', 'sd-logbook' ), 'Metformina', 'medical' ),
+			self::make_variable( 'med_emergency_contact_name', __( 'Contatto emergenza', 'sd-logbook' ), __( 'Nome del contatto di emergenza.', 'sd-logbook' ), 'Marco Rossi', 'medical' ),
+			self::make_variable( 'med_emergency_contact_phone', __( 'Tel. emergenza', 'sd-logbook' ), __( 'Telefono del contatto di emergenza.', 'sd-logbook' ), '+41 79 111 22 33', 'medical' ),
+			self::make_variable( 'med_glycemia_unit', __( 'Unità glicemia', 'sd-logbook' ), __( 'Unità di misura glicemia (mg/dl o mmol/l).', 'sd-logbook' ), 'mg/dl', 'medical' ),
+		);
+	}
+
+	/**
 	 * Recupera i moduli/form disponibili per l'editor template.
 	 *
 	 * @return array<string,array<string,mixed>>
@@ -243,7 +276,7 @@ class SD_Email_Templates {
 			'group'     => __( 'Soci SDS', 'sd-logbook' ),
 			'label'     => __( 'Soci SDS', 'sd-logbook' ),
 			'color'     => 'indigo',
-			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables() ),
+			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables(), self::get_medical_variables() ),
 		);
 
 		global $wpdb;
@@ -519,6 +552,25 @@ class SD_Email_Templates {
 		$height_val          = '';
 		$blood_type_val      = '';
 		$research_consent_label = '';
+		// Variabili mediche (profilo subacqueo).
+		$med_hba1c_last             = '';
+		$med_hba1c_date             = '';
+		$med_hba1c_unit             = '';
+		$med_uses_cgm               = '';
+		$med_cgm_device             = '';
+		$med_therapy_type           = '';
+		$med_therapy_detail         = '';
+		$med_insulin_pump_model     = '';
+		$med_certification_level    = '';
+		$med_certification_agency   = '';
+		$med_certification_date     = '';
+		$med_medical_clearance_date = '';
+		$med_medical_clearance_expiry = '';
+		$med_allergies              = '';
+		$med_medications            = '';
+		$med_emergency_contact_name  = '';
+		$med_emergency_contact_phone = '';
+		$med_glycemia_unit           = '';
 		$email_associazione = (string) ( get_option( 'sd_secretariat_email' ) ?: get_option( 'admin_email' ) );
 
 		// Mappa codici paese → nome per CH/IT/DE/FR/AT/LI + fallback.
@@ -611,22 +663,74 @@ class SD_Email_Templates {
 			// Taglia maglietta (colonna DB = taglia_maglietta).
 			$tshirt_size_val = (string) ( $context->taglia_maglietta ?? $context->tshirt_size ?? '' );
 
-			// Dati da sd_diver_profiles (peso, altezza, gruppo sanguigno, consenso ricerca).
+			// Dati da sd_diver_profiles (peso, altezza, gruppo sanguigno, consenso ricerca, dati medici).
 			$user_id_for_profile = (int) ( $context->wp_user_id ?? 0 );
 			if ( $user_id_for_profile > 0 ) {
 				global $wpdb;
 				$db_obj  = new SD_Database();
 				$profile = $wpdb->get_row(
 					$wpdb->prepare(
-						'SELECT weight, height, blood_type, default_shared_for_research FROM ' . $db_obj->table( 'diver_profiles' ) . ' WHERE user_id = %d LIMIT 1',
+						'SELECT * FROM ' . $db_obj->table( 'diver_profiles' ) . ' WHERE user_id = %d LIMIT 1',
 						$user_id_for_profile
 					)
 				);
 				if ( $profile ) {
-					$weight_val    = '' !== (string) $profile->weight ? (string) $profile->weight : '';
-					$height_val    = '' !== (string) $profile->height ? (string) $profile->height : '';
+					$weight_val    = '' !== (string) $profile->weight && null !== $profile->weight ? (string) $profile->weight : '';
+					$height_val    = '' !== (string) $profile->height && null !== $profile->height ? (string) $profile->height : '';
 					$blood_type_val = (string) ( $profile->blood_type ?? '' );
 					$research_consent_label = $profile->default_shared_for_research ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+
+					// Campi medici.
+					$med_hba1c_last  = null !== $profile->hba1c_last ? (string) $profile->hba1c_last : '';
+					if ( ! empty( $profile->hba1c_date ) ) {
+						$dt_hba1c        = DateTime::createFromFormat( 'Y-m-d', (string) $profile->hba1c_date );
+						$med_hba1c_date  = $dt_hba1c ? $dt_hba1c->format( 'd.m.Y' ) : (string) $profile->hba1c_date;
+					}
+					$med_hba1c_unit  = (string) ( $profile->hba1c_unit ?? '%' );
+					$med_uses_cgm    = $profile->uses_cgm ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+					$med_cgm_device  = (string) ( $profile->cgm_device ?? '' );
+					// Terapia: mapping slug → label.
+					$therapy_labels  = array(
+						'none'           => '',
+						'oral'           => __( 'Farmaci orali', 'sd-logbook' ),
+						'insulin_pen'    => __( 'Penna insulinica', 'sd-logbook' ),
+						'insulin_pump'   => __( 'Microinfusore', 'sd-logbook' ),
+						'insulin_patch'  => __( 'Patch insulinica', 'sd-logbook' ),
+						'diet_only'      => __( 'Solo dieta', 'sd-logbook' ),
+						'other'          => __( 'Altro', 'sd-logbook' ),
+					);
+					$t_key               = sanitize_key( (string) ( $profile->therapy_type ?? 'none' ) );
+					$med_therapy_type    = $therapy_labels[ $t_key ] ?? ucfirst( str_replace( '_', ' ', $t_key ) );
+					$med_therapy_detail  = (string) ( $profile->therapy_detail ?? '' );
+					if ( 'other' === sanitize_key( (string) ( $profile->therapy_detail ?? '' ) ) && ! empty( $profile->therapy_detail_other ) ) {
+						$med_therapy_detail = (string) $profile->therapy_detail_other;
+					}
+					$med_insulin_pump_model = (string) ( $profile->insulin_pump_model ?? '' );
+					if ( ! empty( $profile->insulin_pump_model_other ) ) {
+						$med_insulin_pump_model = (string) $profile->insulin_pump_model_other;
+					}
+					// Certificazione.
+					$med_certification_level  = (string) ( $profile->certification_level ?? '' );
+					$med_certification_agency = (string) ( $profile->certification_agency ?? '' );
+					if ( ! empty( $profile->certification_date ) ) {
+						$dt_cert              = DateTime::createFromFormat( 'Y-m-d', (string) $profile->certification_date );
+						$med_certification_date = $dt_cert ? $dt_cert->format( 'd.m.Y' ) : (string) $profile->certification_date;
+					}
+					// Visita medica.
+					if ( ! empty( $profile->medical_clearance_date ) ) {
+						$dt_mc                    = DateTime::createFromFormat( 'Y-m-d', (string) $profile->medical_clearance_date );
+						$med_medical_clearance_date = $dt_mc ? $dt_mc->format( 'd.m.Y' ) : (string) $profile->medical_clearance_date;
+					}
+					if ( ! empty( $profile->medical_clearance_expiry ) ) {
+						$dt_mce                      = DateTime::createFromFormat( 'Y-m-d', (string) $profile->medical_clearance_expiry );
+						$med_medical_clearance_expiry = $dt_mce ? $dt_mce->format( 'd.m.Y' ) : (string) $profile->medical_clearance_expiry;
+					}
+					// Altro.
+					$med_allergies               = (string) ( $profile->allergies ?? '' );
+					$med_medications             = (string) ( $profile->medications ?? '' );
+					$med_emergency_contact_name  = (string) ( $profile->emergency_contact_name ?? '' );
+					$med_emergency_contact_phone = (string) ( $profile->emergency_contact_phone ?? '' );
+					$med_glycemia_unit           = (string) ( $profile->glycemia_unit ?? 'mg/dl' );
 				}
 			}
 		}
@@ -667,6 +771,25 @@ class SD_Email_Templates {
 			'{{height}}'            => $height_val,
 			'{{blood_type}}'        => $blood_type_val,
 			'{{default_shared_for_research}}' => $research_consent_label,
+			// Variabili mediche.
+			'{{med_hba1c_last}}'              => $med_hba1c_last,
+			'{{med_hba1c_date}}'              => $med_hba1c_date,
+			'{{med_hba1c_unit}}'              => $med_hba1c_unit,
+			'{{med_uses_cgm}}'                => $med_uses_cgm,
+			'{{med_cgm_device}}'              => $med_cgm_device,
+			'{{med_therapy_type}}'            => $med_therapy_type,
+			'{{med_therapy_detail}}'          => $med_therapy_detail,
+			'{{med_insulin_pump_model}}'      => $med_insulin_pump_model,
+			'{{med_certification_level}}'     => $med_certification_level,
+			'{{med_certification_agency}}'    => $med_certification_agency,
+			'{{med_certification_date}}'      => $med_certification_date,
+			'{{med_medical_clearance_date}}'  => $med_medical_clearance_date,
+			'{{med_medical_clearance_expiry}}' => $med_medical_clearance_expiry,
+			'{{med_allergies}}'               => $med_allergies,
+			'{{med_medications}}'             => $med_medications,
+			'{{med_emergency_contact_name}}'  => $med_emergency_contact_name,
+			'{{med_emergency_contact_phone}}' => $med_emergency_contact_phone,
+			'{{med_glycemia_unit}}'           => $med_glycemia_unit,
 		);
 
 		$resolved = str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );

@@ -501,6 +501,27 @@
 	background: #ddd6fe;
 }
 
+/* Chip variabili mediche — tonalità rosa tenue */
+.sd-var-chip--medical {
+	background: #fff1f2;
+	border-color: #fda4af;
+	color: #9f1239;
+}
+
+.sd-var-chip--medical:hover {
+	background: #ffe4e6;
+	border-color: #fb7185;
+	color: #881337;
+}
+
+.sd-var-chip--medical .sd-var-chip-tag {
+	color: #be123c;
+}
+
+.sd-var-chip--medical .sd-var-chip-desc {
+	color: #9f1239;
+}
+
 .sd-var-chip-tag {
 	font-family: monospace;
 	font-size: 0.95rem;

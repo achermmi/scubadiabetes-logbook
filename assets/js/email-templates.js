@@ -506,7 +506,26 @@
 			'{{taglia_maglietta}}': 'M',
 			'{{weight}}': '70.0',
 			'{{height}}': '170',
-			'{{blood_type}}': 'A+'
+			'{{blood_type}}': 'A+',
+			// Variabili mediche.
+			'{{med_hba1c_last}}': '7.2',
+			'{{med_hba1c_date}}': '15.03.2026',
+			'{{med_hba1c_unit}}': '%',
+			'{{med_uses_cgm}}': 'Sì',
+			'{{med_cgm_device}}': 'Dexcom G7',
+			'{{med_therapy_type}}': 'Penna insulinica',
+			'{{med_therapy_detail}}': 'Rapida + basale',
+			'{{med_insulin_pump_model}}': 'Omnipod 5',
+			'{{med_certification_level}}': 'OWD',
+			'{{med_certification_agency}}': 'PADI',
+			'{{med_certification_date}}': '10.06.2018',
+			'{{med_medical_clearance_date}}': '05.01.2026',
+			'{{med_medical_clearance_expiry}}': '05.01.2027',
+			'{{med_allergies}}': 'Nessuna',
+			'{{med_medications}}': 'Metformina',
+			'{{med_emergency_contact_name}}': 'Marco Rossi',
+			'{{med_emergency_contact_phone}}': '+41 79 111 22 33',
+			'{{med_glycemia_unit}}': 'mg/dl'
 		};
 
 		state.currentVariables.forEach(function (variable) {
@@ -808,6 +827,7 @@
 			state.currentVariables.forEach(function (variable) {
 				var varLabel = variable.label || variable.description || '';
 				var fmtOvr = state.varFormatOverrides[variable.tag] || '';
+				var isMedical = variable.group === 'medical';
 				var badgeClass = 'sd-var-chip-fmt-badge';
 				var badgeIcon  = '\u2261'; // ≡
 				var badgeTip   = 'Formato specifico: clicca per impostare';
@@ -820,7 +840,8 @@
 					badgeIcon   = '\u21B5'; // ↵
 					badgeTip    = 'Formato specifico: etichetta:\u21B5{{var}} — clicca per cambiare';
 				}
-				chipsHtml += '<button type="button" class="sd-var-chip" data-var="' + escAttr(variable.tag) + '" data-label="' + escAttr(varLabel) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
+				var chipClass = 'sd-var-chip' + (isMedical ? ' sd-var-chip--medical' : '');
+				chipsHtml += '<button type="button" class="' + chipClass + '" data-var="' + escAttr(variable.tag) + '" data-label="' + escAttr(varLabel) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
 				chipsHtml += '<span class="sd-var-chip-tag">' + escHtml(variable.tag) + '</span>';
 				chipsHtml += '<span class="sd-var-chip-desc">' + escHtml(variable.description || variable.label || '') + '</span>';
 				chipsHtml += '<span class="' + badgeClass + '" title="' + escAttr(badgeTip) + '">' + badgeIcon + '</span>';
