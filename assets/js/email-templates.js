@@ -492,7 +492,21 @@
 			'{{telefono_associazione}}': '+41 79 000 00 00',
 			'{{indirizzo_associazione}}': 'Via Esempio 1, 6900 Lugano',
 			'{{logo}}': '<img src="' + uploadsBase + 'cropped-cropped-ScubaDS-1.jpeg" alt="Logo" style="max-height:80px;display:block;">',
-			'{{logo_esteso}}': '<img src="' + uploadsBase + 'scubadiabetes_radius60.png" alt="Logo esteso" style="max-height:120px;display:block;">'
+			'{{logo_esteso}}': '<img src="' + uploadsBase + 'scubadiabetes_radius60.png" alt="Logo esteso" style="max-height:120px;display:block;">',
+			'{{gender}}': 'Maschile',
+			'{{sotto_tutela}}': 'No',
+			'{{is_scuba}}': 'Sì',
+			'{{privacy_consent}}': 'Sì',
+			'{{default_shared_for_research}}': 'Sì',
+			'{{member_type}}': 'Attivo',
+			'{{guardian_dob}}': '10.02.1978',
+			'{{birth_country}}': 'Svizzera',
+			'{{guardian_country}}': 'Svizzera',
+			'{{tshirt_size}}': 'M',
+			'{{taglia_maglietta}}': 'M',
+			'{{weight}}': '70.0',
+			'{{height}}': '170',
+			'{{blood_type}}': 'A+'
 		};
 
 		state.currentVariables.forEach(function (variable) {

@@ -506,7 +506,36 @@ class SD_Email_Templates {
 		$email_socio        = '';
 		$dob_formatted      = '';
 		$diabetes_type_label = '';
+		$gender_label        = '';
+		$member_type_label   = '';
+		$sotto_tutela_label  = '';
+		$is_scuba_label      = '';
+		$privacy_consent_label = '';
+		$guardian_dob_formatted = '';
+		$tshirt_size_val     = '';
+		$birth_country_label = '';
+		$guardian_country_label = '';
+		$weight_val          = '';
+		$height_val          = '';
+		$blood_type_val      = '';
+		$research_consent_label = '';
 		$email_associazione = (string) ( get_option( 'sd_secretariat_email' ) ?: get_option( 'admin_email' ) );
+
+		// Mappa codici paese → nome per CH/IT/DE/FR/AT/LI + fallback.
+		$country_names = array(
+			'CH' => 'Svizzera',
+			'IT' => 'Italia',
+			'DE' => 'Germania',
+			'FR' => 'Francia',
+			'AT' => 'Austria',
+			'LI' => 'Liechtenstein',
+			'BE' => 'Belgio',
+			'NL' => 'Paesi Bassi',
+			'ES' => 'Spagna',
+			'PT' => 'Portogallo',
+			'GB' => 'Regno Unito',
+			'US' => 'Stati Uniti',
+		);
 
 		if ( $context ) {
 			if ( ! empty( $context->membership_expiry ) ) {
@@ -515,9 +544,11 @@ class SD_Email_Templates {
 			}
 			$member_type_key = sanitize_key( (string) ( $context->member_type ?? '' ) );
 			if ( isset( $member_type_labels[ $member_type_key ] ) ) {
-				$tipo_socio = (string) $member_type_labels[ $member_type_key ];
+				$tipo_socio        = (string) $member_type_labels[ $member_type_key ];
+				$member_type_label = $tipo_socio;
 			} else {
-				$tipo_socio = (string) $member_type_labels['attivo'];
+				$tipo_socio        = (string) $member_type_labels['attivo'];
+				$member_type_label = $tipo_socio;
 			}
 			$numero_socio    = trim( (string) ( $context->member_number ?? '' ) );
 			if ( '' === $numero_socio && ! empty( $context->id ) ) {
@@ -531,9 +562,11 @@ class SD_Email_Templates {
 			$nome_completo = trim( $nome . ' ' . $cognome );
 			$email_socio   = (string) ( $context->email ?? '' );
 			if ( ! empty( $context->date_of_birth ) ) {
-				$dt_dob       = DateTime::createFromFormat( 'Y-m-d', (string) $context->date_of_birth );
+				$dt_dob        = DateTime::createFromFormat( 'Y-m-d', (string) $context->date_of_birth );
 				$dob_formatted = $dt_dob ? $dt_dob->format( 'd.m.Y' ) : (string) $context->date_of_birth;
 			}
+
+			// Tipo di diabete.
 			$diabetes_type_labels = array(
 				'tipo_1'          => __( 'Tipo 1', 'sd-logbook' ),
 				'tipo_2'          => __( 'Tipo 2', 'sd-logbook' ),
@@ -547,6 +580,55 @@ class SD_Email_Templates {
 			);
 			$dt_key = sanitize_key( (string) ( $context->diabetes_type ?? '' ) );
 			$diabetes_type_label = $diabetes_type_labels[ $dt_key ] ?? ucfirst( str_replace( '_', ' ', $dt_key ) );
+
+			// Genere.
+			$gender_raw    = strtoupper( trim( (string) ( $context->gender ?? '' ) ) );
+			$gender_labels = array( 'M' => __( 'Maschile', 'sd-logbook' ), 'F' => __( 'Femminile', 'sd-logbook' ) );
+			$gender_label  = $gender_labels[ $gender_raw ] ?? $gender_raw;
+
+			// Booleani.
+			$sotto_tutela_label      = ! empty( $context->sotto_tutela ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+			$is_scuba_label          = ! empty( $context->is_scuba ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+			$privacy_consent_label   = ! empty( $context->privacy_consent ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+
+			// guardian_dob formattato.
+			if ( ! empty( $context->guardian_dob ) ) {
+				$dt_gdob              = DateTime::createFromFormat( 'Y-m-d', (string) $context->guardian_dob );
+				$guardian_dob_formatted = $dt_gdob ? $dt_gdob->format( 'd.m.Y' ) : (string) $context->guardian_dob;
+			}
+
+			// guardian_country: mostrare solo se esiste effettivamente un tutore.
+			$has_guardian = ! empty( $context->guardian_first_name ) || ! empty( $context->guardian_last_name );
+			if ( $has_guardian ) {
+				$gc_code            = strtoupper( trim( (string) ( $context->guardian_country ?? '' ) ) );
+				$guardian_country_label = $country_names[ $gc_code ] ?? $gc_code;
+			}
+
+			// Nazione di nascita.
+			$bc_code            = strtoupper( trim( (string) ( $context->birth_country ?? '' ) ) );
+			$birth_country_label = $country_names[ $bc_code ] ?? $bc_code;
+
+			// Taglia maglietta (colonna DB = taglia_maglietta).
+			$tshirt_size_val = (string) ( $context->taglia_maglietta ?? $context->tshirt_size ?? '' );
+
+			// Dati da sd_diver_profiles (peso, altezza, gruppo sanguigno, consenso ricerca).
+			$user_id_for_profile = (int) ( $context->wp_user_id ?? 0 );
+			if ( $user_id_for_profile > 0 ) {
+				global $wpdb;
+				$db_obj  = new SD_Database();
+				$profile = $wpdb->get_row(
+					$wpdb->prepare(
+						'SELECT weight, height, blood_type, default_shared_for_research FROM ' . $db_obj->table( 'diver_profiles' ) . ' WHERE user_id = %d LIMIT 1',
+						$user_id_for_profile
+					)
+				);
+				if ( $profile ) {
+					$weight_val    = '' !== (string) $profile->weight ? (string) $profile->weight : '';
+					$height_val    = '' !== (string) $profile->height ? (string) $profile->height : '';
+					$blood_type_val = (string) ( $profile->blood_type ?? '' );
+					$research_consent_label = $profile->default_shared_for_research ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
+				}
+			}
 		}
 
 		$map = array(
@@ -557,6 +639,7 @@ class SD_Email_Templates {
 			'{{anno_prossimo}}'     => $anno_prox,
 			'{{scadenza}}'          => $scadenza,
 			'{{tipo_socio}}'        => $tipo_socio,
+			'{{member_type}}'       => $member_type_label,
 			'{{tassa_sociale}}'     => $tassa_sociale,
 			'{{tassa_sociale_numero}}' => $numero_socio,
 			'{{nome}}'              => $nome,
@@ -571,6 +654,19 @@ class SD_Email_Templates {
 			'{{logo_esteso}}'       => self::get_logo_markup( true ),
 			'{{date_of_birth}}'     => $dob_formatted,
 			'{{diabetes_type}}'     => $diabetes_type_label,
+			'{{gender}}'            => $gender_label,
+			'{{sotto_tutela}}'      => $sotto_tutela_label,
+			'{{is_scuba}}'          => $is_scuba_label,
+			'{{privacy_consent}}'   => $privacy_consent_label,
+			'{{guardian_dob}}'      => $guardian_dob_formatted,
+			'{{guardian_country}}'  => $guardian_country_label,
+			'{{birth_country}}'     => $birth_country_label,
+			'{{tshirt_size}}'       => $tshirt_size_val,
+			'{{taglia_maglietta}}'  => $tshirt_size_val,
+			'{{weight}}'            => $weight_val,
+			'{{height}}'            => $height_val,
+			'{{blood_type}}'        => $blood_type_val,
+			'{{default_shared_for_research}}' => $research_consent_label,
 		);
 
 		$resolved = str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
