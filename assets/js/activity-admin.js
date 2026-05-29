@@ -4277,6 +4277,27 @@
 			}
 
 			state.registrations = resp.data.registrations || [];
+			// Sync to regDashboardState.rows so filter buttons work
+			regDashboardState.rows = (state.registrations || []).map(function (r) {
+				var em = String(r.email || '');
+				var ln = String(r.last_name || '');
+				var fn = String(r.first_name || '');
+				return {
+					id: parseInt(r.id, 10) || 0,
+					first_name: fn,
+					last_name: ln,
+					name: (ln && fn ? ln + ', ' + fn : (ln || fn)).trim(),
+					email: em,
+					status: String(r.status || ''),
+					payment_status: String(r.payment_status || ''),
+					price_chf: parseFloat(r.price_chf) || 0,
+					price_eur: parseFloat(r.price_eur) || 0,
+					created_at: String(r.created_at || ''),
+					can_remind: !!(em && em.indexOf('@') > 0 && em.indexOf('.') > em.indexOf('@')),
+					last_email_at: '',
+					last_email_subject: '',
+				};
+			});
 			renderRegistrationsTable();
 			updatePaymentsStats();
 		});

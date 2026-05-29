@@ -1445,10 +1445,11 @@ white-space: normal;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.4rem;
-	height: 2.4rem;
-	padding: 0;
-	font-size: 1.2rem;
+	padding: 0.45rem;
+	aspect-ratio: 1;
+	width: auto;
+	height: auto;
+	font-size: 1rem;
 	line-height: 1;
 	overflow: visible;
 	margin: 2px 0 2px 4px;
@@ -1559,12 +1560,12 @@ white-space: normal;
    Bottoni icon-only nella tabella registrazioni
    ============================================================ */
 .sd-btn-icon-only {
-	padding: 0;
-	font-size: 1.1rem;
+	padding: 0.45rem;
+	aspect-ratio: 1;
+	width: auto;
+	height: auto;
+	font-size: 1rem;
 	line-height: 1;
-	min-width: 2.2rem;
-	width: 2.2rem;
-	height: 2.2rem;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
