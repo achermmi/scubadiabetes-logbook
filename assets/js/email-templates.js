@@ -527,6 +527,12 @@
 		}
 
 		processTextNodes($temp);
+
+		// Evidenzia in rosso le variabili {{...}} rimaste non risolte nell'anteprima.
+		$temp.html($temp.html().replace(/\{\{[a-z_]+\}\}/g, function (match) {
+			return '<span class="sd-preview-empty-var" title="Variabile senza dati">' + match + '</span>';
+		}));
+
 		return $temp.html();
 	}
 

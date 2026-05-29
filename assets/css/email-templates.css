@@ -738,6 +738,19 @@
 	font-size: 0.85rem;
 }
 
+/* Variabili senza dati evidenziate in rosso nell'anteprima */
+.sd-preview-empty-var {
+	display: inline-block;
+	background: #fef2f2;
+	color: #b91c1c;
+	border: 1px solid #fca5a5;
+	border-radius: 3px;
+	padding: 0 4px;
+	font-family: monospace;
+	font-size: 0.82em;
+	line-height: 1.4;
+}
+
 /* ============================================================
    Azioni form
    ============================================================ */

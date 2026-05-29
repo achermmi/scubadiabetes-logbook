@@ -573,7 +573,29 @@ class SD_Email_Templates {
 			'{{diabetes_type}}'     => $diabetes_type_label,
 		);
 
-		return str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
+		$resolved = str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
+
+		// Rimuovi eventuali tag {{...}} rimasti non risolti.
+		$resolved = preg_replace( '/\{\{[a-z_]+\}\}/', '', $resolved );
+
+		// Rimuovi voci <li> il cui valore risulta vuoto dopo la sostituzione
+		// (es. "Telefono: " oppure "Genere: " con valore assente).
+		$resolved = preg_replace_callback(
+			'/<li>(.*?)<\/li>/si',
+			function ( $m ) {
+				$text_only = trim( wp_strip_all_tags( $m[1] ) );
+				if ( '' === $text_only || preg_match( '/:\s*$/', $text_only ) ) {
+					return '';
+				}
+				return $m[0];
+			},
+			$resolved
+		);
+
+		// Rimuovi <ul>/<ol> rimasti senza voci.
+		$resolved = preg_replace( '/<[uo]l>\s*<\/[uo]l>/si', '', $resolved );
+
+		return $resolved;
 	}
 
 	/**
