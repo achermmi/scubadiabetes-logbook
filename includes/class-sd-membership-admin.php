@@ -2051,9 +2051,10 @@ class SD_Membership_Admin {
 		if ( ! $pdf_str ) {
 			return array();
 		}
-		$tmp      = wp_tempnam( 'sd_member_' . (int) $member->id . '_' );
-		$pdf_path = $tmp . '.pdf';
-		rename( $tmp, $pdf_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+		$first    = sanitize_file_name( (string) ( $member->first_name ?? '' ) );
+		$last     = sanitize_file_name( (string) ( $member->last_name ?? '' ) );
+		$label    = trim( $first . '-' . $last, '-' ) ?: ( 'socio-' . (int) $member->id );
+		$pdf_path = get_temp_dir() . $label . '-' . gmdate( 'Ymd' ) . '-' . substr( md5( uniqid( '', true ) ), 0, 6 ) . '.pdf';
 		file_put_contents( $pdf_path, $pdf_str ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		return array( $pdf_path );
 	}
