@@ -735,8 +735,42 @@ class SD_Email_Templates {
 						$med_medical_clearance_expiry = $dt_mce ? $dt_mce->format( 'd.m.Y' ) : (string) $profile->medical_clearance_expiry;
 					}
 					// Altro.
-					$med_allergies               = (string) ( $profile->allergies ?? '' );
-					$med_medications             = (string) ( $profile->medications ?? '' );
+					// Allergie: array JSON di stringhe → lista leggibile.
+					$allergies_raw = (string) ( $profile->allergies ?? '' );
+					if ( '' !== $allergies_raw ) {
+						$allergies_arr = json_decode( $allergies_raw, true );
+						if ( is_array( $allergies_arr ) && ! empty( $allergies_arr ) ) {
+							$allergies_clean = array_filter( array_map( 'trim', $allergies_arr ), 'strlen' );
+							$med_allergies   = implode( ', ', array_values( $allergies_clean ) );
+						} else {
+							$med_allergies = '' === trim( $allergies_raw, '[] ' ) ? '' : $allergies_raw;
+						}
+					}
+					// Farmaci: array JSON di oggetti {name, dosage, unit, suspended} → lista leggibile.
+					$medications_raw = (string) ( $profile->medications ?? '' );
+					if ( '' !== $medications_raw ) {
+						$medications_arr = json_decode( $medications_raw, true );
+						if ( is_array( $medications_arr ) && ! empty( $medications_arr ) ) {
+							$meds_labels = array();
+							foreach ( $medications_arr as $med ) {
+								if ( ! is_array( $med ) || empty( $med['name'] ) ) {
+									continue;
+								}
+								$label = sanitize_text_field( (string) $med['name'] );
+								if ( ! empty( $med['dosage'] ) ) {
+									$label .= ' ' . sanitize_text_field( (string) $med['dosage'] );
+									if ( ! empty( $med['unit'] ) && 'altro' !== strtolower( (string) $med['unit'] ) ) {
+										$label .= ' ' . sanitize_text_field( (string) $med['unit'] );
+									}
+								}
+								if ( ! empty( $med['suspended'] ) ) {
+									$label .= ' (' . __( 'sospeso', 'sd-logbook' ) . ')';
+								}
+								$meds_labels[] = $label;
+							}
+							$med_medications = implode( ', ', $meds_labels );
+						}
+					}
 					$med_emergency_contact_name  = (string) ( $profile->emergency_contact_name ?? '' );
 					$med_emergency_contact_phone = (string) ( $profile->emergency_contact_phone ?? '' );
 					$med_glycemia_unit           = (string) ( $profile->glycemia_unit ?? 'mg/dl' );
