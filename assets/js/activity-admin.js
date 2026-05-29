@@ -6610,13 +6610,13 @@
 				'<td>' +
 					'<span class="sd-status-pill-wrap">' +
 						'<span class="sd-renewal-status ' + regInfo.cls + '">' + esc(regInfo.label) + '</span>' +
-						'<select class="sd-status-pill-select sd-reg-status-select" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawReg) + '" aria-label="Stato iscrizione">' + regOptionsHtml + '</select>' +
+						'<select class="sd-status-pill-select sd-reg-status-select" name="reg_status_' + esc(r.id) + '" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawReg) + '" aria-label="Stato iscrizione">' + regOptionsHtml + '</select>' +
 					'</span>' +
 				'</td>' +
 				'<td>' +
 					'<span class="sd-status-pill-wrap">' +
 						'<span class="sd-renewal-status ' + payInfo.cls + '">' + esc(payInfo.label) + '</span>' +
-						'<select class="sd-status-pill-select sd-reg-payment-select" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawPay) + '" aria-label="Stato pagamento">' + payOptionsHtml + '</select>' +
+						'<select class="sd-status-pill-select sd-reg-payment-select" name="reg_pay_' + esc(r.id) + '" data-reg-id="' + esc(r.id) + '" data-prev="' + esc(rawPay) + '" aria-label="Stato pagamento">' + payOptionsHtml + '</select>' +
 					'</span>' +
 				'</td>' +
 				'<td>' + formatRegDate(r.created_at) + '</td>' +

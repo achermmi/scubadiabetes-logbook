@@ -201,7 +201,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<input type="number" id="sd-price-eur" class="sd-input" min="0" step="0.01" inputmode="decimal" placeholder="0.00" readonly>
 						</div>
 						<div class="sd-field-group sd-price-submit-wrap">
-							<label class="sd-label sd-label-ghost">&nbsp;</label>
+							<span class="sd-label sd-label-ghost" aria-hidden="true">&nbsp;</span>
 							<button type="submit" id="sd-price-submit-btn" class="sd-btn sd-btn-secondary"><?php esc_html_e( 'Aggiungi Tariffa', 'sd-logbook' ); ?></button>
 						</div>
 					</div>
@@ -286,7 +286,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 						
 						<div class="sd-field-builder-meta">
-							<label class="sd-label"><?php esc_html_e( 'Tipo:', 'sd-logbook' ); ?></label>
+							<span class="sd-label"><?php esc_html_e( 'Tipo:', 'sd-logbook' ); ?></span>
 							<div class="sd-radio-group">
 								<label class="sd-admin-inline-check">
 									<input type="radio" name="sd-image-type" value="display" checked>
@@ -306,7 +306,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 						</div>
 						<div class="sd-field-builder-meta">
-							<label class="sd-label"><?php esc_html_e( 'Dimensionamento:', 'sd-logbook' ); ?></label>
+							<span class="sd-label"><?php esc_html_e( 'Dimensionamento:', 'sd-logbook' ); ?></span>
 							<div class="sd-inline-form">
 								<input type="number" id="sd-image-width" class="sd-input" placeholder="<?php esc_attr_e( 'Larghezza (px)', 'sd-logbook' ); ?>" min="50">
 								<input type="number" id="sd-image-height" class="sd-input" placeholder="<?php esc_attr_e( 'Altezza (px)', 'sd-logbook' ); ?>" min="50">
@@ -317,7 +317,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 						</div>
 						<div class="sd-field-builder-meta">
-							<label class="sd-label"><?php esc_html_e( 'Allineamento Orizzontale:', 'sd-logbook' ); ?></label>
+							<span class="sd-label"><?php esc_html_e( 'Allineamento Orizzontale:', 'sd-logbook' ); ?></span>
 							<div class="sd-radio-group">
 								<label class="sd-admin-inline-check">
 									<input type="radio" name="sd-image-align-h" value="left" checked>
@@ -334,7 +334,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 						</div>
 						<div class="sd-field-builder-meta">
-							<label class="sd-label"><?php esc_html_e( 'Allineamento Verticale:', 'sd-logbook' ); ?></label>
+							<span class="sd-label"><?php esc_html_e( 'Allineamento Verticale:', 'sd-logbook' ); ?></span>
 							<div class="sd-radio-group">
 								<label class="sd-admin-inline-check">
 									<input type="radio" name="sd-image-align-v" value="top" checked>
