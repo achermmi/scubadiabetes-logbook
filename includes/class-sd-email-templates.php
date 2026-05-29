@@ -635,7 +635,10 @@ class SD_Email_Templates {
 
 			// Genere.
 			$gender_raw    = strtoupper( trim( (string) ( $context->gender ?? '' ) ) );
-			$gender_labels = array( 'M' => __( 'Maschile', 'sd-logbook' ), 'F' => __( 'Femminile', 'sd-logbook' ) );
+			$gender_labels = array(
+				'M' => __( 'Maschile', 'sd-logbook' ),
+				'F' => __( 'Femminile', 'sd-logbook' ),
+			);
 			$gender_label  = $gender_labels[ $gender_raw ] ?? $gender_raw;
 
 			// Booleani.
