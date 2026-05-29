@@ -522,6 +522,48 @@
 	color: #9f1239;
 }
 
+/* Chip certificazioni sub — tonalità teal */
+.sd-var-chip--diving {
+	background: #f0fdfa;
+	border-color: #5eead4;
+	color: #134e4a;
+}
+
+.sd-var-chip--diving:hover {
+	background: #ccfbf1;
+	border-color: #2dd4bf;
+	color: #0f3d39;
+}
+
+.sd-var-chip--diving .sd-var-chip-tag {
+	color: #0f766e;
+}
+
+.sd-var-chip--diving .sd-var-chip-desc {
+	color: #134e4a;
+}
+
+/* Chip contatti di emergenza — tonalità ambra */
+.sd-var-chip--emergency {
+	background: #fffbeb;
+	border-color: #fcd34d;
+	color: #78350f;
+}
+
+.sd-var-chip--emergency:hover {
+	background: #fef3c7;
+	border-color: #f59e0b;
+	color: #6b2e00;
+}
+
+.sd-var-chip--emergency .sd-var-chip-tag {
+	color: #b45309;
+}
+
+.sd-var-chip--emergency .sd-var-chip-desc {
+	color: #78350f;
+}
+
 .sd-var-chip-tag {
 	font-family: monospace;
 	font-size: 0.95rem;

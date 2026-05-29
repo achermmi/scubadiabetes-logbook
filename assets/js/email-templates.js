@@ -525,7 +525,10 @@
 			'{{med_medications}}': 'Metformina',
 			'{{med_emergency_contact_name}}': 'Marco Rossi',
 			'{{med_emergency_contact_phone}}': '+41 79 111 22 33',
-			'{{med_glycemia_unit}}': 'mg/dl'
+			'{{med_glycemia_unit}}': 'mg/dl',
+			// Variabili profilo: certificazioni e contatti emergenza.
+			'{{prof_certifications}}': 'PADI — Divemaster (22/03/2026, N. 579526)',
+			'{{prof_emergency_contacts}}': 'Marco Rossi (+41 79 111 22 33, coniuge)'
 		};
 
 		state.currentVariables.forEach(function (variable) {
@@ -827,7 +830,9 @@
 			state.currentVariables.forEach(function (variable) {
 				var varLabel = variable.label || variable.description || '';
 				var fmtOvr = state.varFormatOverrides[variable.tag] || '';
-				var isMedical = variable.group === 'medical';
+				var isMedical   = variable.group === 'medical';
+				var isDiving    = variable.group === 'diving';
+				var isEmergency = variable.group === 'emergency';
 				var badgeClass = 'sd-var-chip-fmt-badge';
 				var badgeIcon  = '\u2261'; // ≡
 				var badgeTip   = 'Formato specifico: clicca per impostare';
@@ -840,7 +845,10 @@
 					badgeIcon   = '\u21B5'; // ↵
 					badgeTip    = 'Formato specifico: etichetta:\u21B5{{var}} — clicca per cambiare';
 				}
-				var chipClass = 'sd-var-chip' + (isMedical ? ' sd-var-chip--medical' : '');
+				var chipClass = 'sd-var-chip';
+				if (isMedical)   chipClass += ' sd-var-chip--medical';
+				if (isDiving)    chipClass += ' sd-var-chip--diving';
+				if (isEmergency) chipClass += ' sd-var-chip--emergency';
 				chipsHtml += '<button type="button" class="' + chipClass + '" data-var="' + escAttr(variable.tag) + '" data-label="' + escAttr(varLabel) + '" title="' + escAttr(variable.description || variable.label || variable.tag) + '">';
 				chipsHtml += '<span class="sd-var-chip-tag">' + escHtml(variable.tag) + '</span>';
 				chipsHtml += '<span class="sd-var-chip-desc">' + escHtml(variable.description || variable.label || '') + '</span>';

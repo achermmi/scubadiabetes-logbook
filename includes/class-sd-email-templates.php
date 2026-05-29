@@ -264,6 +264,24 @@ class SD_Email_Templates {
 	}
 
 	/**
+	 * Variabili certificazioni subacquee (da user meta sd_certifications).
+	 */
+	private static function get_certification_variables(): array {
+		return array(
+			self::make_variable( 'prof_certifications', __( 'Certificazioni sub', 'sd-logbook' ), __( 'Elenco certificazioni subacquee (agenzia, livello, data, N. brevetto).', 'sd-logbook' ), 'PADI — Divemaster (22/03/2026, N. 579526)', 'diving' ),
+		);
+	}
+
+	/**
+	 * Variabili contatti di emergenza (da user meta sd_emergency_contacts).
+	 */
+	private static function get_emergency_contact_variables(): array {
+		return array(
+			self::make_variable( 'prof_emergency_contacts', __( 'Contatti di emergenza', 'sd-logbook' ), __( 'Elenco contatti di emergenza (nome, telefono, relazione).', 'sd-logbook' ), 'Marco Rossi (+41 79 111 22 33, coniuge)', 'emergency' ),
+		);
+	}
+
+	/**
 	 * Recupera i moduli/form disponibili per l'editor template.
 	 *
 	 * @return array<string,array<string,mixed>>
@@ -276,7 +294,7 @@ class SD_Email_Templates {
 			'group'     => __( 'Soci SDS', 'sd-logbook' ),
 			'label'     => __( 'Soci SDS', 'sd-logbook' ),
 			'color'     => 'indigo',
-			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables(), self::get_medical_variables() ),
+			'variables' => array_merge( self::get_standard_variables(), self::get_membership_form_variables(), self::get_medical_variables(), self::get_certification_variables(), self::get_emergency_contact_variables() ),
 		);
 
 		global $wpdb;
@@ -573,6 +591,8 @@ class SD_Email_Templates {
 		$med_emergency_contact_name  = '';
 		$med_emergency_contact_phone = '';
 		$med_glycemia_unit           = '';
+		$prof_certifications         = '';
+		$prof_emergency_contacts     = '';
 		$email_associazione = (string) ( get_option( 'sd_secretariat_email' ) ?: get_option( 'admin_email' ) );
 
 		// Mappa codici paese → nome per CH/IT/DE/FR/AT/LI + fallback.
@@ -775,8 +795,60 @@ class SD_Email_Templates {
 					$med_emergency_contact_phone = (string) ( $profile->emergency_contact_phone ?? '' );
 					$med_glycemia_unit           = (string) ( $profile->glycemia_unit ?? 'mg/dl' );
 				}
+			// Certificazioni sub (da user meta sd_certifications).
+			$certs_raw = get_user_meta( $user_id_for_profile, 'sd_certifications', true );
+			if ( is_array( $certs_raw ) && ! empty( $certs_raw ) ) {
+				$certs_labels = array();
+				foreach ( $certs_raw as $cert ) {
+					if ( ! is_array( $cert ) || empty( $cert['agency'] ) ) {
+						continue;
+					}
+					$c_agency = sanitize_text_field( (string) $cert['agency'] );
+					$c_level  = sanitize_text_field( (string) ( $cert['level'] ?? '' ) );
+					$c_label  = $c_agency . ( $c_level ? ' — ' . $c_level : '' );
+					$c_extras = array();
+					if ( ! empty( $cert['date'] ) ) {
+						$dt_cm = DateTime::createFromFormat( 'Y-m-d', (string) $cert['date'] );
+						$c_extras[] = $dt_cm ? $dt_cm->format( 'd.m.Y' ) : (string) $cert['date'];
+					}
+					if ( ! empty( $cert['number'] ) ) {
+						$c_extras[] = 'N. ' . sanitize_text_field( (string) $cert['number'] );
+					}
+					if ( ! empty( $c_extras ) ) {
+						$c_label .= ' (' . implode( ', ', $c_extras ) . ')';
+					}
+					$certs_labels[] = $c_label;
+				}
+				$prof_certifications = implode( ', ', $certs_labels );
+			}
+			// Contatti di emergenza (da user meta sd_emergency_contacts).
+			$contacts_raw = get_user_meta( $user_id_for_profile, 'sd_emergency_contacts', true );
+			if ( is_array( $contacts_raw ) && ! empty( $contacts_raw ) ) {
+				$ec_labels = array();
+				foreach ( $contacts_raw as $ec ) {
+					if ( ! is_array( $ec ) || empty( $ec['name'] ) ) {
+						continue;
+					}
+					$ec_name   = sanitize_text_field( (string) $ec['name'] );
+					$ec_phone  = sanitize_text_field( (string) ( $ec['phone'] ?? '' ) );
+					$ec_rel    = sanitize_text_field( (string) ( $ec['relationship'] ?? '' ) );
+					$ec_extras = array();
+					if ( $ec_phone ) {
+						$ec_extras[] = $ec_phone;
+					}
+					if ( $ec_rel ) {
+						$ec_extras[] = $ec_rel;
+					}
+					$ec_item = $ec_name;
+					if ( ! empty( $ec_extras ) ) {
+						$ec_item .= ' (' . implode( ', ', $ec_extras ) . ')';
+					}
+					$ec_labels[] = $ec_item;
+				}
+				$prof_emergency_contacts = implode( ', ', $ec_labels );
 			}
 		}
+	}
 
 		$map = array(
 			'{{data_oggi_breve}}'   => $today_breve,
@@ -846,6 +918,9 @@ class SD_Email_Templates {
 			'{{med_emergency_contact_name}}'  => $med_emergency_contact_name,
 			'{{med_emergency_contact_phone}}' => $med_emergency_contact_phone,
 			'{{med_glycemia_unit}}'           => $med_glycemia_unit,
+			// Variabili profilo subacqueo: certificazioni e contatti emergenza.
+			'{{prof_certifications}}'         => $prof_certifications,
+			'{{prof_emergency_contacts}}'     => $prof_emergency_contacts,
 		);
 
 		$resolved = str_replace( array_keys( array_merge( $context_map, $map ) ), array_values( array_merge( $context_map, $map ) ), $text );
