@@ -4304,6 +4304,8 @@
 			var canResendInvoice = paymentStatusCode === 'invoice_requested' || paymentStatusCode === 'invoice_error';
 			var eurAmount = getPriceEurWithCurrentRate(r.price_chf, r.price_eur);
 			var actionsHtml = [];
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-activity-preview-email" data-reg-id="' + parseInt(r.id, 10) + '" title="Anteprima e-mail" aria-label="Anteprima e-mail">\uD83D\uDD0D</button>');
+			actionsHtml.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-btn-icon-only sd-send-reg-email" data-reg-id="' + parseInt(r.id, 10) + '" title="Invia e-mail" aria-label="Invia e-mail"' + (r.email ? '' : ' disabled') + '>\u2709</button>');
 			actionsHtml.push('<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-reg-send-payment-confirmation" data-id="' + parseInt(r.id, 10) + '"' + (canSendPaymentConfirmation ? '' : ' disabled') + '>Invia conferma pagamento</button>');
 			if (canResendInvoice) {
 				actionsHtml.push('<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-reg-resend-invoice" data-id="' + parseInt(r.id, 10) + '">Reinvia fattura</button>');
