@@ -1448,10 +1448,8 @@ white-space: normal;
 	padding: 0.45rem 0.6rem;
 	width: auto;
 	height: auto;
-	aspect-ratio: 1;
-	box-sizing: border-box;
 	font-size: 0.78rem;
-	line-height: 1;
+	line-height: 1.2;
 	overflow: visible;
 	margin: 2px 0 2px 4px;
 	vertical-align: middle;
@@ -1562,16 +1560,21 @@ white-space: normal;
    ============================================================ */
 .sd-btn-icon-only {
 	padding: 0.45rem 0.6rem;
-	aspect-ratio: 1;
-	box-sizing: border-box;
 	width: auto;
 	height: auto;
 	font-size: 0.78rem;
-	line-height: 1;
+	line-height: 1.2;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	overflow: visible;
+}
+
+.sd-btn-icon-only img.emoji {
+	height: 1em !important;
+	width: 1em !important;
+	vertical-align: middle !important;
+	margin: 0 !important;
 }
 
 /* ============================================================
