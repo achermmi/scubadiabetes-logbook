@@ -66,6 +66,7 @@ class SD_PDF_Template_Designer {
 		'mbr_birth_place'      => 'Luogo di nascita',
 		'mbr_fiscal_code'      => 'Codice fiscale / AVS',
 		'mbr_privacy_consent'  => 'Consenso privacy',
+		'mbr_tessera_url'      => 'URL Tessera PDF',
 	);
 
 	public function __construct() {
@@ -588,6 +589,16 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					return ! empty( $member['privacy_consent'] ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
 				case 'gender':
 					return esc_html( $member['gender'] ?? '' );
+				case 'tessera_url':
+					$card_path = (string) ( $member['membership_card_pdf_path'] ?? '' );
+					if ( '' === $card_path ) {
+						return '';
+					}
+					$upload = wp_upload_dir();
+					if ( ! empty( $upload['basedir'] ) && ! empty( $upload['baseurl'] ) ) {
+						return str_replace( trailingslashit( $upload['basedir'] ), trailingslashit( $upload['baseurl'] ), $card_path );
+					}
+					return $card_path;
 				default:
 					return esc_html( (string) ( $member[ $key ] ?? '' ) );
 			}

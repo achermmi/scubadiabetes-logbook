@@ -208,6 +208,7 @@ class SD_Email_Templates {
 			self::make_variable( 'blood_type', __( 'Gruppo sanguigno', 'sd-logbook' ), __( 'Gruppo sanguigno dichiarato.', 'sd-logbook' ), 'A+' ),
 			self::make_variable( 'default_shared_for_research', __( 'Consenso ricerca', 'sd-logbook' ), __( 'Consenso predefinito alla condivisione per ricerca.', 'sd-logbook' ), 'Sì' ),
 			self::make_variable( 'privacy_consent', __( 'Consenso privacy', 'sd-logbook' ), __( 'Consenso privacy fornito nel modulo.', 'sd-logbook' ), 'Sì' ),
+			self::make_variable( 'tessera_url', __( 'URL Tessera PDF', 'sd-logbook' ), __( 'Link diretto al PDF della tessera associativa del socio.', 'sd-logbook' ), 'https://scubadiabetes.ch/wp-content/uploads/sd-documents/2026/member-1/tessera-001-20260530-131707.pdf' ),
 		);
 	}
 
@@ -564,6 +565,7 @@ class SD_Email_Templates {
 		$privacy_consent_label = '';
 		$guardian_dob_formatted = '';
 		$tshirt_size_val     = '';
+		$tessera_url_val     = '';
 		$birth_country_label = '';
 		$guardian_country_label = '';
 		$address_country_label = '';
@@ -691,6 +693,17 @@ class SD_Email_Templates {
 
 			// Taglia maglietta (colonna DB = taglia_maglietta).
 			$tshirt_size_val = (string) ( $context->taglia_maglietta ?? $context->tshirt_size ?? '' );
+
+			// URL tessera PDF (da membership_card_pdf_path).
+			$card_path = (string) ( $context->membership_card_pdf_path ?? '' );
+			if ( '' !== $card_path ) {
+				$upload = wp_upload_dir();
+				if ( ! empty( $upload['basedir'] ) && ! empty( $upload['baseurl'] ) ) {
+					$tessera_url_val = str_replace( trailingslashit( $upload['basedir'] ), trailingslashit( $upload['baseurl'] ), $card_path );
+				} else {
+					$tessera_url_val = $card_path;
+				}
+			}
 
 			// Dati da sd_diver_profiles (peso, altezza, gruppo sanguigno, consenso ricerca, dati medici).
 			$user_id_for_profile = (int) ( $context->wp_user_id ?? 0 );
@@ -895,6 +908,7 @@ class SD_Email_Templates {
 			'{{address_country}}'        => $address_country_label,
 			'{{tshirt_size}}'       => $tshirt_size_val,
 			'{{taglia_maglietta}}'  => $tshirt_size_val,
+			'{{tessera_url}}'       => $tessera_url_val,
 			'{{weight}}'            => $weight_val,
 			'{{height}}'            => $height_val,
 			'{{blood_type}}'        => $blood_type_val,
