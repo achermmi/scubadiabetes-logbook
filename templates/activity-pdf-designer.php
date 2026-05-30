@@ -283,6 +283,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<label class="sd-prop-checkbox">
 					<input type="checkbox" id="sd-img-is-bg"> <?php esc_html_e( 'Sfondo (sotto i campi)', 'sd-logbook' ); ?>
 				</label>
+				<label><?php esc_html_e( 'Arrotondamento angoli (mm)', 'sd-logbook' ); ?>
+					<input type="number" id="sd-img-border-radius" class="sd-pdf-input" min="0" max="30" step="0.5" value="0">
+				</label>
 				<label><?php esc_html_e( 'Colore sfondo (se nessuna immagine)', 'sd-logbook' ); ?>
 					<input type="color" id="sd-img-bg-color" class="sd-pdf-input" value="#ffffff" style="width:100%;height:34px;padding:2px;cursor:pointer;">
 				</label>
