@@ -2731,9 +2731,9 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
 		}
 
-		$registration_id = intval( $_POST['registration_id'] ?? 0 );
-		$template_id     = intval( $_POST['template_id'] ?? 0 );
-		$pdf_template_id = intval( $_POST['pdf_template_id'] ?? 0 );
+		$registration_id  = intval( $_POST['registration_id'] ?? 0 );
+		$template_id      = intval( $_POST['template_id'] ?? 0 );
+		$pdf_template_ids = array_values( array_filter( array_map( 'intval', (array) ( $_POST['pdf_template_ids'] ?? array() ) ) ) );
 		if ( $registration_id <= 0 ) {
 			wp_send_json_error( array( 'message' => __( 'Registrazione non valida.', 'sd-logbook' ) ) );
 		}
@@ -2753,7 +2753,7 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'E-mail non valida.', 'sd-logbook' ) ) );
 		}
 
-		$sent = $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_id );
+		$sent = $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_ids );
 		if ( ! $sent ) {
 			$msg = $this->reg_last_mail_error
 				? sprintf( __( 'Invio e-mail non riuscito (%s).', 'sd-logbook' ), $this->reg_last_mail_error )
@@ -2851,11 +2851,11 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
 		}
 
-		$activity_id     = intval( $_POST['activity_id'] ?? 0 );
-		$template_id     = intval( $_POST['template_id'] ?? 0 );
-		$pdf_template_id = intval( $_POST['pdf_template_id'] ?? 0 );
-		$filter_type     = sanitize_text_field( wp_unslash( $_POST['filter_type'] ?? 'all' ) );
-		$allowed         = array( 'all', 'pending', 'paid', 'invoice_requested', 'valid_email' );
+		$activity_id      = intval( $_POST['activity_id'] ?? 0 );
+		$template_id      = intval( $_POST['template_id'] ?? 0 );
+		$pdf_template_ids = array_values( array_filter( array_map( 'intval', (array) ( $_POST['pdf_template_ids'] ?? array() ) ) ) );
+		$filter_type      = sanitize_text_field( wp_unslash( $_POST['filter_type'] ?? 'all' ) );
+		$allowed          = array( 'all', 'pending', 'paid', 'invoice_requested', 'valid_email' );
 		if ( ! in_array( $filter_type, $allowed, true ) ) {
 			$filter_type = 'all';
 		}
@@ -2885,7 +2885,7 @@ class SD_Activity_Manager {
 				$skipped++;
 				continue;
 			}
-			if ( $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_id ) ) {
+			if ( $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_ids ) ) {
 				$sent++;
 			} else {
 				$failed++;
@@ -2927,9 +2927,9 @@ class SD_Activity_Manager {
 			wp_send_json_error( array( 'message' => __( 'Permessi insufficienti', 'sd-logbook' ) ) );
 		}
 
-		$activity_id     = intval( $_POST['activity_id'] ?? 0 );
-		$template_id     = intval( $_POST['template_id'] ?? 0 );
-		$pdf_template_id = intval( $_POST['pdf_template_id'] ?? 0 );
+		$activity_id      = intval( $_POST['activity_id'] ?? 0 );
+		$template_id      = intval( $_POST['template_id'] ?? 0 );
+		$pdf_template_ids = array_values( array_filter( array_map( 'intval', (array) ( $_POST['pdf_template_ids'] ?? array() ) ) ) );
 		if ( $activity_id <= 0 ) {
 			wp_send_json_error( array( 'message' => __( 'Seleziona un\'attività.', 'sd-logbook' ) ) );
 		}
@@ -2987,11 +2987,11 @@ class SD_Activity_Manager {
 	 * Invia un'email "broadcast" a una registrazione attività, opzionalmente da un template.
 	 *
 	 * @param object $row             Riga registrazione (campo email obbligatorio).
-	 * @param int    $template_id     0 = testo predefinito.
-	 * @param int    $pdf_template_id 0 = nessun allegato PDF.
+	 * @param int    $template_id      0 = testo predefinito.
+	 * @param array  $pdf_template_ids ID template PDF da allegare (vuoto = nessuno).
 	 * @return bool
 	 */
-	private function send_registration_broadcast_email( $row, int $template_id = 0, int $pdf_template_id = 0 ): bool {
+	private function send_registration_broadcast_email( $row, int $template_id = 0, array $pdf_template_ids = array() ): bool {
 		$this->reg_last_mail_error = '';
 
 		if ( empty( $row ) || empty( $row->email ) || ! is_email( (string) $row->email ) ) {
@@ -3078,18 +3078,22 @@ class SD_Activity_Manager {
 
 		add_action( 'wp_mail_failed', array( $this, 'capture_reg_wp_mail_failed' ) );
 		$attachments = array();
-		$pdf_tmp     = '';
-		if ( $pdf_template_id > 0 && class_exists( 'SD_PDF_Template_Designer' ) ) {
-			$pdf_tmp = ( new SD_PDF_Template_Designer() )->generate_activity_pdf_to_temp_file( $pdf_template_id, (int) $row->id );
-			if ( $pdf_tmp && file_exists( $pdf_tmp ) ) {
-				$attachments[] = $pdf_tmp;
-			} else {
-				error_log( '[SD Activity] Allegato PDF template non generato reg=' . (int) $row->id . ' tpl=' . $pdf_template_id ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$pdf_tmps    = array();
+		if ( ! empty( $pdf_template_ids ) && class_exists( 'SD_PDF_Template_Designer' ) ) {
+			$designer = new SD_PDF_Template_Designer();
+			foreach ( $pdf_template_ids as $tpl_id ) {
+				$tmp = $designer->generate_activity_pdf_to_temp_file( (int) $tpl_id, (int) $row->id );
+				if ( $tmp && file_exists( $tmp ) ) {
+					$attachments[] = $tmp;
+					$pdf_tmps[]    = $tmp;
+				} else {
+					error_log( '[SD Activity] Allegato PDF template non generato reg=' . (int) $row->id . ' tpl=' . (int) $tpl_id ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
 			}
 		}
 		$sent = wp_mail( (string) $row->email, $subject, $html_body, $headers, $attachments );
-		if ( '' !== $pdf_tmp && file_exists( $pdf_tmp ) ) {
-			wp_delete_file( $pdf_tmp );
+		foreach ( $pdf_tmps as $tmp ) {
+			wp_delete_file( $tmp );
 		}
 		remove_action( 'wp_mail_failed', array( $this, 'capture_reg_wp_mail_failed' ) );
 

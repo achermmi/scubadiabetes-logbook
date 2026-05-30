@@ -4237,20 +4237,20 @@
 			nonce: sdActivityAdmin.nonce
 		}, function (resp) {
 			if (!resp || !resp.success) {
-				$sel.html('<option value="">— Template PDF —</option>');
+				$sel.html('');
 				return;
 			}
 			var templates = resp.data.templates || [];
 			var filtered = templates.filter(function (t) {
 				return !parseInt(t.activity_id, 10) || parseInt(t.activity_id, 10) === activityId;
 			});
-			var html = '<option value="">— Template PDF —</option>';
+			var html = '';
 			filtered.forEach(function (t) {
 				html += '<option value="' + parseInt(t.id, 10) + '">' + esc(t.name) + '</option>';
 			});
 			$sel.html(html);
 		}).fail(function () {
-			$sel.html('<option value="">— Template PDF —</option>');
+			$sel.html('');
 		});
 	}
 
@@ -6687,7 +6687,7 @@
 				nonce: sdActivityAdmin.nonce,
 				registration_id: regId,
 				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
+				pdf_template_ids: $('#sd-reg-tpl-select').val() || []
 			},
 			success: function (resp) {
 				if (!resp.success) {
@@ -6732,7 +6732,7 @@
 				activity_id: regDashboardState.activityId,
 				filter_type: mode,
 				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
+				pdf_template_ids: $('#sd-reg-tpl-select').val() || []
 			},
 			success: function (resp) {
 				$btn.prop('disabled', false).text(origLabel);
@@ -6768,7 +6768,7 @@
 				nonce: sdActivityAdmin.nonce,
 				activity_id: regDashboardState.activityId,
 				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
+				pdf_template_ids: $('#sd-reg-tpl-select').val() || []
 			},
 			success: function (resp) {
 				$btn.prop('disabled', false).text(origLabel);

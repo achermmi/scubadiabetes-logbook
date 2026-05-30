@@ -56,7 +56,7 @@
 			template_type: 'member',
 		}, function (resp) {
 			if (!resp.success) { return; }
-			var html = '<option value="0">— Nessun PDF —</option>';
+			var html = '';
 			(resp.data.templates || []).forEach(function (t) {
 				html += '<option value="' + parseInt(t.id, 10) + '">' + escapeHtml(t.name) + '</option>';
 			});
@@ -408,7 +408,7 @@
 					nonce: sdMembAdmin.nonce,
 					filter_type: renewalsState.quickFilter || 'in_scadenza',
 				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
+				pdf_template_ids: $('#sd-renewals-pdf-template-id').val() || []
 				},
 				success: function(resp) {
 					if (!resp.success) {
@@ -449,7 +449,7 @@
 					action: 'sd_members_send_renewal_emails_all_active',
 					nonce: sdMembAdmin.nonce,
 				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
+				pdf_template_ids: $('#sd-renewals-pdf-template-id').val() || []
 				},
 				success: function(resp) {
 					if (!resp.success) {
