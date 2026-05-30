@@ -1036,8 +1036,8 @@ class SD_PDF_Template_Designer {
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
 body { width: 173.2mm; height: 54mm; }
 .sd-cc-wrap { position: relative; width: 173.2mm; height: 54mm; }
-.sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
-.sd-cut-b { position: absolute; left: 87.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
+.sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-right: none; border-radius: 3mm 0 0 3mm; }
+.sd-cut-b { position: absolute; left: 87.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-left: none; border-radius: 0 3mm 3mm 0; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
