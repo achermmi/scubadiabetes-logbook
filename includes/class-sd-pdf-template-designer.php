@@ -1295,6 +1295,59 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 	}
 
 	// =========================================================================
+	// HELPER: GENERA PDF ATTIVITÀ PER ALLEGATO EMAIL
+	// =========================================================================
+
+	/**
+	 * Genera un PDF da un template attività per una registrazione e restituisce
+	 * il percorso di un file temporaneo. Restituisce false su errore.
+	 *
+	 * @param int $template_id     ID del template PDF.
+	 * @param int $registration_id ID della registrazione attività.
+	 * @return string|false
+	 */
+	public function generate_activity_pdf_to_temp_file( int $template_id, int $registration_id ) {
+		global $wpdb;
+
+		$tpl = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'sd_pdf_templates WHERE id = %d', $template_id ),
+			ARRAY_A
+		);
+		if ( ! $tpl ) {
+			return false;
+		}
+
+		$registration = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'sd_activity_registrations WHERE id = %d', $registration_id ),
+			ARRAY_A
+		);
+		if ( ! $registration ) {
+			return false;
+		}
+		$registration['registration_data'] = json_decode( $registration['registration_data'] ?? '{}', true ) ?: array();
+
+		$manager  = SD_Activity_Manager::get_instance();
+		$activity = $manager->get_activity( intval( $registration['activity_id'] ) );
+
+		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements = $this->extract_elements( $decoded );
+		$layout   = $this->extract_layout( $decoded );
+
+		$html      = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, false, $layout );
+		$pdf_bytes = $this->generate_pdf_string( $html, $tpl['orientation'] );
+
+		if ( ! $pdf_bytes ) {
+			return false;
+		}
+
+		$tmp = wp_tempnam( 'sd_pdf_tpl_' . $template_id . '_reg_' . $registration_id . '_' ) . '.pdf';
+		if ( false === file_put_contents( $tmp, $pdf_bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			return false;
+		}
+		return $tmp;
+	}
+
+	// =========================================================================
 	// HELPER: GENERA PDF SOCIO COME STRINGA (per allegati email)
 	// =========================================================================
 

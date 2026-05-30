@@ -6686,7 +6686,8 @@
 				action: 'sd_activity_send_registration_email_single',
 				nonce: sdActivityAdmin.nonce,
 				registration_id: regId,
-				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
 			},
 			success: function (resp) {
 				if (!resp.success) {
@@ -6730,7 +6731,8 @@
 				nonce: sdActivityAdmin.nonce,
 				activity_id: regDashboardState.activityId,
 				filter_type: mode,
-				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
 			},
 			success: function (resp) {
 				$btn.prop('disabled', false).text(origLabel);
@@ -6765,7 +6767,8 @@
 				action: 'sd_activity_send_registration_emails_all_paid',
 				nonce: sdActivityAdmin.nonce,
 				activity_id: regDashboardState.activityId,
-				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0
+				template_id: parseInt($('#sd-reg-template-id').val(), 10) || 0,
+				pdf_template_id: parseInt($('#sd-reg-tpl-select').val(), 10) || 0
 			},
 			success: function (resp) {
 				$btn.prop('disabled', false).text(origLabel);
