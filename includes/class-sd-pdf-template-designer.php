@@ -93,12 +93,12 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v3' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v4' ) ) {
 			return;
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'sd_pdf_templates';
-		// Rimuove eventuali preset precedenti (v1, v2) per reinstallare con le nuove dimensioni.
+		// Rimuove eventuali preset precedenti (v1-v3) per reinstallare con gli angoli corretti.
 		$old_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s AND template_type = 'member'", 'Tessera Socio' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $old_id ) {
 			$wpdb->delete( $table, array( 'id' => (int) $old_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -119,7 +119,8 @@ class SD_PDF_Template_Designer {
 		);
 		delete_option( 'sd_pdf_preset_tessera_v1' );
 		delete_option( 'sd_pdf_preset_tessera_v2' );
-		update_option( 'sd_pdf_preset_tessera_v3', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v3' );
+		update_option( 'sd_pdf_preset_tessera_v4', 1 );
 	}
 
 	/**
@@ -352,7 +353,7 @@ class SD_PDF_Template_Designer {
 				'opacity'        => 1.0,
 				'is_background'  => false,
 				'bg_color'       => '#0055A5',
-				'border_radius'  => 0,
+				'border_radius'  => 3,
 				'page'           => 1,
 			),
 			// Testo header
