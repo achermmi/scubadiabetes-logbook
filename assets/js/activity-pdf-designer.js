@@ -77,10 +77,19 @@
 	}
 
 	function getPageDims() {
+		if (state.orientation === 'credit_card') {
+			return { w: 85.6, h: 54, canvasW: 655, canvasH: 204 };
+		}
 		if (state.orientation === 'landscape' || state.orientation === 'landscape_hf') {
 			return { w: 297, h: 210, canvasW: 1123, canvasH: 794 };
 		}
 		return { w: 210, h: 297, canvasW: 794, canvasH: 1123 };
+	}
+
+	// Offset canvas X per elementi nella seconda faccia della tessera (page=1)
+	function cardXOffset(el) {
+		if (state.orientation !== 'credit_card') { return 0; }
+		return (parseInt(el.page, 10) || 0) === 1 ? mmToPx(87.6) : 0;
 	}
 
 	// =========================================================================
@@ -104,6 +113,7 @@
 			label_show:     false,
 			label_position: 'above',
 			custom_text:    '',
+			page:           0,
 		};
 		if ( 'image' === type ) {
 			el.url           = '';
@@ -134,7 +144,7 @@
 			return buildImageDOM(el);
 		}
 		var dims  = getPageDims();
-		var xPx   = mmToPx(el.x);
+		var xPx   = mmToPx(el.x) + cardXOffset(el);
 		var yPx   = mmToPx(el.y);
 		var wPx   = mmToPx(el.width);
 		var hPx   = el.height > 0 ? mmToPx(el.height) : 0;
@@ -180,7 +190,7 @@
 	}
 
 	function buildImageDOM(el) {
-		var xPx  = mmToPx(el.x);
+		var xPx  = mmToPx(el.x) + cardXOffset(el);
 		var yPx  = mmToPx(el.y);
 		var wPx  = mmToPx(el.width);
 		var hPx  = mmToPx(el.height || 50);
@@ -484,28 +494,25 @@
 						if (!mel) { return; }
 						mel.x = parseFloat(Math.max(0, Math.min(dims.w - mel.width, snap.x + dX)).toFixed(2));
 						mel.y = parseFloat(Math.max(0, Math.min(dims.h - 5, snap.y + dY)).toFixed(2));
-						$canvas.find('[data-id="' + mel.id + '"]').css({ left: mmToPx(mel.x) + 'px', top: mmToPx(mel.y) + 'px' });
+						$canvas.find('[data-id="' + mel.id + '"]').css({ left: (mmToPx(mel.x) + cardXOffset(mel)) + 'px', top: mmToPx(mel.y) + 'px' });
 					});
 				});
 			} else {
 				// SINGLE-DRAG
 				var el = state.elements.find(function (el) { return el.id === id; });
 				if (!el) { state.isDragging = false; return; }
-				state.dragOffsetX = e.clientX - canvasRect.left - mmToPx(el.x);
-				state.dragOffsetY = e.clientY - canvasRect.top  - mmToPx(el.y);
-				$(document).on('mousemove.sddrag', function (ev) {
-					if (!state.isDragging) { return; }
-					var nx = ev.clientX - canvasRect.left - state.dragOffsetX;
-					var ny = ev.clientY - canvasRect.top  - state.dragOffsetY;
-					nx = clamp(nx, 0, dims.canvasW - mmToPx(el.width));
-					ny = clamp(ny, 0, dims.canvasH - 16);
-					el.x = pxToMm(nx);
-					el.y = pxToMm(ny);
-					$el.css({ left: nx + 'px', top: ny + 'px' });
-					$('#sd-prop-x').val(el.x);
-					$('#sd-prop-y').val(el.y);
-				});
-			}
+			var xOff = cardXOffset(el);
+			state.dragOffsetX = e.clientX - canvasRect.left - mmToPx(el.x) - xOff;
+			state.dragOffsetY = e.clientY - canvasRect.top  - mmToPx(el.y);
+			$(document).on('mousemove.sddrag', function (ev) {
+				if (!state.isDragging) { return; }
+				var nx = ev.clientX - canvasRect.left - state.dragOffsetX - xOff;
+				var ny = ev.clientY - canvasRect.top  - state.dragOffsetY;
+				nx = clamp(nx, 0, mmToPx(dims.w) - mmToPx(el.width));
+				ny = clamp(ny, 0, dims.canvasH - 16);
+				el.x = pxToMm(nx);
+				el.y = pxToMm(ny);
+				$el.css({ left: (nx + xOff) + 'px', top: ny + 'px' });
 
 			$(document).on('mouseup.sddrag', function () {
 				state.isDragging = false;
@@ -693,9 +700,17 @@
 			var xPx = e.originalEvent.clientX - canvasRect.left;
 			var yPx = e.originalEvent.clientY - canvasRect.top;
 
-			var el    = defaultElement(type, label);
-			el.x      = pxToMm(clamp(xPx - mmToPx(el.width / 2), 0, canvasRect.width - mmToPx(el.width)));
-			el.y      = pxToMm(clamp(yPx - 12, 0, canvasRect.height - 20));
+var el     = defaultElement(type, label);
+		var xOffPx = 0;
+		if (state.orientation === 'credit_card' && xPx > mmToPx(85.6)) {
+			el.page = 1;
+			xOffPx  = mmToPx(87.6);
+		} else {
+			el.page = 0;
+		}
+		var cardMaxW = state.orientation === 'credit_card' ? mmToPx(85.6) : canvasRect.width;
+		el.x  = pxToMm(clamp(xPx - xOffPx - mmToPx(el.width / 2), 0, cardMaxW - mmToPx(el.width)));
+		el.y  = pxToMm(clamp(yPx - 12, 0, canvasRect.height - 20));
 
 			addElement(el);
 			selectElement(el.id);
@@ -797,7 +812,7 @@
 				// Trova tutti gli elementi sovrapposti al rettangolo
 				var selIds = [];
 				state.elements.forEach(function (el) {
-					var elX1 = mmToPx(el.x);
+					var elX1 = mmToPx(el.x) + cardXOffset(el);
 					var elY1 = mmToPx(el.y);
 					var elX2 = elX1 + mmToPx(el.width);
 					var $dom = $canvas.find('[data-id="' + el.id + '"]');
@@ -835,12 +850,15 @@
 	function applyOrientation(orientation) {
 		state.orientation = orientation;
 		var $c = $('#sd-pdf-canvas');
-		var isLandscape = (orientation === 'landscape' || orientation === 'landscape_hf');
-		var isBranded   = (orientation === 'portrait_hf' || orientation === 'landscape_hf');
+		var isLandscape  = (orientation === 'landscape' || orientation === 'landscape_hf');
+		var isBranded    = (orientation === 'portrait_hf' || orientation === 'landscape_hf');
+		var isCreditCard = (orientation === 'credit_card');
 		if (isLandscape) {
-			$c.addClass('landscape');
+			$c.removeClass('credit-card').addClass('landscape');
+		} else if (isCreditCard) {
+			$c.removeClass('landscape').addClass('credit-card');
 		} else {
-			$c.removeClass('landscape');
+			$c.removeClass('landscape credit-card');
 		}
 		$('#sd-layout-panel').toggle(isBranded);
 		state.layout.style = isBranded ? 'branded' : 'plain';
@@ -1228,7 +1246,7 @@
 				els.forEach(function (el) {
 					el.x = parseFloat(el.x.toFixed(2));
 					el.y = parseFloat(el.y.toFixed(2));
-					$('#sd-pdf-canvas').find('[data-id="' + el.id + '"]').css({ left: mmToPx(el.x) + 'px', top: mmToPx(el.y) + 'px' });
+					$('#sd-pdf-canvas').find('[data-id="' + el.id + '"]').css({ left: (mmToPx(el.x) + cardXOffset(el)) + 'px', top: mmToPx(el.y) + 'px' });
 				});
 				if (state.selectedIds.length === 1) {
 					$('#sd-prop-x').val(els[0].x);

@@ -187,6 +187,18 @@
 	height: 794px;
 }
 
+.sd-pdf-canvas.credit-card {
+	width: 655px;
+	min-width: 655px;
+	height: 204px;
+	background-image: none;
+	background: linear-gradient(90deg,
+		#ffffff 0, #ffffff 324px,
+		#b0b8c1 324px, #b0b8c1 332px,
+		#ffffff 332px, #ffffff 100%);
+	border-radius: 0;
+}
+
 .sd-pdf-canvas.drag-over {
 	outline: 3px dashed #2980b9;
 }

@@ -93,7 +93,7 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v4' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v5' ) ) {
 			return;
 		}
 		global $wpdb;
@@ -120,7 +120,8 @@ class SD_PDF_Template_Designer {
 		delete_option( 'sd_pdf_preset_tessera_v1' );
 		delete_option( 'sd_pdf_preset_tessera_v2' );
 		delete_option( 'sd_pdf_preset_tessera_v3' );
-		update_option( 'sd_pdf_preset_tessera_v4', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v4' );
+		update_option( 'sd_pdf_preset_tessera_v5', 1 );
 	}
 
 	/**
@@ -353,7 +354,7 @@ class SD_PDF_Template_Designer {
 				'opacity'        => 1.0,
 				'is_background'  => false,
 				'bg_color'       => '#0055A5',
-				'border_radius'  => 3,
+				'border_radius'  => 0,
 				'page'           => 1,
 			),
 			// Testo header
@@ -965,10 +966,14 @@ class SD_PDF_Template_Designer {
 		if ( 'credit_card' === $orientation ) {
 			return '<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
-@page { size: 85.6mm 54mm; margin: 0; }
+@page { size: 173.2mm 54mm; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
-body { width: 85.6mm; }
-.sd-pdf-page { position: relative; width: 85.6mm; height: 54mm; overflow: hidden; border-radius: 3mm; }
+body { width: 173.2mm; }
+.sd-cc-wrap { overflow: hidden; width: 173.2mm; height: 54mm; }
+.sd-pdf-page { position: relative; float: left; width: 85.6mm; height: 54mm; overflow: hidden; }
+.sd-cc-gap { float: left; width: 2mm; height: 54mm; }
+.sd-card-0 { border-radius: 3mm 0 0 3mm; }
+.sd-card-1 { border-radius: 0 3mm 3mm 0; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
@@ -1272,7 +1277,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		// nelle chiamate ricorsive $total_pages > 1, quindi si salta la paginazione.
 		if ( $max_page >= 1 && 1 === $total_pages ) {
 			$calc_total = $max_page + 1;
-			$html       = '';
+			$is_cc      = ( 'credit_card' === $orientation );
+			$html       = $is_cc ? '<div class="sd-cc-wrap">' : '';
 			for ( $p = 0; $p <= $max_page; $p++ ) {
 				$page_els = array_values(
 					array_filter(
@@ -1283,9 +1289,12 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					)
 				);
 				if ( $p > 0 ) {
-					$html .= '<div style="page-break-before:always;"></div>';
+					$html .= $is_cc ? '<div class="sd-cc-gap"></div>' : '<div style="page-break-before:always;"></div>';
 				}
 				$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total );
+			}
+			if ( $is_cc ) {
+				$html .= '</div>';
 			}
 			return $html;
 		}
@@ -1303,7 +1312,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			}
 		);
 
-		$html = '<div class="sd-pdf-page">';
+		$card_class = ( 'credit_card' === $orientation ) ? ' sd-card-' . ( $page_num - 1 ) : '';
+		$html = '<div class="sd-pdf-page' . $card_class . '">';
 		if ( $is_branded ) {
 			$html .= $this->build_branded_header_html( $layout, $page_num, $total_pages, $page_w );
 		}
@@ -1389,7 +1399,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$dompdf = new \Dompdf\Dompdf( $options );
 		$dompdf->loadHtml( $html );
 		if ( 'credit_card' === $orientation ) {
-			$dompdf->setPaper( array( 0, 0, 242.65, 153.02 ), 'portrait' );
+			$dompdf->setPaper( array( 0, 0, 490.76, 153.07 ), 'portrait' );
 		} else {
 			$is_land = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
 			$dompdf->setPaper( 'A4', $is_land ? 'landscape' : 'portrait' );
@@ -1420,7 +1430,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$dompdf = new \Dompdf\Dompdf( $options );
 		$dompdf->loadHtml( $html );
 		if ( 'credit_card' === $orientation ) {
-			$dompdf->setPaper( array( 0, 0, 242.65, 153.02 ), 'portrait' );
+			$dompdf->setPaper( array( 0, 0, 490.76, 153.07 ), 'portrait' );
 		} else {
 			$is_land           = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
 			$paper_orientation = $is_land ? 'landscape' : 'portrait';
