@@ -935,6 +935,8 @@ var el     = defaultElement(type, label);
 			accent_bg:          '#00A3D8',
 			logo_url:           '',
 			logo_attachment_id: 0,
+			logo_offset_x:      5,
+			logo_offset_y:      3,
 			show_page_numbers:  true,
 			show_date:          true,
 			footer_note:        '',
@@ -948,6 +950,8 @@ var el     = defaultElement(type, label);
 		$('#sd-layout-accent-bg').val(layout.accent_bg || '#00A3D8');
 		$('#sd-layout-logo-url').val(layout.logo_url || '');
 		$('#sd-layout-logo-att').val(layout.logo_attachment_id || 0);
+		$('#sd-layout-logo-offset-x').val(layout.logo_offset_x !== undefined ? layout.logo_offset_x : 5);
+		$('#sd-layout-logo-offset-y').val(layout.logo_offset_y !== undefined ? layout.logo_offset_y : 3);
 		$('#sd-layout-show-page-num').prop('checked', layout.show_page_numbers !== false);
 		$('#sd-layout-show-date').prop('checked', layout.show_date !== false);
 	}
@@ -959,6 +963,8 @@ var el     = defaultElement(type, label);
 		state.layout.accent_bg          = $('#sd-layout-accent-bg').val();
 		state.layout.logo_url           = $('#sd-layout-logo-url').val();
 		state.layout.logo_attachment_id = parseInt($('#sd-layout-logo-att').val(), 10) || 0;
+		state.layout.logo_offset_x      = parseFloat($('#sd-layout-logo-offset-x').val()) || 5;
+		state.layout.logo_offset_y      = parseFloat($('#sd-layout-logo-offset-y').val()) || 3;
 		state.layout.show_page_numbers  = $('#sd-layout-show-page-num').is(':checked');
 		state.layout.show_date          = $('#sd-layout-show-date').is(':checked');
 	}

@@ -1671,6 +1671,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			'accent_bg'          => '#00A3D8',
 			'logo_url'           => '',
 			'logo_attachment_id' => 0,
+			'logo_offset_x'      => 5,
+			'logo_offset_y'      => 3,
 			'show_page_numbers'  => true,
 			'show_date'          => true,
 			'footer_note'        => '',
@@ -1687,6 +1689,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			'accent_bg'          => sanitize_hex_color( $raw['accent_bg'] ?? '' ) ?: $d['accent_bg'],
 			'logo_url'           => esc_url_raw( $raw['logo_url'] ?? '' ),
 			'logo_attachment_id' => intval( $raw['logo_attachment_id'] ?? 0 ),
+			'logo_offset_x'      => max( 0, min( 150, floatval( $raw['logo_offset_x'] ?? 5 ) ) ),
+			'logo_offset_y'      => max( 0, min( 20, floatval( $raw['logo_offset_y'] ?? 3 ) ) ),
 			'show_page_numbers'  => ! empty( $raw['show_page_numbers'] ),
 			'show_date'          => ! empty( $raw['show_date'] ),
 			'footer_note'        => sanitize_text_field( $raw['footer_note'] ?? '' ),
@@ -1746,6 +1750,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$logo_html  = '';
 		$logo_url   = $layout['logo_url'] ?? '';
 		$logo_att   = intval( $layout['logo_attachment_id'] ?? 0 );
+		$logo_off_x = floatval( $layout['logo_offset_x'] ?? 5 );
+		$logo_off_y = floatval( $layout['logo_offset_y'] ?? 3 );
 		$logo_local = '';
 		if ( $logo_att > 0 ) {
 			$f = get_attached_file( $logo_att );
@@ -1757,9 +1763,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$logo_local = $this->map_url_to_local_path( $logo_url );
 		}
 		if ( '' !== $logo_local ) {
-			$logo_html = '<td style="padding:0 5mm 0 0;vertical-align:middle;text-align:right;width:62mm;">'
+			$logo_html = '<div style="position:absolute;top:' . $logo_off_y . 'mm;right:' . $logo_off_x . 'mm;">'
 				. '<img src="' . esc_attr( $logo_local ) . '" style="height:18mm;width:auto;vertical-align:middle;" alt="">'
-				. '</td>';
+				. '</div>';
 		}
 
 		$pw    = $page_w;
@@ -1775,8 +1781,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$html .= '<div style="font-size:7.5pt;color:rgba(255,255,255,0.68);margin-top:1mm;">' . esc_html( $meta ) . '</div>';
 		}
 		$html .= '</td>';
-		$html .= $logo_html;
 		$html .= '</tr></table>';
+		$html .= $logo_html;
 		$html .= '</div>';
 		$html .= '<div style="position:absolute;top:' . $hdr_h . 'mm;left:0;width:' . $pw . 'mm;height:' . $accent_h . 'mm;background:' . $acc_bg . ';"></div>';
 		$html .= '<div style="position:absolute;bottom:0;left:0;width:' . $pw . 'mm;height:' . $accent_h . 'mm;background:' . $hdr_bg . ';"></div>';

@@ -85,6 +85,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 					<input type="hidden" id="sd-layout-logo-att" value="0">
 				</label>
+				<div class="sd-prop-row">
+					<label class="sd-prop-label"><?php esc_html_e( 'Logo X da destra (mm)', 'sd-logbook' ); ?>
+						<input type="number" id="sd-layout-logo-offset-x" class="sd-pdf-input" min="0" max="150" step="0.5" value="5">
+					</label>
+					<label class="sd-prop-label"><?php esc_html_e( 'Logo Y dall\'alto (mm)', 'sd-logbook' ); ?>
+						<input type="number" id="sd-layout-logo-offset-y" class="sd-pdf-input" min="0" max="20" step="0.5" value="3">
+					</label>
+				</div>
 				<label class="sd-prop-checkbox">
 					<input type="checkbox" id="sd-layout-show-page-num" checked>
 					<?php esc_html_e( 'Mostra numero pagina', 'sd-logbook' ); ?>
