@@ -93,7 +93,7 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v6' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v7' ) ) {
 			return;
 		}
 		global $wpdb;
@@ -122,7 +122,8 @@ class SD_PDF_Template_Designer {
 		delete_option( 'sd_pdf_preset_tessera_v3' );
 		delete_option( 'sd_pdf_preset_tessera_v4' );
 		delete_option( 'sd_pdf_preset_tessera_v5' );
-		update_option( 'sd_pdf_preset_tessera_v6', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v6' );
+		update_option( 'sd_pdf_preset_tessera_v7', 1 );
 	}
 
 	/**
@@ -494,6 +495,35 @@ class SD_PDF_Template_Designer {
 				'label_show'     => false,
 				'label_position' => 'above',
 				'custom_text'    => '',
+				'page'           => 1,
+			),
+			// Striscia accent secondaria in basso Fronte B (speculare a tess_a_stripe)
+			array(
+				'id'             => 'tess_b_stripe',
+				'type'           => 'image',
+				'label'          => 'Striscia accent B',
+				'x'              => 0.0,
+				'y'              => 46.6,
+				'width'          => 85.6,
+				'height'         => 2.5,
+				'font_size'      => 11,
+				'font_bold'      => false,
+				'font_italic'    => false,
+				'color'          => '#000000',
+				'prefix'         => '',
+				'suffix'         => '',
+				'label_show'     => false,
+				'label_position' => 'above',
+				'custom_text'    => '',
+				'url'            => '',
+				'attachment_id'  => 0,
+				'rotation'       => 0,
+				'flip_h'         => false,
+				'flip_v'         => false,
+				'opacity'        => 1.0,
+				'is_background'  => false,
+				'bg_color'       => '#00A3D8',
+				'border_radius'  => 0,
 				'page'           => 1,
 			),
 		);
