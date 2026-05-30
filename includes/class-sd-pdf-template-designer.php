@@ -93,7 +93,7 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v7' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v8' ) ) {
 			return;
 		}
 		global $wpdb;
@@ -123,7 +123,8 @@ class SD_PDF_Template_Designer {
 		delete_option( 'sd_pdf_preset_tessera_v4' );
 		delete_option( 'sd_pdf_preset_tessera_v5' );
 		delete_option( 'sd_pdf_preset_tessera_v6' );
-		update_option( 'sd_pdf_preset_tessera_v7', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v7' );
+		update_option( 'sd_pdf_preset_tessera_v8', 1 );
 	}
 
 	/**
@@ -192,15 +193,15 @@ class SD_PDF_Template_Designer {
 				'border_radius'  => 0,
 				'page'           => 0,
 			),
-			// Logo quadrato, colonna destra (x≈48.5 mm)
+			// Logo colonna destra - proporzioni originali 1158x597px (ratio ~1.94:1)
 			array(
 				'id'             => 'tess_a_logo',
 				'type'           => 'image',
 				'label'          => 'Logo',
-				'x'              => 48.5,
-				'y'              => 11.5,
-				'width'          => 31.0,
-				'height'         => 31.0,
+				'x'              => 46.0,
+				'y'              => 13.5,
+				'width'          => 39.0,
+				'height'         => 20.0,
 				'font_size'      => 11,
 				'font_bold'      => false,
 				'font_italic'    => false,
