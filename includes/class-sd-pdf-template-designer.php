@@ -93,7 +93,7 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v5' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v6' ) ) {
 			return;
 		}
 		global $wpdb;
@@ -121,7 +121,8 @@ class SD_PDF_Template_Designer {
 		delete_option( 'sd_pdf_preset_tessera_v2' );
 		delete_option( 'sd_pdf_preset_tessera_v3' );
 		delete_option( 'sd_pdf_preset_tessera_v4' );
-		update_option( 'sd_pdf_preset_tessera_v5', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v5' );
+		update_option( 'sd_pdf_preset_tessera_v6', 1 );
 	}
 
 	/**
@@ -158,6 +159,7 @@ class SD_PDF_Template_Designer {
 				'is_background'  => true,
 				'bg_color'       => '#0055A5',
 				'border_radius'  => 3,
+				'border_radius_css' => '3mm 0 0 3mm',
 				'page'           => 0,
 			),
 			// Striscia accent secondaria in basso (y=46.6 mm dal top = 14 pt dal fondo)
@@ -326,6 +328,7 @@ class SD_PDF_Template_Designer {
 				'is_background'  => true,
 				'bg_color'       => '#F7FAFF',
 				'border_radius'  => 3,
+				'border_radius_css' => '0 3mm 3mm 0',
 				'page'           => 1,
 			),
 			// Header blu in alto (28 pt = 9.9 mm)
@@ -355,6 +358,7 @@ class SD_PDF_Template_Designer {
 				'is_background'  => false,
 				'bg_color'       => '#0055A5',
 				'border_radius'  => 0,
+				'border_radius_css' => '0 3mm 0 0',
 				'page'           => 1,
 			),
 			// Testo header
@@ -968,13 +972,11 @@ class SD_PDF_Template_Designer {
 <style>
 @page { size: 173.2mm 54mm; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
-body { width: 173.2mm; }
-.sd-cc-wrap { overflow: hidden; width: 173.2mm; height: 54mm; }
-.sd-pdf-page { position: relative; float: left; width: 85.6mm; height: 54mm; overflow: hidden; }
-.sd-cc-gap { float: left; width: 2mm; height: 54mm; }
-.sd-card-0 { border-radius: 3mm 0 0 3mm; }
-.sd-card-1 { border-radius: 0 3mm 3mm 0; background: #ffffff; }
-.sd-card-1 div { border-top-right-radius: 3mm; }
+body { width: 173.2mm; height: 54mm; }
+.sd-cc-wrap { position: relative; width: 173.2mm; height: 54mm; }
+.sd-pdf-page { position: absolute; width: 85.6mm; height: 54mm; }
+.sd-card-0 { left: 0mm; top: 0mm; background: #0055A5; border-radius: 3mm 0 0 3mm; border: 0.3mm dashed #888; border-right: none; }
+.sd-card-1 { left: 87.6mm; top: 0mm; background: #F7FAFF; border-radius: 0 3mm 3mm 0; border: 0.3mm dashed #888; border-left: none; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
@@ -1290,7 +1292,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					)
 				);
 				if ( $p > 0 ) {
-					$html .= $is_cc ? '<div class="sd-cc-gap"></div>' : '<div style="page-break-before:always;"></div>';
+					$html .= $is_cc ? '' : '<div style="page-break-before:always;"></div>';
 				}
 				$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total );
 			}
@@ -1483,16 +1485,17 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			'height'         => round( max( 0.0, floatval( $el['height'] ?? 0 ) ), 2 ),
 		);
 		if ( 'image' === $type ) {
-			$base['url']           = esc_url_raw( $el['url'] ?? '' );
-			$base['attachment_id'] = max( 0, intval( $el['attachment_id'] ?? 0 ) );
-			$base['height']        = round( max( 1.0, floatval( $el['height'] ?? 40 ) ), 2 );
-			$base['rotation']      = intval( $el['rotation'] ?? 0 ) % 360;
-			$base['flip_h']        = ! empty( $el['flip_h'] );
-			$base['flip_v']        = ! empty( $el['flip_v'] );
-			$base['opacity']       = round( max( 0.05, min( 1.0, floatval( $el['opacity'] ?? 1.0 ) ) ), 2 );
-			$base['is_background'] = ! empty( $el['is_background'] );
-			$base['bg_color']      = sanitize_hex_color( $el['bg_color'] ?? '' ) ?: '';
-			$base['border_radius'] = max( 0, intval( $el['border_radius'] ?? 0 ) );
+			$base['url']               = esc_url_raw( $el['url'] ?? '' );
+			$base['attachment_id']     = max( 0, intval( $el['attachment_id'] ?? 0 ) );
+			$base['height']            = round( max( 1.0, floatval( $el['height'] ?? 40 ) ), 2 );
+			$base['rotation']          = intval( $el['rotation'] ?? 0 ) % 360;
+			$base['flip_h']            = ! empty( $el['flip_h'] );
+			$base['flip_v']            = ! empty( $el['flip_v'] );
+			$base['opacity']           = round( max( 0.05, min( 1.0, floatval( $el['opacity'] ?? 1.0 ) ) ), 2 );
+			$base['is_background']     = ! empty( $el['is_background'] );
+			$base['bg_color']          = sanitize_hex_color( $el['bg_color'] ?? '' ) ?: '';
+			$base['border_radius']     = max( 0, intval( $el['border_radius'] ?? 0 ) );
+			$base['border_radius_css'] = sanitize_text_field( $el['border_radius_css'] ?? '' );
 		}
 		$base['page'] = max( 0, intval( $el['page'] ?? 0 ) );
 		return $base;
@@ -1526,13 +1529,16 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$img_src = '' !== $local ? $local : esc_attr( $el['url'] );
 		}
 
-		$border_radius = intval( $el['border_radius'] ?? 0 );
+		$border_radius     = intval( $el['border_radius'] ?? 0 );
+		$border_radius_css = sanitize_text_field( $el['border_radius_css'] ?? '' );
 
 		$style  = 'position:absolute;';
 		$style .= 'left:' . $x . 'mm;top:' . $y . 'mm;';
 		$style .= 'width:' . $width . 'mm;height:' . $height . 'mm;';
 		$style .= 'opacity:' . $opacity . ';overflow:hidden;';
-		if ( $border_radius > 0 ) {
+		if ( '' !== $border_radius_css ) {
+			$style .= 'border-radius:' . $border_radius_css . ';';
+		} elseif ( $border_radius > 0 ) {
 			$style .= 'border-radius:' . $border_radius . 'mm;';
 		}
 

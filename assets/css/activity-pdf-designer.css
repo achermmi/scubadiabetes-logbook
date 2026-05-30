@@ -192,11 +192,43 @@
 	min-width: 655px;
 	height: 204px;
 	background-image: none;
+	/* sfondo bianco con striscia grigia al centro (linea di piega) */
 	background: linear-gradient(90deg,
 		#ffffff 0, #ffffff 324px,
 		#b0b8c1 324px, #b0b8c1 332px,
 		#ffffff 332px, #ffffff 100%);
 	border-radius: 0;
+	position: relative;
+}
+
+/* Guide di taglio: bordo tratteggiato Fronte A (sinistra) */
+.sd-pdf-canvas.credit-card::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 324px;
+	height: 204px;
+	border: 1px dashed #aaa;
+	border-right: none;
+	border-radius: 11px 0 0 11px;
+	pointer-events: none;
+	z-index: 10;
+}
+
+/* Guide di taglio: bordo tratteggiato Fronte B (destra) */
+.sd-pdf-canvas.credit-card::after {
+	content: '';
+	position: absolute;
+	left: 332px;
+	top: 0;
+	width: 323px;
+	height: 204px;
+	border: 1px dashed #aaa;
+	border-left: none;
+	border-radius: 0 11px 11px 0;
+	pointer-events: none;
+	z-index: 10;
 }
 
 .sd-pdf-canvas.drag-over {
