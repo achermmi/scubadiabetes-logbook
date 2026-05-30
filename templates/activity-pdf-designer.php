@@ -27,6 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<button id="sd-tpl-btn-new" class="sd-pdf-btn sd-pdf-btn-secondary"><?php esc_html_e( '+ Nuovo', 'sd-logbook' ); ?></button>
 			<button id="sd-tpl-btn-load" class="sd-pdf-btn sd-pdf-btn-secondary"><?php esc_html_e( '📂 Carica', 'sd-logbook' ); ?></button>
 			<button id="sd-tpl-btn-save" class="sd-pdf-btn sd-pdf-btn-primary"><?php esc_html_e( '💾 Salva', 'sd-logbook' ); ?></button>
+			<button id="sd-tpl-btn-undo" class="sd-pdf-btn sd-pdf-btn-secondary" disabled title="<?php esc_attr_e( 'Nessuna operazione da annullare', 'sd-logbook' ); ?>"><?php esc_html_e( '↩ Undo', 'sd-logbook' ); ?></button>
+			<button id="sd-tpl-btn-snap-grid" class="sd-pdf-btn sd-pdf-btn-secondary" title="<?php esc_attr_e( 'Aggancia alla griglia 5mm', 'sd-logbook' ); ?>"><?php esc_html_e( '⊞ Griglia', 'sd-logbook' ); ?></button>
 			<button id="sd-tpl-btn-delete" class="sd-pdf-btn sd-pdf-btn-danger"><?php esc_html_e( '🗑 Elimina', 'sd-logbook' ); ?></button>
 		</div>
 		<div class="sd-pdf-toolbar-right">

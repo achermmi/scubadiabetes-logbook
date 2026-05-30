@@ -4,7 +4,7 @@ Tags: diving, diabetes, logbook, scuba, medical
 Requires at least: 6.0
 Tested up to: 6.9.1
 Requires PHP: 7.4
-Stable tag: 1.3.88
+Stable tag: 1.3.95
 License: GPLv2 or later
 
 Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.

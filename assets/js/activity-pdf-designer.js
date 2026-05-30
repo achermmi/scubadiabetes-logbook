@@ -34,6 +34,7 @@
 		resizeStartX:   0,
 		resizeStartW:   0,
 		isBoxSelecting: false,
+		history:        [],          // undo history (max 5 snapshot)
 		layout: {
 			style:              'branded',
 			header_title:       '',
@@ -56,6 +57,51 @@
 	function mmToPx(mm) { return Math.round(mm * PX_PER_MM); }
 
 	function clamp(val, min, max) { return Math.min(max, Math.max(min, val)); }
+
+	// =========================================================================
+	// UNDO HISTORY (max 5 snapshot)
+	// =========================================================================
+
+	function pushHistory() {
+		state.history.push(JSON.parse(JSON.stringify(state.elements)));
+		if (state.history.length > 5) { state.history.shift(); }
+		updateUndoBtn();
+	}
+
+	function undo() {
+		if (!state.history.length) { return; }
+		state.elements    = state.history.pop();
+		state.selectedId  = null;
+		state.selectedIds = [];
+		renderAllElements();
+		updatePropsPanel();
+		updateUndoBtn();
+		showStatus('Operazione annullata.', 'ok');
+	}
+
+	function updateUndoBtn() {
+		var $btn = $('#sd-tpl-btn-undo');
+		$btn.prop('disabled', state.history.length === 0);
+		$btn.attr('title', state.history.length > 0
+			? state.history.length + ' operazioni annullabili'
+			: 'Nessuna operazione da annullare');
+	}
+
+	// =========================================================================
+	// SNAP TO GRID
+	// =========================================================================
+
+	function snapToGrid() {
+		var gridMm = 5;
+		if (!state.elements.length) { return; }
+		pushHistory();
+		state.elements.forEach(function (el) {
+			el.x = Math.round(el.x / gridMm) * gridMm;
+			el.y = Math.round(el.y / gridMm) * gridMm;
+		});
+		renderAllElements();
+		showStatus('Elementi agganciati alla griglia 5\u00a0mm.', 'ok');
+	}
 
 	function esc(str) {
 		return String(str)
@@ -359,6 +405,7 @@
 	function alignSelected(type) {
 		var els = getSelectedEls();
 		if (els.length < 2) { return; }
+		pushHistory();
 		var $canvas = $('#sd-pdf-canvas');
 		function elH(e) { return pxToMm($canvas.find('[data-id="' + e.id + '"]').outerHeight() || 20); }
 		var xs  = els.map(function (e) { return e.x; });
@@ -402,6 +449,7 @@
 	function applySameWidth(width) {
 		width = parseFloat(width) || 0;
 		if (width < 5) { return; }
+		pushHistory();
 		getSelectedEls().forEach(function (e) { e.width = width; });
 		renderAllElements();
 	}
@@ -409,6 +457,7 @@
 	function applySameFontSize(size) {
 		size = parseInt(size, 10) || 0;
 		if (size < 6) { return; }
+		pushHistory();
 		getSelectedEls().forEach(function (e) { e.font_size = size; });
 		renderAllElements();
 	}
@@ -476,6 +525,7 @@
 			var $canvas    = $('#sd-pdf-canvas');
 			var canvasRect = $canvas[0].getBoundingClientRect();
 			var dims       = getPageDims();
+			pushHistory();
 			state.isDragging = true;
 
 			if (state.selectedIds.length > 1 && state.selectedIds.indexOf(id) !== -1) {
@@ -533,6 +583,7 @@
 			var el = state.elements.find(function (el) { return el.id === id; });
 			if (!el) { return; }
 
+			pushHistory();
 			state.isResizing   = true;
 			state.resizeStartX = e.clientX;
 			state.resizeStartW = el.width;
@@ -560,6 +611,7 @@
 			var id = $el.data('id');
 			var el = state.elements.find(function (el) { return el.id === id; });
 			if (!el) { return; }
+			pushHistory();
 			state.isResizing = true;
 			var startY       = e.clientY;
 			var startH       = el.height || ( el.type === 'image' ? 50 : 10 );
@@ -587,6 +639,7 @@
 			var id = $el.data('id');
 			var el = state.elements.find(function (el) { return el.id === id; });
 			if (!el || el.type !== 'image') { return; }
+			pushHistory();
 			state.isResizing = true;
 			var startX       = e.clientX;
 			var startY       = e.clientY;
@@ -751,11 +804,13 @@ var el     = defaultElement(type, label);
 	// =========================================================================
 
 	function addElement(el) {
+		pushHistory();
 		state.elements.push(el);
 		renderElement(el);
 	}
 
 	function removeElement(id) {
+		pushHistory();
 		state.elements = state.elements.filter(function (el) { return el.id !== id; });
 		$('#sd-pdf-canvas').find('[data-id="' + id + '"]').remove();
 		var idx = state.selectedIds.indexOf(id);
@@ -1205,6 +1260,7 @@ var el     = defaultElement(type, label);
 		state.activityId   = 0;
 		state.nextId       = 1;
 		state.orientation  = 'portrait_hf';
+		state.history      = [];
 		state.layout       = getDefaultLayout();
 		$('#sd-tpl-name').val('');
 		$('#sd-tpl-orientation').val('portrait_hf');
@@ -1213,6 +1269,7 @@ var el     = defaultElement(type, label);
 		applyTemplateType('activity');
 		renderAllElements();
 		selectElement(null);
+		updateUndoBtn();
 	}
 
 	// =========================================================================
@@ -1302,6 +1359,10 @@ var el     = defaultElement(type, label);
 		});
 
 		$('#sd-tpl-btn-save').on('click', saveTemplate);
+
+		$('#sd-tpl-btn-undo').on('click', undo);
+
+		$('#sd-tpl-btn-snap-grid').on('click', snapToGrid);
 
 		$('#sd-tpl-btn-load').on('click', openLoadModal);
 
@@ -1420,6 +1481,7 @@ var el     = defaultElement(type, label);
 		$('#sd-img-fullpage').on('click', function () {
 			var el = state.elements.find(function (e) { return e.id === state.selectedId; });
 			if (!el || el.type !== 'image') { return; }
+			pushHistory();
 			var dims = getPageDims();
 			el.x      = 0;
 			el.y      = 0;
