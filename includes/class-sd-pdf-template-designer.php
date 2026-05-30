@@ -67,6 +67,7 @@ class SD_PDF_Template_Designer {
 		'mbr_fiscal_code'      => 'Codice fiscale / AVS',
 		'mbr_privacy_consent'  => 'Consenso privacy',
 		'mbr_tessera_url'      => 'URL Tessera PDF',
+		'mbr_membership_year'  => 'Anno iscrizione',
 	);
 
 	public function __construct() {
@@ -75,6 +76,7 @@ class SD_PDF_Template_Designer {
 
 	private function init_hooks() {
 		add_shortcode( 'sd_pdf_template_designer', array( $this, 'shortcode_designer' ) );
+		add_action( 'admin_init', array( $this, 'maybe_install_preset_templates' ) );
 		add_action( 'wp_ajax_sd_pdf_tpl_save', array( $this, 'ajax_template_save' ) );
 		add_action( 'wp_ajax_sd_pdf_tpl_list', array( $this, 'ajax_template_list' ) );
 		add_action( 'wp_ajax_sd_pdf_tpl_load', array( $this, 'ajax_template_load' ) );
@@ -87,8 +89,77 @@ class SD_PDF_Template_Designer {
 	}
 
 	// =========================================================================
-	// SHORTCODE
+	// AUTO-INSTALL TEMPLATE PRESET (una-tantum via admin_init)
 	// =========================================================================
+
+	public function maybe_install_preset_templates() {
+		if ( get_option( 'sd_pdf_preset_tessera_v1' ) ) {
+			return;
+		}
+		global $wpdb;
+		$table   = $wpdb->prefix . 'sd_pdf_templates';
+		$exists  = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s AND template_type = 'member'", 'Tessera Socio' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $exists ) {
+			update_option( 'sd_pdf_preset_tessera_v1', 1 );
+			return;
+		}
+		$elements = $this->get_tessera_preset_elements();
+		$wpdb->insert(
+			$table,
+			array(
+				'name'          => 'Tessera Socio',
+				'orientation'   => 'portrait',
+				'elements_json' => wp_json_encode( $elements ),
+				'activity_id'   => null,
+				'template_type' => 'member',
+				'created_by'    => get_current_user_id() ?: 1,
+				'created_at'    => current_time( 'mysql' ),
+				'updated_at'    => current_time( 'mysql' ),
+			),
+			array( '%s', '%s', '%s', null, '%s', '%d', '%s', '%s' )
+		);
+		update_option( 'sd_pdf_preset_tessera_v1', 1 );
+	}
+
+	/**
+	 * Definisce gli elementi del template preset "Tessera Socio".
+	 * Layout A4 portrait, due card 2× scala (170×107 mm) stacked verticalmente.
+	 */
+	private function get_tessera_preset_elements() {
+		return array(
+			// Etichetta sezione Fronte A
+			array( 'id' => 'tess_lbl_a', 'type' => 'text_label', 'label' => '', 'x' => 20.0, 'y' => 9.0, 'width' => 60.0, 'height' => 0.0, 'font_size' => 7, 'font_bold' => false, 'font_italic' => false, 'color' => '#888888', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'FRONTE A' ),
+			// Sfondo blu Fronte A
+			array( 'id' => 'tess_a_bg', 'type' => 'image', 'label' => 'Sfondo Fronte A', 'x' => 20.0, 'y' => 15.0, 'width' => 170.0, 'height' => 107.0, 'font_size' => 11, 'font_bold' => false, 'font_italic' => false, 'color' => '#000000', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '', 'url' => '', 'attachment_id' => 0, 'rotation' => 0, 'flip_h' => false, 'flip_v' => false, 'opacity' => 1.0, 'is_background' => true, 'bg_color' => '#0055A5' ),
+			// Striscia accent secondaria (bassa)
+			array( 'id' => 'tess_a_stripe', 'type' => 'image', 'label' => 'Striscia accent A', 'x' => 20.0, 'y' => 107.0, 'width' => 170.0, 'height' => 5.0, 'font_size' => 11, 'font_bold' => false, 'font_italic' => false, 'color' => '#000000', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '', 'url' => '', 'attachment_id' => 0, 'rotation' => 0, 'flip_h' => false, 'flip_v' => false, 'opacity' => 1.0, 'is_background' => true, 'bg_color' => '#00A3D8' ),
+			// Logo (colonna destra)
+			array( 'id' => 'tess_a_logo', 'type' => 'image', 'label' => 'Logo', 'x' => 118.0, 'y' => 37.0, 'width' => 62.0, 'height' => 62.0, 'font_size' => 11, 'font_bold' => false, 'font_italic' => false, 'color' => '#000000', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '', 'url' => 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png', 'attachment_id' => 0, 'rotation' => 0, 'flip_h' => false, 'flip_v' => false, 'opacity' => 1.0, 'is_background' => false, 'bg_color' => '' ),
+			// Titolo riga 1
+			array( 'id' => 'tess_a_t1', 'type' => 'text_label', 'label' => '', 'x' => 28.0, 'y' => 21.0, 'width' => 86.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => true, 'font_italic' => false, 'color' => '#ffffff', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'ASSOCIAZIONE' ),
+			// Titolo riga 2
+			array( 'id' => 'tess_a_t2', 'type' => 'text_label', 'label' => '', 'x' => 28.0, 'y' => 33.0, 'width' => 86.0, 'height' => 0.0, 'font_size' => 14, 'font_bold' => true, 'font_italic' => false, 'color' => '#ffffff', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'SCUBADIABETES' ),
+			// Sottotitolo
+			array( 'id' => 'tess_a_sub', 'type' => 'text_label', 'label' => '', 'x' => 28.0, 'y' => 52.0, 'width' => 86.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#99CCFF', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'Tessera associativa' ),
+			// Anno iscrizione (campo dinamico)
+			array( 'id' => 'tess_a_anno', 'type' => 'mbr_membership_year', 'label' => 'Anno', 'x' => 28.0, 'y' => 64.0, 'width' => 86.0, 'height' => 0.0, 'font_size' => 12, 'font_bold' => true, 'font_italic' => false, 'color' => '#ffffff', 'prefix' => 'Anno ', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			// Etichetta sezione Fronte B
+			array( 'id' => 'tess_lbl_b', 'type' => 'text_label', 'label' => '', 'x' => 20.0, 'y' => 129.0, 'width' => 60.0, 'height' => 0.0, 'font_size' => 7, 'font_bold' => false, 'font_italic' => false, 'color' => '#888888', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'FRONTE B' ),
+			// Sfondo chiaro Fronte B
+			array( 'id' => 'tess_b_bg', 'type' => 'image', 'label' => 'Sfondo Fronte B', 'x' => 20.0, 'y' => 135.0, 'width' => 170.0, 'height' => 107.0, 'font_size' => 11, 'font_bold' => false, 'font_italic' => false, 'color' => '#000000', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '', 'url' => '', 'attachment_id' => 0, 'rotation' => 0, 'flip_h' => false, 'flip_v' => false, 'opacity' => 1.0, 'is_background' => true, 'bg_color' => '#F5F8FF' ),
+			// Header blu Fronte B
+			array( 'id' => 'tess_b_hdr', 'type' => 'image', 'label' => 'Header Fronte B', 'x' => 20.0, 'y' => 135.0, 'width' => 170.0, 'height' => 20.0, 'font_size' => 11, 'font_bold' => false, 'font_italic' => false, 'color' => '#000000', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '', 'url' => '', 'attachment_id' => 0, 'rotation' => 0, 'flip_h' => false, 'flip_v' => false, 'opacity' => 1.0, 'is_background' => false, 'bg_color' => '#0055A5' ),
+			// Testo header Fronte B
+			array( 'id' => 'tess_b_htxt', 'type' => 'text_label', 'label' => '', 'x' => 28.0, 'y' => 139.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 10, 'font_bold' => true, 'font_italic' => false, 'color' => '#ffffff', 'prefix' => '', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => 'Tessera socio' ),
+			// Campi socio Fronte B
+			array( 'id' => 'tess_b_nome', 'type' => 'mbr_first_name',       'label' => 'Nome',            'x' => 28.0, 'y' => 163.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#1a1a2e', 'prefix' => 'Nome: ',            'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			array( 'id' => 'tess_b_cogn', 'type' => 'mbr_last_name',        'label' => 'Cognome',         'x' => 28.0, 'y' => 175.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#1a1a2e', 'prefix' => 'Cognome: ',         'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			array( 'id' => 'tess_b_dob',  'type' => 'mbr_date_of_birth',    'label' => 'Data di nascita', 'x' => 28.0, 'y' => 187.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#1a1a2e', 'prefix' => 'Data di nascita: ', 'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			array( 'id' => 'tess_b_num',  'type' => 'mbr_member_number',    'label' => 'Numero socio',    'x' => 28.0, 'y' => 199.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#1a1a2e', 'prefix' => 'Numero socio: ',    'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			array( 'id' => 'tess_b_tipo', 'type' => 'mbr_member_type',      'label' => 'Tipo socio',      'x' => 28.0, 'y' => 211.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => false, 'font_italic' => false, 'color' => '#1a1a2e', 'prefix' => 'Tipo socio: ',      'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+			array( 'id' => 'tess_b_exp',  'type' => 'mbr_membership_expiry','label' => 'Scadenza',        'x' => 28.0, 'y' => 223.0, 'width' => 155.0, 'height' => 0.0, 'font_size' => 9, 'font_bold' => true,  'font_italic' => false, 'color' => '#0055A5', 'prefix' => 'Scadenza: ',         'suffix' => '', 'label_show' => false, 'label_position' => 'above', 'custom_text' => '' ),
+		);
+	}
 
 	public function shortcode_designer( $atts ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -589,6 +660,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					return ! empty( $member['privacy_consent'] ) ? __( 'Sì', 'sd-logbook' ) : __( 'No', 'sd-logbook' );
 				case 'gender':
 					return esc_html( $member['gender'] ?? '' );
+				case 'membership_year':
+					$exp = (string) ( $member['membership_expiry'] ?? '' );
+					return '' !== $exp ? (string) (int) substr( $exp, 0, 4 ) : (string) (int) gmdate( 'Y' );
 				case 'tessera_url':
 					$card_path = (string) ( $member['membership_card_pdf_path'] ?? '' );
 					if ( '' === $card_path ) {
@@ -992,6 +1066,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			$base['flip_v']        = ! empty( $el['flip_v'] );
 			$base['opacity']       = round( max( 0.05, min( 1.0, floatval( $el['opacity'] ?? 1.0 ) ) ), 2 );
 			$base['is_background'] = ! empty( $el['is_background'] );
+			$base['bg_color']      = sanitize_hex_color( $el['bg_color'] ?? '' ) ?: '';
 		}
 		return $base;
 	}
@@ -1048,7 +1123,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		}
 
 		if ( empty( $img_src ) ) {
-			return '<div style="' . $style . 'background:#f0f0f0;"></div>';
+			$bg = ! empty( $el['bg_color'] ) ? $el['bg_color'] : '#f0f0f0';
+			return '<div style="' . $style . 'background:' . esc_attr( $bg ) . ';"></div>';
 		}
 
 		$img_style = 'width:100%;height:100%;display:block;';

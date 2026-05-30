@@ -245,6 +245,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<label class="sd-prop-checkbox">
 					<input type="checkbox" id="sd-img-is-bg"> <?php esc_html_e( 'Sfondo (sotto i campi)', 'sd-logbook' ); ?>
 				</label>
+				<label><?php esc_html_e( 'Colore sfondo (se nessuna immagine)', 'sd-logbook' ); ?>
+					<input type="color" id="sd-img-bg-color" class="sd-pdf-input" value="" style="width:100%;height:34px;padding:2px;cursor:pointer;">
+				</label>
 				<button id="sd-img-fullpage" class="sd-pdf-btn sd-pdf-btn-secondary sd-pdf-full-width" style="margin-top:6px;"><?php esc_html_e( '⬛ Adatta a tutta la pagina', 'sd-logbook' ); ?></button>
 				<button id="sd-img-delete" class="sd-pdf-btn sd-pdf-btn-danger sd-pdf-full-width" style="margin-top:4px;"><?php esc_html_e( '🗑 Rimuovi immagine', 'sd-logbook' ); ?></button>
 			</div>

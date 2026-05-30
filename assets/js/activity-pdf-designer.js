@@ -102,6 +102,7 @@
 			el.flip_v        = false;
 			el.opacity       = 1.0;
 			el.is_background = false;
+			el.bg_color      = '';
 		}
 		return el;
 	}
@@ -188,6 +189,8 @@
 		var inner;
 		if ( el.url ) {
 			inner = '<img src="' + esc(el.url) + '" style="width:100%;height:100%;object-fit:contain;display:block;" draggable="false">';
+		} else if ( el.bg_color ) {
+			inner = '<div style="width:100%;height:100%;background:' + esc(el.bg_color) + ';display:block;"></div>';
 		} else {
 			inner = '<div class="sd-img-placeholder"><span>\uD83D\uDCF7</span></div>';
 		}
@@ -265,6 +268,7 @@
 				$('#sd-img-opacity').val(opPct);
 				$('#sd-img-opacity-val').text(opPct + '%');
 				$('#sd-img-is-bg').prop('checked', !!el.is_background);
+				$('#sd-img-bg-color').val(el.bg_color || '');
 				return;
 			}
 			$('#sd-props-form').show();
@@ -397,6 +401,7 @@
 			el.flip_v       = $('#sd-img-flip-v').is(':checked');
 			el.opacity      = parseFloat($('#sd-img-opacity').val()) / 100 || 1.0;
 			el.is_background = $('#sd-img-is-bg').is(':checked');
+			el.bg_color      = $('#sd-img-bg-color').val() || '';
 			renderElement(el);
 			return;
 		}
