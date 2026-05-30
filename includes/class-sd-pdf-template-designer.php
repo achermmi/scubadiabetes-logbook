@@ -93,7 +93,7 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v8' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v9' ) ) {
 			return;
 		}
 		global $wpdb;
@@ -124,7 +124,8 @@ class SD_PDF_Template_Designer {
 		delete_option( 'sd_pdf_preset_tessera_v5' );
 		delete_option( 'sd_pdf_preset_tessera_v6' );
 		delete_option( 'sd_pdf_preset_tessera_v7' );
-		update_option( 'sd_pdf_preset_tessera_v8', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v8' );
+		update_option( 'sd_pdf_preset_tessera_v9', 1 );
 	}
 
 	/**
@@ -198,7 +199,7 @@ class SD_PDF_Template_Designer {
 				'id'             => 'tess_a_logo',
 				'type'           => 'image',
 				'label'          => 'Logo',
-				'x'              => 46.0,
+				'x'              => 44.0,
 				'y'              => 13.5,
 				'width'          => 39.0,
 				'height'         => 20.0,
@@ -525,6 +526,36 @@ class SD_PDF_Template_Designer {
 				'is_background'  => false,
 				'bg_color'       => '#00A3D8',
 				'border_radius'  => 0,
+				'page'           => 1,
+			),
+			// Banda blu in basso Fronte B (sotto la striscia cyan, speculare al footer di Card A)
+			array(
+				'id'             => 'tess_b_footer_bg',
+				'type'           => 'image',
+				'label'          => 'Footer Fronte B',
+				'x'              => 0.0,
+				'y'              => 49.1,
+				'width'          => 85.6,
+				'height'         => 4.9,
+				'font_size'      => 11,
+				'font_bold'      => false,
+				'font_italic'    => false,
+				'color'          => '#000000',
+				'prefix'         => '',
+				'suffix'         => '',
+				'label_show'     => false,
+				'label_position' => 'above',
+				'custom_text'    => '',
+				'url'            => '',
+				'attachment_id'  => 0,
+				'rotation'       => 0,
+				'flip_h'         => false,
+				'flip_v'         => false,
+				'opacity'        => 1.0,
+				'is_background'  => false,
+				'bg_color'       => '#0055A5',
+				'border_radius'  => 0,
+				'border_radius_css' => '0 0 3mm 0',
 				'page'           => 1,
 			),
 		);
