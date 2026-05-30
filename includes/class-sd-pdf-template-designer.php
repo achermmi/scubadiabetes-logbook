@@ -1283,7 +1283,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			if ( $is_cc ) {
 				// Flat layout: tutti gli elementi di entrambe le facce in un unico position:relative,
 				// Fronte B (page=1) con X offset di 87.6mm. Compatibile con dompdf.
-				$html = '<div class="sd-cc-wrap"><div class="sd-cut-a"></div><div class="sd-cut-b"></div>';
+				// Le guide di taglio vengono aggiunte DOPO gli elementi carta, altrimenti
+				// gli sfondi colorati le coprirebbero (painters algorithm di dompdf).
+				$html = '<div class="sd-cc-wrap">';
 				for ( $p = 0; $p <= $max_page; $p++ ) {
 					$page_els = array_values(
 						array_filter(
@@ -1296,6 +1298,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					$x_off = ( 1 === $p ) ? 87.6 : 0.0;
 					$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total, $x_off );
 				}
+				$html .= '<div class="sd-cut-a"></div><div class="sd-cut-b"></div>';
 				$html .= '</div>';
 				return $html;
 			}
