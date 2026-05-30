@@ -973,7 +973,8 @@ body { width: 173.2mm; }
 .sd-pdf-page { position: relative; float: left; width: 85.6mm; height: 54mm; overflow: hidden; }
 .sd-cc-gap { float: left; width: 2mm; height: 54mm; }
 .sd-card-0 { border-radius: 3mm 0 0 3mm; }
-.sd-card-1 { border-radius: 0 3mm 3mm 0; }
+.sd-card-1 { border-radius: 0 3mm 3mm 0; background: #ffffff; }
+.sd-card-1 div { border-top-right-radius: 3mm; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
