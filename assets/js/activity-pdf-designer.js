@@ -513,6 +513,10 @@
 				el.x = pxToMm(nx);
 				el.y = pxToMm(ny);
 				$el.css({ left: (nx + xOff) + 'px', top: ny + 'px' });
+				$('#sd-prop-x').val(el.x);
+				$('#sd-prop-y').val(el.y);
+			});
+			}
 
 			$(document).on('mouseup.sddrag', function () {
 				state.isDragging = false;
@@ -701,17 +705,16 @@
 			var yPx = e.originalEvent.clientY - canvasRect.top;
 
 var el     = defaultElement(type, label);
-		var xOffPx = 0;
-		if (state.orientation === 'credit_card' && xPx > mmToPx(85.6)) {
-			el.page = 1;
-			xOffPx  = mmToPx(87.6);
-		} else {
-			el.page = 0;
-		}
-		var cardMaxW = state.orientation === 'credit_card' ? mmToPx(85.6) : canvasRect.width;
-		el.x  = pxToMm(clamp(xPx - xOffPx - mmToPx(el.width / 2), 0, cardMaxW - mmToPx(el.width)));
-		el.y  = pxToMm(clamp(yPx - 12, 0, canvasRect.height - 20));
-
+				var xOffPx = 0;
+				if (state.orientation === 'credit_card' && xPx > mmToPx(85.6)) {
+					el.page = 1;
+					xOffPx  = mmToPx(87.6);
+				} else {
+					el.page = 0;
+				}
+				var cardMaxW = state.orientation === 'credit_card' ? mmToPx(85.6) : canvasRect.width;
+				el.x  = pxToMm(clamp(xPx - xOffPx - mmToPx(el.width / 2), 0, cardMaxW - mmToPx(el.width)));
+				el.y  = pxToMm(clamp(yPx - 12, 0, canvasRect.height - 20));
 			addElement(el);
 			selectElement(el.id);
 		});
