@@ -974,9 +974,8 @@ class SD_PDF_Template_Designer {
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
 body { width: 173.2mm; height: 54mm; }
 .sd-cc-wrap { position: relative; width: 173.2mm; height: 54mm; }
-.sd-pdf-page { position: absolute; width: 85.6mm; height: 54mm; }
-.sd-card-0 { left: 0mm; top: 0mm; background: #0055A5; border-radius: 3mm 0 0 3mm; border: 0.3mm dashed #888; border-right: none; }
-.sd-card-1 { left: 87.6mm; top: 0mm; background: #F7FAFF; border-radius: 0 3mm 3mm 0; border: 0.3mm dashed #888; border-left: none; }
+.sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-right: none; border-radius: 3mm 0 0 3mm; }
+.sd-cut-b { position: absolute; left: 87.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-left: none; border-radius: 0 3mm 3mm 0; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
@@ -1266,7 +1265,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		return $this->wrap_pdf_html( $content, $orientation );
 	}
 
-	private function build_member_page_content( $elements, $member, $is_preview = false, $layout = null, $orientation = 'portrait', $page_num = 1, $total_pages = 1 ) {
+	private function build_member_page_content( $elements, $member, $is_preview = false, $layout = null, $orientation = 'portrait', $page_num = 1, $total_pages = 1, $cc_x_offset = 0.0 ) {
 		// Supporto template multi-pagina: se almeno un elemento ha page >= 1,
 		// raggruppa per pagina e aggiunge un page-break tra ogni gruppo.
 		$max_page = 0;
@@ -1281,7 +1280,26 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		if ( $max_page >= 1 && 1 === $total_pages ) {
 			$calc_total = $max_page + 1;
 			$is_cc      = ( 'credit_card' === $orientation );
-			$html       = $is_cc ? '<div class="sd-cc-wrap">' : '';
+			if ( $is_cc ) {
+				// Flat layout: tutti gli elementi di entrambe le facce in un unico position:relative,
+				// Fronte B (page=1) con X offset di 87.6mm. Compatibile con dompdf.
+				$html = '<div class="sd-cc-wrap"><div class="sd-cut-a"></div><div class="sd-cut-b"></div>';
+				for ( $p = 0; $p <= $max_page; $p++ ) {
+					$page_els = array_values(
+						array_filter(
+							$elements,
+							function ( $el ) use ( $p ) {
+								return intval( $el['page'] ?? 0 ) === $p;
+							}
+						)
+					);
+					$x_off = ( 1 === $p ) ? 87.6 : 0.0;
+					$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total, $x_off );
+				}
+				$html .= '</div>';
+				return $html;
+			}
+			$html = '';
 			for ( $p = 0; $p <= $max_page; $p++ ) {
 				$page_els = array_values(
 					array_filter(
@@ -1292,12 +1310,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 					)
 				);
 				if ( $p > 0 ) {
-					$html .= $is_cc ? '' : '<div style="page-break-before:always;"></div>';
+					$html .= '<div style="page-break-before:always;"></div>';
 				}
 				$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total );
-			}
-			if ( $is_cc ) {
-				$html .= '</div>';
 			}
 			return $html;
 		}
@@ -1315,19 +1330,24 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			}
 		);
 
-		$card_class = ( 'credit_card' === $orientation ) ? ' sd-card-' . ( $page_num - 1 ) : '';
-		$html = '<div class="sd-pdf-page' . $card_class . '">';
-		if ( $is_branded ) {
+		// Flat layout credit_card: nessun div wrapper, elementi renderizzati direttamente nel sd-cc-wrap.
+		$is_cc_flat = ( 'credit_card' === $orientation ) && ( $total_pages > 1 );
+		$html       = $is_cc_flat ? '' : '<div class="sd-pdf-page">';
+		if ( ! $is_cc_flat && $is_branded ) {
 			$html .= $this->build_branded_header_html( $layout, $page_num, $total_pages, $page_w );
 		}
 		foreach ( $elements as $el ) {
 			$type = sanitize_key( $el['type'] ?? '' );
 			if ( 'image' === $type ) {
-				$html .= $this->render_image_element( $el, $is_preview );
+				$el_r = $el;
+				if ( 0.0 !== $cc_x_offset ) {
+					$el_r['x'] = floatval( $el['x'] ) + $cc_x_offset;
+				}
+				$html .= $this->render_image_element( $el_r, $is_preview );
 				continue;
 			}
 
-			$x              = floatval( $el['x'] ?? 0 );
+			$x              = floatval( $el['x'] ?? 0 ) + $cc_x_offset;
 			$y              = floatval( $el['y'] ?? 0 );
 			$width          = floatval( $el['width'] ?? 60 );
 			$height         = floatval( $el['height'] ?? 0 );
@@ -1377,7 +1397,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 
 			$html .= '<div style="' . $style . '">' . $inner . '</div>';
 		}
-		$html .= '</div>';
+		if ( ! $is_cc_flat ) {
+			$html .= '</div>';
+		}
 		return $html;
 	}
 
