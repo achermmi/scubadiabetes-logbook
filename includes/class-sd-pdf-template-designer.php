@@ -1035,9 +1035,10 @@ class SD_PDF_Template_Designer {
 @page { size: 172.2mm 54mm; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
 body { width: 172.2mm; height: 54mm; }
-.sd-cc-wrap { position: relative; width: 172.2mm; height: 54mm; }
+.sd-cc-wrap { position: relative; width: 172.2mm; height: 54mm; background: #0055A5; }
 .sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
 .sd-cut-b { position: absolute; left: 86.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
+.sd-gap-stripe { position: absolute; left: 85.6mm; top: 46.6mm; width: 1mm; height: 2.5mm; background: #00A3D8; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
@@ -1357,10 +1358,10 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 							}
 						)
 					);
-					$x_off = ( 1 === $p ) ? 87.6 : 0.0;
+					$x_off = ( 1 === $p ) ? 86.6 : 0.0;
 					$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total, $x_off );
 				}
-				$html .= '<div class="sd-cut-a"></div><div class="sd-cut-b"></div>';
+				$html .= '<div class="sd-gap-stripe"></div><div class="sd-cut-a"></div><div class="sd-cut-b"></div>';
 				$html .= '</div>';
 				return $html;
 			}
