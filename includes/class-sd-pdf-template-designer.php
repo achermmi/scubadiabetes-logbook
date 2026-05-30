@@ -1326,15 +1326,38 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		}
 		$registration['registration_data'] = json_decode( $registration['registration_data'] ?? '{}', true ) ?: array();
 
-		$manager  = SD_Activity_Manager::get_instance();
-		$activity = $manager->get_activity( intval( $registration['activity_id'] ) );
-
 		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
 		$elements = $this->extract_elements( $decoded );
 		$layout   = $this->extract_layout( $decoded );
 
-		$html      = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, false, $layout );
-		$pdf_bytes = $this->generate_pdf_string( $html, $tpl['orientation'] );
+		// Se il template è di tipo "member" (es. tessera socio), genera il PDF
+		// con il builder soci usando i dati del socio collegato alla registrazione.
+		if ( 'member' === ( $tpl['template_type'] ?? 'activity' ) ) {
+			$member    = null;
+			$member_id = intval( $registration['member_id'] ?? 0 );
+			if ( $member_id > 0 && class_exists( 'SD_Database' ) ) {
+				$db     = new SD_Database();
+				$member = $wpdb->get_row(
+					$wpdb->prepare( 'SELECT * FROM ' . $db->table( 'members' ) . ' WHERE id = %d', $member_id ),
+					ARRAY_A
+				);
+			}
+			if ( ! $member ) {
+				// Fallback: costruisce un array minimo dai dati della registrazione.
+				$member = array(
+					'first_name' => $registration['first_name'] ?? '',
+					'last_name'  => $registration['last_name'] ?? '',
+					'email'      => $registration['email'] ?? '',
+				);
+			}
+			$html      = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member, false, $layout );
+			$pdf_bytes = $this->generate_pdf_string( $html, $tpl['orientation'] );
+		} else {
+			$manager  = SD_Activity_Manager::get_instance();
+			$activity = $manager->get_activity( intval( $registration['activity_id'] ) );
+			$html      = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, false, $layout );
+			$pdf_bytes = $this->generate_pdf_string( $html, $tpl['orientation'] );
+		}
 
 		if ( ! $pdf_bytes ) {
 			return false;
