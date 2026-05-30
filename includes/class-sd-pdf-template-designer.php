@@ -1267,7 +1267,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 				$max_page = $p;
 			}
 		}
-		if ( $max_page >= 1 ) {
+		// La guardia "$total_pages === 1" evita la ricorsione infinita:
+		// nelle chiamate ricorsive $total_pages > 1, quindi si salta la paginazione.
+		if ( $max_page >= 1 && 1 === $total_pages ) {
 			$calc_total = $max_page + 1;
 			$html       = '';
 			for ( $p = 0; $p <= $max_page; $p++ ) {

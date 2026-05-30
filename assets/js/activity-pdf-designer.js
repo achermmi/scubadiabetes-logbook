@@ -280,7 +280,7 @@
 				$('#sd-img-opacity').val(opPct);
 				$('#sd-img-opacity-val').text(opPct + '%');
 				$('#sd-img-is-bg').prop('checked', !!el.is_background);
-				$('#sd-img-bg-color').val(el.bg_color || '');
+				$('#sd-img-bg-color').val(el.bg_color || '#ffffff');
 				return;
 			}
 			$('#sd-props-form').show();
