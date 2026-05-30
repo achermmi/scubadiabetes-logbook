@@ -93,33 +93,33 @@ class SD_PDF_Template_Designer {
 	// =========================================================================
 
 	public function maybe_install_preset_templates() {
-		if ( get_option( 'sd_pdf_preset_tessera_v2' ) ) {
+		if ( get_option( 'sd_pdf_preset_tessera_v3' ) ) {
 			return;
 		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'sd_pdf_templates';
-		// Rimuove eventuale preset precedente (v1) per reinstallare con le nuove dimensioni.
+		// Rimuove eventuali preset precedenti (v1, v2) per reinstallare con le nuove dimensioni.
 		$old_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s AND template_type = 'member'", 'Tessera Socio' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $old_id ) {
 			$wpdb->delete( $table, array( 'id' => (int) $old_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
-		$elements = $this->get_tessera_preset_elements();
-		$wpdb->insert(
-			$table,
-			array(
-				'name'          => 'Tessera Socio',
-				'orientation'   => 'credit_card',
-				'elements_json' => wp_json_encode( $elements ),
-				'activity_id'   => null,
-				'template_type' => 'member',
-				'created_by'    => get_current_user_id() ?: 1,
-				'created_at'    => current_time( 'mysql' ),
-				'updated_at'    => current_time( 'mysql' ),
-			),
-			array( '%s', '%s', '%s', null, '%s', '%d', '%s', '%s' )
+		$elements      = $this->get_tessera_preset_elements();
+		$default_layout = $this->get_default_layout();
+		$wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->prepare(
+				"INSERT INTO {$table} (name, orientation, elements_json, template_type, created_by, created_at, updated_at) VALUES (%s, %s, %s, %s, %d, %s, %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'Tessera Socio',
+				'credit_card',
+				$this->encode_elements_json( $elements, $default_layout ),
+				'member',
+				get_current_user_id() ?: 1,
+				current_time( 'mysql' ),
+				current_time( 'mysql' )
+			)
 		);
 		delete_option( 'sd_pdf_preset_tessera_v1' );
-		update_option( 'sd_pdf_preset_tessera_v2', 1 );
+		delete_option( 'sd_pdf_preset_tessera_v2' );
+		update_option( 'sd_pdf_preset_tessera_v3', 1 );
 	}
 
 	/**
