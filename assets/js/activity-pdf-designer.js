@@ -89,7 +89,7 @@
 	// Offset canvas X per elementi nella seconda faccia della tessera (page=1)
 	function cardXOffset(el) {
 		if (state.orientation !== 'credit_card') { return 0; }
-		return (parseInt(el.page, 10) || 0) === 1 ? mmToPx(87.6) : 0;
+		return (parseInt(el.page, 10) || 0) === 1 ? mmToPx(86.6) : 0;
 	}
 
 	// =========================================================================

@@ -1032,12 +1032,12 @@ class SD_PDF_Template_Designer {
 		if ( 'credit_card' === $orientation ) {
 			return '<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
-@page { size: 173.2mm 54mm; margin: 0; }
+@page { size: 172.2mm 54mm; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
-body { width: 173.2mm; height: 54mm; }
-.sd-cc-wrap { position: relative; width: 173.2mm; height: 54mm; }
-.sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-right: none; border-radius: 3mm 0 0 3mm; }
-.sd-cut-b { position: absolute; left: 87.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-left: none; border-radius: 0 3mm 3mm 0; }
+body { width: 172.2mm; height: 54mm; }
+.sd-cc-wrap { position: relative; width: 172.2mm; height: 54mm; }
+.sd-cut-a { position: absolute; left: 0; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
+.sd-cut-b { position: absolute; left: 86.6mm; top: 0; width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
@@ -1489,7 +1489,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$dompdf = new \Dompdf\Dompdf( $options );
 		$dompdf->loadHtml( $html );
 		if ( 'credit_card' === $orientation ) {
-			$dompdf->setPaper( array( 0, 0, 490.76, 153.07 ), 'portrait' );
+			$dompdf->setPaper( array( 0, 0, 488.13, 153.07 ), 'portrait' );
 		} else {
 			$is_land = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
 			$dompdf->setPaper( 'A4', $is_land ? 'landscape' : 'portrait' );
@@ -1520,7 +1520,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$dompdf = new \Dompdf\Dompdf( $options );
 		$dompdf->loadHtml( $html );
 		if ( 'credit_card' === $orientation ) {
-			$dompdf->setPaper( array( 0, 0, 490.76, 153.07 ), 'portrait' );
+			$dompdf->setPaper( array( 0, 0, 488.13, 153.07 ), 'portrait' );
 		} else {
 			$is_land           = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
 			$paper_orientation = $is_land ? 'landscape' : 'portrait';

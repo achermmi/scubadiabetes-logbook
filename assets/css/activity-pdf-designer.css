@@ -188,15 +188,15 @@
 }
 
 .sd-pdf-canvas.credit-card {
-	width: 655px;
-	min-width: 655px;
+	width: 651px;
+	min-width: 651px;
 	height: 204px;
 	background-image: none;
 	/* sfondo bianco con striscia grigia al centro (linea di piega) */
 	background: linear-gradient(90deg,
 		#ffffff 0, #ffffff 324px,
-		#b0b8c1 324px, #b0b8c1 332px,
-		#ffffff 332px, #ffffff 100%);
+		#b0b8c1 324px, #b0b8c1 328px,
+		#ffffff 328px, #ffffff 100%);
 	border-radius: 0;
 	position: relative;
 }
@@ -210,8 +210,7 @@
 	width: 324px;
 	height: 204px;
 	border: 1px dashed #aaa;
-	border-right: none;
-	border-radius: 11px 0 0 11px;
+	border-radius: 11px;
 	pointer-events: none;
 	z-index: 10;
 }
@@ -220,13 +219,12 @@
 .sd-pdf-canvas.credit-card::after {
 	content: '';
 	position: absolute;
-	left: 332px;
+	left: 328px;
 	top: 0;
 	width: 323px;
 	height: 204px;
 	border: 1px dashed #aaa;
-	border-left: none;
-	border-radius: 0 11px 11px 0;
+	border-radius: 11px;
 	pointer-events: none;
 	z-index: 10;
 }
