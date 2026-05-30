@@ -968,7 +968,7 @@ class SD_PDF_Template_Designer {
 @page { size: 85.6mm 54mm; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: DejaVu Sans, Arial, sans-serif; }
 body { width: 85.6mm; }
-.sd-pdf-page { position: relative; width: 85.6mm; height: 54mm; overflow: hidden; }
+.sd-pdf-page { position: relative; width: 85.6mm; height: 54mm; overflow: hidden; border-radius: 3mm; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
