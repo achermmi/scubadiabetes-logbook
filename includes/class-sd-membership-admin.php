@@ -1925,6 +1925,22 @@ class SD_Membership_Admin {
 			// Carica il profilo completo del socio (wp_user_id, dati medici, profilo sub,
 			// genere, data di nascita, ecc.) per popolare tutte le variabili del template.
 			$full_member = SD_Membership_Helper::get_member_full( (int) $member->id );
+			// Se la tessera non è ancora stata generata, creala al volo e salva il percorso.
+			if ( $full_member && empty( $full_member->membership_card_pdf_path ) && class_exists( 'SD_Payment_Documents' ) ) {
+				$card_doc = ( new SD_Payment_Documents() )->generate_card_document( $full_member );
+				if ( ! is_wp_error( $card_doc ) ) {
+					global $wpdb;
+					$db_ref = new SD_Database();
+					$wpdb->update(
+						$db_ref->table( 'members' ),
+						array( 'membership_card_pdf_path' => $card_doc ),
+						array( 'id' => (int) $full_member->id ),
+						array( '%s' ),
+						array( '%d' )
+					);
+					$full_member->membership_card_pdf_path = $card_doc;
+				}
+			}
 			$built = SD_Email_Templates::build( $template_id, $full_member ?: $member, array( 'form_key' => 'membership:association' ) );
 			if ( $built ) {
 				$subject = sanitize_text_field( str_replace( array( "\r", "\n" ), ' ', (string) $built['subject'] ) );

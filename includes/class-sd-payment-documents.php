@@ -73,6 +73,40 @@ class SD_Payment_Documents {
 	}
 
 	/**
+	 * Genera solo la tessera PDF per un socio (senza ricevuta).
+	 * Usato come fallback quando membership_card_pdf_path è assente.
+	 *
+	 * @param object $member Dati socio.
+	 * @return string|WP_Error Percorso filesystem del PDF generato.
+	 */
+	public function generate_card_document( $member ) {
+		$upload = wp_upload_dir();
+		if ( empty( $upload['basedir'] ) || ! is_dir( $upload['basedir'] ) ) {
+			return new WP_Error( 'sd_upload_dir_missing', __( 'Directory upload non disponibile.', 'sd-logbook' ) );
+		}
+
+		$dir = trailingslashit( $upload['basedir'] ) . 'sd-documents/' . gmdate( 'Y' ) . '/member-' . (int) $member->id . '/';
+		if ( ! wp_mkdir_p( $dir ) ) {
+			return new WP_Error( 'sd_docs_dir_failed', __( 'Impossibile creare la cartella documenti.', 'sd-logbook' ) );
+		}
+
+		$safe_number = ! empty( $member->member_number ) ? preg_replace( '/[^A-Za-z0-9\-]/', '', (string) $member->member_number ) : (string) $member->id;
+		$card        = $dir . 'tessera-' . $safe_number . '-' . gmdate( 'Ymd-His' ) . '.pdf';
+
+		// Oggetto payment minimale: usa l'anno dalla scadenza iscrizione.
+		$fake_payment               = new stdClass();
+		$fake_payment->payment_year = ! empty( $member->membership_expiry )
+			? (string) ( (int) substr( (string) $member->membership_expiry, 0, 4 ) )
+			: gmdate( 'Y' );
+		$fake_payment->payment_date = current_time( 'mysql' );
+
+		$card_pages = $this->build_card_pages( $member, $fake_payment );
+		$this->write_styled_pdf( $card, $card_pages );
+
+		return $card;
+	}
+
+	/**
 	 * Genera PDF elenco soci in formato A4 orizzontale.
 	 *
 	 * @param array $rows Righe dati soci (ARRAY_A da wpdb).
