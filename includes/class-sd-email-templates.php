@@ -1063,6 +1063,53 @@ class SD_Email_Templates {
 	}
 
 	/**
+	 * Restituisce un wrapper HTML branded (header + footer) per email.
+	 * Usare così: $html = SD_Email_Templates::get_branded_email_wrapper($body, 'Titolo', 'Sottotitolo');
+	 *
+	 * @param string $body        Corpo HTML del messaggio.
+	 * @param string $doc_title   Titolo documento nell'intestazione (vuoto = nome associazione).
+	 * @param string $doc_subtitle Sottotitolo/descrizione.
+	 * @return string HTML completo.
+	 */
+	public static function get_branded_email_wrapper( string $body, string $doc_title = '', string $doc_subtitle = '' ): string {
+		$hdr_bg    = sanitize_hex_color( (string) get_option( 'sd_payment_brand_primary', '#0055A5' ) ) ?: '#0055A5';
+		$acc_bg    = sanitize_hex_color( (string) get_option( 'sd_payment_brand_secondary', '#00A3D8' ) ) ?: '#00A3D8';
+		$assoc     = (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
+		$title     = '' !== $doc_title ? $doc_title : $assoc;
+		$logo_html = '';
+		$logo_url  = (string) get_option( 'sd_payment_brand_logo', '' );
+		if ( '' !== $logo_url ) {
+			$logo_html = '<td align="right" valign="middle" style="padding:0 20px 0 0;width:120px;">'
+				. '<img src="' . esc_url( $logo_url ) . '" alt="" style="height:50px;width:auto;">'
+				. '</td>';
+		}
+		$now      = wp_date( 'd.m.Y H:i' );
+		$sub_html = '' !== $doc_subtitle ? '<div style="font-size:13px;color:rgba(255,255,255,0.85);margin-top:4px;">' . esc_html( $doc_subtitle ) . '</div>' : '';
+		$meta_html = '<div style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:4px;">' . esc_html( $now ) . '</div>';
+
+		$html  = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+			. '<meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f6f8;">';
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0" style="background:' . esc_attr( $hdr_bg ) . ';">'
+			. '<tr>'
+			. '<td valign="middle" style="padding:14px 20px;">'
+			. '<div style="font-size:17px;font-weight:bold;color:#fff;letter-spacing:0.5px;">' . esc_html( strtoupper( $title ) ) . '</div>'
+			. $sub_html . $meta_html
+			. '</td>'
+			. $logo_html
+			. '</tr></table>';
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0">'
+			. '<tr><td style="height:4px;background:' . esc_attr( $acc_bg ) . ';"></td></tr></table>';
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
+			. '<td style="padding:20px 30px;font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">'
+			. $body
+			. '</td></tr></table>';
+		$html .= '<table width="100%" cellpadding="0" cellspacing="0">'
+			. '<tr><td style="height:4px;background:' . esc_attr( $hdr_bg ) . ';"></td></tr></table>';
+		$html .= '</body></html>';
+		return $html;
+	}
+
+	/**
 	 * Costruisce il markup HTML del logo associazione.
 	 *
 	 * @param bool $extended Se usare il logo esteso.

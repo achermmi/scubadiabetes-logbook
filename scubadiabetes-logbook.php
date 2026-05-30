@@ -3,7 +3,7 @@
  * Plugin Name: ScubaDiabetes Logbook
  * Plugin URI: https://scubadiabetes.ch
  * Description: Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
- * Version: 1.3.92
+ * Version: 1.3.93
  * Author: Mirko Achermann
  * Author URI: https://m-achermann.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.3.92' );
+define( 'SD_LOGBOOK_VERSION', '1.3.93' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -38,7 +38,7 @@ final class SD_Logbook {
 	/**
 	 * Versione del database
 	 */
-	const DB_VERSION = '3.9.0';
+	const DB_VERSION = '3.9.1';
 
 	/**
 	 * Ottieni istanza singleton
@@ -221,6 +221,12 @@ final class SD_Logbook {
 			// v3.1.0: corregge valori non validi in member_type
 			if ( version_compare( $current_db_version, '3.1.0', '<' ) ) {
 				$db->fix_invalid_member_types();
+			}
+
+			// v3.9.1: estende colonna orientation a varchar(20) per nuovi valori _hf
+			if ( version_compare( $current_db_version, '3.9.1', '<' ) ) {
+				global $wpdb;
+				$wpdb->query( 'ALTER TABLE ' . $wpdb->prefix . 'sd_pdf_templates MODIFY orientation varchar(20) DEFAULT \'portrait\'' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 
 			update_option( 'sd_logbook_db_version', self::DB_VERSION );

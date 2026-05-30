@@ -17,8 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="sd-pdf-toolbar-left">
 			<input type="text" id="sd-tpl-name" placeholder="<?php esc_attr_e( 'Nome template…', 'sd-logbook' ); ?>" class="sd-pdf-tpl-name-input">
 			<select id="sd-tpl-orientation" class="sd-pdf-select">
-				<option value="portrait"><?php esc_html_e( 'Verticale (A4)', 'sd-logbook' ); ?></option>
-				<option value="landscape"><?php esc_html_e( 'Orizzontale (A4)', 'sd-logbook' ); ?></option>
+				<option value="portrait_hf"><?php esc_html_e( 'A4 Verticale con Intestazione', 'sd-logbook' ); ?></option>
+				<option value="landscape_hf"><?php esc_html_e( 'A4 Orizzontale con Intestazione', 'sd-logbook' ); ?></option>
+				<option value="portrait"><?php esc_html_e( 'A4 Verticale senza Sfondo', 'sd-logbook' ); ?></option>
+				<option value="landscape"><?php esc_html_e( 'A4 Orizzontale senza Sfondo', 'sd-logbook' ); ?></option>
 			</select>
 		</div>
 		<div class="sd-pdf-toolbar-center">
@@ -53,6 +55,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php esc_html_e( 'Soci', 'sd-logbook' ); ?>
 					</button>
 				</div>
+			</div>
+
+			<!-- Pannello layout intestazione (visibile solo per orientamenti _hf) -->
+			<div id="sd-layout-panel" class="sd-pdf-sidebar-section" style="display:none;">
+				<h4><?php esc_html_e( 'Intestazione / Piè di pagina', 'sd-logbook' ); ?></h4>
+				<label class="sd-prop-label"><?php esc_html_e( 'Titolo documento', 'sd-logbook' ); ?>
+					<input type="text" id="sd-layout-title" class="sd-pdf-input sd-pdf-full-width"
+						placeholder="<?php esc_attr_e( 'lascia vuoto per usare il nome associazione', 'sd-logbook' ); ?>">
+				</label>
+				<label class="sd-prop-label"><?php esc_html_e( 'Sottotitolo', 'sd-logbook' ); ?>
+					<input type="text" id="sd-layout-subtitle" class="sd-pdf-input sd-pdf-full-width"
+						placeholder="<?php esc_attr_e( 'es. Documento - Anno {{anno_oggi}}', 'sd-logbook' ); ?>">
+				</label>
+				<div class="sd-prop-row">
+					<label class="sd-prop-label"><?php esc_html_e( 'Colore intestazione', 'sd-logbook' ); ?>
+						<input type="color" id="sd-layout-header-bg" class="sd-pdf-input" value="#0055A5">
+					</label>
+					<label class="sd-prop-label"><?php esc_html_e( 'Colore accent', 'sd-logbook' ); ?>
+						<input type="color" id="sd-layout-accent-bg" class="sd-pdf-input" value="#00A3D8">
+					</label>
+				</div>
+				<label class="sd-prop-label"><?php esc_html_e( 'Logo (URL o media library)', 'sd-logbook' ); ?>
+					<div style="display:flex;gap:4px;align-items:center;">
+						<input type="text" id="sd-layout-logo-url" class="sd-pdf-input" style="flex:1;" placeholder="https://...">
+						<button type="button" id="sd-layout-logo-btn" class="sd-pdf-btn sd-pdf-btn-secondary" style="white-space:nowrap;"><?php esc_html_e( 'Scegli', 'sd-logbook' ); ?></button>
+					</div>
+					<input type="hidden" id="sd-layout-logo-att" value="0">
+				</label>
+				<label class="sd-prop-checkbox">
+					<input type="checkbox" id="sd-layout-show-page-num" checked>
+					<?php esc_html_e( 'Mostra numero pagina', 'sd-logbook' ); ?>
+				</label>
+				<label class="sd-prop-checkbox">
+					<input type="checkbox" id="sd-layout-show-date" checked>
+					<?php esc_html_e( 'Mostra data', 'sd-logbook' ); ?>
+				</label>
 			</div>
 
 			<!-- Sezioni specifiche ATTIVITÀ -->

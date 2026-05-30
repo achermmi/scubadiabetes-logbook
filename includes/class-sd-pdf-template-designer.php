@@ -567,10 +567,14 @@ class SD_PDF_Template_Designer {
 		// Sanifica ogni elemento
 		$elements = array_map( array( $this, 'sanitize_element' ), $elements );
 
+		$layout_raw = json_decode( stripslashes( $_POST['layout_json'] ?? '{}' ), true );
+		$layout     = $this->sanitize_layout( is_array( $layout_raw ) ? $layout_raw : array() );
+
+		$valid_orientations = array( 'portrait', 'landscape', 'portrait_hf', 'landscape_hf', 'credit_card' );
 		$data = array(
 			'name'          => $name,
-			'orientation'   => in_array( $orientation, array( 'portrait', 'landscape' ), true ) ? $orientation : 'portrait',
-			'elements_json' => wp_json_encode( $elements ),
+			'orientation'   => in_array( $orientation, $valid_orientations, true ) ? $orientation : 'portrait',
+			'elements_json' => $this->encode_elements_json( $elements, $layout ),
 			'activity_id'   => ( 'activity' === $tpl_type && $activity_id > 0 ) ? $activity_id : null,
 			'template_type' => $tpl_type,
 			'updated_at'    => current_time( 'mysql' ),
@@ -665,7 +669,9 @@ class SD_PDF_Template_Designer {
 			wp_send_json_error( array( 'message' => __( 'Template non trovato.', 'sd-logbook' ) ) );
 		}
 
-		$row['elements'] = json_decode( $row['elements_json'], true ) ?: array();
+		$decoded         = json_decode( $row['elements_json'], true ) ?: array();
+		$row['elements'] = $this->extract_elements( $decoded );
+		$row['layout']   = $this->extract_layout( $decoded );
 		unset( $row['elements_json'] );
 
 		wp_send_json_success( array( 'template' => $row ) );
@@ -760,7 +766,9 @@ class SD_PDF_Template_Designer {
 			wp_send_json_error( array( 'message' => __( 'Template non trovato.', 'sd-logbook' ) ) );
 		}
 
-		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
+		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements = $this->extract_elements( $decoded );
+		$layout   = $this->extract_layout( $decoded );
 		$manager  = SD_Activity_Manager::get_instance();
 
 		$activity = null;
@@ -782,7 +790,7 @@ class SD_PDF_Template_Designer {
 			}
 		}
 
-		$html     = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, 0 === $registration_id );
+		$html     = $this->build_pdf_html( $elements, $tpl['orientation'], $activity, $registration, 0 === $registration_id, $layout );
 		$filename = 'template_' . $template_id . ( $registration_id > 0 ? '_reg_' . $registration_id : '_anteprima' ) . '_' . gmdate( 'Ymd_His' ) . '.pdf';
 
 		$this->stream_pdf( $html, $filename, $tpl['orientation'] );
@@ -816,7 +824,9 @@ class SD_PDF_Template_Designer {
 			wp_send_json_error( array( 'message' => __( 'Template non trovato.', 'sd-logbook' ) ) );
 		}
 
-		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
+		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements = $this->extract_elements( $decoded );
+		$layout   = $this->extract_layout( $decoded );
 		$manager  = SD_Activity_Manager::get_instance();
 		$activity = $manager->get_activity( $activity_id );
 
@@ -837,7 +847,7 @@ class SD_PDF_Template_Designer {
 		$all_html = '';
 		foreach ( $registrations as $idx => $reg ) {
 			$reg['registration_data'] = is_array( $reg['registration_data'] ) ? $reg['registration_data'] : ( json_decode( $reg['registration_data'], true ) ?: array() );
-			$page_html = $this->build_page_content( $elements, $activity, $reg );
+			$page_html = $this->build_page_content( $elements, $activity, $reg, false, $layout );
 			if ( $idx > 0 ) {
 				$all_html .= '<div style="page-break-before:always;"></div>';
 			}
@@ -854,12 +864,15 @@ class SD_PDF_Template_Designer {
 	// HELPER: COSTRUISCE HTML PDF
 	// =========================================================================
 
-	private function build_pdf_html( $elements, $orientation, $activity, $registration, $is_preview = false ) {
-		$content = $this->build_page_content( $elements, $activity, $registration, $is_preview );
+	private function build_pdf_html( $elements, $orientation, $activity, $registration, $is_preview = false, $layout = null ) {
+		$content = $this->build_page_content( $elements, $activity, $registration, $is_preview, $layout, $orientation );
 		return $this->wrap_pdf_html( $content, $orientation );
 	}
 
-	private function build_page_content( $elements, $activity, $registration, $is_preview = false ) {
+	private function build_page_content( $elements, $activity, $registration, $is_preview = false, $layout = null, $orientation = 'portrait' ) {
+		$is_branded   = ( null !== $layout ) && ( ( $layout['style'] ?? 'plain' ) === 'branded' );
+		$is_landscape = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
+		$page_w       = $is_landscape ? 297.0 : 210.0;
 		// Sfondi (image con is_background) vengono renderizzati per primi
 		usort(
 			$elements,
@@ -870,6 +883,9 @@ class SD_PDF_Template_Designer {
 			}
 		);
 		$html = '<div class="sd-pdf-page">';
+		if ( $is_branded ) {
+			$html .= $this->build_branded_header_html( $layout, 1, 1, $page_w );
+		}
 		foreach ( $elements as $el ) {
 			$type = sanitize_key( $el['type'] ?? '' );
 			if ( 'image' === $type ) {
@@ -955,7 +971,7 @@ body { width: 85.6mm; }
 </style>
 </head><body>' . $content . '</body></html>';
 		}
-		$is_portrait = 'portrait' === $orientation;
+		$is_portrait = in_array( $orientation, array( 'portrait', 'portrait_hf' ), true );
 		$page_w = $is_portrait ? '210mm' : '297mm';
 		$page_h = $is_portrait ? '297mm' : '210mm';
 		$paper  = $is_portrait ? '@page { size: A4 portrait; margin: 0; }' : '@page { size: A4 landscape; margin: 0; }';
@@ -1116,6 +1132,10 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 
 		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
 
+		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements = $this->extract_elements( $decoded );
+		$layout   = $this->extract_layout( $decoded );
+
 		$member = null;
 		if ( $member_id > 0 ) {
 			$db     = new SD_Database();
@@ -1125,7 +1145,7 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			);
 		}
 
-		$html     = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member, 0 === $member_id );
+		$html     = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member, 0 === $member_id, $layout );
 		$filename = 'socio_' . ( $member_id > 0 ? $member_id : 'anteprima' ) . '_tpl' . $template_id . '_' . gmdate( 'Ymd_His' ) . '.pdf';
 
 		$this->stream_pdf( $html, $filename, $tpl['orientation'] );
@@ -1184,11 +1204,13 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			wp_send_json_error( array( 'message' => __( 'Nessun socio trovato.', 'sd-logbook' ) ) );
 		}
 
-		$elements = json_decode( $tpl['elements_json'], true ) ?: array();
+		$decoded  = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements = $this->extract_elements( $decoded );
+		$layout   = $this->extract_layout( $decoded );
 		$all_html = '';
 
 		foreach ( $members as $idx => $member ) {
-			$page_html = $this->build_member_page_content( $elements, $member );
+			$page_html = $this->build_member_page_content( $elements, $member, false, $layout, $tpl['orientation'] );
 			if ( $idx > 0 ) {
 				$all_html .= '<div style="page-break-before:always;"></div>';
 			}
@@ -1218,8 +1240,10 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		}
 
 		$member_arr = is_object( $member_data ) ? (array) $member_data : (array) $member_data;
-		$elements   = json_decode( $tpl['elements_json'], true ) ?: array();
-		$html       = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member_arr, false );
+		$decoded    = json_decode( $tpl['elements_json'], true ) ?: array();
+		$elements   = $this->extract_elements( $decoded );
+		$layout     = $this->extract_layout( $decoded );
+		$html       = $this->build_member_pdf_html( $elements, $tpl['orientation'], $member_arr, false, $layout );
 
 		return $this->generate_pdf_string( $html, $tpl['orientation'] );
 	}
@@ -1228,12 +1252,12 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 	// HELPER: COSTRUISCE HTML PDF SOCIO
 	// =========================================================================
 
-	private function build_member_pdf_html( $elements, $orientation, $member, $is_preview = false ) {
-		$content = $this->build_member_page_content( $elements, $member, $is_preview );
+	private function build_member_pdf_html( $elements, $orientation, $member, $is_preview = false, $layout = null ) {
+		$content = $this->build_member_page_content( $elements, $member, $is_preview, $layout, $orientation );
 		return $this->wrap_pdf_html( $content, $orientation );
 	}
 
-	private function build_member_page_content( $elements, $member, $is_preview = false ) {
+	private function build_member_page_content( $elements, $member, $is_preview = false, $layout = null, $orientation = 'portrait', $page_num = 1, $total_pages = 1 ) {
 		// Supporto template multi-pagina: se almeno un elemento ha page >= 1,
 		// raggruppa per pagina e aggiunge un page-break tra ogni gruppo.
 		$max_page = 0;
@@ -1244,7 +1268,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			}
 		}
 		if ( $max_page >= 1 ) {
-			$html = '';
+			$calc_total = $max_page + 1;
+			$html       = '';
 			for ( $p = 0; $p <= $max_page; $p++ ) {
 				$page_els = array_values(
 					array_filter(
@@ -1257,10 +1282,14 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 				if ( $p > 0 ) {
 					$html .= '<div style="page-break-before:always;"></div>';
 				}
-				$html .= $this->build_member_page_content( $page_els, $member, $is_preview );
+				$html .= $this->build_member_page_content( $page_els, $member, $is_preview, $layout, $orientation, $p + 1, $calc_total );
 			}
 			return $html;
 		}
+
+		$is_branded   = ( null !== $layout ) && ( ( $layout['style'] ?? 'plain' ) === 'branded' );
+		$is_landscape = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
+		$page_w       = $is_landscape ? 297.0 : 210.0;
 
 		usort(
 			$elements,
@@ -1272,6 +1301,9 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		);
 
 		$html = '<div class="sd-pdf-page">';
+		if ( $is_branded ) {
+			$html .= $this->build_branded_header_html( $layout, $page_num, $total_pages, $page_w );
+		}
 		foreach ( $elements as $el ) {
 			$type = sanitize_key( $el['type'] ?? '' );
 			if ( 'image' === $type ) {
@@ -1356,7 +1388,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		if ( 'credit_card' === $orientation ) {
 			$dompdf->setPaper( array( 0, 0, 242.65, 153.02 ), 'portrait' );
 		} else {
-			$dompdf->setPaper( 'A4', ( 'landscape' === $orientation ) ? 'landscape' : 'portrait' );
+			$is_land = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
+			$dompdf->setPaper( 'A4', $is_land ? 'landscape' : 'portrait' );
 		}
 		$dompdf->render();
 
@@ -1386,7 +1419,8 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		if ( 'credit_card' === $orientation ) {
 			$dompdf->setPaper( array( 0, 0, 242.65, 153.02 ), 'portrait' );
 		} else {
-			$paper_orientation = ( 'landscape' === $orientation ) ? 'landscape' : 'portrait';
+			$is_land           = in_array( $orientation, array( 'landscape', 'landscape_hf' ), true );
+			$paper_orientation = $is_land ? 'landscape' : 'portrait';
 			$dompdf->setPaper( 'A4', $paper_orientation );
 		}
 		$dompdf->render();
@@ -1515,6 +1549,133 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 		$img_style = 'width:100%;height:100%;display:block;';
 		return '<div style="' . $style . '"><img src="' . esc_attr( $img_src ) . '" style="' . $img_style . '" alt=""></div>';
 	}
+
+	// =========================================================================
+	// HELPER: LAYOUT (branded header/footer)
+	// =========================================================================
+
+	private function get_default_layout(): array {
+		return array(
+			'style'              => 'plain',
+			'header_title'       => '',
+			'header_subtitle'    => '',
+			'header_bg'          => '#0055A5',
+			'accent_bg'          => '#00A3D8',
+			'logo_url'           => '',
+			'logo_attachment_id' => 0,
+			'show_page_numbers'  => true,
+			'show_date'          => true,
+			'footer_note'        => '',
+		);
+	}
+
+	private function sanitize_layout( array $raw ): array {
+		$d = $this->get_default_layout();
+		return array(
+			'style'              => in_array( $raw['style'] ?? 'plain', array( 'branded', 'plain' ), true ) ? $raw['style'] : 'plain',
+			'header_title'       => sanitize_text_field( $raw['header_title'] ?? '' ),
+			'header_subtitle'    => sanitize_text_field( $raw['header_subtitle'] ?? '' ),
+			'header_bg'          => sanitize_hex_color( $raw['header_bg'] ?? '' ) ?: $d['header_bg'],
+			'accent_bg'          => sanitize_hex_color( $raw['accent_bg'] ?? '' ) ?: $d['accent_bg'],
+			'logo_url'           => esc_url_raw( $raw['logo_url'] ?? '' ),
+			'logo_attachment_id' => intval( $raw['logo_attachment_id'] ?? 0 ),
+			'show_page_numbers'  => ! empty( $raw['show_page_numbers'] ),
+			'show_date'          => ! empty( $raw['show_date'] ),
+			'footer_note'        => sanitize_text_field( $raw['footer_note'] ?? '' ),
+		);
+	}
+
+	private function extract_elements( array $decoded ): array {
+		if ( isset( $decoded['_v'] ) ) {
+			return is_array( $decoded['elements'] ?? null ) ? array_values( $decoded['elements'] ) : array();
+		}
+		return array_values( $decoded );
+	}
+
+	private function extract_layout( array $decoded ): array {
+		if ( isset( $decoded['_v'], $decoded['_layout'] ) && is_array( $decoded['_layout'] ) ) {
+			return $decoded['_layout'];
+		}
+		return array();
+	}
+
+	private function encode_elements_json( array $elements, array $layout ): string {
+		return (string) wp_json_encode(
+			array(
+				'_v'       => 2,
+				'_layout'  => $layout,
+				'elements' => $elements,
+			)
+		);
+	}
+
+	private function build_branded_header_html( array $layout, int $page_num, int $total_p, float $page_w ): string {
+		$hdr_h   = 24.0;
+		$accent_h = 2.8;
+		$hdr_bg  = esc_attr( $layout['header_bg'] ?? '#0055A5' );
+		$acc_bg  = esc_attr( $layout['accent_bg'] ?? '#00A3D8' );
+		$title   = ( '' !== ( $layout['header_title'] ?? '' ) )
+			? $layout['header_title']
+			: (string) get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' );
+		$sub     = $layout['header_subtitle'] ?? '';
+		try {
+			$now = new \DateTime( 'now', new \DateTimeZone( 'Europe/Zurich' ) );
+		} catch ( \Exception $e ) {
+			$now = new \DateTime( 'now' );
+		}
+		$sub = str_replace( '{{anno_oggi}}', $now->format( 'Y' ), $sub );
+		$sub = str_replace( '{{data_oggi_breve}}', $now->format( 'd.m.Y' ), $sub );
+
+		$meta_parts = array();
+		if ( ! empty( $layout['show_page_numbers'] ) ) {
+			$meta_parts[] = 'Pagina ' . $page_num . ' di ' . $total_p;
+		}
+		if ( ! empty( $layout['show_date'] ) ) {
+			$meta_parts[] = $now->format( 'd.m.Y H:i' );
+		}
+		$meta = implode( '  |  ', $meta_parts );
+
+		$logo_html  = '';
+		$logo_url   = $layout['logo_url'] ?? '';
+		$logo_att   = intval( $layout['logo_attachment_id'] ?? 0 );
+		$logo_local = '';
+		if ( $logo_att > 0 ) {
+			$f = get_attached_file( $logo_att );
+			if ( $f && file_exists( $f ) ) {
+				$logo_local = $f;
+			}
+		}
+		if ( '' === $logo_local && '' !== $logo_url ) {
+			$logo_local = $this->map_url_to_local_path( $logo_url );
+		}
+		if ( '' !== $logo_local ) {
+			$logo_html = '<td style="padding:0 5mm 0 0;vertical-align:middle;text-align:right;width:62mm;">'
+				. '<img src="' . esc_attr( $logo_local ) . '" style="height:18mm;width:auto;vertical-align:middle;" alt="">'
+				. '</td>';
+		}
+
+		$pw    = $page_w;
+		$html  = '<div style="position:absolute;top:0;left:0;width:' . $pw . 'mm;height:' . $hdr_h . 'mm;background:' . $hdr_bg . ';overflow:hidden;">';
+		$html .= '<table style="width:' . $pw . 'mm;height:' . $hdr_h . 'mm;border-collapse:collapse;table-layout:fixed;">';
+		$html .= '<tr>';
+		$html .= '<td style="padding:0 3mm 0 5mm;vertical-align:middle;">';
+		$html .= '<div style="font-size:13pt;font-weight:bold;color:#fff;letter-spacing:0.5px;">' . esc_html( strtoupper( $title ) ) . '</div>';
+		if ( '' !== $sub ) {
+			$html .= '<div style="font-size:9.5pt;color:rgba(255,255,255,0.88);margin-top:1mm;">' . esc_html( $sub ) . '</div>';
+		}
+		if ( '' !== $meta ) {
+			$html .= '<div style="font-size:7.5pt;color:rgba(255,255,255,0.68);margin-top:1mm;">' . esc_html( $meta ) . '</div>';
+		}
+		$html .= '</td>';
+		$html .= $logo_html;
+		$html .= '</tr></table>';
+		$html .= '</div>';
+		$html .= '<div style="position:absolute;top:' . $hdr_h . 'mm;left:0;width:' . $pw . 'mm;height:' . $accent_h . 'mm;background:' . $acc_bg . ';"></div>';
+		$html .= '<div style="position:absolute;bottom:0;left:0;width:' . $pw . 'mm;height:' . $accent_h . 'mm;background:' . $hdr_bg . ';"></div>';
+		return $html;
+	}
+
+	// =========================================================================
 
 	/**
 	 * Converte URL WordPress uploads in percorso locale (per dompdf, isRemoteEnabled=false).

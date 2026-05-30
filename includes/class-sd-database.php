@@ -1413,7 +1413,7 @@ class SD_Database {
 		$sql_pdf_templates   = "CREATE TABLE {$table_pdf_templates} (
 			id int(11) NOT NULL AUTO_INCREMENT,
 			name varchar(255) NOT NULL,
-			orientation varchar(10) DEFAULT 'portrait',
+			orientation varchar(20) DEFAULT 'portrait',
 			elements_json longtext DEFAULT NULL,
 			activity_id int(11) DEFAULT NULL,
 			template_type varchar(20) NOT NULL DEFAULT 'activity',

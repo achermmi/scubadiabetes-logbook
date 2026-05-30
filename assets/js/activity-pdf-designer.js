@@ -20,7 +20,7 @@
 	var state = {
 		templateId:     0,
 		templateType:   'activity',   // 'activity' | 'member'
-		orientation:    'portrait',
+		orientation:    'portrait_hf',
 		elements:       [],          // array di oggetti elemento
 		selectedId:     null,
 		selectedIds:    [],          // multi-selezione
@@ -34,6 +34,18 @@
 		resizeStartX:   0,
 		resizeStartW:   0,
 		isBoxSelecting: false,
+		layout: {
+			style:              'branded',
+			header_title:       '',
+			header_subtitle:    '',
+			header_bg:          '#0055A5',
+			accent_bg:          '#00A3D8',
+			logo_url:           '',
+			logo_attachment_id: 0,
+			show_page_numbers:  true,
+			show_date:          true,
+			footer_note:        '',
+		},
 	};
 
 	// =========================================================================
@@ -65,7 +77,7 @@
 	}
 
 	function getPageDims() {
-		if (state.orientation === 'landscape') {
+		if (state.orientation === 'landscape' || state.orientation === 'landscape_hf') {
 			return { w: 297, h: 210, canvasW: 1123, canvasH: 794 };
 		}
 		return { w: 210, h: 297, canvasW: 794, canvasH: 1123 };
@@ -804,14 +816,70 @@
 	// ORIENTAMENTO
 	// =========================================================================
 
+	function getOrientationLabel(o) {
+		var labels = {
+			'portrait_hf':  'A4 Verticale + Intestazione',
+			'landscape_hf': 'A4 Orizzontale + Intestazione',
+			'portrait':     'A4 Verticale',
+			'landscape':    'A4 Orizzontale',
+			'credit_card':  'Tessera (85.6×54mm)',
+		};
+		return labels[o] || o;
+	}
+
 	function applyOrientation(orientation) {
 		state.orientation = orientation;
 		var $c = $('#sd-pdf-canvas');
-		if (orientation === 'landscape') {
+		var isLandscape = (orientation === 'landscape' || orientation === 'landscape_hf');
+		var isBranded   = (orientation === 'portrait_hf' || orientation === 'landscape_hf');
+		if (isLandscape) {
 			$c.addClass('landscape');
 		} else {
 			$c.removeClass('landscape');
 		}
+		$('#sd-layout-panel').toggle(isBranded);
+		state.layout.style = isBranded ? 'branded' : 'plain';
+	}
+
+	// =========================================================================
+	// LAYOUT BRANDED (intestazione / piè di pagina)
+	// =========================================================================
+
+	function getDefaultLayout() {
+		return {
+			style:              'branded',
+			header_title:       '',
+			header_subtitle:    '',
+			header_bg:          '#0055A5',
+			accent_bg:          '#00A3D8',
+			logo_url:           '',
+			logo_attachment_id: 0,
+			show_page_numbers:  true,
+			show_date:          true,
+			footer_note:        '',
+		};
+	}
+
+	function applyLayoutToUI(layout) {
+		$('#sd-layout-title').val(layout.header_title || '');
+		$('#sd-layout-subtitle').val(layout.header_subtitle || '');
+		$('#sd-layout-header-bg').val(layout.header_bg || '#0055A5');
+		$('#sd-layout-accent-bg').val(layout.accent_bg || '#00A3D8');
+		$('#sd-layout-logo-url').val(layout.logo_url || '');
+		$('#sd-layout-logo-att').val(layout.logo_attachment_id || 0);
+		$('#sd-layout-show-page-num').prop('checked', layout.show_page_numbers !== false);
+		$('#sd-layout-show-date').prop('checked', layout.show_date !== false);
+	}
+
+	function readLayoutFromUI() {
+		state.layout.header_title       = $('#sd-layout-title').val();
+		state.layout.header_subtitle    = $('#sd-layout-subtitle').val();
+		state.layout.header_bg          = $('#sd-layout-header-bg').val();
+		state.layout.accent_bg          = $('#sd-layout-accent-bg').val();
+		state.layout.logo_url           = $('#sd-layout-logo-url').val();
+		state.layout.logo_attachment_id = parseInt($('#sd-layout-logo-att').val(), 10) || 0;
+		state.layout.show_page_numbers  = $('#sd-layout-show-page-num').is(':checked');
+		state.layout.show_date          = $('#sd-layout-show-date').is(':checked');
 	}
 
 	// =========================================================================
@@ -824,6 +892,7 @@
 			showStatus('Inserisci un nome per il template.', 'error');
 			return;
 		}
+		readLayoutFromUI();
 
 		$.post(sdPdfDesigner.ajaxUrl, {
 			action:          'sd_pdf_tpl_save',
@@ -834,6 +903,7 @@
 			template_type:   state.templateType,
 			activity_id:     state.activityId,
 			elements_json:   JSON.stringify(state.elements),
+			layout_json:     JSON.stringify(state.layout),
 		}, function (resp) {
 			if (resp.success) {
 				state.templateId = resp.data.template_id;
@@ -867,7 +937,7 @@
 				rows.forEach(function (t) {
 					html += '<tr>';
 					html += '<td>' + esc(t.name) + '</td>';
-					html += '<td>' + esc(t.orientation === 'landscape' ? 'Orizzontale' : 'Verticale') + '</td>';
+					html += '<td>' + esc(getOrientationLabel(t.orientation)) + '</td>';
 					html += '<td>' + esc((t.updated_at || '').substring(0, 16)) + '</td>';
 					html += '<td><button class="sd-pdf-btn sd-pdf-btn-primary sd-btn-tpl-load" data-id="' + esc(t.id) + '">Carica</button></td>';
 					html += '</tr>';
@@ -896,10 +966,15 @@
 			}
 			var tpl = resp.data.template;
 			state.templateId   = tpl.id;
-			state.orientation  = tpl.orientation || 'portrait';
+			state.orientation  = tpl.orientation || 'portrait_hf';
 			state.templateType = tpl.template_type || 'activity';
 			state.elements     = tpl.elements || [];
 			state.activityId   = parseInt(tpl.activity_id, 10) || 0;
+			if (tpl.layout && typeof tpl.layout === 'object') {
+				state.layout = $.extend({}, getDefaultLayout(), tpl.layout);
+			} else {
+				state.layout = getDefaultLayout();
+			}
 			// Ricalcola nextId
 			state.nextId = 1;
 			state.elements.forEach(function (el) {
@@ -910,6 +985,7 @@
 			$('#sd-tpl-name').val(tpl.name);
 			$('#sd-tpl-orientation').val(state.orientation);
 			applyOrientation(state.orientation);
+			applyLayoutToUI(state.layout);
 			applyTemplateType(state.templateType);
 			if (state.activityId > 0) {
 				$('#sd-activity-select').val(state.activityId);
@@ -1102,10 +1178,12 @@
 		state.selectedIds  = [];
 		state.activityId   = 0;
 		state.nextId       = 1;
-		state.orientation  = 'portrait';
+		state.orientation  = 'portrait_hf';
+		state.layout       = getDefaultLayout();
 		$('#sd-tpl-name').val('');
-		$('#sd-tpl-orientation').val('portrait');
-		applyOrientation('portrait');
+		$('#sd-tpl-orientation').val('portrait_hf');
+		applyOrientation('portrait_hf');
+		applyLayoutToUI(state.layout);
 		applyTemplateType('activity');
 		renderAllElements();
 		selectElement(null);
@@ -1222,6 +1300,24 @@
 		// Orientamento
 		$('#sd-tpl-orientation').on('change', function () {
 			applyOrientation($(this).val());
+		});
+
+		// Layout panel: sincronizza state.layout su ogni modifica
+		$('#sd-layout-panel').on('input change', 'input', function () {
+			readLayoutFromUI();
+		});
+
+		// Media library per logo intestazione
+		$('#sd-layout-logo-btn').on('click', function () {
+			if (typeof wp === 'undefined' || !wp.media) { return; }
+			var frame = wp.media({ title: 'Scegli logo', button: { text: 'Usa immagine' }, multiple: false });
+			frame.on('select', function () {
+				var att = frame.state().get('selection').first().toJSON();
+				$('#sd-layout-logo-url').val(att.url);
+				$('#sd-layout-logo-att').val(att.id);
+				readLayoutFromUI();
+			});
+			frame.open();
 		});
 
 		// Attività select
