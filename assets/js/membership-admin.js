@@ -247,7 +247,7 @@
 					nonce: sdMembAdmin.nonce,
 					member_id: memberId,
 				template_id: parseInt($('#sd-renewals-template-id').val(), 10) || 0,
-				pdf_template_id: parseInt($('#sd-renewals-pdf-template-id').val(), 10) || 0
+				pdf_template_ids: $('#sd-renewals-pdf-template-id').val() || []
 				},
 				success: function(resp) {
 					if (!resp.success) {
