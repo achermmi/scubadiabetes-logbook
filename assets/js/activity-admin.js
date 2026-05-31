@@ -4294,8 +4294,8 @@
 					price_eur: parseFloat(r.price_eur) || 0,
 					created_at: String(r.created_at || ''),
 					can_remind: !!(em && em.indexOf('@') > 0 && em.lastIndexOf('.') > em.indexOf('@')),
-					last_email_at: '',
-					last_email_subject: '',
+					last_email_at: String(r.last_email_at || ''),
+					last_email_subject: String(r.last_email_subject || ''),
 				};
 			});
 			regDashboardState.activityId = activityId;

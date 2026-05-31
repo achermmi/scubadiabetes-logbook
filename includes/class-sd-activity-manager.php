@@ -85,7 +85,55 @@ class SD_Activity_Manager {
 		}
 		error_log( 'SD_LOGBOOK AJAX: sd_activity_registration_list - trovate ' . count( $registrations ) . ' registrazioni per activity_id=' . $activity_id );
 
-		// Puoi aggiungere qui eventuale mapping/campionamento campi per compatibilità JS
+		// Arricchisce con last_email_at / last_email_subject dall'audit log (un'unica query batch).
+		global $wpdb;
+		$audit       = $wpdb->prefix . 'sd_audit_log';
+		$audit_exists = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $audit ) );
+
+		if ( $audit_exists && ! empty( $registrations ) ) {
+			$ids      = implode( ',', array_map( 'intval', array_column( $registrations, 'id' ) ) );
+			$email_rows = $wpdb->get_results(
+				"SELECT al1.record_id, al1.created_at AS last_email_at, al1.new_data AS last_email_data
+				 FROM {$audit} al1
+				 INNER JOIN (
+					SELECT record_id, MAX(id) AS max_id
+					FROM {$audit}
+					WHERE table_name = 'sd_activity_registrations'
+					  AND action IN ('registration_broadcast','email_sent')
+					  AND record_id IN ({$ids})
+					GROUP BY record_id
+				 ) al2 ON al2.max_id = al1.id"
+			);
+
+			$email_by_id = array();
+			foreach ( (array) $email_rows as $er ) {
+				$subject = '';
+				if ( ! empty( $er->last_email_data ) ) {
+					$decoded = json_decode( (string) $er->last_email_data, true );
+					if ( is_array( $decoded ) && ! empty( $decoded['subject'] ) ) {
+						$subject = (string) $decoded['subject'];
+					}
+				}
+				$email_by_id[ (int) $er->record_id ] = array(
+					'last_email_at'      => (string) $er->last_email_at,
+					'last_email_subject' => $subject,
+				);
+			}
+
+			foreach ( $registrations as &$reg ) {
+				$reg_id                    = (int) $reg['id'];
+				$reg['last_email_at']      = isset( $email_by_id[ $reg_id ] ) ? $email_by_id[ $reg_id ]['last_email_at'] : '';
+				$reg['last_email_subject'] = isset( $email_by_id[ $reg_id ] ) ? $email_by_id[ $reg_id ]['last_email_subject'] : '';
+			}
+			unset( $reg );
+		} else {
+			foreach ( $registrations as &$reg ) {
+				$reg['last_email_at']      = '';
+				$reg['last_email_subject'] = '';
+			}
+			unset( $reg );
+		}
+
 		wp_send_json_success(
 			array(
 				'registrations' => $registrations,
