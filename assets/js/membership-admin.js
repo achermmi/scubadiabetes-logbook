@@ -211,7 +211,7 @@
 
 		var actionHtml = '<span class="sd-renewal-disabled">—</span>';
 			var previewBtn = '<button type="button" class="sd-btn sd-btn-outline sd-btn-sm sd-btn-icon-only sd-preview-renewal-email" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.previewLabel) || 'Anteprima') + '">\uD83D\uDD0D</button>';
-			var sendBtn = '<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-btn-icon-only sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '"' + (r.can_remind ? '' : ' disabled') + '>\u2709</button>';
+			var sendBtn = '<button type="button" class="sd-btn sd-btn-primary sd-btn-sm sd-btn-icon-only sd-send-renewal-reminder" data-member-id="' + escapeAttr(r.id) + '" title="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '" aria-label="' + escapeAttr((sdMembAdmin.strings && sdMembAdmin.strings.sendReminderLabel) || 'Invia e-mail') + '"' + (r.can_remind ? '' : ' disabled') + '>\u2709</button>';
 			actionHtml = '<div class="sd-renewal-action-cell">' + previewBtn + sendBtn + '</div>';
 
 			html += '<tr>' +
