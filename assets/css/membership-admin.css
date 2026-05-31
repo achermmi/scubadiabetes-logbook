@@ -125,7 +125,7 @@
 	flex: 0 0 auto;
 	display: flex;
 	flex-direction: row;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 0.55rem;
 	align-items: flex-end;
 }
