@@ -6745,6 +6745,10 @@
 	}
 
 	function sendRegEmailSingle($btn, regId) {
+		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
+			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			return;
+		}
 		var origLabel = $btn.text();
 		$btn.prop('disabled', true).text(regStrings().regSendingLabel || 'Invio...');
 		$.ajax({
@@ -6777,6 +6781,11 @@
 	function sendRegEmailsBulk() {
 		var $btn = $(this);
 		if ($btn.prop('disabled')) { return; }
+
+		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
+			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			return;
+		}
 
 		var mode = regDashboardState.quickFilter || 'all';
 		var confirmTextMap = {
@@ -6823,6 +6832,11 @@
 		var $btn = $(this);
 		if ($btn.prop('disabled')) { return; }
 
+		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
+			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			return;
+		}
+
 		if (!window.confirm(regStrings().regAllPaidConfirm || 'Inviare l\'e-mail a tutte le iscrizioni pagate?')) { return; }
 
 		var origLabel = $btn.text();
@@ -6860,7 +6874,7 @@
 		if (!$msg.length) { return; }
 		$msg
 			.removeClass('sd-notice-error sd-notice-success sd-notice-warning')
-			.addClass(type === 'success' ? 'sd-notice-success' : 'sd-notice-error')
+			.addClass(type === 'success' ? 'sd-notice-success' : (type === 'warning' ? 'sd-notice-warning' : 'sd-notice-error'))
 			.text(text)
 			.show();
 	}

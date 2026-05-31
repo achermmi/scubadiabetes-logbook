@@ -188,7 +188,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php esc_html_e( 'Modello e-mail:', 'sd-logbook' ); ?>
 			</label>
 			<select id="sd-renewals-template-id" class="sd-field-input sd-renewals-template-select">
-				<option value="0"><?php esc_html_e( '— Testo predefinito —', 'sd-logbook' ); ?></option>
+				<option value="0"><?php esc_html_e( '— Seleziona modello e-mail —', 'sd-logbook' ); ?></option>
 				<?php
 				if ( class_exists( 'SD_Email_Templates' ) ) {
 					foreach ( SD_Email_Templates::get_all_as_options( array( 'template_type' => 'membership', 'form_key' => 'membership:association' ) ) as $tpl_id => $tpl_name ) {

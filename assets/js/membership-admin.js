@@ -236,6 +236,11 @@
 				return;
 			}
 
+			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
+				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+				return;
+			}
+
 			$btn.prop('disabled', true).text((sdMembAdmin.strings && sdMembAdmin.strings.sendingLabel) || 'Invio...');
 
 			$.ajax({
@@ -392,6 +397,11 @@
 				return;
 			}
 
+			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
+				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+				return;
+			}
+
 			var confirmText = buildBulkConfirmText();
 			if (!window.confirm(confirmText)) {
 				return;
@@ -431,6 +441,11 @@
 		$('#sd-renewals-email-all-active').on('click', function() {
 			var $btn = $(this);
 			if ($btn.prop('disabled')) {
+				return;
+			}
+
+			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
+				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
 				return;
 			}
 
@@ -540,7 +555,7 @@
 		}
 		$msg
 			.removeClass('sd-notice-error sd-notice-success sd-notice-warning')
-			.addClass(type === 'success' ? 'sd-notice-success' : 'sd-notice-error')
+			.addClass(type === 'success' ? 'sd-notice-success' : (type === 'warning' ? 'sd-notice-warning' : 'sd-notice-error'))
 			.text(text)
 			.show();
 	}
