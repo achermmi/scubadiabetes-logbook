@@ -122,14 +122,12 @@
 }
 
 .sd-filter-main-actions {
-	flex: 1;
-	min-width: 0;
+	flex: 0 0 auto;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	gap: 0.55rem;
 	align-items: flex-end;
-	justify-content: flex-end;
 }
 
 .sd-filter-main-actions .sd-action-btn {
