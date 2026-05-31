@@ -132,6 +132,14 @@
 	transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 	touch-action: manipulation;
 	-webkit-tap-highlight-color: transparent;
+	white-space: nowrap;
+}
+
+#sd-export-csv,
+#sd-export-xlsx,
+#sd-export-pdf,
+#sd-export-vcf {
+	min-width: 0;
 }
 
 .sd-action-btn:hover {
