@@ -78,6 +78,7 @@ class SD_Membership_Admin {
 		add_action( 'wp_ajax_sd_members_delete', array( $this, 'delete_members' ) );
 		add_action( 'wp_ajax_sd_members_export', array( $this, 'export_members' ) );
 		add_action( 'wp_ajax_sd_members_export_pdf', array( $this, 'export_members_pdf' ) );
+		add_action( 'wp_ajax_sd_members_export_vcf', array( $this, 'export_members_vcf' ) );
 		add_action( 'wp_ajax_sd_members_stats', array( $this, 'get_stats' ) );
 		add_action( 'wp_ajax_sd_resend_invoice_email', array( $this, 'resend_invoice_email' ) );
 		add_action( 'wp_ajax_sd_members_renewals_dashboard', array( $this, 'get_renewals_dashboard' ) );
@@ -1456,6 +1457,185 @@ class SD_Membership_Admin {
 		header( 'Content-Length: ' . strlen( $pdf ) );
 		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
 		echo $pdf; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		exit;
+	}
+
+	/**
+	 * AJAX: esporta mailing list filtrata come vCard (.vcf)
+	 * Compatibile con MS Outlook 365, eM Client, Apple Mail/iOS, Mozilla Thunderbird.
+	 */
+	public function export_members_vcf() {
+		check_ajax_referer( 'sd_membership_admin_nonce', 'nonce' );
+
+		if ( ! $this->check_access() ) {
+			wp_die( esc_html__( 'Accesso negato.', 'sd-logbook' ) );
+		}
+
+		global $wpdb;
+		$db   = new SD_Database();
+		$year = absint( $_POST['anno'] ?? gmdate( 'Y' ) );
+
+		// Filtri (stessa logica di get_members_list)
+		$search           = sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) );
+		$pagato           = isset( $_POST['pagato'] ) && '' !== $_POST['pagato'] ? absint( $_POST['pagato'] ) : null;
+		$is_scuba         = isset( $_POST['is_scuba'] ) && '' !== $_POST['is_scuba'] ? absint( $_POST['is_scuba'] ) : null;
+		$is_active_filter = isset( $_POST['is_active'] ) && '' !== $_POST['is_active'] ? absint( $_POST['is_active'] ) : null;
+		$diabetes         = sanitize_text_field( wp_unslash( $_POST['diabetes_type'] ?? '' ) );
+		$member_type      = sanitize_text_field( wp_unslash( $_POST['member_type'] ?? '' ) );
+		$wp_role          = sanitize_text_field( wp_unslash( $_POST['wp_role'] ?? '' ) );
+		$fee_filter       = sanitize_text_field( wp_unslash( $_POST['fee_amount'] ?? '' ) );
+
+		$member_type_expr = "CASE
+			WHEN m.parent_member_id IS NOT NULL THEN 'attivo_famigliare'
+			WHEN EXISTS (
+				SELECT 1 FROM {$db->table('members')} fc2 WHERE fc2.parent_member_id = m.id LIMIT 1
+			) THEN 'attivo_capo_famiglia'
+			ELSE CASE
+				WHEN COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo') IN ('staff', 'medico') THEN 'attivo'
+				ELSE COALESCE(NULLIF(REPLACE(LOWER(TRIM(m.member_type)), ' ', '_'), ''), 'attivo')
+			END
+		END";
+
+		$where  = array();
+		$params = array();
+
+		if ( ! empty( $search ) ) {
+			$like    = '%' . $wpdb->esc_like( $search ) . '%';
+			$where[] = '(m.first_name LIKE %s OR m.last_name LIKE %s OR m.email LIKE %s)';
+			$params  = array_merge( $params, array( $like, $like, $like ) );
+		}
+		if ( null !== $pagato ) {
+			$where[]  = '(CASE WHEN m.parent_member_id IS NOT NULL THEN COALESCE(pm.has_paid_fee, 0) ELSE m.has_paid_fee END) = %d';
+			$params[] = $pagato;
+		}
+		if ( null !== $is_scuba ) {
+			$where[]  = 'm.is_scuba = %d';
+			$params[] = $is_scuba;
+		}
+		if ( ! empty( $diabetes ) ) {
+			$where[]  = 'm.diabetes_type = %s';
+			$params[] = $diabetes;
+		}
+		if ( ! empty( $member_type ) ) {
+			$normalized_type = str_replace( ' ', '_', strtolower( trim( $member_type ) ) );
+			if ( 'attivo_famigliare' === $normalized_type ) {
+				$where[] = 'm.parent_member_id IS NOT NULL';
+			} else {
+				$where[]  = $member_type_expr . ' = %s';
+				$params[] = $normalized_type;
+			}
+		}
+		if ( ! empty( $fee_filter ) ) {
+			$where[]  = 'm.fee_amount = %f';
+			$params[] = floatval( $fee_filter );
+		}
+		if ( null !== $is_active_filter ) {
+			$where[]  = 'COALESCE(m.is_active, 1) = %d';
+			$params[] = $is_active_filter;
+		}
+
+		$where_sql = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
+		$pm_join   = "LEFT JOIN {$db->table('members')} pm ON pm.id = m.parent_member_id";
+
+		$query_sql = "SELECT m.id, m.first_name, m.last_name, m.email, m.phone, m.wp_user_id,
+		                     {$member_type_expr} AS member_type
+		              FROM {$db->table('members')} m
+		              {$pm_join}
+		              {$where_sql}
+		              ORDER BY m.last_name ASC, m.first_name ASC";
+
+		$rows = ! empty( $params )
+			? $wpdb->get_results( $wpdb->prepare( $query_sql, $params ) ) // phpcs:ignore
+			: $wpdb->get_results( $query_sql ); // phpcs:ignore
+
+		// Filtro ruolo WP (post-query, come in get_members_list)
+		if ( ! empty( $wp_role ) ) {
+			$rows = array_filter(
+				(array) $rows,
+				function ( $row ) use ( $wp_role ) {
+					if ( empty( $row->wp_user_id ) ) {
+						return false;
+					}
+					$wp_user = get_userdata( (int) $row->wp_user_id );
+					return $wp_user && in_array( $wp_role, (array) $wp_user->roles, true );
+				}
+			);
+		}
+
+		// Costruisce il nome della mailing list dai filtri attivi
+		$label_parts = array();
+		if ( ! empty( $search ) ) {
+			$label_parts[] = sanitize_file_name( $search );
+		}
+		if ( ! empty( $member_type ) ) {
+			$label_parts[] = sanitize_file_name( $member_type );
+		}
+		if ( null !== $pagato ) {
+			$label_parts[] = $pagato ? 'pagato' : 'non-pagato';
+		}
+		if ( null !== $is_scuba ) {
+			$label_parts[] = $is_scuba ? 'sub' : 'no-sub';
+		}
+		if ( ! empty( $diabetes ) ) {
+			$label_parts[] = sanitize_file_name( $diabetes );
+		}
+		if ( ! empty( $fee_filter ) ) {
+			$label_parts[] = 'CHF' . sanitize_file_name( $fee_filter );
+		}
+		if ( null !== $is_active_filter ) {
+			$label_parts[] = $is_active_filter ? 'attivo' : 'non-attivo';
+		}
+		if ( ! empty( $wp_role ) ) {
+			$label_parts[] = sanitize_file_name( $wp_role );
+		}
+		$label_parts[] = $year;
+
+		$list_name = 'SDS-' . ( ! empty( $label_parts ) ? implode( '-', $label_parts ) : 'tutti' );
+		$filename  = $list_name . '.vcf';
+
+		// Genera il contenuto vCard 3.0
+		$vcf = '';
+		foreach ( (array) $rows as $m ) {
+			$first = trim( (string) ( $m->first_name ?? '' ) );
+			$last  = trim( (string) ( $m->last_name ?? '' ) );
+			$email = trim( (string) ( $m->email ?? '' ) );
+			$phone = trim( (string) ( $m->phone ?? '' ) );
+
+			if ( '' === $email && '' === $first && '' === $last ) {
+				continue;
+			}
+
+			// Escape vCard (RFC 6350: backslash, virgola, punto e virgola, newline)
+			$esc = function ( $v ) {
+				return str_replace(
+					array( '\\', ',', ';', "\r\n", "\n", "\r" ),
+					array( '\\\\', '\,', '\;', '\n', '\n', '\n' ),
+					(string) $v
+				);
+			};
+
+			$vcf .= 'BEGIN:VCARD' . "\r\n";
+			$vcf .= 'VERSION:3.0' . "\r\n";
+			$vcf .= 'N:' . $esc( $last ) . ';' . $esc( $first ) . ';;;' . "\r\n";
+			$vcf .= 'FN:' . $esc( trim( $first . ' ' . $last ) ) . "\r\n";
+			if ( '' !== $email ) {
+				$vcf .= 'EMAIL;TYPE=INTERNET:' . $esc( $email ) . "\r\n";
+			}
+			if ( '' !== $phone ) {
+				$vcf .= 'TEL;TYPE=CELL:' . $esc( $phone ) . "\r\n";
+			}
+			$vcf .= 'CATEGORIES:' . $esc( $list_name ) . "\r\n";
+			$vcf .= 'END:VCARD' . "\r\n";
+		}
+
+		if ( '' === $vcf ) {
+			wp_die( esc_html__( 'Nessun socio trovato con i filtri selezionati.', 'sd-logbook' ) );
+		}
+
+		header( 'Content-Type: text/vcard; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+		echo $vcf; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
 	}
 

@@ -362,6 +362,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-pdf">
 						↓ PDF
 					</button>
+					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-vcf" title="<?php esc_attr_e( 'Esporta mailing list vCard (.vcf) compatibile con Outlook, eM Client, Apple Mail, Thunderbird', 'sd-logbook' ); ?>">
+						📇 <?php esc_html_e( 'Mailing list', 'sd-logbook' ); ?>
+					</button>
 				</div>
 			</div>
 

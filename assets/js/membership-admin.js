@@ -798,6 +798,24 @@
 			$form[0].submit();
 			setTimeout(function () { $form.remove(); }, 5000);
 		});
+
+		$('#sd-export-vcf').on('click', function () {
+			var filters = getFilters();
+
+			var formData = $.extend({}, filters, {
+				action: 'sd_members_export_vcf',
+				nonce:  sdMembAdmin.nonce,
+				anno:   filters.anno || sdMembAdmin.currentYear,
+			});
+
+			var $form = $('<form method="POST" action="' + sdMembAdmin.ajaxUrl + '" style="display:none;">');
+			$.each(formData, function (k, v) {
+				$form.append('<input type="hidden" name="' + escapeAttr(k) + '" value="' + escapeAttr(v) + '">');
+			});
+			$('body').append($form);
+			$form[0].submit();
+			setTimeout(function () { $form.remove(); }, 5000);
+		});
 	}
 
 	// ===== TABS (pagina edit) =====
