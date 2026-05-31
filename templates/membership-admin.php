@@ -342,30 +342,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<option value="subscriber"><?php esc_html_e( 'Subscriber', 'sd-logbook' ); ?></option>
 					</select>
 				</div>
+			</div>
 
-				<div class="sd-filter-group sd-filter-actions">
-					<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
-						<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
-					</button>
-					<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
-						<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
-					</button>
-					<button type="button" id="sd-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm sd-action-btn">
-						<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
-					</button>
-					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-csv" data-format="csv">
-						↓ CSV
-					</button>
-					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-xlsx" data-format="xlsx">
-						↓ Excel
-					</button>
-					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-pdf">
-						↓ PDF
-					</button>
-					<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-vcf" title="<?php esc_attr_e( 'Esporta mailing list vCard (.vcf) compatibile con Outlook, eM Client, Apple Mail, Thunderbird', 'sd-logbook' ); ?>">
-						📇 <?php esc_html_e( 'Mailing list', 'sd-logbook' ); ?>
-					</button>
-				</div>
+			<div class="sd-filter-actions">
+				<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
+					<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
+				</button>
+				<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
+					<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
+				</button>
+				<button type="button" id="sd-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm sd-action-btn">
+					<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
+				</button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-csv" data-format="csv">
+					↓ CSV
+				</button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-xlsx" data-format="xlsx">
+					↓ Excel
+				</button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-pdf">
+					↓ PDF
+				</button>
+				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-vcf" title="<?php esc_attr_e( 'Esporta mailing list vCard (.vcf) compatibile con Outlook, eM Client, Apple Mail, Thunderbird', 'sd-logbook' ); ?>">
+					📇 <?php esc_html_e( 'Mailing list', 'sd-logbook' ); ?>
+				</button>
 			</div>
 
 		</form>

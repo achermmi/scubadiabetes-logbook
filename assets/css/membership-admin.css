@@ -113,8 +113,6 @@
 	flex-wrap: wrap;
 	justify-content: flex-end;
 	gap: 0.55rem;
-	grid-column: 1 / -1;
-	align-self: end;
 	align-items: center;
 	padding-top: 0.35rem;
 }
