@@ -439,6 +439,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<select id="sd-reg-tpl-select" class="sd-select sd-tpl-select-inline" multiple size="3" style="height:auto;vertical-align:middle;min-width:160px;" title="<?php esc_attr_e( 'Ctrl+clic per selezionare più template PDF da allegare all\'e-mail', 'sd-logbook' ); ?>">
 						</select>
 						<button type="button" class="sd-btn sd-btn-info sd-btn-sm" id="sd-reg-tpl-pdf-all" title="<?php esc_attr_e( 'PDF tutte le registrazioni con il template selezionato', 'sd-logbook' ); ?>">📑 <?php esc_html_e( 'PDF Template (tutti)', 'sd-logbook' ); ?></button>
+						<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm" id="sd-reg-export-vcf" title="<?php esc_attr_e( 'Esporta mailing list vCard (.vcf) compatibile con Outlook, eM Client, Apple Mail, Thunderbird', 'sd-logbook' ); ?>">📇 <?php esc_html_e( 'Mailing list', 'sd-logbook' ); ?></button>
 					</div>
 				</div>
 				<div class="sd-renewals-table-wrap">

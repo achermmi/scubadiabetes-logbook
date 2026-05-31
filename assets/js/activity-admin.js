@@ -6231,6 +6231,73 @@
 			});
 		});
 
+		// ── Mailing list (vCard .vcf) ───────────────────────────────────────
+		$('#sd-reg-export-vcf').on('click', function () {
+			var activityId = parseInt($('#sd-reg-activity-id').val(), 10) || 0;
+			if (!activityId) { alert('Seleziona un\'attività.'); return; }
+
+			var rows = getFilteredRegRows();
+			if (!rows.length) { alert('Nessuna iscrizione trovata con il filtro corrente.'); return; }
+
+			// Nome attività dal testo dell'option selezionata
+			var activityName = String($('#sd-reg-activity-id option:selected').text() || '').trim();
+			// Rimuovi il prefisso "#N - " se presente
+			activityName = activityName.replace(/^#\d+\s*[-–]\s*/, '');
+
+			// Filtro attivo
+			var filterMode = regDashboardState.quickFilter || 'all';
+			var filterLabels = {
+				'all': '',
+				'pending': 'in-attesa',
+				'paid': 'pagati',
+				'invoice_requested': 'fattura-richiesta',
+				'valid_email': 'email-valida'
+			};
+			var searchTerm = String(regDashboardState.searchTerm || '').trim();
+
+			// Costruisce il nome della mailing list
+			var parts = [ activityName ];
+			var filterLabel = filterLabels[filterMode] || filterMode;
+			if (filterLabel) { parts.push(filterLabel); }
+			if (searchTerm) { parts.push(searchTerm); }
+			var listName = 'SDS-' + parts.join('-').replace(/[^\w\-àèéìòùÀÈÉÌÒÙ]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+			var filename = listName + '.vcf';
+
+			// Escape per vCard 3.0 (RFC 6350)
+			function escVcard(v) {
+				return String(v || '').replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\r\n|\n|\r/g, '\\n');
+			}
+
+			var vcf = '';
+			rows.forEach(function (r) {
+				var first = String(r.first_name || '').trim();
+				var last  = String(r.last_name  || '').trim();
+				var email = String(r.email || '').trim();
+				var phone = String(r.phone || '').trim();
+				if (!first && !last && !email) { return; }
+
+				vcf += 'BEGIN:VCARD\r\n';
+				vcf += 'VERSION:3.0\r\n';
+				vcf += 'N:' + escVcard(last) + ';' + escVcard(first) + ';;;\r\n';
+				vcf += 'FN:' + escVcard((first + ' ' + last).trim()) + '\r\n';
+				if (email) { vcf += 'EMAIL;TYPE=INTERNET:' + escVcard(email) + '\r\n'; }
+				if (phone) { vcf += 'TEL;TYPE=CELL:' + escVcard(phone) + '\r\n'; }
+				vcf += 'CATEGORIES:' + escVcard(listName) + '\r\n';
+				vcf += 'END:VCARD\r\n';
+			});
+
+			if (!vcf) { alert('Nessun contatto valido da esportare.'); return; }
+
+			var blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+			var link = document.createElement('a');
+			link.href = window.URL.createObjectURL(blob);
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			setTimeout(function () { window.URL.revokeObjectURL(link.href); }, 5000);
+		});
+
 		// ── PDF Template singola registrazione ─────────────────────────────
 		$(document).on('click', '.sd-reg-tpl-pdf-row', function () {
 			var $btn           = $(this);

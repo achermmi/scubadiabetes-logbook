@@ -2662,7 +2662,7 @@ class SD_Activity_Manager {
 		$sql = $wpdb->prepare(
 			"SELECT r.id, r.first_name, r.last_name, r.email, r.status, r.payment_status,
 			        r.price_chf, r.price_eur, r.created_at, r.payment_date, r.updated_at,
-			        r.activity_id
+			        r.activity_id, r.registration_data
 			        {$select_extra}
 			 FROM {$table} r
 			 {$last_email_sql}
@@ -2696,12 +2696,24 @@ class SD_Activity_Manager {
 				}
 			}
 
+			$rd_raw = (string) ( $row->registration_data ?? '' );
+			$rd     = $rd_raw ? ( json_decode( $rd_raw, true ) ?: array() ) : array();
+			// Cerca telefono in vari nomi di campo comuni
+			$phone = '';
+			foreach ( array( 'phone', 'cellulare', 'telefono', 'mobile', 'tel' ) as $pkey ) {
+				if ( ! empty( $rd[ $pkey ] ) ) {
+					$phone = (string) $rd[ $pkey ];
+					break;
+				}
+			}
+
 			$result[] = array(
 				'id'             => (int) $row->id,
 				'first_name'     => (string) $row->first_name,
 				'last_name'      => (string) $row->last_name,
 				'name'           => trim( (string) $row->last_name . ', ' . (string) $row->first_name ),
 				'email'          => $email,
+				'phone'          => $phone,
 				'status'         => (string) $row->status,
 				'payment_status' => (string) $row->payment_status,
 				'price_chf'      => (float) $row->price_chf,
