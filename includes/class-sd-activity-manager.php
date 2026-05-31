@@ -2951,7 +2951,7 @@ class SD_Activity_Manager {
 				$skipped++;
 				continue;
 			}
-			if ( $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_id ) ) {
+			if ( $this->send_registration_broadcast_email( $row, $template_id, $pdf_template_ids ) ) {
 				$sent++;
 			} else {
 				$failed++;

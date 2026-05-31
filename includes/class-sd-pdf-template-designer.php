@@ -1363,7 +1363,12 @@ body { width: ' . $page_w . '; height: ' . $page_h . '; }
 			return false;
 		}
 
-		$tmp = wp_tempnam( 'sd_pdf_tpl_' . $template_id . '_reg_' . $registration_id . '_' ) . '.pdf';
+		$first = sanitize_file_name( (string) ( $registration['first_name'] ?? '' ) );
+		$last  = sanitize_file_name( (string) ( $registration['last_name'] ?? '' ) );
+		$label = trim( $first . '-' . $last, '-' ) ?: ( 'reg-' . $registration_id );
+		$tz    = new DateTimeZone( 'Europe/Zurich' );
+		$now   = new DateTime( 'now', $tz );
+		$tmp   = get_temp_dir() . $label . '-tpl' . $template_id . '-' . $now->format( 'Ymd' ) . '-' . $now->format( 'His' ) . '.pdf';
 		if ( false === file_put_contents( $tmp, $pdf_bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			return false;
 		}
