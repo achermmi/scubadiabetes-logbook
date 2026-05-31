@@ -4344,7 +4344,7 @@
 				nameHtml += ' <span class="sd-status-badge sd-status-draft">MINORENNE (' + esc(String(minorInfo.age)) + ' anni)</span>';
 			}
 			var lastEmailHtml = r.last_email_at
-				? '<span title="' + esc(r.last_email_subject || '') + '">' + formatDate(r.last_email_at) + '</span>'
+				? '<span title="' + esc(r.last_email_subject || '') + '">' + formatRegDateTime(r.last_email_at) + '</span>'
 				: '-';
 			html += '<tr>' +
 				'<td>' + nameHtml + '</td>' +
@@ -6888,7 +6888,8 @@
 		var y = dt.getFullYear();
 		var hh = String(dt.getHours()).padStart(2, '0');
 		var mm = String(dt.getMinutes()).padStart(2, '0');
-		return d + '.' + m + '.' + y + ' ' + hh + ':' + mm;
+		var ss = String(dt.getSeconds()).padStart(2, '0');
+		return d + '.' + m + '.' + y + ' ' + hh + ':' + mm + ':' + ss;
 	}
 
 })(jQuery);
