@@ -722,6 +722,10 @@ msgstr ""
 msgid "Apple Pay"
 msgstr ""
 
+#: includes/class-sd-payment-documents.php:172
+msgid "Carta credito"
+msgstr ""
+
 #: templates/cgm-dashboard.php:135
 msgid "Applica"
 msgstr ""
