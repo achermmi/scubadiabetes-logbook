@@ -247,6 +247,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div class="sd-filter-bar">
 		<form id="sd-member-filters" class="sd-filters-form">
 
+			<!-- Riga 1: Ricerca, Stato pagamento, Anno, Tassa, Subacqueo, Diabete -->
 			<div class="sd-filter-row">
 				<div class="sd-filter-group">
 					<label class="sd-filter-label" for="sd-filter-search"><?php esc_html_e( 'Ricerca', 'sd-logbook' ); ?></label>
@@ -306,7 +307,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<option value="altro"><?php esc_html_e( 'Altro', 'sd-logbook' ); ?></option>
 					</select>
 				</div>
+			</div>
 
+			<!-- Riga 2: Tipo socio, Socio attivo, Ruolo WP + Cerca / Reset / Elimina inline -->
+			<div class="sd-filter-row-2">
 				<div class="sd-filter-group">
 					<label class="sd-filter-label" for="sd-filter-type"><?php esc_html_e( 'Tipo socio', 'sd-logbook' ); ?></label>
 					<select name="member_type" id="sd-filter-type" class="sd-select sd-select-sm">
@@ -342,18 +346,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<option value="subscriber"><?php esc_html_e( 'Subscriber', 'sd-logbook' ); ?></option>
 					</select>
 				</div>
+
+				<div class="sd-filter-main-actions">
+					<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
+					</button>
+					<button type="button" id="sd-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm sd-action-btn">
+						<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
+					</button>
+				</div>
 			</div>
 
-			<div class="sd-filter-actions">
-				<button type="submit" id="sd-btn-search" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
-					<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
-				</button>
-				<button type="button" id="sd-btn-reset" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn">
-					<?php esc_html_e( 'Reset', 'sd-logbook' ); ?>
-				</button>
-				<button type="button" id="sd-delete-selected" class="sd-btn sd-btn-danger sd-btn-sm sd-action-btn">
-					<?php esc_html_e( 'Elimina iscrizione', 'sd-logbook' ); ?>
-				</button>
+			<!-- Riga 3: export -->
+			<div class="sd-filter-export-row">
 				<button type="button" class="sd-btn sd-btn-secondary sd-btn-sm sd-action-btn" id="sd-export-csv" data-format="csv">
 					↓ CSV
 				</button>
