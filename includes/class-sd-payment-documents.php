@@ -150,15 +150,15 @@ class SD_Payment_Documents {
 		// Colonne tabella: [ label, larghezza pt, max_chars ].
 		$columns = array(
 			array( '#', 22, 4 ),
-			array( 'Cognome, Nome', 120, 28 ),
-			array( 'Email', 150, 35 ),
-			array( 'Nascita', 58, 10 ),
-			array( 'Tipo Socio', 95, 22 ),
-			array( 'CHF', 42, 8 ),
-			array( 'Pagato', 36, 3 ),
-			array( 'Metodo', 85, 20 ),
-			array( 'Data Pag.', 58, 10 ),
-			array( 'Scadenza', 60, 10 ),
+			array( __( 'Cognome, Nome', 'sd-logbook' ), 120, 28 ),
+			array( __( 'Email', 'sd-logbook' ), 150, 35 ),
+			array( __( 'Nascita', 'sd-logbook' ), 58, 10 ),
+			array( __( 'Tipo Socio', 'sd-logbook' ), 95, 22 ),
+			array( __( 'CHF', 'sd-logbook' ), 42, 8 ),
+			array( __( 'Pagato', 'sd-logbook' ), 36, 3 ),
+			array( __( 'Metodo', 'sd-logbook' ), 85, 20 ),
+			array( __( 'Data Pag.', 'sd-logbook' ), 58, 10 ),
+			array( __( 'Scadenza', 'sd-logbook' ), 60, 10 ),
 		);
 		$table_w = 0.0;
 		foreach ( $columns as $col ) {
@@ -166,27 +166,27 @@ class SD_Payment_Documents {
 		}
 
 		$method_labels = array(
-			'bonifico_iban' => 'Bonifico IBAN',
-			'twint'         => 'TWINT',
-			'paypal'        => 'PayPal',
-			'carta_credito' => 'Carta credito',
-			'apple_pay'     => 'Apple Pay',
-			'google_pay'    => 'Google Pay',
-			'fattura'       => 'Fattura',
-			'famigliare'    => 'Famigliare',
-			'staff'         => 'Staff',
+			'bonifico_iban' => __( 'Bonifico IBAN', 'sd-logbook' ),
+			'twint'         => __( 'TWINT', 'sd-logbook' ),
+			'paypal'        => __( 'PayPal', 'sd-logbook' ),
+			'carta_credito' => __( 'Carta credito', 'sd-logbook' ),
+			'apple_pay'     => __( 'Apple Pay', 'sd-logbook' ),
+			'google_pay'    => __( 'Google Pay', 'sd-logbook' ),
+			'fattura'       => __( 'Fattura', 'sd-logbook' ),
+			'famigliare'    => __( 'Famigliare', 'sd-logbook' ),
+			'staff'         => __( 'Staff', 'sd-logbook' ),
 		);
 
 		$type_labels = array(
-			'attivo'               => 'Attivo',
-			'attivo_capo_famiglia' => 'Attivo Capo Famiglia',
-			'attivo_famigliare'    => 'Attivo Famigliare',
-			'passivo'              => 'Passivo',
-			'accompagnatore'       => 'Accompagnatore',
-			'sostenitore'          => 'Sostenitore',
-			'onorario'             => 'Onorario',
-			'fondatore'            => 'Fondatore',
-			'staff'                => 'Staff',
+			'attivo'               => __( 'Attivo', 'sd-logbook' ),
+			'attivo_capo_famiglia' => __( 'Attivo Capo Famiglia', 'sd-logbook' ),
+			'attivo_famigliare'    => __( 'Attivo Famigliare', 'sd-logbook' ),
+			'passivo'              => __( 'Passivo', 'sd-logbook' ),
+			'accompagnatore'       => __( 'Accompagnatore', 'sd-logbook' ),
+			'sostenitore'          => __( 'Sostenitore', 'sd-logbook' ),
+			'onorario'             => __( 'Onorario', 'sd-logbook' ),
+			'fondatore'            => __( 'Fondatore', 'sd-logbook' ),
+			'staff'                => __( 'Staff', 'sd-logbook' ),
 		);
 
 		$total_rows = count( $rows );
@@ -203,8 +203,10 @@ class SD_Payment_Documents {
 
 			// Testo intestazione (colonna sinistra).
 			$ops .= $this->text( $margin_l, $ph - 26, 14, strtoupper( $assoc_title ), true, array( 1, 1, 1 ) );
-			$ops .= $this->text( $margin_l, $ph - 44, 10, 'Elenco soci - Anno ' . (string) $year, false, array( 0.80, 0.91, 1.0 ) );
-			$ops .= $this->text( $margin_l, $ph - 59, 8, 'Pagina ' . ( $pg + 1 ) . ' di ' . $total_pages . '  |  ' . gmdate( 'd.m.Y H:i' ), false, array( 0.70, 0.85, 1.0 ) );
+			/* translators: %s = anno corrente (es. 2026) */
+			$ops .= $this->text( $margin_l, $ph - 44, 10, sprintf( __( 'Elenco soci - Anno %s', 'sd-logbook' ), (string) $year ), false, array( 0.80, 0.91, 1.0 ) );
+			/* translators: 1: numero pagina corrente, 2: totale pagine */
+			$ops .= $this->text( $margin_l, $ph - 59, 8, sprintf( __( 'Pagina %1$d di %2$d', 'sd-logbook' ), $pg + 1, $total_pages ) . '  |  ' . gmdate( 'd.m.Y H:i' ), false, array( 0.70, 0.85, 1.0 ) );
 
 			// Logo (destra, centrato verticalmente nella barra).
 			if ( ! empty( $logo_img['path'] ) ) {

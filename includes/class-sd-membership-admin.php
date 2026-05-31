@@ -171,6 +171,7 @@ class SD_Membership_Admin {
 					'previewTitle'      => __( 'Anteprima e-mail', 'sd-logbook' ),
 					'previewLoading'    => __( 'Caricamento anteprima...', 'sd-logbook' ),
 					'previewError'      => __( 'Impossibile caricare l\'anteprima.', 'sd-logbook' ),
+					'noTemplateSelected' => __( 'Seleziona un modello e-mail prima di inviare.', 'sd-logbook' ),
 				),
 			)
 		);

@@ -1,0 +1,134 @@
+# English (United States) translations for ScubaDiabetes Logbook
+# Copyright (C) 2026 Mirko Achermann
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: ScubaDiabetes Logbook 1.3.78\n"
+"Report-Msgid-Bugs-To: https://scubadiabetes.ch\n"
+"Last-Translator: \n"
+"Language-Team: English <info@scubadiabetes.ch>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Manual\n"
+"X-Domain: sd-logbook\n"
+
+#: templates/activity-admin.php templates/membership-admin.php
+msgid "— Seleziona modello e-mail —"
+msgstr "— Select an email template —"
+
+#: assets/js/activity-admin.js assets/js/membership-admin.js
+msgid "Seleziona un modello e-mail prima di inviare."
+msgstr "Please select an email template before sending."
+
+#: includes/class-sd-payment-documents.php
+msgid "Cognome, Nome"
+msgstr "Last name, First name"
+
+#: includes/class-sd-payment-documents.php
+msgid "Nascita"
+msgstr "Birth date"
+
+#: includes/class-sd-payment-documents.php
+msgid "Tipo Socio"
+msgstr "Member type"
+
+#: includes/class-sd-payment-documents.php
+msgid "Pagato"
+msgstr "Paid"
+
+#: includes/class-sd-payment-documents.php
+msgid "Metodo"
+msgstr "Method"
+
+#: includes/class-sd-payment-documents.php
+msgid "Data Pag."
+msgstr "Pay date"
+
+#: includes/class-sd-payment-documents.php
+msgid "Scadenza"
+msgstr "Expiry"
+
+#: includes/class-sd-payment-documents.php
+msgid "Bonifico IBAN"
+msgstr "IBAN transfer"
+
+#: includes/class-sd-payment-documents.php
+msgid "Carta credito"
+msgstr "Credit card"
+
+#: includes/class-sd-payment-documents.php
+msgid "Fattura"
+msgstr "Invoice"
+
+#: includes/class-sd-payment-documents.php
+msgid "Famigliare"
+msgstr "Family member"
+
+#: includes/class-sd-payment-documents.php
+#, php-format
+msgid "Elenco soci - Anno %s"
+msgstr "Member list - Year %s"
+
+#: includes/class-sd-payment-documents.php
+#, php-format
+msgid "Pagina %1$d di %2$d"
+msgstr "Page %1$d of %2$d"
+
+#: includes/class-sd-payment-documents.php
+msgid "Attivo"
+msgstr "Active"
+
+#: includes/class-sd-payment-documents.php
+msgid "Attivo Capo Famiglia"
+msgstr "Active Family Head"
+
+#: includes/class-sd-payment-documents.php
+msgid "Attivo Famigliare"
+msgstr "Active Family Member"
+
+#: includes/class-sd-payment-documents.php
+msgid "Passivo"
+msgstr "Passive"
+
+#: includes/class-sd-payment-documents.php
+msgid "Accompagnatore"
+msgstr "Companion"
+
+#: includes/class-sd-payment-documents.php
+msgid "Sostenitore"
+msgstr "Supporter"
+
+#: includes/class-sd-payment-documents.php
+msgid "Onorario"
+msgstr "Honorary"
+
+#: includes/class-sd-payment-documents.php
+msgid "Fondatore"
+msgstr "Founder"
+
+#: includes/class-sd-membership-admin.php
+msgid "Invia e-mail"
+msgstr "Send email"
+
+#: includes/class-sd-membership-admin.php
+msgid "Invio..."
+msgstr "Sending..."
+
+#: includes/class-sd-membership-admin.php
+msgid "E-mail inviata con successo."
+msgstr "Email sent successfully."
+
+#: includes/class-sd-membership-admin.php
+msgid "Invio e-mail non riuscito."
+msgstr "Email sending failed."
+
+#: includes/class-sd-membership-admin.php
+msgid "Caricamento..."
+msgstr "Loading..."
+
+#: includes/class-sd-membership-admin.php
+msgid "Errore nel caricamento."
+msgstr "Loading error."

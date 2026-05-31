@@ -544,7 +544,8 @@ window.sdActivityAdmin = {
 		regPaymentConfirmationError: '<?php esc_attr_e( 'Invio conferma pagamento non riuscito.', 'sd-logbook' ); ?>',
 		regAllPaidLabel: '<?php esc_attr_e( 'Invia e-mail a tutte le iscrizioni pagate', 'sd-logbook' ); ?>',
 		regAllPaidSendingLabel: '<?php esc_attr_e( 'Invio a tutti i pagati...', 'sd-logbook' ); ?>',
-		regAllPaidConfirm: '<?php esc_attr_e( 'Inviare l\'e-mail a tutte le iscrizioni pagate dell\'attività selezionata?', 'sd-logbook' ); ?>'
+		regAllPaidConfirm: '<?php esc_attr_e( 'Inviare l\'e-mail a tutte le iscrizioni pagate dell\'attività selezionata?', 'sd-logbook' ); ?>',
+		noTemplateSelected: '<?php esc_attr_e( 'Seleziona un modello e-mail prima di inviare.', 'sd-logbook' ); ?>'
 	}
 };
 

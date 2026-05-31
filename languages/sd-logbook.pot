@@ -7645,3 +7645,27 @@ msgstr ""
 #: templates/profile.php:895
 msgid "⚠ Modalità Sandbox attiva (dati di test)"
 msgstr ""
+
+#: templates/activity-admin.php templates/membership-admin.php
+msgid "— Seleziona modello e-mail —"
+msgstr ""
+
+#: assets/js/activity-admin.js assets/js/membership-admin.js
+msgid "Seleziona un modello e-mail prima di inviare."
+msgstr ""
+
+#: includes/class-sd-payment-documents.php
+msgid "Nascita"
+msgstr ""
+
+#. %s = anno corrente (es. 2026)
+#: includes/class-sd-payment-documents.php
+#, php-format
+msgid "Elenco soci - Anno %s"
+msgstr ""
+
+#. 1: numero pagina corrente, 2: totale pagine
+#: includes/class-sd-payment-documents.php
+#, php-format
+msgid "Pagina %1$d di %2$d"
+msgstr ""

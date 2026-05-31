@@ -237,7 +237,7 @@
 			}
 
 			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
-				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+				showRenewalsMessage('warning', (sdMembAdmin.strings && sdMembAdmin.strings.noTemplateSelected) || 'Seleziona un modello e-mail prima di inviare.');
 				return;
 			}
 
@@ -398,7 +398,7 @@
 			}
 
 			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
-				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+				showRenewalsMessage('warning', (sdMembAdmin.strings && sdMembAdmin.strings.noTemplateSelected) || 'Seleziona un modello e-mail prima di inviare.');
 				return;
 			}
 
@@ -445,7 +445,7 @@
 			}
 
 			if (!(parseInt($('#sd-renewals-template-id').val(), 10) || 0)) {
-				showRenewalsMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+				showRenewalsMessage('warning', (sdMembAdmin.strings && sdMembAdmin.strings.noTemplateSelected) || 'Seleziona un modello e-mail prima di inviare.');
 				return;
 			}
 

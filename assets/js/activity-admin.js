@@ -6746,7 +6746,7 @@
 
 	function sendRegEmailSingle($btn, regId) {
 		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
-			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			showRegDashboardMessage('warning', regStrings().noTemplateSelected || 'Seleziona un modello e-mail prima di inviare.');
 			return;
 		}
 		var origLabel = $btn.text();
@@ -6783,7 +6783,7 @@
 		if ($btn.prop('disabled')) { return; }
 
 		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
-			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			showRegDashboardMessage('warning', regStrings().noTemplateSelected || 'Seleziona un modello e-mail prima di inviare.');
 			return;
 		}
 
@@ -6833,7 +6833,7 @@
 		if ($btn.prop('disabled')) { return; }
 
 		if (!(parseInt($('#sd-reg-template-id').val(), 10) || 0)) {
-			showRegDashboardMessage('warning', 'Seleziona un modello e-mail prima di inviare.');
+			showRegDashboardMessage('warning', regStrings().noTemplateSelected || 'Seleziona un modello e-mail prima di inviare.');
 			return;
 		}
 
