@@ -158,7 +158,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</select>
 				</div>
 
-				<div class="sd-filter-group sd-filter-actions">
+				<div class="sd-filter-main-actions">
 					<button type="submit" class="sd-btn sd-btn-primary sd-btn-sm sd-action-btn">
 						<?php esc_html_e( 'Cerca', 'sd-logbook' ); ?>
 					</button>
