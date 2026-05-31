@@ -4298,8 +4298,10 @@
 					last_email_subject: '',
 				};
 			});
+			regDashboardState.activityId = activityId;
 			renderRegistrationsTable();
 			updatePaymentsStats();
+			if (typeof updateRegBulkButton === 'function') { updateRegBulkButton(); }
 		});
 	}
 

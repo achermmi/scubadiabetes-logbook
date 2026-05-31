@@ -519,6 +519,8 @@
 	margin-bottom: 0.75rem;
 	flex-wrap: wrap;
 }
+
+.sd-renewals-quick-filters {
 	display: flex;
 	gap: 0.45rem;
 	flex-wrap: wrap;
