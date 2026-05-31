@@ -4293,7 +4293,7 @@
 					price_chf: parseFloat(r.price_chf) || 0,
 					price_eur: parseFloat(r.price_eur) || 0,
 					created_at: String(r.created_at || ''),
-					can_remind: !!(em && em.indexOf('@') > 0 && em.indexOf('.') > em.indexOf('@')),
+					can_remind: !!(em && em.indexOf('@') > 0 && em.lastIndexOf('.') > em.indexOf('@')),
 					last_email_at: '',
 					last_email_subject: '',
 				};
