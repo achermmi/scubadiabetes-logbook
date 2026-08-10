@@ -625,8 +625,7 @@ class SD_Payment_Orchestrator {
 		}
 		$bank_swift = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
 		$bank_bic   = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
-		$invoice_no = sprintf( 'INV-%s-%06d-%04d', $year, (int) $member->id, (int) $payment->id );
-		$reference  = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Fattura: %s', gmdate( 'Y' ), $invoice_no );
+		$reference  = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Socio: %s', gmdate( 'Y' ), (string) $member->member_number );
 
 		$member_name = esc_html( trim( (string) $member->first_name . ' ' . (string) $member->last_name ) );
 

@@ -547,7 +547,7 @@ class SD_Payment_Documents {
 			$association_postal,
 			$association_city,
 			(float) $payment->amount,
-			$invoice_no
+			(string) $member->member_number
 		);
 		if ( ! empty( $qr_data['path'] ) ) {
 			$qr_image   = array( 'path' => (string) $qr_data['path'] );
@@ -610,7 +610,7 @@ class SD_Payment_Documents {
 		if ( '' !== trim( $bank_swift . $bank_bic ) ) {
 			$ops .= $this->text( 40, $height - 452, 10, 'SWIFT: ' . $bank_swift . ' | BIC: ' . $bank_bic );
 		}
-		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Modulo di iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . ' - Nr Fattura: ' . $invoice_no );
+		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Modulo di iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . ' - Nr Socio: ' . (string) $member->member_number );
 
 		$ops .= $this->text( 40, $height - 500, 10, 'QR pagamento', true );
 		if ( '' !== trim( $qr_payload ) ) {
@@ -1946,7 +1946,7 @@ class SD_Payment_Documents {
 	 *
 	 * @return array{path:string,payload:string}
 	 */
-	private function generate_membership_qr_image( $iban, $creditor_name, $address, $postal_code, $city, $amount, $invoice_no ) {
+	private function generate_membership_qr_image( $iban, $creditor_name, $address, $postal_code, $city, $amount, $member_number ) {
 		if ( ! class_exists( '\\Sprain\\SwissQrBill\\QrBill' ) || $amount <= 0 ) {
 			return array();
 		}
@@ -1982,7 +1982,7 @@ class SD_Payment_Documents {
 				)
 			);
 
-			$message = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Fattura: %s', gmdate( 'Y' ), $invoice_no );
+			$message = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Socio: %s', gmdate( 'Y' ), $member_number );
 			$qr_bill->setAdditionalInformation(
 				\Sprain\SwissQrBill\DataGroup\Element\AdditionalInformation::create( $message )
 			);
