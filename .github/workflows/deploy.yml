@@ -33,7 +33,9 @@ jobs:
 
       - name: Create deploy marker
         shell: bash
-        run: printf '%s' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.txt
+        run: |
+          printf '%s' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.txt
+          printf '/* sd-deploy:%s */' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.css
 
       - name: Create temporary OPcache reset helper
         if: ${{ matrix.target == 'default' }}
@@ -83,6 +85,22 @@ jobs:
 
             plugin_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" "$plugin_dir/scubadiabetes-logbook.php")"
             echo "File distribuiti: versione=$plugin_version marker=$deployed_sha"
+
+      - name: Verify public plugin path
+        if: ${{ matrix.target == 'default' }}
+        shell: bash
+        run: |
+          expected_marker="/* sd-deploy:${{ github.event.workflow_run.head_sha }} */"
+          marker_url="https://scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook/assets/sd-deploy-version.css?sd_deploy=${{ github.event.workflow_run.head_sha }}"
+          public_marker="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$marker_url" || true)"
+
+          if [ "$public_marker" != "$expected_marker" ]; then
+            echo "Il dominio non serve i file distribuiti in ${{ matrix.remote_path }}."
+            echo "Marker atteso=$expected_marker, ricevuto=${public_marker:-assente}."
+            exit 1
+          fi
+
+          echo "Document root pubblica verificata."
 
       - name: Reset production OPcache
         if: ${{ matrix.target == 'default' }}
