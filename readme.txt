@@ -4,7 +4,7 @@ Tags: diving, diabetes, logbook, scuba, medical
 Requires at least: 6.0
 Tested up to: 6.9.1
 Requires PHP: 8.2
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 
 Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
@@ -20,6 +20,9 @@ Plugin per WordPress che permette la registrazione e il monitoraggio delle immer
 3. Assegnare i ruoli appropriati agli utenti
 
 == Changelog ==
+
+= 1.4.2 =
+* Deploy: aggiunto un health check AJAX non cacheabile per verificare la versione PHP effettivamente caricata in produzione.
 
 = 1.4.1 =
 * Fix: il codice Swiss QR delle fatture soci viene disegnato direttamente nel PDF senza dipendere da GD, file temporanei o immagini configurate manualmente.

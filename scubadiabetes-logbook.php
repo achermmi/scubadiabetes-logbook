@@ -3,7 +3,7 @@
  * Plugin Name: ScubaDiabetes Logbook
  * Plugin URI: https://scubadiabetes.ch
  * Description: Logbook subacqueo per persone con diabete. Registrazione immersioni, monitoraggio glicemico, raccolta dati scientifici secondo il protocollo Diabete Sommerso.
- * Version: 1.4.1
+ * Version: 1.4.2
  * Author: Mirko Achermann
  * Author URI: https://m-achermann.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SD_LOGBOOK_VERSION', '1.4.1' );
+define( 'SD_LOGBOOK_VERSION', '1.4.2' );
 define( 'SD_LOGBOOK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SD_LOGBOOK_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -120,9 +120,23 @@ final class SD_Logbook {
 		add_filter( 'plugin_locale', array( $this, 'force_italian_locale' ), 10, 2 );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'init_components' ) );
+		add_action( 'wp_ajax_sd_logbook_health', array( $this, 'ajax_health_check' ) );
+		add_action( 'wp_ajax_nopriv_sd_logbook_health', array( $this, 'ajax_health_check' ) );
 
 		// Blocca il login degli account disabilitati (is_active = 0)
 		add_filter( 'authenticate', array( $this, 'block_disabled_accounts' ), 30, 1 );
+	}
+
+	/**
+	 * Restituisce la versione PHP effettivamente caricata per i controlli di deploy.
+	 */
+	public function ajax_health_check() {
+		nocache_headers();
+		wp_send_json_success(
+			array(
+				'version' => SD_LOGBOOK_VERSION,
+			)
+		);
 	}
 
 	/**
