@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - target: default
-            remote_path: sites/scubadiabetes/wp-content/plugins/scubadiabetes-logbook
+            remote_path: sites/scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook
           - target: sd-suisse
             remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
           - target: scubadiabetes-dev
