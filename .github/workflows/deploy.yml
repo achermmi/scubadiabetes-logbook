@@ -45,22 +45,32 @@ jobs:
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
 
+      - name: Verify deployed files over SSH
+        if: ${{ matrix.target == 'default' }}
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            plugin_dir="$HOME/${{ matrix.remote_path }}"
+            expected_sha="${{ github.event.workflow_run.head_sha }}"
+            deployed_sha="$(cat "$plugin_dir/assets/sd-deploy-version.txt" 2>/dev/null || true)"
+
+            if [ "$deployed_sha" != "$expected_sha" ]; then
+              echo "Marker remoto non valido: atteso=$expected_sha ricevuto=${deployed_sha:-assente}"
+              exit 1
+            fi
+
+            plugin_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" "$plugin_dir/scubadiabetes-logbook.php")"
+            echo "File distribuiti: versione=$plugin_version marker=$deployed_sha"
+
       - name: Verify production plugin version
         if: ${{ matrix.target == 'default' }}
         shell: bash
         run: |
           expected_sha="${{ github.event.workflow_run.head_sha }}"
           expected_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" scubadiabetes-logbook.php)"
-          marker_url="https://scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook/assets/sd-deploy-version.txt?sd_deploy=$expected_sha"
-          live_sha="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$marker_url" || true)"
-
-          if [ "$live_sha" != "$expected_sha" ]; then
-            echo "I file non sono stati distribuiti nella directory plugin usata da scubadiabetes.ch."
-            echo "Atteso marker=$expected_sha, ricevuto marker=${live_sha:-assente}."
-            echo "Correggere matrix.default.remote_path nel workflow deploy."
-            exit 1
-          fi
-
           page_url="https://scubadiabetes.ch/sostienici/diventa-socio/?sd_deploy=$expected_sha"
           page_html="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$page_url")"
           live_version="$(printf '%s' "$page_html" | grep -oE 'membership\.(css|js)\?ver=[0-9.]+' | sed -E 's/.*ver=//' | head -n 1)"
@@ -71,22 +81,20 @@ jobs:
           fi
 
           if [ "$live_version" != "$expected_version" ]; then
-            echo "I file $expected_sha sono pubblici, ma PHP esegue ancora la versione $live_version invece di $expected_version."
-            echo "Riavviare PHP-FPM o svuotare OPcache dal pannello Infomaniak."
+            echo "I file $expected_sha sono distribuiti, ma il sito espone ancora la versione $live_version invece di $expected_version."
+            echo "Svuotare la cache pagina e OPcache dal pannello Infomaniak."
             exit 1
           fi
 
           echo "Versione pubblica verificata: $live_version"
 
       - name: Discover WordPress plugin installations
-        id: discover_plugins
         if: ${{ failure() && matrix.target == 'default' }}
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          capture_stdout: true
           script: |
             echo "Installazioni scubadiabetes-logbook trovate sotto $HOME:"
             for plugin_file in "$HOME"/sites/*/wp-content/plugins/scubadiabetes-logbook/scubadiabetes-logbook.php; do
@@ -99,16 +107,3 @@ jobs:
               fi
               echo "$plugin_file | versione=$plugin_version | marker=$marker_value"
             done
-
-      - name: Publish discovered installations
-        if: ${{ always() && matrix.target == 'default' && steps.discover_plugins.outputs.stdout != '' }}
-        shell: bash
-        env:
-          DISCOVERY_OUTPUT: ${{ steps.discover_plugins.outputs.stdout }}
-        run: |
-          {
-            echo "## Installazioni WordPress rilevate"
-            echo '```text'
-            printf '%s\n' "$DISCOVERY_OUTPUT"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
