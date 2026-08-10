@@ -35,6 +35,25 @@ jobs:
         shell: bash
         run: printf '%s' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.txt
 
+      - name: Create temporary OPcache reset helper
+        if: ${{ matrix.target == 'default' }}
+        shell: bash
+        run: |
+          reset_file="sd-runtime-reset-${{ github.event.workflow_run.head_sha }}.php"
+          reset_token="$(openssl rand -hex 32)"
+          cat > "assets/$reset_file" <<PHP
+          <?php
+          if ( ! isset( \$_GET['token'] ) || ! hash_equals( '$reset_token', \$_GET['token'] ) ) {
+              http_response_code( 404 );
+              exit;
+          }
+          header( 'Content-Type: application/json' );
+          header( 'Cache-Control: no-store' );
+          echo json_encode( array( 'opcache_reset' => function_exists( 'opcache_reset' ) ? opcache_reset() : null ) );
+          PHP
+          echo "SD_RESET_FILE=$reset_file" >> "$GITHUB_ENV"
+          echo "SD_RESET_TOKEN=$reset_token" >> "$GITHUB_ENV"
+
       - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
@@ -64,6 +83,23 @@ jobs:
 
             plugin_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" "$plugin_dir/scubadiabetes-logbook.php")"
             echo "File distribuiti: versione=$plugin_version marker=$deployed_sha"
+
+      - name: Reset production OPcache
+        if: ${{ matrix.target == 'default' }}
+        shell: bash
+        run: |
+          reset_url="https://scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook/assets/$SD_RESET_FILE?token=$SD_RESET_TOKEN"
+          reset_result="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$reset_url" || true)"
+          echo "Risultato reset runtime: ${reset_result:-non disponibile}"
+
+      - name: Remove temporary OPcache reset helper
+        if: ${{ always() && matrix.target == 'default' }}
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: rm -f "$HOME/${{ matrix.remote_path }}/assets/sd-runtime-reset-${{ github.event.workflow_run.head_sha }}.php"
 
       - name: Verify production plugin version
         if: ${{ matrix.target == 'default' }}
