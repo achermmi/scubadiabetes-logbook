@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - target: default
-            remote_path: sites/scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook
+            remote_path: ""
           - target: sd-suisse
             remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
           - target: scubadiabetes-dev
@@ -35,12 +35,21 @@ jobs:
         shell: bash
         run: printf '%s' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.txt
 
+      - name: Validate default deploy path secret
+        if: ${{ matrix.target == 'default' }}
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.REMOTE_PATH }}" ]; then
+            echo "Il secret REMOTE_PATH non e configurato."
+            exit 1
+          fi
+
       - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz --mkpath --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./
-          remote_path: ${{ matrix.remote_path }}
+          remote_path: ${{ matrix.target == 'default' && secrets.REMOTE_PATH || matrix.remote_path }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
@@ -77,3 +86,22 @@ jobs:
           fi
 
           echo "Versione pubblica verificata: $live_version"
+
+      - name: Discover WordPress plugin installations
+        if: ${{ failure() && matrix.target == 'default' }}
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "Installazioni scubadiabetes-logbook trovate sotto $HOME:"
+            find "$HOME" -maxdepth 9 -type f -path '*/wp-content/plugins/scubadiabetes-logbook/scubadiabetes-logbook.php' -print 2>/dev/null | while IFS= read -r plugin_file; do
+              plugin_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" "$plugin_file")"
+              marker_file="$(dirname "$plugin_file")/assets/sd-deploy-version.txt"
+              marker_value="assente"
+              if [ -f "$marker_file" ]; then
+                marker_value="$(cat "$marker_file")"
+              fi
+              echo "$plugin_file | versione=$plugin_version | marker=$marker_value"
+            done
