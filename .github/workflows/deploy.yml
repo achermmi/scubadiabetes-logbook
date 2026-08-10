@@ -31,6 +31,10 @@ jobs:
           php_version: "8.2"
           args: --no-dev --optimize-autoloader --ignore-platform-reqs
 
+      - name: Create deploy marker
+        shell: bash
+        run: printf '%s' '${{ github.event.workflow_run.head_sha }}' > assets/sd-deploy-version.txt
+
       - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
@@ -45,8 +49,19 @@ jobs:
         if: ${{ matrix.target == 'default' }}
         shell: bash
         run: |
+          expected_sha="${{ github.event.workflow_run.head_sha }}"
           expected_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" scubadiabetes-logbook.php)"
-          page_url="https://scubadiabetes.ch/sostienici/diventa-socio/?sd_deploy=${{ github.event.workflow_run.head_sha }}"
+          marker_url="https://scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook/assets/sd-deploy-version.txt?sd_deploy=$expected_sha"
+          live_sha="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$marker_url" || true)"
+
+          if [ "$live_sha" != "$expected_sha" ]; then
+            echo "I file non sono stati distribuiti nella directory plugin usata da scubadiabetes.ch."
+            echo "Atteso marker=$expected_sha, ricevuto marker=${live_sha:-assente}."
+            echo "Correggere matrix.default.remote_path nel workflow deploy."
+            exit 1
+          fi
+
+          page_url="https://scubadiabetes.ch/sostienici/diventa-socio/?sd_deploy=$expected_sha"
           page_html="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$page_url")"
           live_version="$(printf '%s' "$page_html" | grep -oE 'membership\.(css|js)\?ver=[0-9.]+' | sed -E 's/.*ver=//' | head -n 1)"
 
@@ -56,8 +71,8 @@ jobs:
           fi
 
           if [ "$live_version" != "$expected_version" ]; then
-            echo "Deploy non attivo: repository=$expected_version, produzione=$live_version."
-            echo "Verificare il percorso remoto e riavviare PHP/OPcache su Infomaniak."
+            echo "I file $expected_sha sono pubblici, ma PHP esegue ancora la versione $live_version invece di $expected_version."
+            echo "Riavviare PHP-FPM o svuotare OPcache dal pannello Infomaniak."
             exit 1
           fi
 
