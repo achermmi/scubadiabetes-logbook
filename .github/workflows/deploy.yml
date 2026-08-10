@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - target: default
-            remote_path: ""
+            remote_path: sites/scubadiabetes.ch/wp-content/plugins/scubadiabetes-logbook
           - target: sd-suisse
             remote_path: sites/sds/wp-content/plugins/scubadiabetes-logbook
           - target: scubadiabetes-dev
@@ -31,20 +31,34 @@ jobs:
           php_version: "8.2"
           args: --no-dev --optimize-autoloader --ignore-platform-reqs
 
-      - name: Validate default deploy path secret
-        if: ${{ matrix.target == 'default' }}
-        run: |
-          if [ -z "${{ secrets.REMOTE_PATH }}" ]; then
-            echo "REMOTE_PATH secret is missing or empty for target 'default'."
-            exit 1
-          fi
-
       - name: Deploy via rsync over SSH (${{ matrix.target }})
         uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz --mkpath --delete --exclude='.git/' --exclude='.github/' --exclude='tools/' --exclude='*.phar' --exclude='.phpcs.xml' --exclude='phpcs.xml' --exclude='composer.json' --exclude='composer.lock' --exclude='.gitignore'
           path: ./
-          remote_path: ${{ matrix.target == 'default' && secrets.REMOTE_PATH || matrix.remote_path }}
+          remote_path: ${{ matrix.remote_path }}
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_key: ${{ secrets.SSH_KEY }}
+
+      - name: Verify production plugin version
+        if: ${{ matrix.target == 'default' }}
+        shell: bash
+        run: |
+          expected_version="$(sed -n "s/^define( 'SD_LOGBOOK_VERSION', '\([^']*\)' );/\1/p" scubadiabetes-logbook.php)"
+          page_url="https://scubadiabetes.ch/sostienici/diventa-socio/?sd_deploy=${{ github.event.workflow_run.head_sha }}"
+          page_html="$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$page_url")"
+          live_version="$(printf '%s' "$page_html" | grep -oE 'membership\.(css|js)\?ver=[0-9.]+' | sed -E 's/.*ver=//' | head -n 1)"
+
+          if [ -z "$live_version" ]; then
+            echo "Impossibile rilevare SD_LOGBOOK_VERSION dalla pagina pubblica."
+            exit 1
+          fi
+
+          if [ "$live_version" != "$expected_version" ]; then
+            echo "Deploy non attivo: repository=$expected_version, produzione=$live_version."
+            echo "Verificare il percorso remoto e riavviare PHP/OPcache su Infomaniak."
+            exit 1
+          fi
+
+          echo "Versione pubblica verificata: $live_version"
