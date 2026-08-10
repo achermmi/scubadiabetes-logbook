@@ -614,12 +614,19 @@ class SD_Payment_Orchestrator {
 
 		$association_name = (string) get_option(
 			'sd_payment_invoice_association_name',
-			get_option( 'sd_payment_association_title', get_bloginfo( 'name' ) )
+			'Scuba Diabetes Suisse/Svizzera/Schweiz'
 		);
-		$bank_iban  = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
+		if ( '' === trim( $association_name ) ) {
+			$association_name = 'Scuba Diabetes Suisse/Svizzera/Schweiz';
+		}
+		$bank_iban = (string) get_option( 'sd_payment_invoice_bank_iban', 'CH35 0900 0000 1691 5442 1' );
+		if ( '' === trim( $bank_iban ) ) {
+			$bank_iban = 'CH35 0900 0000 1691 5442 1';
+		}
 		$bank_swift = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
 		$bank_bic   = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
-		$qr_payload = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
+		$invoice_no = sprintf( 'INV-%s-%06d-%04d', $year, (int) $member->id, (int) $payment->id );
+		$reference  = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Fattura: %s', gmdate( 'Y' ), $invoice_no );
 
 		$member_name = esc_html( trim( (string) $member->first_name . ' ' . (string) $member->last_name ) );
 
@@ -646,9 +653,7 @@ class SD_Payment_Orchestrator {
 		if ( '' !== trim( $bank_swift . $bank_bic ) ) {
 			$body .= '<li><strong>' . esc_html__( 'SWIFT/BIC:', 'sd-logbook' ) . '</strong> ' . esc_html( trim( $bank_swift . ' ' . $bank_bic ) ) . '</li>';
 		}
-		if ( '' !== trim( $qr_payload ) ) {
-			$body .= '<li><strong>' . esc_html__( 'QR pagamento:', 'sd-logbook' ) . '</strong><br>' . nl2br( esc_html( $qr_payload ) ) . '</li>';
-		}
+		$body .= '<li><strong>' . esc_html__( 'Riferimento:', 'sd-logbook' ) . '</strong> ' . esc_html( $reference ) . '</li>';
 		$body .= '</ul>';
 		$body .= '<p style="color:#666;font-size:12px">' . esc_html__( 'La tessera associativa verrà emessa dopo la conferma del pagamento.', 'sd-logbook' ) . '</p>';
 		$body .= '</body></html>';

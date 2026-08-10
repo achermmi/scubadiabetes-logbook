@@ -185,7 +185,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_name',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => 'Associazione ScubaDiabetes',
+				'default'           => 'Scuba Diabetes Suisse/Svizzera/Schweiz',
 			)
 		);
 		register_setting(
@@ -193,7 +193,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_address',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'Via al Ticino 30B',
 			)
 		);
 		register_setting(
@@ -201,7 +201,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_postal_code',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => '6514',
 			)
 		);
 		register_setting(
@@ -209,7 +209,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_city',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'Sementina',
 			)
 		);
 		register_setting(
@@ -217,7 +217,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_email',
 			array(
 				'sanitize_callback' => 'sanitize_email',
-				'default'           => get_bloginfo( 'admin_email' ),
+				'default'           => 'info@scubadiabetes.ch',
 			)
 		);
 		register_setting(
@@ -225,7 +225,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_association_phone',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => '+41 77 205 9391',
 			)
 		);
 		register_setting(
@@ -233,7 +233,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_bank_name',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'PostFinance AG',
 			)
 		);
 		register_setting(
@@ -241,7 +241,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_bank_address',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'Mingerstrasse 20',
 			)
 		);
 		register_setting(
@@ -249,7 +249,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_bank_postal_code',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => '3030',
 			)
 		);
 		register_setting(
@@ -257,7 +257,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_bank_city',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'Bern',
 			)
 		);
 		register_setting(
@@ -265,7 +265,7 @@ class SD_Payment_Settings {
 			'sd_payment_invoice_bank_iban',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
+				'default'           => 'CH35 0900 0000 1691 5442 1',
 			)
 		);
 		register_setting(
@@ -336,6 +336,18 @@ class SD_Payment_Settings {
 			return strtoupper( $value );
 		}
 		return '#0055A5';
+	}
+
+	/**
+	 * Recupera un dato fattura usando il valore ufficiale se non configurato.
+	 *
+	 * @param string $option_name Nome opzione.
+	 * @param string $default Valore predefinito.
+	 * @return string
+	 */
+	private function invoice_option( $option_name, $default ) {
+		$value = trim( (string) get_option( $option_name, $default ) );
+		return '' !== $value ? $value : $default;
 	}
 
 	/**
@@ -428,17 +440,17 @@ class SD_Payment_Settings {
 		$checkout_url                    = get_option( 'sd_payment_checkout_page_url', '' );
 		$confirm_url                     = get_option( 'sd_payment_confirmation_page_url', '' );
 		$login_url                       = get_option( 'sd_payment_login_url', home_url( '/login/' ) );
-		$invoice_association_name        = get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' ) );
-		$invoice_association_address     = get_option( 'sd_payment_invoice_association_address', '' );
-		$invoice_association_postal_code = get_option( 'sd_payment_invoice_association_postal_code', '' );
-		$invoice_association_city        = get_option( 'sd_payment_invoice_association_city', '' );
-		$invoice_association_email       = get_option( 'sd_payment_invoice_association_email', get_bloginfo( 'admin_email' ) );
-		$invoice_association_phone       = get_option( 'sd_payment_invoice_association_phone', '' );
-		$invoice_bank_name               = get_option( 'sd_payment_invoice_bank_name', '' );
-		$invoice_bank_address            = get_option( 'sd_payment_invoice_bank_address', '' );
-		$invoice_bank_postal_code        = get_option( 'sd_payment_invoice_bank_postal_code', '' );
-		$invoice_bank_city               = get_option( 'sd_payment_invoice_bank_city', '' );
-		$invoice_bank_iban               = get_option( 'sd_payment_invoice_bank_iban', '' );
+		$invoice_association_name        = $this->invoice_option( 'sd_payment_invoice_association_name', 'Scuba Diabetes Suisse/Svizzera/Schweiz' );
+		$invoice_association_address     = $this->invoice_option( 'sd_payment_invoice_association_address', 'Via al Ticino 30B' );
+		$invoice_association_postal_code = $this->invoice_option( 'sd_payment_invoice_association_postal_code', '6514' );
+		$invoice_association_city        = $this->invoice_option( 'sd_payment_invoice_association_city', 'Sementina' );
+		$invoice_association_email       = $this->invoice_option( 'sd_payment_invoice_association_email', 'info@scubadiabetes.ch' );
+		$invoice_association_phone       = $this->invoice_option( 'sd_payment_invoice_association_phone', '+41 77 205 9391' );
+		$invoice_bank_name               = $this->invoice_option( 'sd_payment_invoice_bank_name', 'PostFinance AG' );
+		$invoice_bank_address            = $this->invoice_option( 'sd_payment_invoice_bank_address', 'Mingerstrasse 20' );
+		$invoice_bank_postal_code        = $this->invoice_option( 'sd_payment_invoice_bank_postal_code', '3030' );
+		$invoice_bank_city               = $this->invoice_option( 'sd_payment_invoice_bank_city', 'Bern' );
+		$invoice_bank_iban               = $this->invoice_option( 'sd_payment_invoice_bank_iban', 'CH35 0900 0000 1691 5442 1' );
 		$invoice_bank_swift              = get_option( 'sd_payment_invoice_bank_swift', '' );
 		$invoice_bank_bic                = get_option( 'sd_payment_invoice_bank_bic', '' );
 		$invoice_qr_payload              = get_option( 'sd_payment_invoice_qr_payload', '' );

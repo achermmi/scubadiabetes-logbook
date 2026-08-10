@@ -520,27 +520,41 @@ class SD_Payment_Documents {
 		$height             = 842.0;
 		$primary            = $this->hex_to_rgb( get_option( 'sd_payment_brand_primary', '#0055A5' ) );
 		$secondary          = $this->hex_to_rgb( get_option( 'sd_payment_brand_secondary', '#00A3D8' ) );
-		$association_name   = (string) get_option( 'sd_payment_invoice_association_name', get_option( 'sd_payment_association_title', 'Associazione ScubaDiabetes' ) );
-		$association_addr   = (string) get_option( 'sd_payment_invoice_association_address', '' );
-		$association_postal = (string) get_option( 'sd_payment_invoice_association_postal_code', '' );
-		$association_city   = (string) get_option( 'sd_payment_invoice_association_city', '' );
-		$association_email  = (string) get_option( 'sd_payment_invoice_association_email', get_bloginfo( 'admin_email' ) );
-		$association_phone  = (string) get_option( 'sd_payment_invoice_association_phone', '' );
+		$association_name   = $this->invoice_option( 'sd_payment_invoice_association_name', 'Scuba Diabetes Suisse/Svizzera/Schweiz' );
+		$association_addr   = $this->invoice_option( 'sd_payment_invoice_association_address', 'Via al Ticino 30B' );
+		$association_postal = $this->invoice_option( 'sd_payment_invoice_association_postal_code', '6514' );
+		$association_city   = $this->invoice_option( 'sd_payment_invoice_association_city', 'Sementina' );
+		$association_email  = $this->invoice_option( 'sd_payment_invoice_association_email', 'info@scubadiabetes.ch' );
+		$association_phone  = $this->invoice_option( 'sd_payment_invoice_association_phone', '+41 77 205 9391' );
 
-		$bank_name    = (string) get_option( 'sd_payment_invoice_bank_name', '' );
-		$bank_addr    = (string) get_option( 'sd_payment_invoice_bank_address', '' );
-		$bank_postal  = (string) get_option( 'sd_payment_invoice_bank_postal_code', '' );
-		$bank_city    = (string) get_option( 'sd_payment_invoice_bank_city', '' );
-		$bank_iban    = (string) get_option( 'sd_payment_invoice_bank_iban', '' );
+		$bank_name    = $this->invoice_option( 'sd_payment_invoice_bank_name', 'PostFinance AG' );
+		$bank_addr    = $this->invoice_option( 'sd_payment_invoice_bank_address', 'Mingerstrasse 20' );
+		$bank_postal  = $this->invoice_option( 'sd_payment_invoice_bank_postal_code', '3030' );
+		$bank_city    = $this->invoice_option( 'sd_payment_invoice_bank_city', 'Bern' );
+		$bank_iban    = $this->invoice_option( 'sd_payment_invoice_bank_iban', 'CH35 0900 0000 1691 5442 1' );
 		$bank_swift   = (string) get_option( 'sd_payment_invoice_bank_swift', '' );
 		$bank_bic     = (string) get_option( 'sd_payment_invoice_bank_bic', '' );
 		$qr_payload   = (string) get_option( 'sd_payment_invoice_qr_payload', '' );
 		$qr_image_url = (string) get_option( 'sd_payment_invoice_qr_image_url', '' );
-		$qr_image     = $this->resolve_qr_image_for_pdf( $qr_image_url );
 
 		$member_name = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
 		$invoice_no  = sprintf( 'INV-%s-%06d-%04d', ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ), (int) $member->id, (int) $payment->id );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
+		$qr_data     = $this->generate_membership_qr_image(
+			$bank_iban,
+			$association_name,
+			$association_addr,
+			$association_postal,
+			$association_city,
+			(float) $payment->amount,
+			$invoice_no
+		);
+		if ( ! empty( $qr_data['path'] ) ) {
+			$qr_image   = array( 'path' => (string) $qr_data['path'] );
+			$qr_payload = (string) $qr_data['payload'];
+		} else {
+			$qr_image = $this->resolve_qr_image_for_pdf( $qr_image_url );
+		}
 
 		// Logo associazione (sfondo = colore primario header per preservare angoli arrotondati)
 		$logo_url   = 'https://scubadiabetes.ch/wp-content/uploads/2026/04/scubadiabetes_radius60.png';
@@ -593,12 +607,14 @@ class SD_Payment_Documents {
 		$ops .= $this->text( 40, $height - 398, 10, 'Banca: ' . $bank_name );
 		$ops .= $this->text( 40, $height - 416, 10, 'Indirizzo banca: ' . trim( $bank_addr . ' - ' . $bank_postal . ' ' . $bank_city, ' -' ) );
 		$ops .= $this->text( 40, $height - 434, 10, 'IBAN: ' . $bank_iban, true );
-		$ops .= $this->text( 40, $height - 452, 10, 'SWIFT: ' . $bank_swift . ' | BIC: ' . $bank_bic );
-		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Quota sociale ' . ( ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ) ) . ' - ' . (string) $member->member_number );
+		if ( '' !== trim( $bank_swift . $bank_bic ) ) {
+			$ops .= $this->text( 40, $height - 452, 10, 'SWIFT: ' . $bank_swift . ' | BIC: ' . $bank_bic );
+		}
+		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Modulo di iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . ' - Nr Fattura: ' . $invoice_no );
 
 		$ops .= $this->text( 40, $height - 500, 10, 'QR pagamento', true );
 		if ( '' !== trim( $qr_payload ) ) {
-			foreach ( $this->wrap_text_lines( 'Payload QR: ' . $qr_payload, 88 ) as $idx => $line ) {
+			foreach ( $this->wrap_text_lines( 'Dati QR: ' . $qr_payload, 88 ) as $idx => $line ) {
 				$ops .= $this->text( 40, $height - 518 - ( $idx * 13 ), 8.5, $line );
 			}
 		} else {
@@ -1911,6 +1927,85 @@ class SD_Payment_Documents {
 		$pid  = ! empty( $payment->id ) ? (int) $payment->id : 0;
 		$mid  = ! empty( $member->id ) ? (int) $member->id : 0;
 		return sprintf( 'RCV-%s-%06d-%04d', $year, $mid, $pid );
+	}
+
+	/**
+	 * Recupera un dato fattura configurabile usando il valore ufficiale come fallback.
+	 *
+	 * @param string $option_name Nome opzione.
+	 * @param string $default Valore predefinito.
+	 * @return string
+	 */
+	private function invoice_option( $option_name, $default ) {
+		$value = trim( (string) get_option( $option_name, $default ) );
+		return '' !== $value ? $value : $default;
+	}
+
+	/**
+	 * Genera il codice Swiss QR per la fattura della tassa associativa.
+	 *
+	 * @return array{path:string,payload:string}
+	 */
+	private function generate_membership_qr_image( $iban, $creditor_name, $address, $postal_code, $city, $amount, $invoice_no ) {
+		if ( ! class_exists( '\\Sprain\\SwissQrBill\\QrBill' ) || $amount <= 0 ) {
+			return array();
+		}
+
+		$street          = $address;
+		$building_number = '';
+		if ( preg_match( '/^(.+?)\s+(\d+[A-Za-z]?)$/', $address, $matches ) ) {
+			$street          = $matches[1];
+			$building_number = $matches[2];
+		}
+
+		try {
+			$qr_bill = \Sprain\SwissQrBill\QrBill::create();
+			$qr_bill->setCreditor(
+				\Sprain\SwissQrBill\DataGroup\Element\StructuredAddress::createWithStreet(
+					$creditor_name,
+					$street,
+					$building_number,
+					$postal_code,
+					$city,
+					'CH'
+				)
+			);
+			$qr_bill->setCreditorInformation(
+				\Sprain\SwissQrBill\DataGroup\Element\CreditorInformation::create( preg_replace( '/\s+/', '', $iban ) )
+			);
+			$qr_bill->setPaymentAmountInformation(
+				\Sprain\SwissQrBill\DataGroup\Element\PaymentAmountInformation::create( 'CHF', $amount )
+			);
+			$qr_bill->setPaymentReference(
+				\Sprain\SwissQrBill\DataGroup\Element\PaymentReference::create(
+					\Sprain\SwissQrBill\DataGroup\Element\PaymentReference::TYPE_NON
+				)
+			);
+
+			$message = sprintf( 'Modulo di iscrizione ScubaDiabetes %s - Nr Fattura: %s', gmdate( 'Y' ), $invoice_no );
+			$qr_bill->setAdditionalInformation(
+				\Sprain\SwissQrBill\DataGroup\Element\AdditionalInformation::create( $message )
+			);
+
+			$upload    = wp_upload_dir();
+			$cache_dir = trailingslashit( $upload['basedir'] ) . 'sd-documents/qr-cache/';
+			if ( empty( $upload['basedir'] ) || ! wp_mkdir_p( $cache_dir ) ) {
+				return array();
+			}
+
+			$png_path = $cache_dir . 'membership-' . md5( $qr_bill->getQrCode()->getText() ) . '.png';
+			if ( ! file_exists( $png_path ) ) {
+				$qr_bill->getQrCode()->writeFile( $png_path );
+			}
+			$jpg_path = $this->convert_png_to_jpeg( $png_path );
+
+			return array(
+				'path'    => $jpg_path,
+				'payload' => $message,
+			);
+		} catch ( \Throwable $exception ) {
+			return array();
+		}
 	}
 
 	/**
