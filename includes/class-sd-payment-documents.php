@@ -618,9 +618,11 @@ class SD_Payment_Documents {
 
 		$ops .= $this->text( 40, $height - 500, 10, 'QR pagamento', true );
 		if ( '' !== $qr_commands ) {
-			foreach ( $this->wrap_text_lines( 'Dati QR: ' . $qr_payload, 88 ) as $idx => $line ) {
+			$qr_data_lines = $this->wrap_text_lines( 'Dati QR: ' . $qr_payload, 88 );
+			foreach ( $qr_data_lines as $idx => $line ) {
 				$ops .= $this->text( 40, $height - 518 - ( $idx * 13 ), 8.5, $line );
 			}
+			$ops .= $this->text( 40, $height - 518 - ( count( $qr_data_lines ) * 13 ), 8.5, 'QR valido solo per pagamenti da istituti bancari Svizzeri', true );
 		} else {
 			$ops .= $this->text( 40, $height - 518, 8.5, 'Generazione QR non disponibile. Verificare il log del server.' );
 		}
