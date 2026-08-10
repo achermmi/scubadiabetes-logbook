@@ -540,6 +540,7 @@ class SD_Payment_Documents {
 		$member_name = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
 		$invoice_no  = sprintf( 'INV-%s-%06d-%04d', ! empty( $payment->payment_year ) ? (string) $payment->payment_year : gmdate( 'Y' ), (int) $member->id, (int) $payment->id );
 		$amount      = 'CHF ' . number_format( (float) $payment->amount, 2, '.', '' );
+		$qr_commands = '';
 		$qr_data     = $this->generate_membership_qr_image(
 			$bank_iban,
 			$association_name,
@@ -549,11 +550,14 @@ class SD_Payment_Documents {
 			(float) $payment->amount,
 			(string) $member->member_number
 		);
-		if ( ! empty( $qr_data['path'] ) ) {
-			$qr_image   = array( 'path' => (string) $qr_data['path'] );
+		if ( ! empty( $qr_data['qr_text'] ) ) {
+			$qr_commands = $this->render_qr_vector( (string) $qr_data['qr_text'], 430, $height - 544, 120 );
 			$qr_payload = (string) $qr_data['payload'];
-		} else {
+		}
+		if ( '' === $qr_commands ) {
 			$qr_image = $this->resolve_qr_image_for_pdf( $qr_image_url );
+		} else {
+			$qr_image = array();
 		}
 
 		// Logo associazione (sfondo = colore primario header per preservare angoli arrotondati)
@@ -613,13 +617,14 @@ class SD_Payment_Documents {
 		$ops .= $this->text( 40, $height - 470, 10, 'Causale: Modulo di iscrizione ScubaDiabetes ' . gmdate( 'Y' ) . ' - Nr Socio: ' . (string) $member->member_number );
 
 		$ops .= $this->text( 40, $height - 500, 10, 'QR pagamento', true );
-		if ( '' !== trim( $qr_payload ) ) {
+		if ( '' !== $qr_commands ) {
 			foreach ( $this->wrap_text_lines( 'Dati QR: ' . $qr_payload, 88 ) as $idx => $line ) {
 				$ops .= $this->text( 40, $height - 518 - ( $idx * 13 ), 8.5, $line );
 			}
 		} else {
-			$ops .= $this->text( 40, $height - 518, 8.5, 'Payload QR non configurato nelle impostazioni.' );
+			$ops .= $this->text( 40, $height - 518, 8.5, 'Generazione QR non disponibile. Verificare il log del server.' );
 		}
+		$ops .= $qr_commands;
 
 		$images = array();
 		if ( ! empty( $logo_image['path'] ) ) {
@@ -1944,7 +1949,7 @@ class SD_Payment_Documents {
 	/**
 	 * Genera il codice Swiss QR per la fattura della tassa associativa.
 	 *
-	 * @return array{path:string,payload:string}
+	 * @return array{qr_text:string,payload:string}
 	 */
 	private function generate_membership_qr_image( $iban, $creditor_name, $address, $postal_code, $city, $amount, $member_number ) {
 		if ( ! class_exists( '\\Sprain\\SwissQrBill\\QrBill' ) || $amount <= 0 ) {
@@ -1987,24 +1992,70 @@ class SD_Payment_Documents {
 				\Sprain\SwissQrBill\DataGroup\Element\AdditionalInformation::create( $message )
 			);
 
-			$upload    = wp_upload_dir();
-			$cache_dir = trailingslashit( $upload['basedir'] ) . 'sd-documents/qr-cache/';
-			if ( empty( $upload['basedir'] ) || ! wp_mkdir_p( $cache_dir ) ) {
-				return array();
-			}
-
-			$png_path = $cache_dir . 'membership-' . md5( $qr_bill->getQrCode()->getText() ) . '.png';
-			if ( ! file_exists( $png_path ) ) {
-				$qr_bill->getQrCode()->writeFile( $png_path );
-			}
-			$jpg_path = $this->convert_png_to_jpeg( $png_path );
-
 			return array(
-				'path'    => $jpg_path,
+				'qr_text' => $qr_bill->getQrCode()->getText(),
 				'payload' => $message,
 			);
 		} catch ( \Throwable $exception ) {
+			error_log( '[SD Payment] Swiss QR non generato: ' . $exception->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return array();
+		}
+	}
+
+	/**
+	 * Disegna il QR direttamente nel content stream PDF, senza dipendenze grafiche.
+	 *
+	 * @param string $payload Contenuto Swiss QR.
+	 * @param float  $x Coordinata X.
+	 * @param float  $y Coordinata Y.
+	 * @param float  $size Dimensione QR.
+	 * @return string
+	 */
+	private function render_qr_vector( $payload, $x, $y, $size ) {
+		if ( ! class_exists( '\\BaconQrCode\\Encoder\\Encoder' ) ) {
+			return '';
+		}
+
+		try {
+			$qr     = \BaconQrCode\Encoder\Encoder::encode( $payload, \BaconQrCode\Common\ErrorCorrectionLevel::M() );
+			$matrix = $qr->getMatrix();
+			$width  = $matrix->getWidth();
+			$quiet  = 4;
+			$module = $size / ( $width + ( 2 * $quiet ) );
+
+			$commands = $this->rect_fill( $x, $y, $size, $size, array( 1, 1, 1 ) );
+			for ( $row = 0; $row < $width; $row++ ) {
+				$run_start = -1;
+				for ( $column = 0; $column <= $width; $column++ ) {
+					$is_dark = $column < $width && 1 === $matrix->get( $column, $row );
+					if ( $is_dark && $run_start < 0 ) {
+						$run_start = $column;
+					} elseif ( ! $is_dark && $run_start >= 0 ) {
+						$commands .= $this->rect_fill(
+							$x + ( ( $quiet + $run_start ) * $module ),
+							$y + ( ( $quiet + $width - $row - 1 ) * $module ),
+							( $column - $run_start ) * $module,
+							$module,
+							array( 0, 0, 0 )
+						);
+						$run_start = -1;
+					}
+				}
+			}
+
+			$cross_size = $size * 0.14;
+			$cross_x    = $x + ( ( $size - $cross_size ) / 2 );
+			$cross_y    = $y + ( ( $size - $cross_size ) / 2 );
+			$bar        = $cross_size * 0.22;
+			$bar_length = $cross_size * 0.66;
+			$commands  .= $this->rect_fill( $cross_x, $cross_y, $cross_size, $cross_size, array( 0, 0, 0 ) );
+			$commands  .= $this->rect_fill( $cross_x + ( ( $cross_size - $bar ) / 2 ), $cross_y + ( ( $cross_size - $bar_length ) / 2 ), $bar, $bar_length, array( 1, 1, 1 ) );
+			$commands  .= $this->rect_fill( $cross_x + ( ( $cross_size - $bar_length ) / 2 ), $cross_y + ( ( $cross_size - $bar ) / 2 ), $bar_length, $bar, array( 1, 1, 1 ) );
+
+			return $commands;
+		} catch ( \Throwable $exception ) {
+			error_log( '[SD Payment] QR vettoriale non generato: ' . $exception->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return '';
 		}
 	}
 
